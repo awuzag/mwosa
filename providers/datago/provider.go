@@ -152,16 +152,20 @@ func NewWithClients(etpClient etpPriceClient, stockClient stockPriceClient) *Pro
 	}
 
 	if etpClient != nil {
-		p.groups = append(p.groups, newSecuritiesProductPriceGroup(p.fetchDailyBars, p.searchInstruments))
+		p.groups = append(p.groups, newSecuritiesProductPriceGroup(p.fetchDailyBars, p.fetchDailyBarsPage, p.searchInstruments))
 	}
 	if stockClient != nil {
-		p.groups = append(p.groups, newStockPriceGroup(p.fetchDailyBars, p.searchInstruments))
+		p.groups = append(p.groups, newStockPriceGroup(p.fetchDailyBars, p.fetchDailyBarsPage, p.searchInstruments))
 	}
 	return p
 }
 
 func (p *Provider) FetchDailyBars(ctx context.Context, input dailybar.FetchInput) (dailybar.FetchResult, error) {
 	return p.fetchDailyBars(ctx, input)
+}
+
+func (p *Provider) FetchDailyBarsPage(ctx context.Context, input dailybar.PageFetchInput) (dailybar.PageFetchResult, error) {
+	return p.fetchDailyBarsPage(ctx, input)
 }
 
 func (p *Provider) SearchInstruments(ctx context.Context, input instrument.SearchInput) (instrument.SearchResult, error) {
@@ -278,6 +282,59 @@ func (p *Provider) fetchDailyBars(ctx context.Context, input dailybar.FetchInput
 		Provider:   p.Identity,
 		Group:      group,
 		Operation:  operation,
+		TotalCount: result.TotalCount,
+	}, nil
+}
+
+func (p *Provider) fetchDailyBarsPage(ctx context.Context, input dailybar.PageFetchInput) (dailybar.PageFetchResult, error) {
+	inputErrb := oops.In("datago_adapter").With("role", provider.RoleDailyBar, "market", input.Market, "security_type", input.SecurityType, "symbol", input.Symbol, "page", input.PageNo)
+	if err := validateMarket(provider.RoleDailyBar, input.Market, input.Symbol, input.SecurityType); err != nil {
+		return dailybar.PageFetchResult{}, inputErrb.Wrap(err)
+	}
+	operation, err := operationForSecurityType(provider.RoleDailyBar, input.SecurityType, input.Symbol)
+	if err != nil {
+		return dailybar.PageFetchResult{}, inputErrb.Wrap(err)
+	}
+	group := groupForOperation(operation)
+	providerErrb := oops.In("datago_adapter").With("provider", provider.ProviderDataGo, "group", group)
+
+	query := datagoetp.SecuritiesProductPriceQuery{
+		NumOfRows: numOfRowsForDailyFetch(input.PageSize),
+		PageNo:    input.PageNo,
+	}
+	query = query.WithInstrumentLookup(input.Symbol)
+	if input.From != "" && input.From == input.To {
+		query.BasDt = input.From
+	} else {
+		if input.From != "" {
+			query.BeginBasDt = input.From
+		}
+		if input.To != "" {
+			endBasDt, err := exclusiveEndBasDt(input.To)
+			if err != nil {
+				return dailybar.PageFetchResult{}, inputErrb.Wrap(err)
+			}
+			query.EndBasDt = endBasDt
+		}
+	}
+
+	result, err := p.fetchPriceRecords(ctx, operationSpec{SecurityType: input.SecurityType, Operation: operation}, query, false)
+	if err != nil {
+		return dailybar.PageFetchResult{}, providerErrb.With("operation", operation, "market", input.Market, "security_type", input.SecurityType, "symbol", input.Symbol, "page", input.PageNo).Wrapf(err, "fetch datago daily bars page")
+	}
+
+	bars := make([]dailybar.Bar, 0, len(result.Records))
+	for _, record := range result.Records {
+		bars = append(bars, normalizeDailyBar(record, input.SecurityType, operation))
+	}
+
+	return dailybar.PageFetchResult{
+		Bars:       bars,
+		Provider:   p.Identity,
+		Group:      group,
+		Operation:  operation,
+		PageNo:     result.PageNo,
+		PageSize:   result.PageSize,
 		TotalCount: result.TotalCount,
 	}, nil
 }
@@ -401,6 +458,8 @@ type priceRecord struct {
 
 type priceRecordsResult struct {
 	Records    []priceRecord
+	PageNo     int
+	PageSize   int
 	TotalCount int
 }
 
@@ -801,7 +860,7 @@ func (p *Provider) fetchPriceRecords(ctx context.Context, spec operationSpec, qu
 		if err != nil {
 			return priceRecordsResult{}, errb.Wrap(err)
 		}
-		return priceRecordsResult{Records: recordsFromETF(result.Items), TotalCount: result.TotalCount}, nil
+		return priceRecordsResult{Records: recordsFromETF(result.Items), PageNo: result.PageNo, PageSize: result.NumOfRows, TotalCount: result.TotalCount}, nil
 	case provider.OperationGetETNPriceInfo:
 		if p.etpClient == nil {
 			return priceRecordsResult{}, errb.New("datago securitiesProductPrice adapter client is nil")
@@ -819,7 +878,7 @@ func (p *Provider) fetchPriceRecords(ctx context.Context, spec operationSpec, qu
 		if err != nil {
 			return priceRecordsResult{}, errb.Wrap(err)
 		}
-		return priceRecordsResult{Records: recordsFromETN(result.Items), TotalCount: result.TotalCount}, nil
+		return priceRecordsResult{Records: recordsFromETN(result.Items), PageNo: result.PageNo, PageSize: result.NumOfRows, TotalCount: result.TotalCount}, nil
 	case provider.OperationGetELWPriceInfo:
 		if p.etpClient == nil {
 			return priceRecordsResult{}, errb.New("datago securitiesProductPrice adapter client is nil")
@@ -837,7 +896,7 @@ func (p *Provider) fetchPriceRecords(ctx context.Context, spec operationSpec, qu
 		if err != nil {
 			return priceRecordsResult{}, errb.Wrap(err)
 		}
-		return priceRecordsResult{Records: recordsFromELW(result.Items), TotalCount: result.TotalCount}, nil
+		return priceRecordsResult{Records: recordsFromELW(result.Items), PageNo: result.PageNo, PageSize: result.NumOfRows, TotalCount: result.TotalCount}, nil
 	case provider.OperationGetStockPriceInfo:
 		if p.stockClient == nil {
 			return priceRecordsResult{}, errb.New("datago stockPrice adapter client is nil")
@@ -853,7 +912,7 @@ func (p *Provider) fetchPriceRecords(ctx context.Context, spec operationSpec, qu
 		if err != nil {
 			return priceRecordsResult{}, errb.Wrap(err)
 		}
-		return priceRecordsResult{Records: recordsFromStock(result.Items), TotalCount: result.TotalCount}, nil
+		return priceRecordsResult{Records: recordsFromStock(result.Items), PageNo: result.PageNo, PageSize: result.NumOfRows, TotalCount: result.TotalCount}, nil
 	default:
 		return priceRecordsResult{}, errb.New("unsupported datago price info operation")
 	}

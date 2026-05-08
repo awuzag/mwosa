@@ -2,11 +2,15 @@ package daily
 
 import (
 	"context"
+	"strconv"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
+	"github.com/samber/oops"
 )
 
 func TestNewReadServiceRequiresReader(t *testing.T) {
@@ -108,21 +112,30 @@ func TestEnsurePassesSymbolToProviderFetch(t *testing.T) {
 	}
 }
 
-func TestBackfillFetchesProviderRangeWithWorkers(t *testing.T) {
-	var gotFetch dailybar.FetchInput
-	fetcher := dailybar.NewFetch(dailybar.Profile{
+func TestBackfillFetchesProviderPagesWithWorkers(t *testing.T) {
+	var gotPagesMu sync.Mutex
+	gotPages := make([]int, 0)
+	legacyFetchCalled := false
+	fetcher := dailybar.NewPagedFetch(dailybar.Profile{
 		Markets:       []provider.Market{provider.MarketKRX},
 		SecurityTypes: []provider.SecurityType{provider.SecurityTypeETF},
 		Compatibility: provider.Compatibility{DataLatency: provider.DataLatencyPreviousBusinessDay},
 	}, func(_ context.Context, input dailybar.FetchInput) (dailybar.FetchResult, error) {
-		gotFetch = input
-		return dailybar.FetchResult{
+		legacyFetchCalled = true
+		return dailybar.FetchResult{}, nil
+	}, func(_ context.Context, input dailybar.PageFetchInput) (dailybar.PageFetchResult, error) {
+		gotPagesMu.Lock()
+		gotPages = append(gotPages, input.PageNo)
+		gotPagesMu.Unlock()
+		return dailybar.PageFetchResult{
 			Bars: []dailybar.Bar{
 				{Symbol: "069500", TradingDate: "2024-04-15"},
-				{Symbol: "069500", TradingDate: "2024-04-16"},
 			},
-			Provider: provider.Identity{ID: provider.ProviderID("fake")},
-			Group:    provider.GroupID("fakeGroup"),
+			Provider:   provider.Identity{ID: provider.ProviderID("fake")},
+			Group:      provider.GroupID("fakeGroup"),
+			PageNo:     input.PageNo,
+			PageSize:   1,
+			TotalCount: 2,
 		}, nil
 	})
 	writer := &recordingWriteRepository{}
@@ -144,14 +157,117 @@ func TestBackfillFetchesProviderRangeWithWorkers(t *testing.T) {
 	if result.BarsFetched != 2 || result.BarsStored != 2 {
 		t.Fatalf("result = %+v, want fetched/stored 2", result)
 	}
-	if gotFetch.From != "20240415" || gotFetch.To != "20240416" || gotFetch.Workers != 2 {
-		t.Fatalf("fetch input = %+v, want range 20240415-20240416 with workers 2", gotFetch)
+	if legacyFetchCalled {
+		t.Fatal("backfill used legacy FetchDailyBars; want page fetch pipeline")
 	}
-	if strings.Join(result.Dates, ",") != "2024-04-15,2024-04-16" {
+	gotPagesMu.Lock()
+	sortInts(gotPages)
+	gotPagesText := intsText(gotPages)
+	gotPagesMu.Unlock()
+	if gotPagesText != "1,2" {
+		t.Fatalf("page fetches = %s, want 1,2", gotPagesText)
+	}
+	if strings.Join(result.Dates, ",") != "2024-04-15" {
 		t.Fatalf("dates = %v, want sorted backfill dates", result.Dates)
 	}
 	if writer.barsWritten != 2 {
 		t.Fatalf("writer bars = %d, want 2", writer.barsWritten)
+	}
+}
+
+func TestBackfillStoresFirstPageBeforeRemainingFetchCompletes(t *testing.T) {
+	allowSecondPage := make(chan struct{})
+	firstStored := make(chan struct{})
+	done := make(chan error, 1)
+	fetcher := dailybar.NewPagedFetch(dailybar.Profile{
+		Markets:       []provider.Market{provider.MarketKRX},
+		SecurityTypes: []provider.SecurityType{provider.SecurityTypeETF},
+		Compatibility: provider.Compatibility{DataLatency: provider.DataLatencyPreviousBusinessDay},
+	}, func(context.Context, dailybar.FetchInput) (dailybar.FetchResult, error) {
+		return dailybar.FetchResult{}, nil
+	}, func(_ context.Context, input dailybar.PageFetchInput) (dailybar.PageFetchResult, error) {
+		if input.PageNo == 2 {
+			<-allowSecondPage
+		}
+		return dailybar.PageFetchResult{
+			Bars:       []dailybar.Bar{{Symbol: "069500", TradingDate: "2024-04-15"}},
+			Provider:   provider.Identity{ID: provider.ProviderID("fake")},
+			Group:      provider.GroupID("fakeGroup"),
+			PageNo:     input.PageNo,
+			PageSize:   1,
+			TotalCount: 2,
+		}, nil
+	})
+	writer := &recordingWriteRepository{afterWrite: func(call int) {
+		if call == 1 {
+			close(firstStored)
+		}
+	}}
+	service, err := NewService(fakeReadRepository{}, writer, fakeDailyBarRouter{fetcher: fetcher})
+	if err != nil {
+		t.Fatalf("NewService error = %v", err)
+	}
+
+	go func() {
+		_, err := service.Backfill(context.Background(), Request{
+			Market:       provider.MarketKRX,
+			SecurityType: provider.SecurityTypeETF,
+			From:         "20240415",
+			To:           "20240416",
+			Workers:      2,
+		})
+		done <- err
+	}()
+
+	select {
+	case <-firstStored:
+	case <-time.After(time.Second):
+		t.Fatal("first page was not stored before remaining fetch completed")
+	}
+	close(allowSecondPage)
+	if err := <-done; err != nil {
+		t.Fatalf("Backfill error = %v", err)
+	}
+}
+
+func TestBackfillFetchErrorPreservesStoredChunks(t *testing.T) {
+	fetcher := dailybar.NewPagedFetch(dailybar.Profile{
+		Markets:       []provider.Market{provider.MarketKRX},
+		SecurityTypes: []provider.SecurityType{provider.SecurityTypeETF},
+		Compatibility: provider.Compatibility{DataLatency: provider.DataLatencyPreviousBusinessDay},
+	}, func(context.Context, dailybar.FetchInput) (dailybar.FetchResult, error) {
+		return dailybar.FetchResult{}, nil
+	}, func(_ context.Context, input dailybar.PageFetchInput) (dailybar.PageFetchResult, error) {
+		if input.PageNo == 2 {
+			return dailybar.PageFetchResult{}, oops.In("test").New("page 2 failed")
+		}
+		return dailybar.PageFetchResult{
+			Bars:       []dailybar.Bar{{Symbol: "069500", TradingDate: "2024-04-15"}},
+			Provider:   provider.Identity{ID: provider.ProviderID("fake")},
+			Group:      provider.GroupID("fakeGroup"),
+			PageNo:     input.PageNo,
+			PageSize:   1,
+			TotalCount: 2,
+		}, nil
+	})
+	writer := &recordingWriteRepository{}
+	service, err := NewService(fakeReadRepository{}, writer, fakeDailyBarRouter{fetcher: fetcher})
+	if err != nil {
+		t.Fatalf("NewService error = %v", err)
+	}
+
+	_, err = service.Backfill(context.Background(), Request{
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeETF,
+		From:         "20240415",
+		To:           "20240416",
+		Workers:      2,
+	})
+	if err == nil {
+		t.Fatal("Backfill error = nil, want page fetch error")
+	}
+	if writer.barsWritten != 1 {
+		t.Fatalf("writer bars = %d, want first chunk preserved", writer.barsWritten)
 	}
 }
 
@@ -169,15 +285,39 @@ func (fakeWriteRepository) UpsertDailyBars(context.Context, []dailybar.Bar) (Wri
 
 type recordingWriteRepository struct {
 	barsWritten int
+	calls       int
+	afterWrite  func(call int)
 }
 
 func (r *recordingWriteRepository) UpsertDailyBars(_ context.Context, bars []dailybar.Bar) (WriteResult, error) {
+	r.calls++
 	r.barsWritten += len(bars)
+	if r.afterWrite != nil {
+		r.afterWrite(r.calls)
+	}
 	return WriteResult{BarsWritten: len(bars), RowsAffected: len(bars)}, nil
 }
 
 type fakeDailyBarRouter struct {
 	fetcher dailybar.Fetcher
+}
+
+func sortInts(values []int) {
+	for i := 0; i < len(values); i++ {
+		for j := i + 1; j < len(values); j++ {
+			if values[j] < values[i] {
+				values[i], values[j] = values[j], values[i]
+			}
+		}
+	}
+}
+
+func intsText(values []int) string {
+	parts := make([]string, 0, len(values))
+	for _, value := range values {
+		parts = append(parts, strconv.Itoa(value))
+	}
+	return strings.Join(parts, ",")
 }
 
 func (r fakeDailyBarRouter) RouteDailyBars(context.Context, dailybar.RouteInput) (dailybar.Fetcher, error) {

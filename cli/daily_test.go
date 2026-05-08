@@ -245,9 +245,10 @@ func TestBackfillDailyCollectsRange(t *testing.T) {
 	setDataGoEnv(t, server.URL)
 
 	var out bytes.Buffer
+	var errOut bytes.Buffer
 	cmd := NewRootCommand(BuildInfo{})
 	cmd.SetOut(&out)
-	cmd.SetErr(&out)
+	cmd.SetErr(&errOut)
 	if err := executeForTest(t, context.Background(), cmd,
 		"--database", databasePath,
 		"--output", "json",
@@ -262,6 +263,12 @@ func TestBackfillDailyCollectsRange(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), `"bars_fetched": 2`) {
 		t.Fatalf("backfill output should summarize fetched bars:\n%s", out.String())
+	}
+	if strings.Contains(out.String(), "backfill daily: fetched pages") {
+		t.Fatalf("progress should not be written to stdout:\n%s", out.String())
+	}
+	if !strings.Contains(errOut.String(), "backfill daily: fetched pages 1/1") {
+		t.Fatalf("progress should be written to stderr:\n%s", errOut.String())
 	}
 }
 
@@ -329,9 +336,10 @@ func TestBackfillDailyUsesWorkersForPages(t *testing.T) {
 	setDataGoEnv(t, server.URL)
 
 	var out bytes.Buffer
+	var errOut bytes.Buffer
 	cmd := NewRootCommand(BuildInfo{})
 	cmd.SetOut(&out)
-	cmd.SetErr(&out)
+	cmd.SetErr(&errOut)
 	if err := executeForTest(t, context.Background(), cmd,
 		"--database", databasePath,
 		"--output", "json",
@@ -349,6 +357,12 @@ func TestBackfillDailyUsesWorkersForPages(t *testing.T) {
 	}
 	if !strings.Contains(out.String(), `"bars_fetched": 3`) {
 		t.Fatalf("backfill output should summarize fetched bars:\n%s", out.String())
+	}
+	if strings.Contains(out.String(), "backfill daily: fetched pages") {
+		t.Fatalf("progress should not be written to stdout:\n%s", out.String())
+	}
+	if !strings.Contains(errOut.String(), "backfill daily: fetched pages") {
+		t.Fatalf("progress should be written to stderr:\n%s", errOut.String())
 	}
 }
 

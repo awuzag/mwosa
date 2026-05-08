@@ -8,8 +8,9 @@ import (
 )
 
 type DailyBarRoleBuilder struct {
-	profile DailyBarBuilder
-	fetch   dailybar.FetchFunc
+	profile   DailyBarBuilder
+	fetch     dailybar.FetchFunc
+	pageFetch dailybar.PageFetchFunc
 }
 
 func DailyBarFetcher(fetch dailybar.FetchFunc) DailyBarRoleBuilder {
@@ -90,6 +91,11 @@ func (b DailyBarRoleBuilder) Limitations(limitations ...string) DailyBarRoleBuil
 	return b
 }
 
+func (b DailyBarRoleBuilder) PageFetch(pageFetch dailybar.PageFetchFunc) DailyBarRoleBuilder {
+	b.pageFetch = pageFetch
+	return b
+}
+
 func (b DailyBarRoleBuilder) Build() (dailybar.Fetch, error) {
 	if b.fetch == nil {
 		return dailybar.Fetch{}, oops.In("provider_spec").With("role", provider.RoleDailyBar).New("daily-bar provider spec requires fetch callable")
@@ -97,6 +103,9 @@ func (b DailyBarRoleBuilder) Build() (dailybar.Fetch, error) {
 	profile, err := b.profile.Build()
 	if err != nil {
 		return dailybar.Fetch{}, err
+	}
+	if b.pageFetch != nil {
+		return dailybar.NewPagedFetch(profile, b.fetch, b.pageFetch), nil
 	}
 	return dailybar.NewFetch(profile, b.fetch), nil
 }

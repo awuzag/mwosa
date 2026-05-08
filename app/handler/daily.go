@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"io"
 
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	"github.com/ev3rlit/mwosa/service/daily"
@@ -55,6 +56,7 @@ type BackfillDailyRequest struct {
 	From           string
 	To             string
 	Workers        int
+	Progress       io.Writer
 }
 
 func (h Daily) Get(ctx context.Context, req GetDailyRequest) (DailyBarsOutput, error) {
@@ -112,6 +114,7 @@ func (h Daily) Backfill(ctx context.Context, req BackfillDailyRequest) (CollectR
 		From:           req.From,
 		To:             req.To,
 		Workers:        req.Workers,
+		Progress:       req.Progress,
 	})
 	if err != nil {
 		return CollectResultOutput{}, err

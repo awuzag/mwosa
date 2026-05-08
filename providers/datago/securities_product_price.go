@@ -14,9 +14,10 @@ type securitiesProductPriceGroup struct {
 
 var _ provider.GroupRoleProvider = securitiesProductPriceGroup{}
 
-func newSecuritiesProductPriceGroup(fetch dailybar.FetchFunc, search instrument.SearchFunc) securitiesProductPriceGroup {
+func newSecuritiesProductPriceGroup(fetch dailybar.FetchFunc, pageFetch dailybar.PageFetchFunc, search instrument.SearchFunc) securitiesProductPriceGroup {
 	return securitiesProductPriceGroup{
 		Fetcher: spec.PreviousBusinessDayDailyBar(fetch).
+			PageFetch(pageFetch).
 			Markets(provider.MarketKRX).
 			SecurityTypes(
 				provider.SecurityTypeETF,

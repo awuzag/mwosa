@@ -250,6 +250,58 @@ func TestFetchDailyBarsDecodesOnlyRequestedPage(t *testing.T) {
 	}
 }
 
+func TestFetchDailyBarsPageUsesRequestedPage(t *testing.T) {
+	seenPages := make([]string, 0)
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/getETFPriceInfo" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		pageNo := r.URL.Query().Get("pageNo")
+		seenPages = append(seenPages, pageNo)
+		assertCommonQuery(t, r, "2", "1")
+		if got := r.URL.Query().Get("beginBasDt"); got != "20240415" {
+			t.Fatalf("beginBasDt = %q, want 20240415", got)
+		}
+		if got := r.URL.Query().Get("endBasDt"); got != "20240417" {
+			t.Fatalf("endBasDt = %q, want 20240417", got)
+		}
+		fmt.Fprint(w, `{
+			"header": {"resultCode": "00", "resultMsg": "OK"},
+			"body": {
+				"numOfRows": 1,
+				"pageNo": 2,
+				"totalCount": 2,
+				"items": {"item": [
+					{"basDt": "20240416", "srtnCd": "069501", "itmsNm": "KODEX Next", "clpr": "1000"}
+				]}
+			}
+		}`)
+	}))
+	defer server.Close()
+
+	p := newTestProvider(t, server.URL)
+	result, err := p.FetchDailyBarsPage(context.Background(), dailybar.PageFetchInput{
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeETF,
+		From:         "20240415",
+		To:           "20240416",
+		PageNo:       2,
+		PageSize:     1,
+	})
+	if err != nil {
+		t.Fatalf("fetch daily bars page: %v", err)
+	}
+	if strings.Join(seenPages, ",") != "2" {
+		t.Fatalf("seen pages = %v, want [2]", seenPages)
+	}
+	if result.PageNo != 2 || result.PageSize != 1 || result.TotalCount != 2 {
+		t.Fatalf("page metadata = %+v, want page 2 size 1 total 2", result)
+	}
+	if len(result.Bars) != 1 || result.Bars[0].Symbol != "069501" {
+		t.Fatalf("bars = %+v, want requested page bar", result.Bars)
+	}
+}
+
 func TestSearchInstrumentsReturnsEmptyResult(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, _ *http.Request) {
 		fmt.Fprint(w, `{

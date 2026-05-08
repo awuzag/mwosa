@@ -127,6 +127,7 @@ func newBackfillDailyCommand(opts *Options) *cobra.Command {
 				From:           flags.From,
 				To:             flags.To,
 				Workers:        flags.Workers,
+				Progress:       cmd.ErrOrStderr(),
 			})
 		}),
 	}

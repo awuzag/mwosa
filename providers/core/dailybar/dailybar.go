@@ -54,6 +54,16 @@ type FetchInput struct {
 	Workers      int
 }
 
+type PageFetchInput struct {
+	Market       provider.Market
+	SecurityType provider.SecurityType
+	Symbol       string
+	From         string
+	To           string
+	PageNo       int
+	PageSize     int
+}
+
 type Bar struct {
 	Provider     provider.ProviderID   `json:"provider" csv:"-"`
 	Group        provider.GroupID      `json:"provider_group" csv:"-"`
@@ -88,21 +98,41 @@ type FetchResult struct {
 	TotalCount int
 }
 
+type PageFetchResult struct {
+	Bars       []Bar
+	Provider   provider.Identity
+	Group      provider.GroupID
+	Operation  provider.OperationID
+	PageNo     int
+	PageSize   int
+	TotalCount int
+}
+
 type Fetcher interface {
 	provider.RoleProvider
 	FetchDailyBars(ctx context.Context, input FetchInput) (FetchResult, error)
 	DailyBarProfile() Profile
 }
 
+type PageFetcher interface {
+	FetchDailyBarsPage(ctx context.Context, input PageFetchInput) (PageFetchResult, error)
+}
+
 type FetchFunc func(context.Context, FetchInput) (FetchResult, error)
+type PageFetchFunc func(context.Context, PageFetchInput) (PageFetchResult, error)
 
 type Fetch struct {
-	profile Profile
-	fetch   FetchFunc
+	profile   Profile
+	fetch     FetchFunc
+	pageFetch PageFetchFunc
 }
 
 func NewFetch(profile Profile, fetch FetchFunc) Fetch {
 	return Fetch{profile: profile, fetch: fetch}
+}
+
+func NewPagedFetch(profile Profile, fetch FetchFunc, pageFetch PageFetchFunc) Fetch {
+	return Fetch{profile: profile, fetch: fetch, pageFetch: pageFetch}
 }
 
 func (f Fetch) FetchDailyBars(ctx context.Context, input FetchInput) (FetchResult, error) {
@@ -110,6 +140,13 @@ func (f Fetch) FetchDailyBars(ctx context.Context, input FetchInput) (FetchResul
 		return FetchResult{}, oops.In("provider_role").With("role", provider.RoleDailyBar).New("dailybar fetch role is not configured")
 	}
 	return f.fetch(ctx, input)
+}
+
+func (f Fetch) FetchDailyBarsPage(ctx context.Context, input PageFetchInput) (PageFetchResult, error) {
+	if f.pageFetch == nil {
+		return PageFetchResult{}, oops.In("provider_role").With("role", provider.RoleDailyBar).New("dailybar page fetch role is not configured")
+	}
+	return f.pageFetch(ctx, input)
 }
 
 func (f Fetch) DailyBarProfile() Profile {
