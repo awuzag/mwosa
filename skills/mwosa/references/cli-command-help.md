@@ -19,10 +19,10 @@ MWOSA_HELP_REPO_ROOT=/path/to/mwosa skills/mwosa/references/generate-cli-command
 ## Captured Help
 
 ```text
-mwosa v0.1.1-0.20260507065048-104c3fa59132
+mwosa v0.1.1-0.20260508052755-4d097e5ae78c
 schema dev
-commit 104c3fa5913249568487b62c9e42ecb1f7bdb67c
-built 2026-05-07T06:50:48Z
+commit 4d097e5ae78ca8b0bc225a9f9ecde065d66221b4
+built 2026-05-08T05:27:55Z
 go go1.25.6
 Investment research CLI for provider-backed market data
 
