@@ -19,10 +19,10 @@ MWOSA_HELP_REPO_ROOT=/path/to/mwosa skills/mwosa/references/generate-cli-command
 ## Captured Help
 
 ```text
-mwosa v0.1.1-0.20260508052755-4d097e5ae78c
+mwosa v0.1.1-0.20260509143438-c016c3d00b63
 schema dev
-commit 4d097e5ae78ca8b0bc225a9f9ecde065d66221b4
-built 2026-05-08T05:27:55Z
+commit c016c3d00b630740311902e879dc6f27a74cf148
+built 2026-05-09T14:34:38Z
 go go1.25.6
 Investment research CLI for provider-backed market data
 
@@ -46,6 +46,7 @@ Available Commands:
   list        List mwosa resources
   login       Register credentials for a resource
   logout      Remove credentials for a resource
+  migrate     Manage local data migrations
   prefer      Set resource preference
   screen      Run screening workflows
   sync        Refresh provider-backed data batches
@@ -835,6 +836,66 @@ Usage:
 
 Flags:
   -h, --help   help for provider
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa migrate --help
+Manage local data migrations
+
+Usage:
+  mwosa migrate [command]
+
+Available Commands:
+  apply       Apply pending local data migrations
+  status      List local data migration status
+
+Flags:
+  -h, --help   help for migrate
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+Use "mwosa migrate [command] --help" for more information about a command.
+
+
+### mwosa migrate apply --help
+Apply pending local data migrations
+
+Usage:
+  mwosa migrate apply [flags]
+
+Flags:
+  -h, --help   help for apply
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa migrate status --help
+List local data migration status
+
+Usage:
+  mwosa migrate status [flags]
+
+Flags:
+  -h, --help   help for status
 
 Global Flags:
       --config string            config file path
