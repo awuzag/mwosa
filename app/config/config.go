@@ -39,6 +39,7 @@ type Options struct {
 	ConfigPath       string
 	DatabasePath     string
 	Market           string
+	Development      bool
 	ProviderDefaults []ProviderDefault
 }
 
@@ -78,12 +79,12 @@ type Resolved struct {
 func LoadOrCreate(opts Options) (Resolved, error) {
 	errb := oops.In("app_config")
 
-	configPath, configSource, err := resolveConfigPath(opts.ConfigPath)
+	configPath, configSource, err := resolveConfigPath(opts.ConfigPath, opts.Development)
 	if err != nil {
 		return Resolved{}, errb.Wrap(err)
 	}
 
-	defaultDatabasePath, err := DefaultDatabasePath()
+	defaultDatabasePath, err := defaultDatabasePathFor(opts.Development)
 	if err != nil {
 		return Resolved{}, errb.Wrap(err)
 	}
@@ -128,11 +129,11 @@ func SetValue(opts Options, settingPath string, rawValue string) (Resolved, erro
 
 func SetValues(opts Options, values map[string]string) (Resolved, error) {
 	errb := oops.In("app_config")
-	configPath, _, err := resolveConfigPath(opts.ConfigPath)
+	configPath, _, err := resolveConfigPath(opts.ConfigPath, opts.Development)
 	if err != nil {
 		return Resolved{}, errb.Wrap(err)
 	}
-	defaultDatabasePath, err := DefaultDatabasePath()
+	defaultDatabasePath, err := defaultDatabasePathFor(opts.Development)
 	if err != nil {
 		return Resolved{}, errb.Wrap(err)
 	}
@@ -152,6 +153,7 @@ func SetValues(opts Options, values map[string]string) (Resolved, error) {
 	return LoadOrCreate(Options{
 		ConfigPath:       configPath,
 		Market:           opts.Market,
+		Development:      opts.Development,
 		ProviderDefaults: opts.ProviderDefaults,
 	})
 }
@@ -165,6 +167,14 @@ func DefaultConfigPath() (string, error) {
 		return "", err
 	}
 	return filepath.Join(base, AppName, ConfigFileName), nil
+}
+
+func developmentConfigPath() (string, error) {
+	workingDirectory, err := os.Getwd()
+	if err != nil {
+		return "", oops.In("app_config").Wrapf(err, "resolve working directory")
+	}
+	return filepath.Join(workingDirectory, ".mwosa", ConfigFileName), nil
 }
 
 func setConfigValue(cfg *File, settingPath string, rawValue string, defaults []ProviderDefault) error {
@@ -276,7 +286,29 @@ func DefaultDatabasePath() (string, error) {
 	return filepath.Join(base, AppName, DatabaseFileName), nil
 }
 
-func resolveConfigPath(flagPath string) (string, Source, error) {
+func developmentDatabasePath() (string, error) {
+	workingDirectory, err := os.Getwd()
+	if err != nil {
+		return "", oops.In("app_config").Wrapf(err, "resolve working directory")
+	}
+	return filepath.Join(workingDirectory, ".mwosa", DatabaseFileName), nil
+}
+
+func defaultConfigPathFor(development bool) (string, error) {
+	if development {
+		return developmentConfigPath()
+	}
+	return DefaultConfigPath()
+}
+
+func defaultDatabasePathFor(development bool) (string, error) {
+	if development {
+		return developmentDatabasePath()
+	}
+	return DefaultDatabasePath()
+}
+
+func resolveConfigPath(flagPath string, development bool) (string, Source, error) {
 	if strings.TrimSpace(flagPath) != "" {
 		path, err := absolutePath(flagPath)
 		return path, SourceFlag, err
@@ -285,7 +317,7 @@ func resolveConfigPath(flagPath string) (string, Source, error) {
 		path, err := absolutePath(envPath)
 		return path, SourceEnv, err
 	}
-	path, err := DefaultConfigPath()
+	path, err := defaultConfigPathFor(development)
 	if err != nil {
 		return "", "", err
 	}

@@ -36,6 +36,9 @@ func buildInfoFrom(version, commit, date string, info *debug.BuildInfo, ok bool)
 	if !ok || info == nil {
 		return build
 	}
+	if build.Version == "" && info.Main.Version == "(devel)" {
+		build.Development = true
+	}
 	if build.Version == "" && info.Main.Version != "" && info.Main.Version != "(devel)" {
 		build.Version = info.Main.Version
 	}

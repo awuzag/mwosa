@@ -171,6 +171,46 @@ func TestInspectConfigCreatesAndPrintsResolvedPaths(t *testing.T) {
 	}
 }
 
+func TestInspectConfigUsesProjectLocalDefaultsForDevelopmentBuild(t *testing.T) {
+	previousWorkingDirectory, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("get working directory: %v", err)
+	}
+	projectDir := t.TempDir()
+	if err := os.Chdir(projectDir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	projectDir, err = os.Getwd()
+	if err != nil {
+		t.Fatalf("get project working directory: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(previousWorkingDirectory); err != nil {
+			t.Fatalf("restore working directory: %v", err)
+		}
+	})
+
+	cmd := NewRootCommand(BuildInfo{Development: true})
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	cmd.SetArgs([]string{"inspect", "config"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("execute inspect config: %v", err)
+	}
+	var parsed configInspectResult
+	if err := json.Unmarshal(out.Bytes(), &parsed); err != nil {
+		t.Fatalf("inspect config output should be json: %v\n%s", err, out.String())
+	}
+	if parsed.ConfigFile.Path != filepath.Join(projectDir, ".mwosa", "config.json") {
+		t.Fatalf("config path = %q, want project-local config", parsed.ConfigFile.Path)
+	}
+	if parsed.DatabaseFile.Path != filepath.Join(projectDir, ".mwosa", "mwosa.db") {
+		t.Fatalf("database path = %q, want project-local database", parsed.DatabaseFile.Path)
+	}
+}
+
 func TestInspectConfigAlwaysWritesJSON(t *testing.T) {
 	configPath := filepath.Join(t.TempDir(), "config.json")
 	cmd := NewRootCommand(BuildInfo{})

@@ -2,6 +2,7 @@ package app
 
 import (
 	"github.com/ev3rlit/mwosa/app/handler"
+	migrationcore "github.com/ev3rlit/mwosa/migration"
 	"github.com/ev3rlit/mwosa/providers/builtin"
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
@@ -14,6 +15,7 @@ import (
 	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
 	"github.com/ev3rlit/mwosa/storage"
 	dailybarstorage "github.com/ev3rlit/mwosa/storage/dailybar"
+	migrationstorage "github.com/ev3rlit/mwosa/storage/migration"
 	strategystorage "github.com/ev3rlit/mwosa/storage/strategy"
 	"github.com/samber/oops"
 )
@@ -37,6 +39,7 @@ type Runtime struct {
 type StorageRuntime struct {
 	Database   *storage.Database
 	DailyBars  DailyBarStorage
+	Migrations migrationcore.Store
 	Strategies strategyservice.Repository
 }
 
@@ -64,6 +67,7 @@ type ServiceRuntime struct {
 type Handlers struct {
 	Daily      handler.Daily
 	Financials handler.Financials
+	Migration  handler.Migration
 	Strategy   handler.Strategy
 }
 
@@ -87,6 +91,25 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	strategyRepository, err := strategystorage.NewRepository(database)
 	if err != nil {
 		return nil, errb.Wrapf(err, "create strategy repository")
+	}
+	migrationStore, err := migrationstorage.NewRepository(database)
+	if err != nil {
+		return nil, errb.Wrapf(err, "create migration repository")
+	}
+	dailyBarMigration, err := migrationstorage.NewDailyBarV1ToV2Executor(database, writer)
+	if err != nil {
+		return nil, errb.Wrapf(err, "create daily bar migration")
+	}
+	dailyBarExtensionCleanup, err := migrationstorage.NewDailyBarV2ExtensionCleanupExecutor(database)
+	if err != nil {
+		return nil, errb.Wrapf(err, "create daily bar extension cleanup migration")
+	}
+	migrationRunner, err := migrationcore.NewRunner(migrationStore, []migrationcore.Definition{
+		migrationstorage.NewDailyBarV1ToV2Definition(dailyBarMigration),
+		migrationstorage.NewDailyBarV2ExtensionCleanupDefinition(dailyBarExtensionCleanup),
+	})
+	if err != nil {
+		return nil, errb.Wrapf(err, "create migration runner")
 	}
 
 	registry := provider.NewRegistry()
@@ -161,6 +184,7 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	dailyHandler := handler.NewDaily(dailyReader, dailyCollector)
 	financialsHandler := handler.NewFinancials(financialsService)
 	strategyHandler := handler.NewStrategy(strategyService)
+	migrationHandler := handler.NewMigration(migrationRunner)
 
 	return &Runtime{
 		Storage: StorageRuntime{
@@ -169,6 +193,7 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 				Reader: reader,
 				Writer: writer,
 			},
+			Migrations: migrationStore,
 			Strategies: strategyRepository,
 		},
 		Providers: providerRuntime,
@@ -184,6 +209,7 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 		Handlers: Handlers{
 			Daily:      dailyHandler,
 			Financials: financialsHandler,
+			Migration:  migrationHandler,
 			Strategy:   strategyHandler,
 		},
 	}, nil

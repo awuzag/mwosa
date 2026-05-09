@@ -54,6 +54,17 @@ CLI 실행 시 경로 결정 우선순위는 명시적인 입력을 가장 높�
 
 `--database` 와 `MWOSA_DATABASE` 는 실험, 테스트, 임시 실행에서 기본 database 를 우회하기 위한 탈출구다. 일반 설치 사용자는 별도 지정 없이 OS 기본 data 경로를 사용한다.
 
+## 개발 실행 경로
+
+`go run ./cmd/mwosa ...` 처럼 Go development build 로 실행할 때는 기본 경로를 현재 작업 디렉터리의 `.mwosa` 아래로 둔다.
+
+| file | development default |
+| --- | --- |
+| config file | `$PWD/.mwosa/config.json` |
+| database file | `$PWD/.mwosa/mwosa.db` |
+
+이 규칙은 명시 경로보다 낮은 우선순위다. 즉 `--config`, `MWOSA_CONFIG`, `--database`, `MWOSA_DATABASE` 를 지정하면 해당 값이 계속 우선한다. 릴리스 바이너리와 설치된 CLI 는 기존 OS 기본 경로를 사용한다.
+
 ## Init 동작
 
 `mwosa init config` 는 아래 작업을 수행한다.

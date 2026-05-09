@@ -106,7 +106,13 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 		name  string
 		model any
 	}{
-		{name: "daily_bar", model: (*DailyBarRow)(nil)},
+		{name: "daily_bar", model: (*DailyBarV1Row)(nil)},
+		{name: "market_v2", model: (*MarketV2Row)(nil)},
+		{name: "instrument_v2", model: (*InstrumentV2Row)(nil)},
+		{name: "provider_source_v2", model: (*ProviderSourceV2Row)(nil)},
+		{name: "daily_bar_v2", model: (*DailyBarV2Row)(nil)},
+		{name: "daily_bar_extension_v2", model: (*DailyBarExtensionV2Row)(nil)},
+		{name: "migration_runs", model: (*MigrationRunRow)(nil)},
 		{name: "strategies", model: (*StrategyRow)(nil)},
 		{name: "strategy_versions", model: (*StrategyVersionRow)(nil)},
 		{name: "screen_runs", model: (*ScreenRunRow)(nil)},
@@ -129,19 +135,57 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 	}{
 		{
 			name:    "daily_bar_natural_key",
-			model:   (*DailyBarRow)(nil),
+			model:   (*DailyBarV1Row)(nil),
 			columns: []string{"market", "security_type", "trading_date", "symbol", "provider", "provider_group"},
 			unique:  true,
 		},
 		{
 			name:    "idx_daily_bar_date",
-			model:   (*DailyBarRow)(nil),
+			model:   (*DailyBarV1Row)(nil),
 			columns: []string{"market", "security_type", "trading_date"},
 		},
 		{
 			name:    "idx_daily_bar_symbol_date",
-			model:   (*DailyBarRow)(nil),
+			model:   (*DailyBarV1Row)(nil),
 			columns: []string{"market", "security_type", "symbol", "trading_date"},
+		},
+		{
+			name:    "market_v2_code_unique",
+			model:   (*MarketV2Row)(nil),
+			columns: []string{"code"},
+			unique:  true,
+		},
+		{
+			name:    "instrument_v2_natural_key",
+			model:   (*InstrumentV2Row)(nil),
+			columns: []string{"market_id", "security_type", "symbol"},
+			unique:  true,
+		},
+		{
+			name:    "provider_source_v2_natural_key",
+			model:   (*ProviderSourceV2Row)(nil),
+			columns: []string{"provider", "provider_group", "operation"},
+			unique:  true,
+		},
+		{
+			name:    "idx_daily_bar_v2_date",
+			model:   (*DailyBarV2Row)(nil),
+			columns: []string{"trading_date"},
+		},
+		{
+			name:    "idx_daily_bar_v2_instrument_date",
+			model:   (*DailyBarV2Row)(nil),
+			columns: []string{"instrument_id", "trading_date"},
+		},
+		{
+			name:    "idx_migration_runs_resource",
+			model:   (*MigrationRunRow)(nil),
+			columns: []string{"resource"},
+		},
+		{
+			name:    "idx_migration_runs_status",
+			model:   (*MigrationRunRow)(nil),
+			columns: []string{"status"},
 		},
 		{
 			name:    "idx_strategies_archived_at",

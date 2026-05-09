@@ -2,6 +2,7 @@ package storage
 
 import (
 	"context"
+	"database/sql"
 	"errors"
 	"os"
 	"path/filepath"
@@ -57,7 +58,44 @@ func TestDatabaseCreatesDailyBarIndexes(t *testing.T) {
 		t.Fatalf("client: %v", err)
 	}
 
-	rows, err := client.QueryContext(context.Background(), `PRAGMA index_list('daily_bar')`)
+	indexes := sqliteIndexes(t, client, "daily_bar")
+
+	if !indexes["daily_bar_natural_key"] {
+		t.Fatal("daily_bar_natural_key unique index was not created")
+	}
+	for _, name := range []string{"idx_daily_bar_date", "idx_daily_bar_symbol_date"} {
+		if _, ok := indexes[name]; !ok {
+			t.Fatalf("%s index was not created", name)
+		}
+	}
+
+	v2Indexes := sqliteIndexes(t, client, "daily_bar_v2")
+	for _, name := range []string{"idx_daily_bar_v2_date", "idx_daily_bar_v2_instrument_date"} {
+		if _, ok := v2Indexes[name]; !ok {
+			t.Fatalf("%s index was not created", name)
+		}
+	}
+	extensionIndexes := sqliteIndexes(t, client, "daily_bar_extension_v2")
+	if _, ok := extensionIndexes["idx_daily_bar_extension_v2_bar"]; ok {
+		t.Fatal("idx_daily_bar_extension_v2_bar should not be created because the primary key index covers bar-prefix lookups")
+	}
+
+	migrationIndexes := sqliteIndexes(t, client, "migration_runs")
+	for _, name := range []string{"idx_migration_runs_resource", "idx_migration_runs_status"} {
+		if _, ok := migrationIndexes[name]; !ok {
+			t.Fatalf("%s index was not created", name)
+		}
+	}
+}
+
+type queryer interface {
+	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+}
+
+func sqliteIndexes(t *testing.T, client queryer, table string) map[string]bool {
+	t.Helper()
+
+	rows, err := client.QueryContext(context.Background(), `PRAGMA index_list('`+table+`')`)
 	if err != nil {
 		t.Fatalf("index list: %v", err)
 	}
@@ -78,13 +116,5 @@ func TestDatabaseCreatesDailyBarIndexes(t *testing.T) {
 	if err := rows.Err(); err != nil {
 		t.Fatalf("iterate index rows: %v", err)
 	}
-
-	if !indexes["daily_bar_natural_key"] {
-		t.Fatal("daily_bar_natural_key unique index was not created")
-	}
-	for _, name := range []string{"idx_daily_bar_date", "idx_daily_bar_symbol_date"} {
-		if _, ok := indexes[name]; !ok {
-			t.Fatalf("%s index was not created", name)
-		}
-	}
+	return indexes
 }

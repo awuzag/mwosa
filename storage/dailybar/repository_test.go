@@ -34,7 +34,8 @@ func TestDailyBarStoreUpsertIsIdempotent(t *testing.T) {
 		TradingDate:  "2024-04-15",
 		Close:        "35120",
 		Extensions: map[string]string{
-			"nav": "35155.1",
+			"nav":        "35155.1",
+			"bssIdxClpr": "3500.12",
 		},
 	}
 
@@ -45,6 +46,7 @@ func TestDailyBarStoreUpsertIsIdempotent(t *testing.T) {
 	if _, err := writer.UpsertDailyBars(context.Background(), []dailybar.Bar{bar}); err != nil {
 		t.Fatalf("second upsert: %v", err)
 	}
+	assertDailyBarRowCounts(t, database, 0, 1)
 
 	bars, err := reader.QueryDailyBars(context.Background(), daily.Query{
 		Market:       provider.MarketKRX,
@@ -64,6 +66,16 @@ func TestDailyBarStoreUpsertIsIdempotent(t *testing.T) {
 	}
 	if bars[0].Extensions["nav"] != "35155.1" {
 		t.Fatalf("nav extension = %q, want 35155.1", bars[0].Extensions["nav"])
+	}
+	if bars[0].Extensions["bssIdxClpr"] != "3500.12" {
+		t.Fatalf("bssIdxClpr extension = %q, want 3500.12", bars[0].Extensions["bssIdxClpr"])
+	}
+	if got := countDailyBarExtensionV2Rows(t, database); got != 1 {
+		t.Fatalf("daily_bar_extension_v2 rows = %d, want only non-promoted extension row", got)
+	}
+	stored := getStoredDailyBarV2Row(t, database)
+	if stored.SchemaVersion != storage.DailyBarV2SchemaVersion {
+		t.Fatalf("schema_version = %q, want %q", stored.SchemaVersion, storage.DailyBarV2SchemaVersion)
 	}
 }
 
@@ -92,20 +104,20 @@ func TestDailyBarStoreUpsertPreservesCreatedAtAndRefreshesUpdatedAt(t *testing.T
 	if _, err := writer.UpsertDailyBars(context.Background(), []dailybar.Bar{bar}); err != nil {
 		t.Fatalf("first upsert: %v", err)
 	}
-	first := getStoredDailyBarRow(t, database)
+	first := getStoredDailyBarV2Row(t, database)
 
 	time.Sleep(10 * time.Millisecond)
 	bar.Close = "35130"
 	if _, err := writer.UpsertDailyBars(context.Background(), []dailybar.Bar{bar}); err != nil {
 		t.Fatalf("second upsert: %v", err)
 	}
-	second := getStoredDailyBarRow(t, database)
+	second := getStoredDailyBarV2Row(t, database)
 
-	if !second.CreatedAt.Equal(first.CreatedAt) {
-		t.Fatalf("created_at = %s, want preserved %s", second.CreatedAt, first.CreatedAt)
+	if second.CreatedAtMS != first.CreatedAtMS {
+		t.Fatalf("created_at_ms = %d, want preserved %d", second.CreatedAtMS, first.CreatedAtMS)
 	}
-	if !second.UpdatedAt.After(first.UpdatedAt) {
-		t.Fatalf("updated_at = %s, want after %s", second.UpdatedAt, first.UpdatedAt)
+	if second.UpdatedAtMS <= first.UpdatedAtMS {
+		t.Fatalf("updated_at_ms = %d, want after %d", second.UpdatedAtMS, first.UpdatedAtMS)
 	}
 }
 
@@ -121,16 +133,53 @@ func TestNewRepositoriesRequiresDatabase(t *testing.T) {
 	}
 }
 
-func getStoredDailyBarRow(t *testing.T, database *storage.Database) storage.DailyBarRow {
+func countDailyBarExtensionV2Rows(t *testing.T, database *storage.Database) int {
 	t.Helper()
 
 	client, err := database.Client(context.Background())
 	if err != nil {
 		t.Fatalf("client: %v", err)
 	}
-	var row storage.DailyBarRow
+	var got int
+	if err := client.QueryRowContext(context.Background(), "SELECT count(*) FROM daily_bar_extension_v2").Scan(&got); err != nil {
+		t.Fatalf("count daily_bar_extension_v2 rows: %v", err)
+	}
+	return got
+}
+
+func getStoredDailyBarV2Row(t *testing.T, database *storage.Database) storage.DailyBarV2Row {
+	t.Helper()
+
+	client, err := database.Client(context.Background())
+	if err != nil {
+		t.Fatalf("client: %v", err)
+	}
+	var row storage.DailyBarV2Row
 	if err := client.NewSelect().Model(&row).Limit(1).Scan(context.Background()); err != nil {
 		t.Fatalf("select row: %v", err)
 	}
 	return row
+}
+
+func assertDailyBarRowCounts(t *testing.T, database *storage.Database, wantV1Rows, wantV2Rows int) {
+	t.Helper()
+
+	client, err := database.Client(context.Background())
+	if err != nil {
+		t.Fatalf("client: %v", err)
+	}
+	var gotV1Rows int
+	if err := client.QueryRowContext(context.Background(), "SELECT count(*) FROM daily_bar").Scan(&gotV1Rows); err != nil {
+		t.Fatalf("count daily_bar v1 rows: %v", err)
+	}
+	var gotV2Rows int
+	if err := client.QueryRowContext(context.Background(), "SELECT count(*) FROM daily_bar_v2").Scan(&gotV2Rows); err != nil {
+		t.Fatalf("count daily_bar v2 rows: %v", err)
+	}
+	if gotV1Rows != wantV1Rows {
+		t.Fatalf("daily_bar v1 rows = %d, want %d", gotV1Rows, wantV1Rows)
+	}
+	if gotV2Rows != wantV2Rows {
+		t.Fatalf("daily_bar_v2 rows = %d, want %d", gotV2Rows, wantV2Rows)
+	}
 }

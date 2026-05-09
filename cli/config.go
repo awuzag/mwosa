@@ -80,6 +80,7 @@ func newConfigSetCommand(opts *Options) *cobra.Command {
 			resolved, err := appconfig.SetValue(appconfig.Options{
 				ConfigPath:       opts.Config,
 				Market:           opts.Market,
+				Development:      opts.Development,
 				ProviderDefaults: providerDefaults(),
 			}, args[0], args[1])
 			if err != nil {

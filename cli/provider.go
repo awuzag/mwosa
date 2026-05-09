@@ -158,6 +158,7 @@ func newLoginProviderIDCommand(opts *Options, builder provider.ProviderBuilder) 
 			resolved, err := appconfig.SetValues(appconfig.Options{
 				ConfigPath:       opts.Config,
 				Market:           opts.Market,
+				Development:      opts.Development,
 				ProviderDefaults: providerDefaults(),
 			}, updates)
 			if err != nil {
@@ -203,6 +204,7 @@ func newLogoutProviderCommand(opts *Options) *cobra.Command {
 			resolved, err := appconfig.SetValues(appconfig.Options{
 				ConfigPath:       opts.Config,
 				Market:           opts.Market,
+				Development:      opts.Development,
 				ProviderDefaults: providerDefaults(),
 			}, updates)
 			if err != nil {
@@ -288,6 +290,7 @@ func newProviderEnabledCommand(opts *Options, action string, short string, enabl
 			resolved, err := appconfig.SetValue(appconfig.Options{
 				ConfigPath:       opts.Config,
 				Market:           opts.Market,
+				Development:      opts.Development,
 				ProviderDefaults: providerDefaults(),
 			}, providerSettingPath(builder.ID(), "enabled"), fmt.Sprint(enabled))
 			if err != nil {
@@ -318,6 +321,7 @@ func newPreferProviderCommand(opts *Options) *cobra.Command {
 			resolved, err := appconfig.SetValue(appconfig.Options{
 				ConfigPath:       opts.Config,
 				Market:           opts.Market,
+				Development:      opts.Development,
 				ProviderDefaults: providerDefaults(),
 			}, "app.preferred_provider", string(builder.ID()))
 			if err != nil {

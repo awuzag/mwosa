@@ -19,9 +19,10 @@ const (
 )
 
 type BuildInfo struct {
-	Version string
-	Commit  string
-	Date    string
+	Version     string
+	Commit      string
+	Date        string
+	Development bool
 }
 
 type Options struct {
@@ -46,6 +47,7 @@ type Options struct {
 	ProviderConfig provider.Config
 	ConfigState    appconfig.Resolved
 	configLoaded   bool
+	Development    bool
 }
 
 func (opts Options) Validate() error {
@@ -69,8 +71,9 @@ func validateOutputMode(value any) error {
 
 func NewRootCommand(build BuildInfo) *cobra.Command {
 	opts := Options{
-		Output: DefaultOutputMode,
-		Market: string(provider.MarketKRX),
+		Output:      DefaultOutputMode,
+		Market:      string(provider.MarketKRX),
+		Development: build.Development,
 	}
 
 	cmd := &cobra.Command{
@@ -131,6 +134,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	deleteCommand := newDeleteCommand()
 	screenCommand := newScreenCommand()
 	historyCommand := newHistoryCommand()
+	migrateCommand := newMigrateCommand()
 	getCommand := newGetCommand()
 	ensureCommand := newEnsureCommand()
 	syncCommand := newSyncCommand()
@@ -150,6 +154,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 		Delete:   deleteCommand,
 		Screen:   screenCommand,
 		History:  historyCommand,
+		Migrate:  migrateCommand,
 		Get:      getCommand,
 		Ensure:   ensureCommand,
 		Sync:     syncCommand,
@@ -167,6 +172,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	registerFinancialsCommands(roots, &opts)
 	registerStrategyCommands(roots, &opts)
 	registerProviderCommands(roots, &opts)
+	registerMigrationCommands(roots, &opts)
 
 	cmd.AddCommand(newCompletionCommand())
 	cmd.AddCommand(newVersionCommand(build))
@@ -178,6 +184,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	cmd.AddCommand(deleteCommand)
 	cmd.AddCommand(screenCommand)
 	cmd.AddCommand(historyCommand)
+	cmd.AddCommand(migrateCommand)
 	cmd.AddCommand(loginCommand)
 	cmd.AddCommand(logoutCommand)
 	cmd.AddCommand(validateCommand)
@@ -204,6 +211,7 @@ func loadConfig(opts *Options) error {
 		ConfigPath:       opts.Config,
 		DatabasePath:     opts.Database,
 		Market:           opts.Market,
+		Development:      opts.Development,
 		ProviderDefaults: providerDefaults(),
 	})
 	if err != nil {

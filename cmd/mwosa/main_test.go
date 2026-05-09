@@ -53,4 +53,17 @@ func TestBuildInfoFromIgnoresDevelopmentVersion(t *testing.T) {
 	if got.Version != "" {
 		t.Fatalf("Version = %q, want empty", got.Version)
 	}
+	if !got.Development {
+		t.Fatal("Development = false, want true for devel build")
+	}
+}
+
+func TestBuildInfoFromInjectedVersionIsNotDevelopment(t *testing.T) {
+	got := buildInfoFrom("v0.2.0", "", "", &debug.BuildInfo{
+		Main: debug.Module{Version: "(devel)"},
+	}, true)
+
+	if got.Development {
+		t.Fatal("Development = true, want false when version is injected")
+	}
 }

@@ -10,6 +10,7 @@ type commandRoots struct {
 	Delete   *cobra.Command
 	Screen   *cobra.Command
 	History  *cobra.Command
+	Migrate  *cobra.Command
 	Get      *cobra.Command
 	Ensure   *cobra.Command
 	Sync     *cobra.Command
@@ -69,6 +70,13 @@ func newHistoryCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "history",
 		Short: "List mwosa execution history",
+	}
+}
+
+func newMigrateCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "migrate",
+		Short: "Manage local data migrations",
 	}
 }
 

@@ -90,6 +90,44 @@ func TestDefaultPathsCanBeOverriddenByDevelopmentBuild(t *testing.T) {
 	}
 }
 
+func TestLoadOrCreateUsesProjectLocalDefaultsForDevelopment(t *testing.T) {
+	previousWorkingDirectory, err := os.Getwd()
+	if err != nil {
+		t.Fatalf("get working directory: %v", err)
+	}
+	projectDir := t.TempDir()
+	if err := os.Chdir(projectDir); err != nil {
+		t.Fatalf("chdir: %v", err)
+	}
+	projectDir, err = os.Getwd()
+	if err != nil {
+		t.Fatalf("get project working directory: %v", err)
+	}
+	t.Cleanup(func() {
+		if err := os.Chdir(previousWorkingDirectory); err != nil {
+			t.Fatalf("restore working directory: %v", err)
+		}
+	})
+
+	resolved, err := LoadOrCreate(Options{
+		Development: true,
+		Market:      string(provider.MarketKRX),
+	})
+	if err != nil {
+		t.Fatalf("LoadOrCreate error = %v", err)
+	}
+
+	if resolved.ConfigPath != filepath.Join(projectDir, ".mwosa", "config.json") {
+		t.Fatalf("config path = %q, want project-local config", resolved.ConfigPath)
+	}
+	if resolved.DatabasePath != filepath.Join(projectDir, ".mwosa", "mwosa.db") {
+		t.Fatalf("database path = %q, want project-local database", resolved.DatabasePath)
+	}
+	if resolved.ConfigPathSource != SourceDefault || resolved.DatabasePathSource != SourceConfigFile {
+		t.Fatalf("sources = %s/%s, want default/config_file", resolved.ConfigPathSource, resolved.DatabasePathSource)
+	}
+}
+
 func TestLoadOrCreateMergesNewProviderDefaultsWithoutOverwritingExistingValues(t *testing.T) {
 	configPath := filepath.Join(t.TempDir(), "config.json")
 	existing := File{
