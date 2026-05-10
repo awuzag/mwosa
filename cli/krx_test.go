@@ -62,6 +62,9 @@ func TestListKRXAPIsIncludesAllServices(t *testing.T) {
 	if got := strings.Count(out.String(), `"api_id"`); got != 31 {
 		t.Fatalf("api_id count = %d, want 31\n%s", got, out.String())
 	}
+	if !strings.Contains(out.String(), `"description": "ETF daily trade rows"`) {
+		t.Fatalf("output missing KRX API description in:\n%s", out.String())
+	}
 }
 
 func TestSyncKRXStoresRawSnapshot(t *testing.T) {

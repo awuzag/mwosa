@@ -74,8 +74,10 @@ mwosa backfill daily --provider krx --security-type stock --from 20240415 --to 2
 mwosa list instruments 삼성전자 --provider krx --security-type stock -o json
 ```
 
-`get krx` 는 provider-native 응답을 stdout 으로 출력한다. `sync krx` 는 같은 응답을
-provider-native snapshot table 에 저장하고 저장 결과만 stdout 으로 출력한다.
+`list krx-apis` 는 각 `api_id` 의 짧은 설명과 canonical 저장 지원 범위를 함께
+보여준다. `get krx` 는 provider-native 응답을 stdout 으로 출력한다. `sync krx` 는
+같은 응답을 provider-native snapshot table 에 저장하고 저장 결과만 stdout 으로
+출력한다.
 
 ## 신청 단위 메모
 

@@ -24,6 +24,7 @@ type krxAPIOutputRow struct {
 	Category         string `json:"category" csv:"category"`
 	Group            string `json:"provider_group" csv:"group"`
 	APIID            string `json:"api_id" csv:"api_id"`
+	Description      string `json:"description" csv:"description"`
 	CanonicalSupport string `json:"canonical_support" csv:"canonical_support"`
 }
 
@@ -49,6 +50,7 @@ func newListKRXAPIsCommand(opts *Options) *cobra.Command {
 					Category:         service.Category,
 					Group:            string(service.Group),
 					APIID:            string(service.Operation),
+					Description:      service.Description,
 					CanonicalSupport: krxCanonicalSupportLabel(service.Operation),
 				})
 			}
@@ -158,9 +160,9 @@ func (o krxAPIListOutput) CSVRows() any {
 func (o krxAPIListOutput) TableRows() ([]string, [][]string) {
 	rows := make([][]string, 0, len(o.Services))
 	for _, service := range o.Services {
-		rows = append(rows, []string{service.Category, service.Group, service.APIID, service.CanonicalSupport})
+		rows = append(rows, []string{service.Category, service.Group, service.APIID, service.Description, service.CanonicalSupport})
 	}
-	return []string{"category", "group", "api_id", "canonical_support"}, rows
+	return []string{"category", "group", "api_id", "description", "canonical_support"}, rows
 }
 
 func (o krxRawOutput) JSONValue() any {
@@ -201,7 +203,7 @@ func (o krxRawOutput) SyncSnapshot() providerraw.Snapshot {
 func completeKRXAPIIDs(_ *cobra.Command, _ []string, _ string) ([]cobra.Completion, cobra.ShellCompDirective) {
 	values := make([]cobra.Completion, 0, len(krxprovider.ServiceCatalog()))
 	for _, service := range krxprovider.ServiceCatalog() {
-		values = append(values, cobra.CompletionWithDesc(string(service.Operation), string(service.Group)))
+		values = append(values, cobra.CompletionWithDesc(string(service.Operation), service.Description))
 	}
 	return values, cobra.ShellCompDirectiveNoFileComp
 }
