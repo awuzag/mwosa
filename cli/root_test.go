@@ -59,6 +59,23 @@ func TestRootHelpHasOutputFlag(t *testing.T) {
 	}
 }
 
+func TestMarketDataCommandsAreRegistered(t *testing.T) {
+	cmd := NewRootCommand(BuildInfo{})
+	for _, args := range [][]string{
+		{"get", "intraday", "005930"},
+		{"get", "orderbook", "005930"},
+		{"list", "trades", "005930"},
+	} {
+		found, _, err := cmd.Find(args)
+		if err != nil {
+			t.Fatalf("find %v: %v", args, err)
+		}
+		if found == nil || found.Use == "" {
+			t.Fatalf("find %v returned no command", args)
+		}
+	}
+}
+
 func TestCompletionBashGeneratesScriptWithoutConfigLoad(t *testing.T) {
 	configPath := filepath.Join(t.TempDir(), "config.json")
 	cmd := NewRootCommand(BuildInfo{})

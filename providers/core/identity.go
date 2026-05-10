@@ -50,18 +50,22 @@ const (
 	CredentialScopeKIS    CredentialScope = "kis"
 	CredentialScopeDataGo CredentialScope = "datago"
 
-	FreshnessDaily  Freshness = "daily"
-	FreshnessFiling Freshness = "filing"
+	FreshnessDaily    Freshness = "daily"
+	FreshnessFiling   Freshness = "filing"
+	FreshnessIntraday Freshness = "intraday"
 
 	DataLatencyRealtime            DataLatency = "realtime"
 	DataLatencyEndOfDay            DataLatency = "end_of_day"
 	DataLatencyPreviousBusinessDay DataLatency = "previous_business_day"
 	DataLatencyHistorical          DataLatency = "historical"
 
-	RoleDailyBar   Role = "daily_bar"
-	RoleFinancials Role = "financials"
-	RoleInstrument Role = "instrument"
-	RoleQuote      Role = "quote_snapshot"
+	RoleDailyBar    Role = "daily_bar"
+	RoleFinancials  Role = "financials"
+	RoleInstrument  Role = "instrument"
+	RoleIntradayBar Role = "intraday_bar"
+	RoleOrderbook   Role = "orderbook"
+	RoleQuote       Role = "quote_snapshot"
+	RoleTrades      Role = "trades"
 )
 
 type Compatibility struct {

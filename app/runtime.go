@@ -7,13 +7,19 @@ import (
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
 	"github.com/ev3rlit/mwosa/providers/core/financials"
 	"github.com/ev3rlit/mwosa/providers/core/instrument"
+	"github.com/ev3rlit/mwosa/providers/core/intradaybar"
+	"github.com/ev3rlit/mwosa/providers/core/orderbook"
 	"github.com/ev3rlit/mwosa/providers/core/quote"
+	"github.com/ev3rlit/mwosa/providers/core/trades"
 	"github.com/ev3rlit/mwosa/service/daily"
 	financialsservice "github.com/ev3rlit/mwosa/service/financials"
 	instrumentservice "github.com/ev3rlit/mwosa/service/instrument"
+	intradayservice "github.com/ev3rlit/mwosa/service/intraday"
+	orderbookservice "github.com/ev3rlit/mwosa/service/orderbook"
 	providerservice "github.com/ev3rlit/mwosa/service/providers"
 	quoteservice "github.com/ev3rlit/mwosa/service/quote"
 	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
+	tradesservice "github.com/ev3rlit/mwosa/service/trades"
 	"github.com/ev3rlit/mwosa/storage"
 	dailybarstorage "github.com/ev3rlit/mwosa/storage/dailybar"
 	strategystorage "github.com/ev3rlit/mwosa/storage/strategy"
@@ -54,23 +60,32 @@ type ProviderRuntime struct {
 	Financials  financials.Router
 	Quotes      quote.Router
 	Instruments instrument.Router
+	Intraday    intradaybar.Router
+	Orderbooks  orderbook.Router
+	Trades      trades.Router
 }
 
 type ServiceRuntime struct {
 	Daily       DailyServices
 	Financials  financialsservice.Service
 	Instruments instrumentservice.Service
+	Intraday    intradayservice.Service
+	Orderbooks  orderbookservice.Service
 	Providers   providerservice.Service
 	Quotes      quoteservice.Service
 	Strategy    strategyservice.Service
+	Trades      tradesservice.Service
 }
 
 type Handlers struct {
 	Daily       handler.Daily
 	Financials  handler.Financials
 	Instruments handler.Instrument
+	Intraday    handler.Intraday
+	Orderbooks  handler.Orderbook
 	Quotes      handler.Quote
 	Strategy    handler.Strategy
+	Trades      handler.Trades
 }
 
 type DailyServices struct {
@@ -120,6 +135,9 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 		Financials:  financials.NewRouter(coreRouter),
 		Quotes:      quote.NewRouter(coreRouter),
 		Instruments: instrument.NewRouter(coreRouter),
+		Intraday:    intradaybar.NewRouter(coreRouter),
+		Orderbooks:  orderbook.NewRouter(coreRouter),
+		Trades:      trades.NewRouter(coreRouter),
 	}
 
 	dailyReader, err := daily.NewReadService(reader)
@@ -164,6 +182,27 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 			database.Close(),
 		)
 	}
+	intradayService, err := intradayservice.NewService(providerRuntime.Intraday)
+	if err != nil {
+		return nil, oops.Join(
+			errb.Wrapf(err, "create intraday service"),
+			database.Close(),
+		)
+	}
+	orderbookService, err := orderbookservice.NewService(providerRuntime.Orderbooks)
+	if err != nil {
+		return nil, oops.Join(
+			errb.Wrapf(err, "create orderbook service"),
+			database.Close(),
+		)
+	}
+	tradesService, err := tradesservice.NewService(providerRuntime.Trades)
+	if err != nil {
+		return nil, oops.Join(
+			errb.Wrapf(err, "create trades service"),
+			database.Close(),
+		)
+	}
 	datasetReader, err := strategyservice.NewDailyBarDatasetReader(reader, opts.Market)
 	if err != nil {
 		return nil, oops.Join(
@@ -182,6 +221,9 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	financialsHandler := handler.NewFinancials(financialsService)
 	instrumentHandler := handler.NewInstrument(instrumentService)
 	quoteHandler := handler.NewQuote(quoteService)
+	intradayHandler := handler.NewIntraday(intradayService)
+	orderbookHandler := handler.NewOrderbook(orderbookService)
+	tradesHandler := handler.NewTrades(tradesService)
 	strategyHandler := handler.NewStrategy(strategyService)
 
 	return &Runtime{
@@ -201,16 +243,22 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 			},
 			Financials:  financialsService,
 			Instruments: instrumentService,
+			Intraday:    intradayService,
+			Orderbooks:  orderbookService,
 			Providers:   providersService,
 			Quotes:      quoteService,
 			Strategy:    strategyService,
+			Trades:      tradesService,
 		},
 		Handlers: Handlers{
 			Daily:       dailyHandler,
 			Financials:  financialsHandler,
 			Instruments: instrumentHandler,
+			Intraday:    intradayHandler,
+			Orderbooks:  orderbookHandler,
 			Quotes:      quoteHandler,
 			Strategy:    strategyHandler,
+			Trades:      tradesHandler,
 		},
 	}, nil
 }

@@ -10,7 +10,10 @@ import (
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
 	"github.com/ev3rlit/mwosa/providers/core/instrument"
+	"github.com/ev3rlit/mwosa/providers/core/intradaybar"
+	"github.com/ev3rlit/mwosa/providers/core/orderbook"
 	"github.com/ev3rlit/mwosa/providers/core/quote"
+	tradesrole "github.com/ev3rlit/mwosa/providers/core/trades"
 	"github.com/ev3rlit/mwosa/providers/spec"
 	"github.com/samber/oops"
 )
@@ -31,6 +34,10 @@ type marketDataClient interface {
 	Price(context.Context, string) (kisclient.Price, error)
 	ETFETNPrice(context.Context, string) (kisclient.ETFETNPrice, error)
 	Daily(context.Context, string, ...kisclient.DailyOption) ([]kisclient.Bar, error)
+	Intraday(context.Context, string, ...kisclient.IntradayOption) ([]kisclient.IntradayBar, error)
+	Orderbook(context.Context, string) (kisclient.Orderbook, error)
+	Trades(context.Context, string) ([]kisclient.Trade, error)
+	TimeTrades(context.Context, string, string) ([]kisclient.TimedTrade, error)
 	Product(context.Context, string, ...kisclient.InstrumentOption) (kisclient.Product, error)
 	Stock(context.Context, string, ...kisclient.InstrumentOption) (kisclient.Stock, error)
 }
@@ -87,7 +94,7 @@ func NewWithClient(client marketDataClient, accessTokenProvided bool) *Provider 
 		accessTokenProvided: accessTokenProvided,
 	}
 	p.groups = []provider.GroupRoleProvider{
-		newDomesticStockQuotationGroup(p.fetchQuoteSnapshot, p.fetchDailyBars),
+		newDomesticStockQuotationGroup(p.fetchQuoteSnapshot, p.fetchDailyBars, p.fetchIntradayBars, p.fetchOrderbookSnapshot, p.listMarketTrades),
 		newDomesticStockInstrumentGroup(p.searchInstruments),
 	}
 	return p
@@ -213,6 +220,134 @@ func (p *Provider) fetchDailyBars(ctx context.Context, input dailybar.FetchInput
 	}, nil
 }
 
+func (p *Provider) fetchIntradayBars(ctx context.Context, input intradaybar.FetchInput) (intradaybar.FetchResult, error) {
+	errb := oops.In("kis_adapter").With("role", provider.RoleIntradayBar, "market", input.Market, "security_type", input.SecurityType, "symbol", input.Symbol, "at", input.At, "limit", input.Limit)
+	if err := validateMarket(input.Market); err != nil {
+		return intradaybar.FetchResult{}, errb.Wrap(err)
+	}
+	symbol := strings.TrimSpace(input.Symbol)
+	if symbol == "" {
+		return intradaybar.FetchResult{}, errb.New("kis intraday request requires symbol")
+	}
+	if !supportsKISMarketDataSecurityType(input.SecurityType) {
+		return intradaybar.FetchResult{}, unsupportedSecurityTypeError(provider.RoleIntradayBar, input.SecurityType)
+	}
+	if p.client == nil {
+		return intradaybar.FetchResult{}, errb.New("kis provider client is nil")
+	}
+	if err := p.ensureAccessToken(ctx); err != nil {
+		return intradaybar.FetchResult{}, errb.Wrap(err)
+	}
+
+	options := make([]kisclient.IntradayOption, 0, 1)
+	if at := normalizeKISTime(input.At); at != "" {
+		options = append(options, kisclient.WithInputHour(at))
+	}
+	bars, err := p.client.Intraday(ctx, symbol, options...)
+	if err != nil {
+		return intradaybar.FetchResult{}, errb.With("operation", provider.OperationKISIntraday).Wrapf(err, "fetch kis intraday bars")
+	}
+	resultBars := make([]intradaybar.Bar, 0, len(bars))
+	for _, bar := range limitSlice(bars, input.Limit) {
+		resultBars = append(resultBars, normalizeIntradayBar(bar, symbol, input.SecurityType))
+	}
+	return intradaybar.FetchResult{
+		Bars:       resultBars,
+		Provider:   p.Identity,
+		Group:      provider.GroupKISDomesticStockQuotation,
+		Operation:  provider.OperationKISIntraday,
+		TotalCount: len(resultBars),
+	}, nil
+}
+
+func (p *Provider) fetchOrderbookSnapshot(ctx context.Context, input orderbook.SnapshotInput) (orderbook.SnapshotResult, error) {
+	errb := oops.In("kis_adapter").With("role", provider.RoleOrderbook, "market", input.Market, "security_type", input.SecurityType, "symbol", input.Symbol)
+	if err := validateMarket(input.Market); err != nil {
+		return orderbook.SnapshotResult{}, errb.Wrap(err)
+	}
+	symbol := strings.TrimSpace(input.Symbol)
+	if symbol == "" {
+		return orderbook.SnapshotResult{}, errb.New("kis orderbook request requires symbol")
+	}
+	if !supportsKISMarketDataSecurityType(input.SecurityType) {
+		return orderbook.SnapshotResult{}, unsupportedSecurityTypeError(provider.RoleOrderbook, input.SecurityType)
+	}
+	if p.client == nil {
+		return orderbook.SnapshotResult{}, errb.New("kis provider client is nil")
+	}
+	if err := p.ensureAccessToken(ctx); err != nil {
+		return orderbook.SnapshotResult{}, errb.Wrap(err)
+	}
+
+	book, err := p.client.Orderbook(ctx, symbol)
+	if err != nil {
+		return orderbook.SnapshotResult{}, errb.With("operation", provider.OperationKISOrderbook).Wrapf(err, "fetch kis orderbook")
+	}
+	snapshot := normalizeOrderbook(book, symbol, input.SecurityType)
+	return orderbook.SnapshotResult{
+		Snapshot:   snapshot,
+		Provider:   p.Identity,
+		Group:      provider.GroupKISDomesticStockQuotation,
+		Operation:  provider.OperationKISOrderbook,
+		TotalCount: len(snapshot.Levels),
+	}, nil
+}
+
+func (p *Provider) listMarketTrades(ctx context.Context, input tradesrole.ListInput) (tradesrole.ListResult, error) {
+	errb := oops.In("kis_adapter").With("role", provider.RoleTrades, "market", input.Market, "security_type", input.SecurityType, "symbol", input.Symbol, "at", input.At, "limit", input.Limit)
+	if err := validateMarket(input.Market); err != nil {
+		return tradesrole.ListResult{}, errb.Wrap(err)
+	}
+	symbol := strings.TrimSpace(input.Symbol)
+	if symbol == "" {
+		return tradesrole.ListResult{}, errb.New("kis trades request requires symbol")
+	}
+	if !supportsKISMarketDataSecurityType(input.SecurityType) {
+		return tradesrole.ListResult{}, unsupportedSecurityTypeError(provider.RoleTrades, input.SecurityType)
+	}
+	if p.client == nil {
+		return tradesrole.ListResult{}, errb.New("kis provider client is nil")
+	}
+	if err := p.ensureAccessToken(ctx); err != nil {
+		return tradesrole.ListResult{}, errb.Wrap(err)
+	}
+
+	at := normalizeKISTime(input.At)
+	if at != "" {
+		trades, err := p.client.TimeTrades(ctx, symbol, at)
+		if err != nil {
+			return tradesrole.ListResult{}, errb.With("operation", provider.OperationKISTimeTrades).Wrapf(err, "fetch kis time trades")
+		}
+		resultTrades := make([]tradesrole.Trade, 0, len(trades))
+		for _, trade := range limitSlice(trades, input.Limit) {
+			resultTrades = append(resultTrades, normalizeTimedTrade(trade, symbol, input.SecurityType))
+		}
+		return tradesrole.ListResult{
+			Trades:     resultTrades,
+			Provider:   p.Identity,
+			Group:      provider.GroupKISDomesticStockQuotation,
+			Operation:  provider.OperationKISTimeTrades,
+			TotalCount: len(resultTrades),
+		}, nil
+	}
+
+	trades, err := p.client.Trades(ctx, symbol)
+	if err != nil {
+		return tradesrole.ListResult{}, errb.With("operation", provider.OperationKISTrades).Wrapf(err, "fetch kis trades")
+	}
+	resultTrades := make([]tradesrole.Trade, 0, len(trades))
+	for _, trade := range limitSlice(trades, input.Limit) {
+		resultTrades = append(resultTrades, normalizeTrade(trade, symbol, input.SecurityType))
+	}
+	return tradesrole.ListResult{
+		Trades:     resultTrades,
+		Provider:   p.Identity,
+		Group:      provider.GroupKISDomesticStockQuotation,
+		Operation:  provider.OperationKISTrades,
+		TotalCount: len(resultTrades),
+	}, nil
+}
+
 func (p *Provider) searchInstruments(ctx context.Context, input instrument.SearchInput) (instrument.SearchResult, error) {
 	errb := oops.In("kis_adapter").With("role", provider.RoleInstrument, "market", input.Market, "security_type", input.SecurityType, "query", input.Query)
 	if err := validateMarket(input.Market); err != nil {
@@ -283,6 +418,112 @@ func normalizeDailyBar(bar kisclient.Bar, symbol string, securityType provider.S
 	}
 }
 
+func normalizeIntradayBar(bar kisclient.IntradayBar, symbol string, securityType provider.SecurityType) intradaybar.Bar {
+	return intradaybar.Bar{
+		Provider:     provider.ProviderKIS,
+		Group:        provider.GroupKISDomesticStockQuotation,
+		Operation:    provider.OperationKISIntraday,
+		Market:       provider.MarketKRX,
+		SecurityType: securityType,
+		TradingDate:  normalizeISODate(bar.Date),
+		Time:         normalizeISOTime(bar.Time),
+		Symbol:       symbol,
+		Currency:     "KRW",
+		Open:         bar.Open,
+		High:         bar.High,
+		Low:          bar.Low,
+		Close:        bar.Current,
+		Volume:       bar.Volume,
+		TradedValue:  bar.Amount,
+	}
+}
+
+func normalizeOrderbook(book kisclient.Orderbook, symbol string, securityType provider.SecurityType) orderbook.Snapshot {
+	levels := make([]orderbook.Level, 0, len(book.Asks)+len(book.Bids))
+	for i, level := range book.Asks {
+		levels = append(levels, orderbook.Level{
+			Side:          orderbook.SideAsk,
+			Level:         i + 1,
+			Price:         level.Price,
+			Quantity:      level.Quantity,
+			QuantityDelta: level.Delta,
+		})
+	}
+	for i, level := range book.Bids {
+		levels = append(levels, orderbook.Level{
+			Side:          orderbook.SideBid,
+			Level:         i + 1,
+			Price:         level.Price,
+			Quantity:      level.Quantity,
+			QuantityDelta: level.Delta,
+		})
+	}
+	return orderbook.Snapshot{
+		Provider:         provider.ProviderKIS,
+		Group:            provider.GroupKISDomesticStockQuotation,
+		Operation:        provider.OperationKISOrderbook,
+		Market:           provider.MarketKRX,
+		SecurityType:     securityType,
+		Symbol:           firstNonEmpty(book.Expected.Symbol, symbol),
+		AcceptanceTime:   normalizeISOTime(book.AcceptanceTime),
+		Currency:         "KRW",
+		Levels:           levels,
+		TotalAskQuantity: book.TotalAskQuantity,
+		TotalBidQuantity: book.TotalBidQuantity,
+		Expected: orderbook.ExpectedConclusion{
+			Price:              book.Expected.ExpectedPrice,
+			Volume:             book.Expected.ExpectedVolume,
+			Current:            book.Expected.Current,
+			Open:               book.Expected.Open,
+			High:               book.Expected.High,
+			Low:                book.Expected.Low,
+			PreviousClose:      book.Expected.PreviousClose,
+			PreviousChange:     book.Expected.PreviousChange,
+			PreviousChangeSign: book.Expected.PreviousChangeSign,
+			PreviousChangeRate: book.Expected.PreviousChangeRate,
+		},
+	}
+}
+
+func normalizeTrade(trade kisclient.Trade, symbol string, securityType provider.SecurityType) tradesrole.Trade {
+	return tradesrole.Trade{
+		Provider:           provider.ProviderKIS,
+		Group:              provider.GroupKISDomesticStockQuotation,
+		Operation:          provider.OperationKISTrades,
+		Market:             provider.MarketKRX,
+		SecurityType:       securityType,
+		Symbol:             symbol,
+		Time:               normalizeISOTime(trade.Time),
+		Price:              trade.Current,
+		Volume:             trade.Volume,
+		PreviousChange:     trade.PreviousChange,
+		PreviousChangeSign: trade.PreviousChangeSign,
+		PreviousChangeRate: trade.PreviousChangeRate,
+		Strength:           trade.Strength,
+	}
+}
+
+func normalizeTimedTrade(trade kisclient.TimedTrade, symbol string, securityType provider.SecurityType) tradesrole.Trade {
+	return tradesrole.Trade{
+		Provider:           provider.ProviderKIS,
+		Group:              provider.GroupKISDomesticStockQuotation,
+		Operation:          provider.OperationKISTimeTrades,
+		Market:             provider.MarketKRX,
+		SecurityType:       securityType,
+		Symbol:             symbol,
+		Time:               normalizeISOTime(trade.Time),
+		Price:              trade.Current,
+		Volume:             trade.Volume,
+		AccumulatedVolume:  trade.AccumulatedVolume,
+		Ask:                trade.Ask,
+		Bid:                trade.Bid,
+		PreviousChange:     trade.PreviousChange,
+		PreviousChangeSign: trade.PreviousChangeSign,
+		PreviousChangeRate: trade.PreviousChangeRate,
+		Strength:           trade.Strength,
+	}
+}
+
 func instrumentFromProduct(product kisclient.Product, securityType provider.SecurityType) instrument.Instrument {
 	securityCode := firstNonEmpty(product.ShortProductNo, product.ProductNo)
 	return instrument.Instrument{
@@ -347,6 +588,15 @@ func supportsKISDailySecurityType(securityType provider.SecurityType) bool {
 	}
 }
 
+func supportsKISMarketDataSecurityType(securityType provider.SecurityType) bool {
+	switch securityType {
+	case provider.SecurityTypeStock, provider.SecurityTypeETF, provider.SecurityTypeETN:
+		return true
+	default:
+		return false
+	}
+}
+
 func supportsKISInstrumentSecurityType(securityType provider.SecurityType) bool {
 	switch securityType {
 	case provider.SecurityTypeStock, provider.SecurityTypeETF, provider.SecurityTypeETN, provider.SecurityTypeELW:
@@ -378,6 +628,29 @@ func normalizeISODate(value string) string {
 	return value
 }
 
+func normalizeKISTime(value string) string {
+	value = strings.TrimSpace(value)
+	if len(value) == 8 && value[2] == ':' && value[5] == ':' {
+		return value[:2] + value[3:5] + value[6:8]
+	}
+	return value
+}
+
+func normalizeISOTime(value string) string {
+	value = strings.TrimSpace(value)
+	if len(value) == 6 {
+		return value[:2] + ":" + value[2:4] + ":" + value[4:6]
+	}
+	return value
+}
+
+func limitSlice[T any](values []T, limit int) []T {
+	if limit <= 0 || len(values) <= limit {
+		return values
+	}
+	return values[:limit]
+}
+
 func firstNonEmpty(values ...string) string {
 	for _, value := range values {
 		value = strings.TrimSpace(value)
@@ -389,15 +662,18 @@ func firstNonEmpty(values ...string) string {
 }
 
 type domesticStockQuotationGroup struct {
-	quote.Snapshotter
-	dailybar.Fetcher
+	quoteSnapshotter     quote.Snapshotter
+	dailyFetcher         dailybar.Fetcher
+	intradayFetcher      intradaybar.Fetcher
+	orderbookSnapshotter orderbook.Snapshotter
+	tradesLister         tradesrole.Lister
 }
 
 var _ provider.GroupRoleProvider = domesticStockQuotationGroup{}
 
-func newDomesticStockQuotationGroup(snapshot quote.SnapshotFunc, fetch dailybar.FetchFunc) domesticStockQuotationGroup {
+func newDomesticStockQuotationGroup(snapshot quote.SnapshotFunc, fetch dailybar.FetchFunc, fetchIntraday intradaybar.FetchFunc, snapshotOrderbook orderbook.SnapshotFunc, listTrades tradesrole.ListFunc) domesticStockQuotationGroup {
 	return domesticStockQuotationGroup{
-		Snapshotter: quote.NewSnapshot(
+		quoteSnapshotter: quote.NewSnapshot(
 			spec.Quote().
 				Markets(provider.MarketKRX).
 				SecurityTypes(provider.SecurityTypeStock).
@@ -411,7 +687,7 @@ func newDomesticStockQuotationGroup(snapshot quote.SnapshotFunc, fetch dailybar.
 				MustBuild(),
 			snapshot,
 		),
-		Fetcher: dailybar.NewFetch(
+		dailyFetcher: dailybar.NewFetch(
 			spec.DailyBar().
 				Markets(provider.MarketKRX).
 				SecurityTypes(provider.SecurityTypeStock, provider.SecurityTypeETF, provider.SecurityTypeETN).
@@ -435,6 +711,36 @@ func newDomesticStockQuotationGroup(snapshot quote.SnapshotFunc, fetch dailybar.
 				MustBuild(),
 			fetch,
 		),
+		intradayFetcher: spec.RealtimeIntradayBar(fetchIntraday).
+			Markets(provider.MarketKRX).
+			SecurityTypes(provider.SecurityTypeStock, provider.SecurityTypeETF, provider.SecurityTypeETN).
+			Group(provider.GroupKISDomesticStockQuotation).
+			Operations(provider.OperationKISIntraday).
+			RequiresAuth(provider.CredentialScopeKIS).
+			CompatibilityNotes("KIS intraday bars are same-day symbol-scoped minute bars").
+			Priority(90).
+			Limitations("symbol-scoped same-day minute bars only; no historical multi-day intraday backfill").
+			MustBuild(),
+		orderbookSnapshotter: spec.RealtimeOrderbook(snapshotOrderbook).
+			Markets(provider.MarketKRX).
+			SecurityTypes(provider.SecurityTypeStock, provider.SecurityTypeETF, provider.SecurityTypeETN).
+			Group(provider.GroupKISDomesticStockQuotation).
+			Operations(provider.OperationKISOrderbook).
+			RequiresAuth(provider.CredentialScopeKIS).
+			CompatibilityNotes("KIS orderbook snapshot returns up to 10 ask and 10 bid levels with expected conclusion data").
+			Priority(90).
+			Limitations("single symbol snapshot only; no streaming orderbook updates").
+			MustBuild(),
+		tradesLister: spec.RealtimeTrades(listTrades).
+			Markets(provider.MarketKRX).
+			SecurityTypes(provider.SecurityTypeStock, provider.SecurityTypeETF, provider.SecurityTypeETN).
+			Group(provider.GroupKISDomesticStockQuotation).
+			Operations(provider.OperationKISTrades, provider.OperationKISTimeTrades).
+			RequiresAuth(provider.CredentialScopeKIS).
+			CompatibilityNotes("KIS trade rows are market trade prints, not account order executions").
+			Priority(90).
+			Limitations("recent same-day market trades only; account executions are intentionally out of scope").
+			MustBuild(),
 	}
 }
 
@@ -443,7 +749,7 @@ func (g domesticStockQuotationGroup) ProviderGroup() provider.GroupID {
 }
 
 func (g domesticStockQuotationGroup) RoleRegistrations() []provider.RoleRegistration {
-	stockQuote := g.Snapshotter.RoleRegistration()
+	stockQuote := g.quoteSnapshotter.RoleRegistration()
 	etpQuote := quote.NewSnapshot(
 		spec.Quote().
 			Markets(provider.MarketKRX).
@@ -456,12 +762,15 @@ func (g domesticStockQuotationGroup) RoleRegistrations() []provider.RoleRegistra
 			Priority(100).
 			Limitations("ETF/ETN quote snapshots only expose the canonical price field for now").
 			MustBuild(),
-		g.Snapshotter.FetchQuoteSnapshot,
+		g.quoteSnapshotter.FetchQuoteSnapshot,
 	).RoleRegistration()
 	return []provider.RoleRegistration{
 		stockQuote,
 		etpQuote,
-		g.Fetcher.RoleRegistration(),
+		g.dailyFetcher.RoleRegistration(),
+		g.intradayFetcher.RoleRegistration(),
+		g.orderbookSnapshotter.RoleRegistration(),
+		g.tradesLister.RoleRegistration(),
 	}
 }
 
