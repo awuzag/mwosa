@@ -2,19 +2,59 @@
 
 > AI야, 그래서 뭐 사?
 
-mwosa는 여러 금융 데이터 provider 를 하나의 명령어 인터페이스로 다루기 위한 투자 리서치 CLI입니다. 주식, ETF, 지수, 거시 지표, 뉴스, 포트폴리오 데이터를 수집, 조회, 계산하고, 사람과 AI 에이전트가 투자 리서치에 사용할 수 있는 형태로 제공합니다.
+mwosa는 시장 데이터를 모으고, 정리하고, 전략을 개발하고 검증하기 위한 리서치 CLI입니다.
 
-종목 추천이나 자동매매 도구가 아니라, 판단에 필요한 데이터를 일관된 CLI와 구조화 출력으로 제공하는 것을 목표로 합니다.
+여러 금융 데이터 provider 를 하나의 verb-first 명령 체계로 다루고, 주식과 ETF 데이터를 로컬 저장소에 정규화해서 보관합니다. 그 데이터를 바탕으로 스크리닝, 전략 저장, 반복 평가 흐름을 키워 갑니다.
 
-초기 주력 흐름은 한국 주식/ETF 스윙 트레이딩입니다. `mwosa` 는 추세, 거래량, 변동성, 모멘텀, 가격 위치 같은 지표를 계산하고, 그 계산에 사용된 provider 와 원천 데이터를 함께 드러내는 방향으로 설계합니다. 스윙 흐름을 먼저 잘 만들되, 같은 구조로 다양한 시장 데이터와 지표 조회까지 확장합니다.
+`mwosa` 는 "그래서 뭐 사?"라는 질문에 바로 종목을 찍어 주는 도구가 아닙니다. 자동매매봇도 아니고, 실제 주문을 실행하는 런타임도 아닙니다. 판단에 필요한 데이터와 실험 결과를 일관된 CLI와 구조화 출력으로 제공하는 도구입니다.
+
+초기 주력 흐름은 한국 주식/ETF 스윙 리서치입니다. `mwosa` 는 추세, 거래량, 변동성, 모멘텀, 가격 위치 같은 조건을 계산하고, 그 계산에 사용한 provider 와 원천 데이터를 함께 드러내는 방향으로 설계합니다. 스윙 흐름을 먼저 잘 만들되, 같은 구조로 다양한 시장 데이터와 지표 조회까지 확장합니다.
+
+## 정체성
+
+`mwosa` 는 provider 기반 데이터 CLI에서 출발했습니다. 앞으로의 중심은 시장 데이터 기반 전략 리서치 CLI입니다.
+
+역할은 아래와 같습니다.
+
+- provider 를 추가하고 관리한다.
+- 종목 정보, ETF 정보, 일봉과 분봉 같은 시장 데이터를 수집한다.
+- 수집한 데이터를 로컬 저장소에 정규화해서 보관한다.
+- 여러 종목과 ETF를 같은 기준으로 스크리닝한다.
+- 전략을 등록하고 저장한다.
+- 저장된 전략을 여러 종목과 기간에 대해 반복 평가한다.
+- CAGR, MDD, Sharpe, 거래 수, 승률, 손익비 같은 지표로 결과를 비교한다.
+- 좋은 후보 전략, 종목, 파라미터를 찾아낸다.
+- 검증 결과를 사람이 다시 볼 수 있는 리포트와 구조화 출력으로 남긴다.
+
+현재 구현은 provider 관리, 일봉 수집/조회, 로컬 SQLite 저장소, jq 기반 ETF 스크리닝, 저장된 스크리닝 전략 실행을 중심으로 한다. 분봉, 전략 registry 의 확장, 배치 백테스트, 성과 지표 비교, 리포트 출력은 이 흐름 위에 붙일 역할이다.
+
+KIS 같은 브로커 API 는 실시간 실행과 계좌 연동에는 중요하지만, 긴 기간과 다종목을 반복하는 백테스트에는 rate limit 이 병목이 된다. 그래서 `mwosa` 는 provider API 를 매번 직접 두드리는 방식보다, 로컬에 정규화된 데이터를 쌓고 그 위에서 반복 실험하는 구조를 우선한다.
+
+## 리서치 흐름
+
+```text
+provider
+  -> instrument metadata
+  -> daily bars / minute bars
+  -> local normalized storage
+  -> screen
+  -> strategy registry
+  -> batch backtest / evaluation
+  -> report / structured output
+```
+
+현재는 `daily bars -> local storage -> screen -> saved screening run` 흐름이 먼저 구현되어 있다. 나머지는 같은 흐름을 넓히는 방향이다.
 
 ## 목표
 
 - 여러 provider API를 하나의 CLI로 사용
-- 주식, ETF, 지수, 거시 지표, 뉴스, 포트폴리오 데이터 조회
-- 스윙 트레이딩에 필요한 추세와 지표 계산
+- 주식, ETF, 지수, 거시 지표, 뉴스 데이터 조회
+- 시장 데이터를 로컬 SQLite 정본으로 정규화
+- 스윙 트레이딩에 필요한 추세와 지표 계산 방향 확장
+- 여러 후보군을 대상으로 스크리닝과 반복 실험 수행
+- 전략 후보를 저장하고 성과를 비교하는 흐름 제공
 - AI 에이전트가 읽기 좋은 JSON 출력 지원
-- 리서치, 비교, 스크리닝, 계산, 기록을 하나의 명령 체계로 통합
+- 리서치, 비교, 스크리닝, 계산을 하나의 명령 체계로 통합
 
 ## 최소 사용 조건
 
@@ -34,9 +74,9 @@ Go 없이 사용하는 사용자는 GitHub Release 에서 자기 OS/CPU 에 맞�
 받아 `mwosa` 실행 파일을 `PATH` 에 둔다. 릴리스 자동화는 macOS, Linux,
 Windows 용 바이너리와 `checksums.txt` 를 생성한다.
 
-## CLI help 초안
+## 현재 CLI 구조
 
-`mwosa` 는 장기적으로 아래와 같은 verb-first 명령 체계를 가진다.
+`mwosa` 는 verb-first 명령 체계를 가진다.
 
 ```text
 mwosa <verb> [resource] [target] [flags]
@@ -44,7 +84,25 @@ mwosa <verb> [resource] [target] [flags]
 
 예를 들어 `inspect AAPL`, `get quote 005930`, `search instruments 반도체`, `compare symbols AAPL MSFT` 처럼 먼저 동사를 쓰고, 그 다음에 대상을 적는다.
 
-이 목록은 구현 순서가 아니라, 장기적으로 `mwosa --help` 에서 제공할 명령어 표면을 정리한 것이다.
+현재 소스 기준으로 확인한 주요 명령은 아래와 같다.
+
+```bash
+mwosa list providers -o json
+mwosa doctor provider datago -o json
+mwosa backfill daily --provider datago --security-type etf --from 2024-05-02 --to 2024-05-10 --workers 4 -o json
+mwosa get daily 069500 --security-type etf --from 2024-05-02 --to 2024-05-10 -o json
+mwosa screen etf --jq '.[:10]' -o json
+mwosa create strategy latest-liquidity-leaders --engine jq --input etf_daily_metrics --jq '.[:10]' -o json
+mwosa screen strategy latest-liquidity-leaders --alias 2024-05-10-liquidity-leaders -o json
+mwosa history screen -o table
+mwosa inspect screen 2024-05-10-liquidity-leaders -o json
+```
+
+현재 `strategy` 명령은 스크리닝 전략 저장과 실행을 다룬다. 주문 실행 전략이나 실계좌 운용 전략을 뜻하지 않는다.
+
+## 장기 명령 지도
+
+아래 목록은 구현 완료 목록이 아니다. 장기적으로 `mwosa --help` 에서 제공할 명령어 표면과 목표 동작을 정리한 지도다.
 
 ### 명령어 압축 원칙
 
