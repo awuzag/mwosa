@@ -203,7 +203,10 @@ func (nextOpenExecutionModel) Execute(intent orderIntent, bar Bar, p portfolio, 
 	errb := oops.In("backtest_execution_model").With("symbol", intent.Symbol, "side", intent.Side)
 	price := bar.Open
 	if price <= 0 {
-		return fill{}, false, Event{}, errb.With("price", price).New("fill price must be positive")
+		if bar.isNoTradeBar() {
+			return fill{}, false, deferredEvent(bar.Time, intent, "deferred_no_trade_bar", "no_trade_bar"), nil
+		}
+		return fill{}, false, Event{}, errb.With("price", price).New("invalid market data bar: fill price must be positive")
 	}
 	slippageBps := plan.Slippage.Value
 	if intent.Side == SideBuy {
@@ -269,6 +272,17 @@ func unfilledEvent(time time.Time, intent orderIntent, reason string) Event {
 		Time:   time,
 		Layer:  "execution",
 		Type:   "unfilled",
+		Symbol: intent.Symbol,
+		Side:   intent.Side,
+		Reason: reason,
+	}
+}
+
+func deferredEvent(time time.Time, intent orderIntent, eventType string, reason string) Event {
+	return Event{
+		Time:   time,
+		Layer:  "execution",
+		Type:   eventType,
 		Symbol: intent.Symbol,
 		Side:   intent.Side,
 		Reason: reason,

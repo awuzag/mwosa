@@ -291,14 +291,19 @@ func canonicalDailyBarToBacktestBar(row dailybar.Bar) (core.Bar, error) {
 	if err != nil {
 		return core.Bar{}, errb.Wrap(err)
 	}
+	tradedAmount, err := optionalFloat(row.TradedValue, "traded_amount")
+	if err != nil {
+		return core.Bar{}, errb.Wrap(err)
+	}
 	return core.Bar{
-		Time:   tradingDate,
-		Symbol: row.Symbol,
-		Open:   open,
-		High:   high,
-		Low:    low,
-		Close:  closePrice,
-		Volume: volume,
+		Time:         tradingDate,
+		Symbol:       row.Symbol,
+		Open:         open,
+		High:         high,
+		Low:          low,
+		Close:        closePrice,
+		Volume:       volume,
+		TradedAmount: tradedAmount,
 	}, nil
 }
 

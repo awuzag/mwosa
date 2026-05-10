@@ -76,6 +76,89 @@ func TestEngineReportsRiskRejections(t *testing.T) {
 	assert.Empty(t, result.Trades)
 }
 
+func TestEngineDefersNextOpenFillOnNoTradeBarUntilNextFillableBar(t *testing.T) {
+	registry, err := DefaultIndicatorRegistry()
+	require.NoError(t, err)
+
+	strategy := testStrategySpec()
+	strategy.Indicators = nil
+	strategy.Entry = RuleExpr{
+		Operator: "gt",
+		Args: []ValueExpr{
+			{Kind: "price", Price: "close"},
+			{Kind: "value", Value: 0},
+		},
+	}
+	strategy.Exit = RuleExpr{
+		Operator: "lt",
+		Args: []ValueExpr{
+			{Kind: "price", Price: "close"},
+			{Kind: "value", Value: 0},
+		},
+	}
+	plan, err := Compile(strategy, testRunSpec(), registry)
+	require.NoError(t, err)
+
+	engine, err := NewEngine(NewMemoryFeed([]Bar{
+		{Time: date("2024-01-02"), Symbol: "069500", Open: 10, High: 10, Low: 10, Close: 10, Volume: 1000},
+		{Time: date("2024-01-03"), Symbol: "069500", Open: 0, High: 0, Low: 0, Close: 10, Volume: 0},
+		{Time: date("2024-01-04"), Symbol: "069500", Open: 12, High: 12, Low: 12, Close: 12, Volume: 1000},
+	}))
+	require.NoError(t, err)
+
+	result, err := engine.Run(context.Background(), plan)
+	require.NoError(t, err)
+
+	require.Len(t, result.Trades, 1)
+	assert.Equal(t, SideBuy, result.Trades[0].Side)
+	assert.Equal(t, date("2024-01-04"), result.Trades[0].Time)
+	assert.InDelta(t, 12.0, result.Trades[0].Price, 0.0001)
+	require.Len(t, result.ExecutionEvents, 1)
+	assert.Equal(t, "execution", result.ExecutionEvents[0].Layer)
+	assert.Equal(t, "deferred_no_trade_bar", result.ExecutionEvents[0].Type)
+	assert.Equal(t, "069500", result.ExecutionEvents[0].Symbol)
+	assert.Equal(t, SideBuy, result.ExecutionEvents[0].Side)
+	assert.Equal(t, "no_trade_bar", result.ExecutionEvents[0].Reason)
+	assert.Equal(t, 1, result.UnfilledCount)
+}
+
+func TestEngineDoesNotTreatContradictoryOpenZeroBarAsNoTradeBar(t *testing.T) {
+	registry, err := DefaultIndicatorRegistry()
+	require.NoError(t, err)
+
+	strategy := testStrategySpec()
+	strategy.Indicators = nil
+	strategy.Entry = RuleExpr{
+		Operator: "gt",
+		Args: []ValueExpr{
+			{Kind: "price", Price: "close"},
+			{Kind: "value", Value: 0},
+		},
+	}
+	strategy.Exit = RuleExpr{
+		Operator: "lt",
+		Args: []ValueExpr{
+			{Kind: "price", Price: "close"},
+			{Kind: "value", Value: 0},
+		},
+	}
+	plan, err := Compile(strategy, testRunSpec(), registry)
+	require.NoError(t, err)
+
+	engine, err := NewEngine(NewMemoryFeed([]Bar{
+		{Time: date("2024-01-02"), Symbol: "069500", Open: 10, High: 10, Low: 10, Close: 10, Volume: 1000},
+		{Time: date("2024-01-03"), Symbol: "069500", Open: 0, High: 10, Low: 10, Close: 10, Volume: 1000},
+		{Time: date("2024-01-04"), Symbol: "069500", Open: 12, High: 12, Low: 12, Close: 12, Volume: 1000},
+	}))
+	require.NoError(t, err)
+
+	result, err := engine.Run(context.Background(), plan)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "invalid market data bar")
+	assert.NotContains(t, err.Error(), "fill price must be positive")
+	assert.Empty(t, result.ExecutionEvents)
+}
+
 func TestDefaultIndicatorRegistrySupportsMomentumAndChannelIndicators(t *testing.T) {
 	registry, err := DefaultIndicatorRegistry()
 	require.NoError(t, err)

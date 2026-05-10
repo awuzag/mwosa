@@ -9,13 +9,14 @@ import (
 )
 
 type Bar struct {
-	Time   time.Time `json:"time"`
-	Symbol string    `json:"symbol"`
-	Open   float64   `json:"open"`
-	High   float64   `json:"high"`
-	Low    float64   `json:"low"`
-	Close  float64   `json:"close"`
-	Volume float64   `json:"volume,omitempty"`
+	Time         time.Time `json:"time"`
+	Symbol       string    `json:"symbol"`
+	Open         float64   `json:"open"`
+	High         float64   `json:"high"`
+	Low          float64   `json:"low"`
+	Close        float64   `json:"close"`
+	Volume       float64   `json:"volume,omitempty"`
+	TradedAmount float64   `json:"traded_amount,omitempty"`
 }
 
 type DataRequest struct {
@@ -102,4 +103,45 @@ func priceValue(bar Bar, field string) (float64, bool) {
 	default:
 		return 0, false
 	}
+}
+
+func (bar Bar) isNoTradeBar() bool {
+	return bar.Open == 0 &&
+		bar.High == 0 &&
+		bar.Low == 0 &&
+		bar.Close > 0 &&
+		bar.Volume == 0 &&
+		bar.TradedAmount == 0
+}
+
+func (bar Bar) validate() error {
+	errb := oops.In("backtest_bar").With("symbol", bar.Symbol, "time", bar.Time.Format(time.DateOnly))
+	if bar.Open < 0 || bar.High < 0 || bar.Low < 0 || bar.Close < 0 {
+		return errb.With("open", bar.Open, "high", bar.High, "low", bar.Low, "close", bar.Close).New("invalid market data bar: price must not be negative")
+	}
+	if bar.Volume < 0 || bar.TradedAmount < 0 {
+		return errb.With("volume", bar.Volume, "traded_amount", bar.TradedAmount).New("invalid market data bar: liquidity fields must not be negative")
+	}
+	if bar.Close <= 0 {
+		return errb.With("close", bar.Close).New("invalid market data bar: close price must be positive")
+	}
+	if bar.isNoTradeBar() {
+		return nil
+	}
+	if bar.Open <= 0 || bar.High <= 0 || bar.Low <= 0 {
+		return errb.With("open", bar.Open, "high", bar.High, "low", bar.Low, "volume", bar.Volume, "traded_amount", bar.TradedAmount).New("invalid market data bar: zero OHLC is only allowed for no-trade bars")
+	}
+	if bar.High < bar.Low {
+		return errb.With("high", bar.High, "low", bar.Low).New("invalid market data bar: high price must be greater than or equal to low price")
+	}
+	return nil
+}
+
+func validateBars(bars []Bar) error {
+	for _, bar := range bars {
+		if err := bar.validate(); err != nil {
+			return err
+		}
+	}
+	return nil
 }

@@ -95,6 +95,9 @@ func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 	if len(bars) == 0 {
 		return Result{}, errb.New("historical feed returned no bars")
 	}
+	if err := validateBars(bars); err != nil {
+		return Result{}, errb.Wrap(err)
+	}
 
 	series := groupBars(bars)
 	indicatorValues, err := calculateIndicators(plan, series)
@@ -121,17 +124,19 @@ func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 			continue
 		}
 
+		nextPending := pending[:0]
 		for _, intent := range pending {
 			bar, ok := currentBars[intent.Symbol]
 			if !ok {
 				executionEvents = append(executionEvents, Event{
 					Time:   currentTime,
 					Layer:  "execution",
-					Type:   "unfilled",
+					Type:   "deferred_no_bar",
 					Symbol: intent.Symbol,
 					Side:   intent.Side,
-					Reason: "no_bar_for_next_open",
+					Reason: "no_bar_for_pending_order",
 				})
+				nextPending = append(nextPending, intent)
 				continue
 			}
 			fill, ok, event, err := execution.Execute(intent, bar, portfolio, plan)
@@ -140,13 +145,16 @@ func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 			}
 			if !ok {
 				executionEvents = append(executionEvents, event)
+				if isDeferredExecutionEvent(event) {
+					nextPending = append(nextPending, intent)
+				}
 				continue
 			}
 			if err := portfolio.apply(fill.Trade); err != nil {
 				return Result{}, errb.Wrap(err)
 			}
 		}
-		pending = pending[:0]
+		pending = nextPending
 
 		closePrices := closePrices(currentBars)
 		nextIntents, err := evaluateSignals(plan, portfolio, currentBars, currentIndexes, series, indicatorValues)
@@ -156,7 +164,7 @@ func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 		sizedIntents := sizer.Size(nextIntents, portfolio, closePrices, plan)
 		review := risk.Review(currentTime, sizedIntents, portfolio, closePrices, plan)
 		riskEvents = append(riskEvents, review.Events...)
-		pending = append(pending, review.Approved...)
+		pending = appendNewPendingOrders(pending, review.Approved)
 
 		positionsValue := portfolio.positionsValue(closePrices)
 		curve = append(curve, EquityPoint{
@@ -328,6 +336,40 @@ func closePrices(bars map[string]Bar) map[string]float64 {
 		out[symbol] = bar.Close
 	}
 	return out
+}
+
+func isDeferredExecutionEvent(event Event) bool {
+	switch event.Type {
+	case "deferred_no_bar", "deferred_no_trade_bar":
+		return true
+	default:
+		return false
+	}
+}
+
+func appendNewPendingOrders(pending []orderIntent, intents []orderIntent) []orderIntent {
+	seen := make(map[orderKey]struct{}, len(pending))
+	for _, intent := range pending {
+		seen[newOrderKey(intent)] = struct{}{}
+	}
+	for _, intent := range intents {
+		key := newOrderKey(intent)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		pending = append(pending, intent)
+		seen[key] = struct{}{}
+	}
+	return pending
+}
+
+type orderKey struct {
+	symbol string
+	side   Side
+}
+
+func newOrderKey(intent orderIntent) orderKey {
+	return orderKey{symbol: intent.Symbol, side: intent.Side}
 }
 
 func maxDrawdown(curve []EquityPoint) float64 {
