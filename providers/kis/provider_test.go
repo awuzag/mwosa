@@ -3,6 +3,7 @@ package kis
 import (
 	"context"
 	"testing"
+	"time"
 
 	kisclient "github.com/ev3rlit/mwosa/clients/kis"
 	provider "github.com/ev3rlit/mwosa/providers/core"
@@ -77,6 +78,172 @@ func TestFetchETFQuoteUsesETFETNPrice(t *testing.T) {
 	require.Equal(t, 1, client.etfetnCalls)
 	require.Equal(t, "069500", result.Symbol)
 	require.Equal(t, "10250", result.Price)
+}
+
+func TestFetchQuoteUsesValidCachedTokenWithoutIssuingToken(t *testing.T) {
+	now := time.Date(2026, 5, 10, 9, 0, 0, 0, time.UTC)
+	key := newTokenCacheKey("app-key", false)
+	cache := newFakeTokenCache()
+	cache.tokens[key] = CachedToken{
+		Key:         key,
+		AccessToken: "cached-token",
+		TokenType:   "Bearer",
+		ExpiresIn:   86400,
+		ExpiresAt:   now.Add(time.Hour),
+		IssuedAt:    now.Add(-time.Hour),
+		UpdatedAt:   now.Add(-time.Hour),
+	}
+	client := &fakeKISClient{
+		price: kisclient.Price{
+			Symbol:  "005930",
+			Current: "75000",
+		},
+	}
+	p := NewWithClient(client, false, WithTokenCache(cache, key), WithClock(func() time.Time { return now }))
+
+	result, err := p.fetchQuoteSnapshot(context.Background(), quote.SnapshotInput{
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeStock,
+		Symbol:       "005930",
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, 0, client.tokenCalls)
+	require.Equal(t, 1, client.useTokenCalls)
+	require.Equal(t, "cached-token", client.usedToken.AccessToken)
+	require.Equal(t, 1, client.priceCalls)
+	require.Equal(t, "75000", result.Price)
+	require.Len(t, cache.puts, 0)
+}
+
+func TestFetchQuoteStoresTokenOnCacheMiss(t *testing.T) {
+	now := time.Date(2026, 5, 10, 9, 0, 0, 0, time.UTC)
+	key := newTokenCacheKey("app-key", false)
+	cache := newFakeTokenCache()
+	client := &fakeKISClient{
+		token: kisclient.Token{
+			AccessToken: "issued-token",
+			TokenType:   "Bearer",
+			ExpiresIn:   86400,
+			ExpiredAt:   "2026-05-11 09:00:00",
+		},
+		price: kisclient.Price{
+			Symbol:  "005930",
+			Current: "75000",
+		},
+	}
+	p := NewWithClient(client, false, WithTokenCache(cache, key), WithClock(func() time.Time { return now }))
+
+	_, err := p.fetchQuoteSnapshot(context.Background(), quote.SnapshotInput{
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeStock,
+		Symbol:       "005930",
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, 1, client.tokenCalls)
+	require.Len(t, cache.puts, 1)
+	require.Equal(t, "issued-token", cache.puts[0].AccessToken)
+	require.Equal(t, key, cache.puts[0].Key)
+}
+
+func TestFetchQuoteRefreshesExpiredCachedToken(t *testing.T) {
+	now := time.Date(2026, 5, 10, 9, 0, 0, 0, time.UTC)
+	key := newTokenCacheKey("app-key", false)
+	cache := newFakeTokenCache()
+	cache.tokens[key] = CachedToken{
+		Key:         key,
+		AccessToken: "expired-token",
+		ExpiresAt:   now.Add(-time.Minute),
+		IssuedAt:    now.Add(-25 * time.Hour),
+		UpdatedAt:   now.Add(-25 * time.Hour),
+	}
+	client := &fakeKISClient{
+		token: kisclient.Token{
+			AccessToken: "issued-token",
+			TokenType:   "Bearer",
+			ExpiresIn:   86400,
+			ExpiredAt:   "2026-05-11 09:00:00",
+		},
+		price: kisclient.Price{
+			Symbol:  "005930",
+			Current: "75000",
+		},
+	}
+	p := NewWithClient(client, false, WithTokenCache(cache, key), WithClock(func() time.Time { return now }))
+
+	_, err := p.fetchQuoteSnapshot(context.Background(), quote.SnapshotInput{
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeStock,
+		Symbol:       "005930",
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, 1, client.tokenCalls)
+	require.Equal(t, 0, client.useTokenCalls)
+	require.Len(t, cache.puts, 1)
+	require.Equal(t, "issued-token", cache.puts[0].AccessToken)
+}
+
+func TestFetchQuoteTreatsDifferentEnvironmentAsCacheMiss(t *testing.T) {
+	now := time.Date(2026, 5, 10, 9, 0, 0, 0, time.UTC)
+	realKey := newTokenCacheKey("app-key", false)
+	virtualKey := newTokenCacheKey("app-key", true)
+	cache := newFakeTokenCache()
+	cache.tokens[realKey] = CachedToken{
+		Key:         realKey,
+		AccessToken: "real-token",
+		ExpiresAt:   now.Add(time.Hour),
+		IssuedAt:    now,
+		UpdatedAt:   now,
+	}
+	client := &fakeKISClient{
+		token: kisclient.Token{
+			AccessToken: "virtual-token",
+			ExpiresIn:   86400,
+			ExpiredAt:   "2026-05-11 09:00:00",
+		},
+		price: kisclient.Price{
+			Symbol:  "005930",
+			Current: "75000",
+		},
+	}
+	p := NewWithClient(client, false, WithTokenCache(cache, virtualKey), WithClock(func() time.Time { return now }))
+
+	_, err := p.fetchQuoteSnapshot(context.Background(), quote.SnapshotInput{
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeStock,
+		Symbol:       "005930",
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, 1, client.tokenCalls)
+	require.Equal(t, 0, client.useTokenCalls)
+	require.Equal(t, virtualKey, cache.gets[0])
+	require.Equal(t, virtualKey, cache.puts[0].Key)
+}
+
+func TestExplicitAccessTokenSkipsTokenCache(t *testing.T) {
+	key := newTokenCacheKey("app-key", false)
+	cache := newFakeTokenCache()
+	client := &fakeKISClient{
+		price: kisclient.Price{
+			Symbol:  "005930",
+			Current: "75000",
+		},
+	}
+	p := NewWithClient(client, true, WithTokenCache(cache, key))
+
+	_, err := p.fetchQuoteSnapshot(context.Background(), quote.SnapshotInput{
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeStock,
+		Symbol:       "005930",
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, 0, client.tokenCalls)
+	require.Empty(t, cache.gets)
+	require.Empty(t, cache.puts)
 }
 
 func TestFetchDailyBarsNormalizesKISBars(t *testing.T) {
@@ -343,7 +510,8 @@ func TestBuilderUsesEnvCredentialFallbacks(t *testing.T) {
 }
 
 type fakeKISClient struct {
-	tokenCalls int
+	tokenCalls    int
+	useTokenCalls int
 
 	priceCalls      int
 	etfetnCalls     int
@@ -356,6 +524,8 @@ type fakeKISClient struct {
 	stockCalls      int
 
 	price                   kisclient.Price
+	token                   kisclient.Token
+	usedToken               kisclient.Token
 	etfetnPrice             kisclient.ETFETNPrice
 	bars                    []kisclient.Bar
 	intradayBars            []kisclient.IntradayBar
@@ -369,7 +539,15 @@ type fakeKISClient struct {
 
 func (c *fakeKISClient) Token(context.Context) (kisclient.Token, error) {
 	c.tokenCalls++
-	return kisclient.Token{AccessToken: "token"}, nil
+	if c.token.AccessToken != "" {
+		return c.token, nil
+	}
+	return kisclient.Token{AccessToken: "token", TokenType: "Bearer", ExpiresIn: 86400}, nil
+}
+
+func (c *fakeKISClient) UseToken(token kisclient.Token) {
+	c.useTokenCalls++
+	c.usedToken = token
 }
 
 func (c *fakeKISClient) Price(context.Context, string) (kisclient.Price, error) {
@@ -416,4 +594,28 @@ func (c *fakeKISClient) Product(context.Context, string, ...kisclient.Instrument
 func (c *fakeKISClient) Stock(context.Context, string, ...kisclient.InstrumentOption) (kisclient.Stock, error) {
 	c.stockCalls++
 	return c.stock, nil
+}
+
+type fakeTokenCache struct {
+	tokens map[TokenCacheKey]CachedToken
+	gets   []TokenCacheKey
+	puts   []CachedToken
+}
+
+func newFakeTokenCache() *fakeTokenCache {
+	return &fakeTokenCache{
+		tokens: map[TokenCacheKey]CachedToken{},
+	}
+}
+
+func (c *fakeTokenCache) Get(_ context.Context, key TokenCacheKey) (CachedToken, bool, error) {
+	c.gets = append(c.gets, key)
+	token, ok := c.tokens[key]
+	return token, ok, nil
+}
+
+func (c *fakeTokenCache) Put(_ context.Context, token CachedToken) error {
+	c.puts = append(c.puts, token)
+	c.tokens[token.Key] = token
+	return nil
 }

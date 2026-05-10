@@ -4,6 +4,7 @@ import (
 	"context"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/go-resty/resty/v2"
 	"github.com/samber/oops"
@@ -21,8 +22,16 @@ type Client struct {
 	account      string
 	http         *resty.Client
 
-	tokenMu     sync.RWMutex
+	tokenMu sync.RWMutex
+	token   tokenState
+}
+
+type tokenState struct {
 	accessToken string
+	tokenType   string
+	expiresIn   int
+	expiredAt   string
+	issuedAt    time.Time
 }
 
 // New creates a KIS OpenAPI client.
@@ -55,7 +64,9 @@ func New(options ...Option) (*Client, error) {
 		customerType: cfg.customerType,
 		account:      cfg.account,
 		http:         restyClient,
-		accessToken:  cfg.accessToken,
+		token: tokenState{
+			accessToken: cfg.accessToken,
+		},
 	}, nil
 }
 
@@ -76,13 +87,28 @@ func (c *Client) request(ctx context.Context, group string, operation string, tr
 func (c *Client) currentAccessToken() string {
 	c.tokenMu.RLock()
 	defer c.tokenMu.RUnlock()
-	return c.accessToken
+	return c.token.accessToken
 }
 
 func (c *Client) setAccessToken(accessToken string) {
+	c.setToken(Token{AccessToken: accessToken}, time.Time{})
+}
+
+func (c *Client) setToken(token Token, issuedAt time.Time) {
 	c.tokenMu.Lock()
 	defer c.tokenMu.Unlock()
-	c.accessToken = strings.TrimSpace(accessToken)
+	c.token = tokenState{
+		accessToken: strings.TrimSpace(token.AccessToken),
+		tokenType:   strings.TrimSpace(token.TokenType),
+		expiresIn:   token.ExpiresIn,
+		expiredAt:   strings.TrimSpace(token.ExpiredAt),
+		issuedAt:    issuedAt,
+	}
+}
+
+// UseToken installs an already-issued OAuth token on this client instance.
+func (c *Client) UseToken(token Token) {
+	c.setToken(token, time.Time{})
 }
 
 func bearer(accessToken string) string {

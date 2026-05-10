@@ -81,5 +81,24 @@ mwosa login provider kis --app-key <key> --app-secret <secret>
 | `virtual` | `MWOSA_KIS_VIRTUAL`, `KIS_VIRTUAL` |
 
 `access_token` 이 없으면 첫 provider 호출 시 OAuth token 을 발급해서 client 내부에
-저장한다. secret 값은 doctor/login 출력에서 configured 여부만 보이고 값은 출력하지
-않는다.
+저장한다. 이때 발급받은 token 은 CLI 실행이 끝나도 재사용할 수 있도록 별도 SQLite
+파일에 저장한다. 파일은 market-data canonical DB 인 `mwosa.db` 또는 `--database`
+파일과 섞지 않고, 같은 data directory 의 `provider-token-cache.sqlite` 에 둔다.
+
+명시적으로 `auth.access_token`, `MWOSA_KIS_ACCESS_TOKEN`, `KIS_ACCESS_TOKEN` 이
+주어지면 그 token 을 우선 사용하고 cache 를 읽거나 갱신하지 않는다. 이는 임시로
+발급받은 token 을 직접 검증하거나 운영 환경에서 외부 secret 관리자가 token 을
+주입하는 흐름을 보수적으로 존중하기 위한 정책이다.
+
+cache key 는 `provider_id`, `auth_scope`, `environment`, app key hash 로 구성한다.
+app key 원문은 저장하지 않는다. `virtual=true` 인 모의투자 환경과 실전 환경은 서로
+다른 token 으로 취급하므로 token 이 교차 재사용되지 않는다.
+
+만료 판단은 KIS tokenP 응답의 `access_token_token_expired` 를 우선 사용한다. 해당
+값이 없으면 `expires_in` 과 발급 시각으로 보조 계산한다. 만료 2분 전부터는 만료된
+token 으로 보고 `/oauth2/tokenP` 를 다시 호출한 뒤 cache 를 갱신한다. cache miss 는
+정상 경로이며 tokenP 발급으로 이어진다. cache read/write 실패는 성공처럼 숨기지 않고
+명시적인 error 로 반환한다.
+
+secret 값과 token 값은 doctor/login/list/config 출력에 표시하지 않는다. 출력에는
+configured 여부만 남긴다.

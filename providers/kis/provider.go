@@ -5,6 +5,7 @@ import (
 	"fmt"
 	"strings"
 	"sync"
+	"time"
 
 	kisclient "github.com/ev3rlit/mwosa/clients/kis"
 	provider "github.com/ev3rlit/mwosa/providers/core"
@@ -27,10 +28,12 @@ type Config struct {
 	Virtual        bool
 	CustomerType   string
 	Account        string
+	TokenCache     TokenCache
 }
 
 type marketDataClient interface {
 	Token(context.Context) (kisclient.Token, error)
+	UseToken(kisclient.Token)
 	Price(context.Context, string) (kisclient.Price, error)
 	ETFETNPrice(context.Context, string) (kisclient.ETFETNPrice, error)
 	Daily(context.Context, string, ...kisclient.DailyOption) ([]kisclient.Bar, error)
@@ -50,9 +53,15 @@ type Provider struct {
 	tokenMu             sync.Mutex
 	accessTokenProvided bool
 	tokenIssued         bool
+	tokenCache          TokenCache
+	tokenCacheKey       TokenCacheKey
+	tokenExpiryBuffer   time.Duration
+	now                 func() time.Time
 
 	groups []provider.GroupRoleProvider
 }
+
+type ProviderOption func(*Provider)
 
 func New(config Config) (*Provider, error) {
 	errb := oops.In("kis_adapter").With("provider", provider.ProviderKIS)
@@ -81,10 +90,14 @@ func New(config Config) (*Provider, error) {
 	if err != nil {
 		return nil, errb.Wrap(err)
 	}
-	return NewWithClient(client, strings.TrimSpace(config.AccessToken) != ""), nil
+	return NewWithClient(
+		client,
+		strings.TrimSpace(config.AccessToken) != "",
+		WithTokenCache(config.TokenCache, newTokenCacheKey(config.AppKey, config.Virtual)),
+	), nil
 }
 
-func NewWithClient(client marketDataClient, accessTokenProvided bool) *Provider {
+func NewWithClient(client marketDataClient, accessTokenProvided bool, options ...ProviderOption) *Provider {
 	p := &Provider{
 		Identity: provider.Identity{
 			ID:          provider.ProviderKIS,
@@ -92,12 +105,34 @@ func NewWithClient(client marketDataClient, accessTokenProvided bool) *Provider 
 		},
 		client:              client,
 		accessTokenProvided: accessTokenProvided,
+		tokenExpiryBuffer:   defaultTokenExpiryBuffer,
+		now:                 time.Now,
+	}
+	for _, option := range options {
+		if option != nil {
+			option(p)
+		}
 	}
 	p.groups = []provider.GroupRoleProvider{
 		newDomesticStockQuotationGroup(p.fetchQuoteSnapshot, p.fetchDailyBars, p.fetchIntradayBars, p.fetchOrderbookSnapshot, p.listMarketTrades),
 		newDomesticStockInstrumentGroup(p.searchInstruments),
 	}
 	return p
+}
+
+func WithTokenCache(cache TokenCache, key TokenCacheKey) ProviderOption {
+	return func(p *Provider) {
+		p.tokenCache = cache
+		p.tokenCacheKey = key
+	}
+}
+
+func WithClock(now func() time.Time) ProviderOption {
+	return func(p *Provider) {
+		if now != nil {
+			p.now = now
+		}
+	}
 }
 
 func Register(registry *provider.Registry, p provider.IdentityProvider) error {
@@ -127,8 +162,29 @@ func (p *Provider) ensureAccessToken(ctx context.Context) error {
 	if p.client == nil {
 		return oops.In("kis_adapter").With("provider", provider.ProviderKIS).New("kis provider client is nil")
 	}
-	if _, err := p.client.Token(ctx); err != nil {
+	if p.tokenCache != nil {
+		cached, ok, err := p.tokenCache.Get(ctx, p.tokenCacheKey)
+		if err != nil {
+			return oops.In("kis_adapter").With("provider", provider.ProviderKIS).Wrapf(err, "read kis access token cache")
+		}
+		if ok && cachedTokenValidAt(cached, p.now(), p.tokenExpiryBuffer) {
+			p.client.UseToken(cachedTokenToKIS(cached))
+			p.tokenIssued = true
+			return nil
+		}
+	}
+	token, err := p.client.Token(ctx)
+	if err != nil {
 		return oops.In("kis_adapter").With("provider", provider.ProviderKIS, "operation", provider.OperationKISPrice).Wrapf(err, "issue kis access token")
+	}
+	if p.tokenCache != nil {
+		cached, err := cachedTokenFromKIS(p.tokenCacheKey, token, p.now())
+		if err != nil {
+			return oops.In("kis_adapter").With("provider", provider.ProviderKIS).Wrapf(err, "prepare kis access token cache")
+		}
+		if err := p.tokenCache.Put(ctx, cached); err != nil {
+			return oops.In("kis_adapter").With("provider", provider.ProviderKIS).Wrapf(err, "write kis access token cache")
+		}
 	}
 	p.tokenIssued = true
 	return nil

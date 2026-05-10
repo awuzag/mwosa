@@ -27,12 +27,19 @@ const (
 	accountEnv                 = "MWOSA_KIS_ACCOUNT"
 )
 
-type Builder struct{}
+type Builder struct {
+	tokenCache TokenCache
+}
 
 var _ provider.ProviderBuilder = Builder{}
 
 func NewBuilder() Builder {
 	return Builder{}
+}
+
+func (b Builder) WithTokenCache(cache TokenCache) provider.ProviderBuilder {
+	b.tokenCache = cache
+	return b
 }
 
 func (Builder) ID() provider.ProviderID {
@@ -152,7 +159,7 @@ func (Builder) Decide(opts provider.RegisterOptions, config provider.Config) pro
 	}
 }
 
-func (Builder) Build(config provider.Config) (provider.IdentityProvider, error) {
+func (b Builder) Build(config provider.Config) (provider.IdentityProvider, error) {
 	appKey := kisAppKeyFromConfig(config)
 	appSecret := kisAppSecretFromConfig(config)
 	if appKey == "" {
@@ -170,6 +177,7 @@ func (Builder) Build(config provider.Config) (provider.IdentityProvider, error) 
 		Virtual:        kisVirtualFromConfig(config),
 		CustomerType:   kisCustomerTypeFromConfig(config),
 		Account:        kisAccountFromConfig(config),
+		TokenCache:     b.tokenCache,
 	})
 }
 

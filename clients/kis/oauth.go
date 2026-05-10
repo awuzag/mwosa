@@ -3,6 +3,7 @@ package kis
 import (
 	"context"
 	"strings"
+	"time"
 
 	"github.com/samber/oops"
 )
@@ -53,7 +54,7 @@ func (c *Client) Token(ctx context.Context) (Token, error) {
 	if strings.TrimSpace(token.AccessToken) == "" {
 		return Token{}, errb.New("kis OAuth token response missing access token")
 	}
-	c.setAccessToken(token.AccessToken)
+	c.setToken(token, time.Now())
 	return token, nil
 }
 

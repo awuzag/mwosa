@@ -337,6 +337,7 @@ func newPreferProviderCommand(opts *Options) *cobra.Command {
 func applyResolvedConfig(opts *Options, resolved appconfig.Resolved) {
 	opts.Config = resolved.ConfigPath
 	opts.Database = resolved.DatabasePath
+	opts.ProviderAuthDatabase = resolved.ProviderAuthDatabasePath
 	opts.ProviderConfig = resolved.ProviderConfig
 	opts.ConfigState = resolved
 	opts.PreferProvider = resolved.File.App.PreferredProvider
