@@ -18,6 +18,22 @@ type Bundle struct {
 }
 
 func LoadFile(ctx context.Context, path string) (Bundle, error) {
+	bundle, err := loadFile(ctx, path, true)
+	if err != nil {
+		return Bundle{}, err
+	}
+	return bundle, nil
+}
+
+func LoadStrategyFile(ctx context.Context, path string) (core.StrategySpec, error) {
+	bundle, err := loadFile(ctx, path, false)
+	if err != nil {
+		return core.StrategySpec{}, err
+	}
+	return bundle.Strategy, nil
+}
+
+func loadFile(ctx context.Context, path string, requireRun bool) (Bundle, error) {
 	if err := ctx.Err(); err != nil {
 		return Bundle{}, oops.In("backtest_yaml").With("path", path).Wrap(err)
 	}
@@ -28,10 +44,22 @@ func LoadFile(ctx context.Context, path string) (Bundle, error) {
 	if err := ctx.Err(); err != nil {
 		return Bundle{}, oops.In("backtest_yaml").With("path", path).Wrap(err)
 	}
-	return Decode(ctx, bytes.NewReader(payload))
+	return decode(ctx, bytes.NewReader(payload), requireRun)
 }
 
 func Decode(ctx context.Context, reader io.Reader) (Bundle, error) {
+	return decode(ctx, reader, true)
+}
+
+func DecodeStrategy(ctx context.Context, reader io.Reader) (core.StrategySpec, error) {
+	bundle, err := decode(ctx, reader, false)
+	if err != nil {
+		return core.StrategySpec{}, err
+	}
+	return bundle.Strategy, nil
+}
+
+func decode(ctx context.Context, reader io.Reader, requireRun bool) (Bundle, error) {
 	if err := ctx.Err(); err != nil {
 		return Bundle{}, oops.In("backtest_yaml").Wrap(err)
 	}
@@ -73,7 +101,7 @@ func Decode(ctx context.Context, reader io.Reader) (Bundle, error) {
 	if bundle.Strategy.Kind == "" {
 		return Bundle{}, oops.In("backtest_yaml").New("YAML stream requires Strategy document")
 	}
-	if bundle.Run.Kind == "" {
+	if requireRun && bundle.Run.Kind == "" {
 		return Bundle{}, oops.In("backtest_yaml").New("YAML stream requires BacktestRun document")
 	}
 	return bundle, nil

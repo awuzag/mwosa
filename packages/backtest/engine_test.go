@@ -33,11 +33,99 @@ func TestEngineRunsCompiledStrategyPlanWithNextOpenFills(t *testing.T) {
 	assert.InDelta(t, -0.1152, result.TotalReturn, 0.0001)
 	assert.InDelta(t, -0.1152, result.MaxDrawdown, 0.0001)
 	assert.Equal(t, 0, result.UnfilledCount)
+	assert.Equal(t, "next_open", result.Execution.Fill)
+	assert.Equal(t, []string{"069500"}, result.Symbols)
+	assert.InDelta(t, -1152.0, result.RealizedPnL, 0.0001)
+	assert.InDelta(t, 0.0, result.WinRate, 0.0001)
+	assert.InDelta(t, -0.230769, result.AverageTradeRet, 0.0001)
+	assert.Equal(t, result.TotalReturn, result.Metrics.TotalReturn)
 	assert.NotEmpty(t, result.ResultHash)
 
 	repeated, err := engine.Run(context.Background(), plan)
 	require.NoError(t, err)
 	assert.Equal(t, result.ResultHash, repeated.ResultHash)
+}
+
+func TestEngineReportsRiskRejections(t *testing.T) {
+	registry, err := DefaultIndicatorRegistry()
+	require.NoError(t, err)
+
+	strategy := testStrategySpec()
+	strategy.Entry = RuleExpr{
+		Operator: "gt",
+		Args: []ValueExpr{
+			{Kind: "price", Price: "close"},
+			{Kind: "value", Value: 0},
+		},
+	}
+	strategy.Risk = RiskSpec{MaxSymbolWeightPct: 10}
+	run := testRunSpec()
+	plan, err := Compile(strategy, run, registry)
+	require.NoError(t, err)
+
+	engine, err := NewEngine(NewMemoryFeed(testBars()))
+	require.NoError(t, err)
+
+	result, err := engine.Run(context.Background(), plan)
+	require.NoError(t, err)
+
+	require.NotEmpty(t, result.RiskEvents)
+	assert.Equal(t, "risk", result.RiskEvents[0].Layer)
+	assert.Equal(t, "rejected", result.RiskEvents[0].Type)
+	assert.Equal(t, "max_symbol_weight_pct", result.RiskEvents[0].Reason)
+	assert.Empty(t, result.Trades)
+}
+
+func TestDefaultIndicatorRegistrySupportsMomentumAndChannelIndicators(t *testing.T) {
+	registry, err := DefaultIndicatorRegistry()
+	require.NoError(t, err)
+
+	rsi, ok := registry.Definition("rsi")
+	require.True(t, ok)
+	rsiValues, err := rsi.Calculate(IndicatorSpec{
+		ID:     "rsi",
+		Source: ValueExpr{Kind: "price", Price: "close"},
+		Params: map[string]float64{"window": 2},
+	}, []Bar{
+		{Close: 10},
+		{Close: 12},
+		{Close: 11},
+		{Close: 13},
+	})
+	require.NoError(t, err)
+	assert.InDelta(t, 66.6666, rsiValues[2], 0.001)
+
+	high, ok := registry.Definition("donchian_high")
+	require.True(t, ok)
+	highValues, err := high.Calculate(IndicatorSpec{
+		ID:     "donchian_high",
+		Source: ValueExpr{Kind: "price", Price: "high"},
+		Params: map[string]float64{"window": 3},
+	}, []Bar{
+		{High: 10},
+		{High: 12},
+		{High: 11},
+		{High: 13},
+	})
+	require.NoError(t, err)
+	assert.InDelta(t, 12, highValues[2], 0.0001)
+	assert.InDelta(t, 13, highValues[3], 0.0001)
+
+	low, ok := registry.Definition("donchian_low")
+	require.True(t, ok)
+	lowValues, err := low.Calculate(IndicatorSpec{
+		ID:     "donchian_low",
+		Source: ValueExpr{Kind: "price", Price: "low"},
+		Params: map[string]float64{"window": 3},
+	}, []Bar{
+		{Low: 10},
+		{Low: 12},
+		{Low: 11},
+		{Low: 13},
+	})
+	require.NoError(t, err)
+	assert.InDelta(t, 10, lowValues[2], 0.0001)
+	assert.InDelta(t, 11, lowValues[3], 0.0001)
 }
 
 func testStrategySpec() StrategySpec {

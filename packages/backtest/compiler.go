@@ -65,6 +65,10 @@ func Compile(strategy StrategySpec, run BacktestRunSpec, registry IndicatorRegis
 	}, nil
 }
 
+func ValidateStrategySpec(strategy StrategySpec, registry IndicatorRegistry) error {
+	return validateStrategy(strategy, registry)
+}
+
 func validateStrategy(strategy StrategySpec, registry IndicatorRegistry) error {
 	errb := oops.In("backtest_strategy_spec").With("strategy", strategy.Name)
 	if strategy.Kind != KindStrategy {

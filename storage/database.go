@@ -117,6 +117,8 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 		{name: "strategy_versions", model: (*StrategyVersionRow)(nil)},
 		{name: "screen_runs", model: (*ScreenRunRow)(nil)},
 		{name: "screen_run_items", model: (*ScreenRunItemRow)(nil)},
+		{name: "backtest_strategies", model: (*BacktestStrategyRow)(nil)},
+		{name: "backtest_strategy_versions", model: (*BacktestStrategyVersionRow)(nil)},
 	}
 	for _, table := range tables {
 		if _, err := db.NewCreateTable().
@@ -229,6 +231,22 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 			name:    "idx_screen_run_items_symbol",
 			model:   (*ScreenRunItemRow)(nil),
 			columns: []string{"symbol"},
+		},
+		{
+			name:    "idx_backtest_strategies_deleted_at",
+			model:   (*BacktestStrategyRow)(nil),
+			columns: []string{"deleted_at"},
+		},
+		{
+			name:    "backtest_strategy_versions_strategy_version_unique",
+			model:   (*BacktestStrategyVersionRow)(nil),
+			columns: []string{"strategy_id", "version"},
+			unique:  true,
+		},
+		{
+			name:    "idx_backtest_strategy_versions_spec_hash",
+			model:   (*BacktestStrategyVersionRow)(nil),
+			columns: []string{"spec_hash"},
 		},
 	}
 	for _, index := range indexes {

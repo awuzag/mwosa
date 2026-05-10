@@ -293,7 +293,8 @@ mwosa backfill daily --security-type etf --from 20240502 --to 20260502 --workers
 | `mwosa create strategy <name>`                     | 스크리닝 조건, 진입 조건, 청산 조건을 가진 전략 초안을 만든다.        |
 | `mwosa update strategy <name>`                     | 전략 조건, universe, 리스크 설정을 수정한다.                          |
 | `mwosa validate strategy <name>`                   | 전략 정의의 필수 항목과 데이터 요구사항을 검사한다.                   |
-| `mwosa backtest strategy <name>`                   | 과거 데이터로 전략 성과를 검증한다.                                   |
+| `mwosa run backtest <yaml>`                        | YAML 실행 스펙으로 과거 데이터 전략 성과를 검증한다.                  |
+| `mwosa update backtest strategy <name>`            | YAML 전략 스펙을 저장하거나 새 버전으로 갱신한다.                     |
 | `mwosa compare strategies <names...>`              | 여러 전략의 수익률, 낙폭, 승률, 회전율을 비교한다.                    |
 | `mwosa explain backtest <run-id>`                  | 백테스트 결과의 주요 거래, 성과 요인, 한계를 설명한다.                |
 | `mwosa create alert <target>`                      | 가격, 지표, 뉴스, 공시 조건에 대한 알림을 만든다.                     |

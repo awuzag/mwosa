@@ -31,6 +31,7 @@ type Trade struct {
 	SlippageBps float64   `json:"slippage_bps,omitempty"`
 	Reason      string    `json:"reason,omitempty"`
 	RealizedPnL float64   `json:"realized_pnl,omitempty"`
+	Return      float64   `json:"return,omitempty"`
 }
 
 type orderIntent struct {
@@ -43,6 +44,29 @@ type orderIntent struct {
 type fill struct {
 	Trade Trade
 }
+
+type riskReview struct {
+	Approved []orderIntent
+	Events   []Event
+}
+
+type positionSizer interface {
+	Size([]orderIntent, portfolio, map[string]float64, StrategyPlan) []orderIntent
+}
+
+type riskManager interface {
+	Review(time.Time, []orderIntent, portfolio, map[string]float64, StrategyPlan) riskReview
+}
+
+type executionModel interface {
+	Execute(orderIntent, Bar, portfolio, StrategyPlan) (fill, bool, Event, error)
+}
+
+type percentOfEquitySizer struct{}
+
+type limitRiskManager struct{}
+
+type nextOpenExecutionModel struct{}
 
 type portfolio struct {
 	cash      float64
@@ -124,7 +148,7 @@ func (p *portfolio) apply(trade Trade) error {
 	return nil
 }
 
-func sizeOrders(intents []orderIntent, p portfolio, prices map[string]float64, plan StrategyPlan) []orderIntent {
+func (percentOfEquitySizer) Size(intents []orderIntent, p portfolio, prices map[string]float64, plan StrategyPlan) []orderIntent {
 	equity := p.equity(prices)
 	out := make([]orderIntent, 0, len(intents))
 	for _, intent := range intents {
@@ -138,39 +162,55 @@ func sizeOrders(intents []orderIntent, p portfolio, prices map[string]float64, p
 	return out
 }
 
-func reviewOrders(intents []orderIntent, p portfolio, prices map[string]float64, plan StrategyPlan) []orderIntent {
+func (limitRiskManager) Review(currentTime time.Time, intents []orderIntent, p portfolio, prices map[string]float64, plan StrategyPlan) riskReview {
 	equity := p.equity(prices)
-	out := make([]orderIntent, 0, len(intents))
+	out := riskReview{Approved: make([]orderIntent, 0, len(intents))}
 	for _, intent := range intents {
 		if intent.Side == SideSell {
-			out = append(out, intent)
+			out.Approved = append(out.Approved, intent)
 			continue
 		}
 		if plan.Risk.MaxPositions > 0 && !p.hasPosition(intent.Symbol) && p.positionCount() >= plan.Risk.MaxPositions {
+			out.Events = append(out.Events, Event{
+				Time:   currentTime,
+				Layer:  "risk",
+				Type:   "rejected",
+				Symbol: intent.Symbol,
+				Side:   intent.Side,
+				Reason: "max_positions",
+			})
 			continue
 		}
 		if plan.Risk.MaxSymbolWeightPct > 0 && equity > 0 {
 			if intent.Amount/equity*100 > plan.Risk.MaxSymbolWeightPct {
+				out.Events = append(out.Events, Event{
+					Time:   currentTime,
+					Layer:  "risk",
+					Type:   "rejected",
+					Symbol: intent.Symbol,
+					Side:   intent.Side,
+					Reason: "max_symbol_weight_pct",
+				})
 				continue
 			}
 		}
-		out = append(out, intent)
+		out.Approved = append(out.Approved, intent)
 	}
 	return out
 }
 
-func execute(intent orderIntent, bar Bar, p portfolio, plan StrategyPlan) (fill, bool, error) {
+func (nextOpenExecutionModel) Execute(intent orderIntent, bar Bar, p portfolio, plan StrategyPlan) (fill, bool, Event, error) {
 	errb := oops.In("backtest_execution_model").With("symbol", intent.Symbol, "side", intent.Side)
 	price := bar.Open
 	if price <= 0 {
-		return fill{}, false, errb.With("price", price).New("fill price must be positive")
+		return fill{}, false, Event{}, errb.With("price", price).New("fill price must be positive")
 	}
 	slippageBps := plan.Slippage.Value
 	if intent.Side == SideBuy {
 		price *= 1 + slippageBps/10000
 		quantity := math.Floor(intent.Amount / price)
 		if quantity <= 0 {
-			return fill{}, false, nil
+			return fill{}, false, unfilledEvent(bar.Time, intent, "sized_quantity_is_zero"), nil
 		}
 		notional := quantity * price
 		commission := notional * plan.Commission.Value / 10000
@@ -180,7 +220,7 @@ func execute(intent orderIntent, bar Bar, p portfolio, plan StrategyPlan) (fill,
 			commission = notional * plan.Commission.Value / 10000
 		}
 		if quantity <= 0 {
-			return fill{}, false, nil
+			return fill{}, false, unfilledEvent(bar.Time, intent, "insufficient_cash"), nil
 		}
 		return fill{Trade: Trade{
 			Time:        bar.Time,
@@ -192,17 +232,23 @@ func execute(intent orderIntent, bar Bar, p portfolio, plan StrategyPlan) (fill,
 			Commission:  commission,
 			SlippageBps: slippageBps,
 			Reason:      intent.Reason,
-		}}, true, nil
+		}}, true, Event{}, nil
 	}
 
 	position := p.positions[intent.Symbol]
 	if position.Quantity <= 0 {
-		return fill{}, false, nil
+		return fill{}, false, unfilledEvent(bar.Time, intent, "position_not_open"), nil
 	}
 	price *= 1 - slippageBps/10000
 	quantity := position.Quantity
 	notional := quantity * price
 	commission := notional * plan.Commission.Value / 10000
+	costBasis := quantity * position.AvgPrice
+	realizedPnL := notional - commission - costBasis
+	tradeReturn := 0.0
+	if costBasis > 0 {
+		tradeReturn = realizedPnL / costBasis
+	}
 	return fill{Trade: Trade{
 		Time:        bar.Time,
 		Symbol:      intent.Symbol,
@@ -213,6 +259,18 @@ func execute(intent orderIntent, bar Bar, p portfolio, plan StrategyPlan) (fill,
 		Commission:  commission,
 		SlippageBps: slippageBps,
 		Reason:      intent.Reason,
-		RealizedPnL: notional - commission - quantity*position.AvgPrice,
-	}}, true, nil
+		RealizedPnL: realizedPnL,
+		Return:      tradeReturn,
+	}}, true, Event{}, nil
+}
+
+func unfilledEvent(time time.Time, intent orderIntent, reason string) Event {
+	return Event{
+		Time:   time,
+		Layer:  "execution",
+		Type:   "unfilled",
+		Symbol: intent.Symbol,
+		Side:   intent.Side,
+		Reason: reason,
+	}
 }

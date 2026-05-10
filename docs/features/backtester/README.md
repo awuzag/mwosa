@@ -245,7 +245,7 @@ cli/backtest
 
 | 위치 | 맡는 일 | 맡지 않는 일 |
 | --- | --- | --- |
-| `cli/backtest` | `mwosa backtest run <yaml>`, `validate`, output flag | YAML 직접 실행, portfolio 계산 |
+| `cli/backtest` | `mwosa run backtest <yaml>`, `mwosa validate backtest <yaml>`, saved strategy upsert/list/inspect/delete 명령 | YAML 직접 실행, portfolio 계산 |
 | `app/handler/backtest` | CLI request 를 service request 로 변환 | engine loop, storage SQL |
 | `service/backtest` | YAML 로드, schema validation, 데이터 조회, 실행 기록 조립 | indicator 세부 계산, table 렌더링 |
 | `storage/backtest` | saved spec, run, equity curve, trades 저장 | 전략 판단 |

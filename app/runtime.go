@@ -9,11 +9,13 @@ import (
 	"github.com/ev3rlit/mwosa/providers/core/financials"
 	"github.com/ev3rlit/mwosa/providers/core/instrument"
 	"github.com/ev3rlit/mwosa/providers/core/quote"
+	backtestservice "github.com/ev3rlit/mwosa/service/backtest"
 	"github.com/ev3rlit/mwosa/service/daily"
 	financialsservice "github.com/ev3rlit/mwosa/service/financials"
 	providerservice "github.com/ev3rlit/mwosa/service/providers"
 	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
 	"github.com/ev3rlit/mwosa/storage"
+	backteststorage "github.com/ev3rlit/mwosa/storage/backtest"
 	dailybarstorage "github.com/ev3rlit/mwosa/storage/dailybar"
 	migrationstorage "github.com/ev3rlit/mwosa/storage/migration"
 	strategystorage "github.com/ev3rlit/mwosa/storage/strategy"
@@ -37,10 +39,11 @@ type Runtime struct {
 }
 
 type StorageRuntime struct {
-	Database   *storage.Database
-	DailyBars  DailyBarStorage
-	Migrations migrationcore.Store
-	Strategies strategyservice.Repository
+	Database           *storage.Database
+	DailyBars          DailyBarStorage
+	Migrations         migrationcore.Store
+	Strategies         strategyservice.Repository
+	BacktestStrategies backtestservice.StrategyRepository
 }
 
 type DailyBarStorage struct {
@@ -58,6 +61,7 @@ type ProviderRuntime struct {
 }
 
 type ServiceRuntime struct {
+	Backtest   backtestservice.Service
 	Daily      DailyServices
 	Financials financialsservice.Service
 	Providers  providerservice.Service
@@ -65,6 +69,7 @@ type ServiceRuntime struct {
 }
 
 type Handlers struct {
+	Backtest   handler.Backtest
 	Daily      handler.Daily
 	Financials handler.Financials
 	Migration  handler.Migration
@@ -91,6 +96,10 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	strategyRepository, err := strategystorage.NewRepository(database)
 	if err != nil {
 		return nil, errb.Wrapf(err, "create strategy repository")
+	}
+	backtestStrategyRepository, err := backteststorage.NewRepository(database)
+	if err != nil {
+		return nil, errb.Wrapf(err, "create backtest strategy repository")
 	}
 	migrationStore, err := migrationstorage.NewRepository(database)
 	if err != nil {
@@ -181,6 +190,14 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 			database.Close(),
 		)
 	}
+	backtestService, err := backtestservice.NewServiceWithRepository(reader, backtestStrategyRepository)
+	if err != nil {
+		return nil, oops.Join(
+			errb.Wrapf(err, "create backtest service"),
+			database.Close(),
+		)
+	}
+	backtestHandler := handler.NewBacktest(backtestService)
 	dailyHandler := handler.NewDaily(dailyReader, dailyCollector)
 	financialsHandler := handler.NewFinancials(financialsService)
 	strategyHandler := handler.NewStrategy(strategyService)
@@ -193,11 +210,13 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 				Reader: reader,
 				Writer: writer,
 			},
-			Migrations: migrationStore,
-			Strategies: strategyRepository,
+			Migrations:         migrationStore,
+			Strategies:         strategyRepository,
+			BacktestStrategies: backtestStrategyRepository,
 		},
 		Providers: providerRuntime,
 		Services: ServiceRuntime{
+			Backtest: backtestService,
 			Daily: DailyServices{
 				Reader:    dailyReader,
 				Collector: dailyCollector,
@@ -207,6 +226,7 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 			Strategy:   strategyService,
 		},
 		Handlers: Handlers{
+			Backtest:   backtestHandler,
 			Daily:      dailyHandler,
 			Financials: financialsHandler,
 			Migration:  migrationHandler,

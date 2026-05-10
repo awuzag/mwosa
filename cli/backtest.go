@@ -1,0 +1,171 @@
+package cli
+
+import (
+	"github.com/ev3rlit/mwosa/app/handler"
+	"github.com/samber/oops"
+	"github.com/spf13/cobra"
+)
+
+func registerBacktestCommands(roots commandRoots, opts *Options) {
+	roots.List.AddCommand(newListBacktestCommand(opts))
+	roots.Inspect.AddCommand(newInspectBacktestCommand(opts))
+	roots.Update.AddCommand(newUpdateBacktestCommand(opts))
+	roots.Delete.AddCommand(newDeleteBacktestCommand(opts))
+	roots.Validate.AddCommand(newValidateBacktestCommand(opts))
+	roots.Run.AddCommand(newRunBacktestCommand(opts))
+}
+
+func newListBacktestCommand(opts *Options) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "backtest",
+		Short: "List backtest resources",
+	}
+	cmd.AddCommand(newListBacktestStrategiesCommand(opts))
+	return cmd
+}
+
+func newListBacktestStrategiesCommand(opts *Options) *cobra.Command {
+	return &cobra.Command{
+		Use:   "strategies",
+		Short: "List saved backtest strategies",
+		Args:  cobra.NoArgs,
+		RunE: runResult(opts, func(cmd *cobra.Command, _ []string) (result any, err error) {
+			runtime, err := newAppRuntime(opts, false)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Backtest.ListStrategies(cmd.Context(), handler.ListBacktestStrategiesRequest{})
+		}),
+	}
+}
+
+func newInspectBacktestCommand(opts *Options) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "backtest",
+		Short: "Inspect backtest resources",
+	}
+	cmd.AddCommand(newInspectBacktestStrategyCommand(opts))
+	return cmd
+}
+
+func newInspectBacktestStrategyCommand(opts *Options) *cobra.Command {
+	return &cobra.Command{
+		Use:   "strategy <name>",
+		Short: "Inspect a saved backtest strategy",
+		Args:  cobra.ExactArgs(1),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			runtime, err := newAppRuntime(opts, false)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Backtest.InspectStrategy(cmd.Context(), handler.InspectBacktestStrategyRequest{Name: args[0]})
+		}),
+	}
+}
+
+func newUpdateBacktestCommand(opts *Options) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "backtest",
+		Short: "Update backtest resources",
+	}
+	cmd.AddCommand(newUpdateBacktestStrategyCommand(opts))
+	return cmd
+}
+
+func newUpdateBacktestStrategyCommand(opts *Options) *cobra.Command {
+	var yamlFile string
+	cmd := &cobra.Command{
+		Use:   "strategy <name>",
+		Short: "Create or update a saved backtest strategy from YAML",
+		Args:  cobra.ExactArgs(1),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			if yamlFile == "" {
+				return nil, oops.In("cli_backtest").New("--yaml-file is required")
+			}
+			runtime, err := newAppRuntime(opts, false)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Backtest.UpdateStrategy(cmd.Context(), handler.UpdateBacktestStrategyRequest{
+				Name:     args[0],
+				YAMLPath: yamlFile,
+			})
+		}),
+	}
+	cmd.Flags().StringVar(&yamlFile, "yaml-file", "", "YAML file containing a Strategy document")
+	return cmd
+}
+
+func newDeleteBacktestCommand(opts *Options) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "backtest",
+		Short: "Delete backtest resources",
+	}
+	cmd.AddCommand(newDeleteBacktestStrategyCommand(opts))
+	return cmd
+}
+
+func newDeleteBacktestStrategyCommand(opts *Options) *cobra.Command {
+	return &cobra.Command{
+		Use:   "strategy <name>",
+		Short: "Soft delete a saved backtest strategy",
+		Args:  cobra.ExactArgs(1),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			runtime, err := newAppRuntime(opts, false)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Backtest.DeleteStrategy(cmd.Context(), handler.DeleteBacktestStrategyRequest{Name: args[0]})
+		}),
+	}
+}
+
+func newValidateBacktestCommand(opts *Options) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "backtest <yaml>",
+		Short: "Validate a YAML backtest strategy and run spec",
+		Args:  cobra.ExactArgs(1),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			runtime, err := newAppRuntime(opts, false)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Backtest.Validate(cmd.Context(), handler.ValidateBacktestRequest{Path: args[0]})
+		}),
+	}
+	mustMarkBacktestYAML(cmd)
+	return cmd
+}
+
+func newRunBacktestCommand(opts *Options) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "backtest <yaml>",
+		Short: "Run a YAML backtest against stored canonical daily bars",
+		Args:  cobra.ExactArgs(1),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			runtime, err := newAppRuntime(opts, false)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Backtest.Run(cmd.Context(), handler.RunBacktestRequest{Path: args[0]})
+		}),
+	}
+	mustMarkBacktestYAML(cmd)
+	return cmd
+}
+
+func mustMarkBacktestYAML(cmd *cobra.Command) {
+	cmd.ValidArgsFunction = cobra.FixedCompletions([]string{"yaml", "yml"}, cobra.ShellCompDirectiveFilterFileExt)
+}

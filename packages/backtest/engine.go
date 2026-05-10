@@ -23,17 +23,51 @@ func NewEngine(feed Feed) (Engine, error) {
 }
 
 type Result struct {
-	RunName       string        `json:"run_name"`
-	StrategyName  string        `json:"strategy_name"`
-	InitialCash   float64       `json:"initial_cash"`
-	FinalEquity   float64       `json:"final_equity"`
-	TotalReturn   float64       `json:"total_return"`
-	MaxDrawdown   float64       `json:"max_drawdown"`
-	TradeCount    int           `json:"trade_count"`
-	Trades        []Trade       `json:"trades"`
-	EquityCurve   []EquityPoint `json:"equity_curve"`
-	UnfilledCount int           `json:"unfilled_count,omitempty"`
-	ResultHash    string        `json:"result_hash"`
+	RunName         string              `json:"run_name"`
+	StrategyName    string              `json:"strategy_name"`
+	Symbols         []string            `json:"symbols"`
+	Period          Period              `json:"period"`
+	Market          string              `json:"market"`
+	SecurityType    string              `json:"security_type"`
+	Timeframe       string              `json:"timeframe"`
+	Currency        string              `json:"currency"`
+	Execution       ExecutionAssumption `json:"execution"`
+	InitialCash     float64             `json:"initial_cash"`
+	FinalEquity     float64             `json:"final_equity"`
+	TotalReturn     float64             `json:"total_return"`
+	MaxDrawdown     float64             `json:"max_drawdown"`
+	TradeCount      int                 `json:"trade_count"`
+	WinRate         float64             `json:"win_rate"`
+	AverageTradeRet float64             `json:"average_trade_return"`
+	RealizedPnL     float64             `json:"realized_pnl"`
+	Metrics         Metrics             `json:"metrics"`
+	Trades          []Trade             `json:"trades"`
+	EquityCurve     []EquityPoint       `json:"equity_curve"`
+	RiskEvents      []Event             `json:"risk_events,omitempty"`
+	ExecutionEvents []Event             `json:"execution_events,omitempty"`
+	UnfilledCount   int                 `json:"unfilled_count,omitempty"`
+	ResultHash      string              `json:"result_hash"`
+}
+
+type Period struct {
+	From time.Time `json:"from"`
+	To   time.Time `json:"to"`
+}
+
+type ExecutionAssumption struct {
+	Fill       string   `json:"fill"`
+	Commission CostSpec `json:"commission,omitempty"`
+	Slippage   CostSpec `json:"slippage,omitempty"`
+}
+
+type Metrics struct {
+	TotalReturn        float64 `json:"total_return"`
+	MaxDrawdown        float64 `json:"max_drawdown"`
+	TradeCount         int     `json:"trade_count"`
+	WinRate            float64 `json:"win_rate"`
+	AverageTradeReturn float64 `json:"average_trade_return"`
+	RealizedPnL        float64 `json:"realized_pnl"`
+	UnfilledCount      int     `json:"unfilled_count"`
 }
 
 type EquityPoint struct {
@@ -41,6 +75,15 @@ type EquityPoint struct {
 	Cash           float64   `json:"cash"`
 	PositionsValue float64   `json:"positions_value"`
 	Equity         float64   `json:"equity"`
+}
+
+type Event struct {
+	Time   time.Time `json:"time,omitempty"`
+	Layer  string    `json:"layer"`
+	Type   string    `json:"type"`
+	Symbol string    `json:"symbol,omitempty"`
+	Side   Side      `json:"side,omitempty"`
+	Reason string    `json:"reason"`
 }
 
 func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
@@ -63,7 +106,11 @@ func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 	portfolio := newPortfolio(plan.InitialCash)
 	pending := make([]orderIntent, 0)
 	curve := make([]EquityPoint, 0, len(times))
-	unfilledCount := 0
+	riskEvents := make([]Event, 0)
+	executionEvents := make([]Event, 0)
+	sizer := percentOfEquitySizer{}
+	risk := limitRiskManager{}
+	execution := nextOpenExecutionModel{}
 
 	for _, currentTime := range times {
 		if err := ctx.Err(); err != nil {
@@ -77,15 +124,22 @@ func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 		for _, intent := range pending {
 			bar, ok := currentBars[intent.Symbol]
 			if !ok {
-				unfilledCount++
+				executionEvents = append(executionEvents, Event{
+					Time:   currentTime,
+					Layer:  "execution",
+					Type:   "unfilled",
+					Symbol: intent.Symbol,
+					Side:   intent.Side,
+					Reason: "no_bar_for_next_open",
+				})
 				continue
 			}
-			fill, ok, err := execute(intent, bar, portfolio, plan)
+			fill, ok, event, err := execution.Execute(intent, bar, portfolio, plan)
 			if err != nil {
 				return Result{}, errb.Wrap(err)
 			}
 			if !ok {
-				unfilledCount++
+				executionEvents = append(executionEvents, event)
 				continue
 			}
 			if err := portfolio.apply(fill.Trade); err != nil {
@@ -99,9 +153,10 @@ func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 		if err != nil {
 			return Result{}, errb.Wrap(err)
 		}
-		nextIntents = sizeOrders(nextIntents, portfolio, closePrices, plan)
-		nextIntents = reviewOrders(nextIntents, portfolio, closePrices, plan)
-		pending = append(pending, nextIntents...)
+		sizedIntents := sizer.Size(nextIntents, portfolio, closePrices, plan)
+		review := risk.Review(currentTime, sizedIntents, portfolio, closePrices, plan)
+		riskEvents = append(riskEvents, review.Events...)
+		pending = append(pending, review.Approved...)
 
 		positionsValue := portfolio.positionsValue(closePrices)
 		curve = append(curve, EquityPoint{
@@ -112,19 +167,55 @@ func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 		})
 	}
 
+	for _, intent := range pending {
+		executionEvents = append(executionEvents, Event{
+			Layer:  "execution",
+			Type:   "unfilled",
+			Symbol: intent.Symbol,
+			Side:   intent.Side,
+			Reason: "no_next_bar_for_pending_order",
+		})
+	}
+
 	result := Result{
-		RunName:       plan.RunName,
-		StrategyName:  plan.StrategyName,
-		InitialCash:   plan.InitialCash,
-		TradeCount:    len(portfolio.trades),
-		Trades:        append([]Trade(nil), portfolio.trades...),
-		EquityCurve:   curve,
-		UnfilledCount: unfilledCount + len(pending),
+		RunName:      plan.RunName,
+		StrategyName: plan.StrategyName,
+		Symbols:      append([]string(nil), plan.Symbols...),
+		Period: Period{
+			From: plan.From,
+			To:   plan.To,
+		},
+		Market:       plan.Market,
+		SecurityType: plan.SecurityType,
+		Timeframe:    plan.Timeframe,
+		Currency:     plan.Currency,
+		Execution: ExecutionAssumption{
+			Fill:       plan.Fill,
+			Commission: plan.Commission,
+			Slippage:   plan.Slippage,
+		},
+		InitialCash:     plan.InitialCash,
+		TradeCount:      len(portfolio.trades),
+		Trades:          append([]Trade(nil), portfolio.trades...),
+		EquityCurve:     curve,
+		RiskEvents:      riskEvents,
+		ExecutionEvents: executionEvents,
+		UnfilledCount:   len(executionEvents),
 	}
 	if len(curve) > 0 {
 		result.FinalEquity = curve[len(curve)-1].Equity
 		result.TotalReturn = result.FinalEquity/plan.InitialCash - 1
 		result.MaxDrawdown = maxDrawdown(curve)
+	}
+	result.RealizedPnL, result.WinRate, result.AverageTradeRet = tradeStats(result.Trades)
+	result.Metrics = Metrics{
+		TotalReturn:        result.TotalReturn,
+		MaxDrawdown:        result.MaxDrawdown,
+		TradeCount:         result.TradeCount,
+		WinRate:            result.WinRate,
+		AverageTradeReturn: result.AverageTradeRet,
+		RealizedPnL:        result.RealizedPnL,
+		UnfilledCount:      result.UnfilledCount,
 	}
 	result.ResultHash = resultHash(result)
 	return result, nil
@@ -255,6 +346,27 @@ func maxDrawdown(curve []EquityPoint) float64 {
 		}
 	}
 	return maxDD
+}
+
+func tradeStats(trades []Trade) (realizedPnL float64, winRate float64, averageReturn float64) {
+	closed := 0
+	winners := 0
+	var returns float64
+	for _, trade := range trades {
+		if trade.Side != SideSell {
+			continue
+		}
+		closed++
+		realizedPnL += trade.RealizedPnL
+		returns += trade.Return
+		if trade.RealizedPnL > 0 {
+			winners++
+		}
+	}
+	if closed == 0 {
+		return realizedPnL, 0, 0
+	}
+	return realizedPnL, float64(winners) / float64(closed), returns / float64(closed)
 }
 
 func resultHash(result Result) string {

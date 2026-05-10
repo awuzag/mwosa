@@ -10,6 +10,7 @@ type commandRoots struct {
 	Delete   *cobra.Command
 	Screen   *cobra.Command
 	History  *cobra.Command
+	Run      *cobra.Command
 	Migrate  *cobra.Command
 	Get      *cobra.Command
 	Ensure   *cobra.Command
@@ -70,6 +71,13 @@ func newHistoryCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "history",
 		Short: "List mwosa execution history",
+	}
+}
+
+func newRunCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "run",
+		Short: "Run mwosa workflows",
 	}
 }
 
