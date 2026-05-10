@@ -11,7 +11,7 @@ KRX OPEN API 상세 페이지는 서비스마다 `BO_ID` 를 가진다. `API 이
 
 - provider id 는 `krx` 로 둔다.
 - 서비스 승인 단위는 `api_id` 또는 `BO_ID` 로 별도 추적한다.
-- role registration 은 승인된 서비스만 등록한다.
+- role registration 과 raw 호출은 승인/활성화된 서비스만 허용한다.
 - 승인되지 않은 서비스 호출은 조용히 빈 결과로 만들지 말고 `unsupported` 또는
   `not configured` 계열 error 로 드러낸다.
 
@@ -60,10 +60,11 @@ KRX 화면의 `path` 는 client package 안에서 1차 group 으로 쓰기 좋�
 - 같은 symbol/date 데이터가 여러 provider 에서 들어오면 storage upsert 정책과
   provider priority 를 별도로 결정한다.
 
-## v1 범위 제안
+## 구현된 v1 범위
 
-처음부터 31개 서비스를 모두 구현하지 않는다. 현재 `mwosa` 의 국내 리서치 목적에는
-ETP 일별매매정보와 주식 일별매매정보가 가장 직접적이다.
+client module 은 31개 서비스를 모두 typed client 로 구현했다. provider adapter 는
+현재 `mwosa` 의 국내 리서치 목적에 직접 맞는 ETP 일별매매정보와 주식 일별매매정보,
+주식 종목기본정보를 canonical role 로 연결한다.
 
 v1 후보:
 
@@ -72,12 +73,12 @@ v1 후보:
 - `stockInstrument`: `stk_isu_base_info`, `ksq_isu_base_info`,
   `knx_isu_base_info`
 
-deferred 후보:
+raw snapshot 후보:
 
-- 채권, 파생상품, 일반상품은 canonical schema 와 security type 모델이 정리된 뒤
-  붙인다.
-- ESG 서비스는 가격 데이터보다 reference 성격이 강하므로 별도 schema 검토 후
-  붙인다.
+- 지수, 채권, 파생상품, 일반상품, ESG 서비스는 `mwosa get krx <api-id>` 로
+  조회하고 `mwosa sync krx <api-id>` 로 `provider_raw_snapshots` table 에 저장한다.
+- 이 데이터는 canonical schema 와 security type 모델이 정리된 뒤 별도 role/storage 로
+  승격한다.
 
 ## client module 후보
 
@@ -85,8 +86,9 @@ deferred 후보:
 편이 좋다.
 
 ```text
-clients/krx-openapi
+clients/krx
 providers/krx
+storage/providerraw
 ```
 
 client module 이 소유할 것:

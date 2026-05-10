@@ -177,6 +177,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	registerStrategyCommands(roots, &opts)
 	registerProviderCommands(roots, &opts)
 	registerMigrationCommands(roots, &opts)
+	registerKRXCommands(roots, &opts)
 
 	cmd.AddCommand(newCompletionCommand())
 	cmd.AddCommand(newVersionCommand(build))

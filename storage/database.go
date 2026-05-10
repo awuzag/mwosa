@@ -117,6 +117,7 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 		{name: "strategy_versions", model: (*StrategyVersionRow)(nil)},
 		{name: "screen_runs", model: (*ScreenRunRow)(nil)},
 		{name: "screen_run_items", model: (*ScreenRunItemRow)(nil)},
+		{name: "provider_raw_snapshots", model: (*ProviderRawSnapshotRow)(nil)},
 	}
 	for _, table := range tables {
 		if _, err := db.NewCreateTable().
@@ -229,6 +230,17 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 			name:    "idx_screen_run_items_symbol",
 			model:   (*ScreenRunItemRow)(nil),
 			columns: []string{"symbol"},
+		},
+		{
+			name:    "provider_raw_snapshots_natural_key",
+			model:   (*ProviderRawSnapshotRow)(nil),
+			columns: []string{"provider", "provider_group", "operation", "base_date"},
+			unique:  true,
+		},
+		{
+			name:    "idx_provider_raw_snapshots_operation_date",
+			model:   (*ProviderRawSnapshotRow)(nil),
+			columns: []string{"provider", "operation", "base_date"},
 		},
 	}
 	for _, index := range indexes {

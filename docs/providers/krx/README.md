@@ -2,14 +2,16 @@
 
 ## 개요
 
-`krx` provider 는 KRX Data Marketplace OPEN API 를 `mwosa` 에 연결하기 위한
-planned provider 다. KRX OPEN API 는 하나의 통합 API 보다는 서비스별 API 로
+`krx` provider 는 KRX Data Marketplace OPEN API 를 `mwosa` 에 연결하는
+provider 다. KRX OPEN API 는 하나의 통합 API 보다는 서비스별 API 로
 나뉘며, 상세 페이지의 `API 이용신청` 도 각 서비스의 `BO_ID` 를 기준으로
 진행된다.
 
 이 문서는 2026-05-10 기준 KRX OPEN API 서비스 목록과 각 서비스 상세 페이지를
-확인해 만든 개발 전 조사 문서다. 실제 client 구현 전에는 필요한 서비스별로
-이용신청 상태와 개발 명세서 다운로드 파일을 다시 확인해야 한다.
+확인해 만든 조사 문서에서 출발했다. 현재 `clients/krx` 독립 Go module 은 31개
+API typed client 를 제공하고, `providers/krx` adapter 는 그중 canonical 로 자연스럽게
+흡수 가능한 일부 API 를 `daily_bar` / `instrument` role 로 연결한다. 나머지 API 는
+provider-native raw snapshot 으로 조회하고 저장할 수 있다.
 
 ## 문서
 
@@ -17,6 +19,8 @@ planned provider 다. KRX OPEN API 는 하나의 통합 API 보다는 서비스�
   `BO_ID`, 상세 페이지 링크
 - [implementation-notes.md](implementation-notes.md): `mwosa` provider/client
   설계에 반영할 인증, 신청 단위, capability 매핑 메모
+- [../../../clients/krx/README.md](../../../clients/krx/README.md):
+  KRX OPEN API 31개 typed client module
 - [../../../clients/krx/scripts/apply-all-services.browser.js](../../../clients/krx/scripts/apply-all-services.browser.js):
   KRX OPEN API 전체 31개 서비스를 12개월로 일괄 신청하는 브라우저 콘솔용 스크립트
 
@@ -41,28 +45,44 @@ KRX OPEN API 서비스 목록에서 확인한 서비스는 총 31개다.
 | 일반상품 | 3 | `gen` | 석유, 금, 배출권 시장 매매정보 |
 | ESG | 3 | `esg` | ESG 증권상품, 사회책임투자채권, ESG 지수 정보 |
 
-## 초기 구현 후보
+## 구현 상태
 
 `mwosa` 의 현재 방향이 국내 주식/ETF 리서치와 로컬 일별 데이터 저장에 있으므로
-초기 `krx` provider 는 아래 순서로 좁게 시작하는 편이 좋다.
+canonical 저장은 주식/ETP 일별매매정보와 주식 종목기본정보부터 연결한다.
 
-| 우선순위 | 서비스 | `api_id` | capability |
-| ---: | --- | --- | --- |
-| 1 | ETF 일별매매정보 | `etf_bydd_trd` | `daily_bar`, `instrument` |
-| 1 | ETN 일별매매정보 | `etn_bydd_trd` | `daily_bar`, `instrument` |
-| 1 | ELW 일별매매정보 | `elw_bydd_trd` | `daily_bar`, `instrument` |
-| 2 | 유가증권 일별매매정보 | `stk_bydd_trd` | `daily_bar`, `instrument` |
-| 2 | 코스닥 일별매매정보 | `ksq_bydd_trd` | `daily_bar`, `instrument` |
-| 2 | 코넥스 일별매매정보 | `knx_bydd_trd` | `daily_bar`, `instrument` |
-| 3 | 유가증권/코스닥/코넥스 종목기본정보 | `*_isu_base_info` | `instrument` |
-| 4 | KRX/KOSPI/KOSDAQ 시리즈 일별시세정보 | `*_dd_trd` | `index`, `daily_bar` |
+| 상태 | API |
+| --- | --- |
+| `daily_bar` + `instrument` | `etf_bydd_trd`, `etn_bydd_trd`, `elw_bydd_trd` |
+| `daily_bar` | `stk_bydd_trd`, `ksq_bydd_trd`, `knx_bydd_trd` |
+| `instrument` | `stk_isu_base_info`, `ksq_isu_base_info`, `knx_isu_base_info` |
+| `raw snapshot` | 위 9개를 포함한 전체 31개 API |
+
+`raw snapshot` 은 `provider_raw_snapshots` table 에 provider, group, `api_id`,
+base date, row count, canonical support label, provider-native JSON payload 를 저장한다.
+지수, 채권, 파생상품, 일반상품, ESG 처럼 아직 canonical schema 가 분리되지 않은
+데이터는 이 경로로 보관한다.
+
+## CLI
+
+```bash
+mwosa list krx-apis -o json
+mwosa get krx etf_bydd_trd --as-of 20240415 -o json
+mwosa sync krx krx_dd_trd --as-of 20240415 -o json
+
+mwosa sync daily --provider krx --security-type etf --as-of 20240415 -o json
+mwosa backfill daily --provider krx --security-type stock --from 20240415 --to 20240416 -o json
+mwosa list instruments 삼성전자 --provider krx --security-type stock -o json
+```
+
+`get krx` 는 provider-native 응답을 stdout 으로 출력한다. `sync krx` 는 같은 응답을
+provider-native snapshot table 에 저장하고 저장 결과만 stdout 으로 출력한다.
 
 ## 신청 단위 메모
 
 상세 페이지에는 각 서비스별 `BO_ID` 와 `API 이용신청` 버튼이 존재한다. 따라서
 `krx` provider 설정은 provider 전체 키 하나만으로 모든 operation 을 등록했다고
-가정하면 안 된다. 실제 구현에서는 서비스별 승인 상태를 반영해 등록 가능한 role
-만 활성화해야 한다.
+가정하면 안 된다. 현재 설정은 서비스별 `enabled` 값을 두며, 비활성화된 API 를
+호출하면 빈 성공 대신 unsupported error 를 반환한다.
 
 ```json
 {
