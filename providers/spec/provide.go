@@ -11,9 +11,10 @@ import (
 )
 
 type DailyBarRoleBuilder struct {
-	profile   DailyBarBuilder
-	fetch     dailybar.FetchFunc
-	pageFetch dailybar.PageFetchFunc
+	profile    DailyBarBuilder
+	fetch      dailybar.FetchFunc
+	pageFetch  dailybar.PageFetchFunc
+	batchFetch dailybar.BatchFetchFunc
 }
 
 func DailyBarFetcher(fetch dailybar.FetchFunc) DailyBarRoleBuilder {
@@ -99,13 +100,21 @@ func (b DailyBarRoleBuilder) PageFetch(pageFetch dailybar.PageFetchFunc) DailyBa
 	return b
 }
 
-func (b DailyBarRoleBuilder) Build() (dailybar.Fetch, error) {
+func (b DailyBarRoleBuilder) BatchFetch(batchFetch dailybar.BatchFetchFunc) DailyBarRoleBuilder {
+	b.batchFetch = batchFetch
+	return b
+}
+
+func (b DailyBarRoleBuilder) Build() (dailybar.Fetcher, error) {
 	if b.fetch == nil {
-		return dailybar.Fetch{}, oops.In("provider_spec").With("role", provider.RoleDailyBar).New("daily-bar provider spec requires fetch callable")
+		return nil, oops.In("provider_spec").With("role", provider.RoleDailyBar).New("daily-bar provider spec requires fetch callable")
 	}
 	profile, err := b.profile.Build()
 	if err != nil {
-		return dailybar.Fetch{}, err
+		return nil, err
+	}
+	if b.batchFetch != nil {
+		return dailybar.NewBatchFetch(profile, b.fetch, b.batchFetch), nil
 	}
 	if b.pageFetch != nil {
 		return dailybar.NewPagedFetch(profile, b.fetch, b.pageFetch), nil
@@ -113,7 +122,7 @@ func (b DailyBarRoleBuilder) Build() (dailybar.Fetch, error) {
 	return dailybar.NewFetch(profile, b.fetch), nil
 }
 
-func (b DailyBarRoleBuilder) MustBuild() dailybar.Fetch {
+func (b DailyBarRoleBuilder) MustBuild() dailybar.Fetcher {
 	role, err := b.Build()
 	if err != nil {
 		panic(err)

@@ -248,19 +248,23 @@ func (s Service) collectRange(ctx context.Context, req Request, from time.Time, 
 	}
 
 	startedAt := time.Now()
-	fetcher, err := s.router.RouteDailyBars(ctx, dailybar.RouteInput{
-		ProviderID:     req.ProviderID,
-		PreferProvider: req.PreferProvider,
-		Market:         market,
-		SecurityType:   req.SecurityType,
-		Symbol:         req.Symbol,
-	})
+	fetcher, err := s.routeFetcher(ctx, req, market)
 	if err != nil {
 		return CollectResult{}, errb.With("provider", req.ProviderID, "prefer_provider", req.PreferProvider, "symbol", req.Symbol).Wrapf(err, "route daily bars")
 	}
+
+	if batchFetcher, ok := fetcher.(dailybar.BatchFetcher); ok {
+		result, err := s.fetchBatchRange(ctx, req, batchFetcher, fromText, toText)
+		if err != nil {
+			return CollectResult{}, errb.With("provider", req.ProviderID).Wrapf(err, "fetch daily bars batch")
+		}
+		progressBackfill(req.Progress, 1, 1, len(result.bars), len(result.bars), startedAt)
+		return s.storeCollection(ctx, result)
+	}
+
 	pageFetcher, ok := fetcher.(dailybar.PageFetcher)
 	if !ok {
-		return CollectResult{}, errb.With("provider", req.ProviderID, "prefer_provider", req.PreferProvider, "symbol", req.Symbol).New("routed dailybar fetcher does not support page fetch")
+		return CollectResult{}, errb.With("provider", req.ProviderID, "prefer_provider", req.PreferProvider, "symbol", req.Symbol).New("routed dailybar fetcher supports neither batch nor page fetch")
 	}
 
 	first, err := pageFetcher.FetchDailyBarsPage(ctx, dailybar.PageFetchInput{
@@ -390,15 +394,12 @@ func (s Service) fetchRange(ctx context.Context, req Request, from time.Time, to
 		return CollectResult{}, errb.New("daily collection requires --security-type")
 	}
 
-	fetcher, err := s.router.RouteDailyBars(ctx, dailybar.RouteInput{
-		ProviderID:     req.ProviderID,
-		PreferProvider: req.PreferProvider,
-		Market:         market,
-		SecurityType:   req.SecurityType,
-		Symbol:         req.Symbol,
-	})
+	fetcher, err := s.routeFetcher(ctx, req, market)
 	if err != nil {
 		return CollectResult{}, errb.With("provider", req.ProviderID, "prefer_provider", req.PreferProvider, "symbol", req.Symbol).Wrapf(err, "route daily bars")
+	}
+	if batchFetcher, ok := fetcher.(dailybar.BatchFetcher); ok {
+		return s.fetchBatchRange(ctx, req, batchFetcher, fromText, toText)
 	}
 
 	result, err := fetcher.FetchDailyBars(ctx, dailybar.FetchInput{
@@ -415,6 +416,38 @@ func (s Service) fetchRange(ctx context.Context, req Request, from time.Time, to
 
 	return CollectResult{
 		Market:       market,
+		SecurityType: req.SecurityType,
+		ProviderID:   result.Provider.ID,
+		Group:        result.Group,
+		Dates:        collectDatesFromBars(result.Bars),
+		BarsFetched:  len(result.Bars),
+		bars:         result.Bars,
+	}, nil
+}
+
+func (s Service) routeFetcher(ctx context.Context, req Request, market provider.Market) (dailybar.Fetcher, error) {
+	return s.router.RouteDailyBars(ctx, dailybar.RouteInput{
+		ProviderID:     req.ProviderID,
+		PreferProvider: req.PreferProvider,
+		Market:         market,
+		SecurityType:   req.SecurityType,
+		Symbol:         req.Symbol,
+	})
+}
+
+func (s Service) fetchBatchRange(ctx context.Context, req Request, fetcher dailybar.BatchFetcher, fromText string, toText string) (CollectResult, error) {
+	result, err := fetcher.FetchDailyBatch(ctx, dailybar.BatchFetchInput{
+		Market:       withDefaultMarket(req.Market),
+		SecurityType: req.SecurityType,
+		Symbol:       req.Symbol,
+		From:         fromText,
+		To:           toText,
+	})
+	if err != nil {
+		return CollectResult{}, err
+	}
+	return CollectResult{
+		Market:       withDefaultMarket(req.Market),
 		SecurityType: req.SecurityType,
 		ProviderID:   result.Provider.ID,
 		Group:        result.Group,

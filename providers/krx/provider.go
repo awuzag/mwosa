@@ -14,8 +14,6 @@ import (
 	"github.com/samber/oops"
 )
 
-const defaultPageSize = 1000
-
 type Config struct {
 	AuthKey       string
 	BaseURL       string
@@ -98,8 +96,8 @@ func NewWithClient(client client, enabledAPIs map[provider.OperationID]bool, now
 		}
 	}
 	p.groups = []provider.GroupRoleProvider{
-		newETPDailyTradeGroup(p.fetchDailyBars, p.fetchDailyBarsPage, p.searchInstruments),
-		newStockDailyTradeGroup(p.fetchDailyBars, p.fetchDailyBarsPage),
+		newETPDailyTradeGroup(p.fetchDailyBars, p.fetchDailyBatch, p.searchInstruments),
+		newStockDailyTradeGroup(p.fetchDailyBars, p.fetchDailyBatch),
 		newStockInstrumentGroup(p.searchInstruments),
 	}
 	return p
@@ -124,8 +122,8 @@ func (p *Provider) FetchDailyBars(ctx context.Context, input dailybar.FetchInput
 	return p.fetchDailyBars(ctx, input)
 }
 
-func (p *Provider) FetchDailyBarsPage(ctx context.Context, input dailybar.PageFetchInput) (dailybar.PageFetchResult, error) {
-	return p.fetchDailyBarsPage(ctx, input)
+func (p *Provider) FetchDailyBatch(ctx context.Context, input dailybar.BatchFetchInput) (dailybar.BatchFetchResult, error) {
+	return p.fetchDailyBatch(ctx, input)
 }
 
 func (p *Provider) SearchInstruments(ctx context.Context, input instrument.SearchInput) (instrument.SearchResult, error) {
@@ -157,40 +155,7 @@ func (p *Provider) requireAPI(operation provider.OperationID, role provider.Role
 }
 
 func (p *Provider) fetchDailyBars(ctx context.Context, input dailybar.FetchInput) (dailybar.FetchResult, error) {
-	market := withDefaultMarket(input.Market)
-	errb := oops.In("krx_adapter").With("role", provider.RoleDailyBar, "market", market, "security_type", input.SecurityType, "symbol", input.Symbol, "from", input.From, "to", input.To)
-	if err := validateMarket(provider.RoleDailyBar, market, input.SecurityType, input.Symbol); err != nil {
-		return dailybar.FetchResult{}, errb.Wrap(err)
-	}
-	if p.client == nil {
-		return dailybar.FetchResult{}, errb.New("krx provider client is nil")
-	}
-	from, to, err := resolveInputRange(input.From, input.To)
-	if err != nil {
-		return dailybar.FetchResult{}, errb.Wrap(err)
-	}
-	records, group, err := p.fetchDailyRecords(ctx, input.SecurityType, input.Symbol, from, to)
-	if err != nil {
-		return dailybar.FetchResult{}, errb.Wrap(err)
-	}
-	return dailybar.FetchResult{
-		Bars:       records,
-		Provider:   p.Identity,
-		Group:      group,
-		TotalCount: len(records),
-	}, nil
-}
-
-func (p *Provider) fetchDailyBarsPage(ctx context.Context, input dailybar.PageFetchInput) (dailybar.PageFetchResult, error) {
-	pageSize := input.PageSize
-	if pageSize <= 0 {
-		pageSize = defaultPageSize
-	}
-	pageNo := input.PageNo
-	if pageNo <= 0 {
-		pageNo = 1
-	}
-	result, err := p.fetchDailyBars(ctx, dailybar.FetchInput{
+	result, err := p.fetchDailyBatch(ctx, dailybar.BatchFetchInput{
 		Market:       input.Market,
 		SecurityType: input.SecurityType,
 		Symbol:       input.Symbol,
@@ -198,29 +163,39 @@ func (p *Provider) fetchDailyBarsPage(ctx context.Context, input dailybar.PageFe
 		To:           input.To,
 	})
 	if err != nil {
-		return dailybar.PageFetchResult{}, err
+		return dailybar.FetchResult{}, err
 	}
-	start := (pageNo - 1) * pageSize
-	if start >= len(result.Bars) {
-		return dailybar.PageFetchResult{
-			Provider:   p.Identity,
-			Group:      result.Group,
-			PageNo:     pageNo,
-			PageSize:   pageSize,
-			TotalCount: len(result.Bars),
-		}, nil
-	}
-	end := start + pageSize
-	if end > len(result.Bars) {
-		end = len(result.Bars)
-	}
-	return dailybar.PageFetchResult{
-		Bars:       result.Bars[start:end],
-		Provider:   p.Identity,
+	return dailybar.FetchResult{
+		Bars:       result.Bars,
+		Provider:   result.Provider,
 		Group:      result.Group,
-		PageNo:     pageNo,
-		PageSize:   pageSize,
-		TotalCount: len(result.Bars),
+		Operation:  result.Operation,
+		TotalCount: result.TotalCount,
+	}, nil
+}
+
+func (p *Provider) fetchDailyBatch(ctx context.Context, input dailybar.BatchFetchInput) (dailybar.BatchFetchResult, error) {
+	market := withDefaultMarket(input.Market)
+	errb := oops.In("krx_adapter").With("role", provider.RoleDailyBar, "market", market, "security_type", input.SecurityType, "symbol", input.Symbol, "from", input.From, "to", input.To)
+	if err := validateMarket(provider.RoleDailyBar, market, input.SecurityType, input.Symbol); err != nil {
+		return dailybar.BatchFetchResult{}, errb.Wrap(err)
+	}
+	if p.client == nil {
+		return dailybar.BatchFetchResult{}, errb.New("krx provider client is nil")
+	}
+	from, to, err := resolveInputRange(input.From, input.To)
+	if err != nil {
+		return dailybar.BatchFetchResult{}, errb.Wrap(err)
+	}
+	records, group, err := p.fetchDailyRecords(ctx, input.SecurityType, input.Symbol, from, to)
+	if err != nil {
+		return dailybar.BatchFetchResult{}, errb.Wrap(err)
+	}
+	return dailybar.BatchFetchResult{
+		Bars:       records,
+		Provider:   p.Identity,
+		Group:      group,
+		TotalCount: len(records),
 	}, nil
 }
 
@@ -571,10 +546,10 @@ type etpDailyTradeGroup struct {
 
 var _ provider.GroupRoleProvider = etpDailyTradeGroup{}
 
-func newETPDailyTradeGroup(fetch dailybar.FetchFunc, pageFetch dailybar.PageFetchFunc, search instrument.SearchFunc) etpDailyTradeGroup {
+func newETPDailyTradeGroup(fetch dailybar.FetchFunc, batchFetch dailybar.BatchFetchFunc, search instrument.SearchFunc) etpDailyTradeGroup {
 	return etpDailyTradeGroup{
 		Fetcher: spec.PreviousBusinessDayDailyBar(fetch).
-			PageFetch(pageFetch).
+			BatchFetch(batchFetch).
 			Markets(provider.MarketKRX).
 			SecurityTypes(provider.SecurityTypeETF, provider.SecurityTypeETN, provider.SecurityTypeELW).
 			Group(provider.GroupKRXETPDailyTrade).
@@ -610,10 +585,10 @@ type stockDailyTradeGroup struct {
 
 var _ provider.GroupRoleProvider = stockDailyTradeGroup{}
 
-func newStockDailyTradeGroup(fetch dailybar.FetchFunc, pageFetch dailybar.PageFetchFunc) stockDailyTradeGroup {
+func newStockDailyTradeGroup(fetch dailybar.FetchFunc, batchFetch dailybar.BatchFetchFunc) stockDailyTradeGroup {
 	return stockDailyTradeGroup{
 		Fetcher: spec.PreviousBusinessDayDailyBar(fetch).
-			PageFetch(pageFetch).
+			BatchFetch(batchFetch).
 			Markets(provider.MarketKRX).
 			SecurityTypes(provider.SecurityTypeStock).
 			Group(provider.GroupKRXStockDailyTrade).

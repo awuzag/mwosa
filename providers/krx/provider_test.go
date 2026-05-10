@@ -6,12 +6,14 @@ import (
 	"net/http"
 	"net/http/httptest"
 	"strings"
+	"sync"
 	"testing"
 	"time"
 
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
 	"github.com/ev3rlit/mwosa/providers/core/instrument"
+	dailyservice "github.com/ev3rlit/mwosa/service/daily"
 )
 
 func TestFetchETFDailyBars(t *testing.T) {
@@ -119,6 +121,87 @@ func TestSearchStockInstruments(t *testing.T) {
 	}
 }
 
+func TestStockBackfillUsesOneKRXBatchPerEndpoint(t *testing.T) {
+	var countsMu sync.Mutex
+	counts := map[string]int{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		countsMu.Lock()
+		counts[r.URL.Path]++
+		countsMu.Unlock()
+		w.Header().Set("Content-Type", "application/json")
+		if got := r.URL.Query().Get("basDd"); got != "20240415" {
+			t.Fatalf("basDd = %q, want 20240415", got)
+		}
+		switch r.URL.Path {
+		case "/sto/stk_bydd_trd":
+			writeStockDailyRows(w, "KOSPI", 1001)
+		case "/sto/ksq_bydd_trd":
+			writeStockDailyRows(w, "KOSDAQ", 1)
+		case "/sto/knx_bydd_trd":
+			writeStockDailyRows(w, "KONEX", 1)
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	p, err := New(Config{AuthKey: "test-key", BaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("new provider: %v", err)
+	}
+	registry := provider.NewRegistry()
+	if err := Register(registry, p); err != nil {
+		t.Fatalf("register provider: %v", err)
+	}
+	fetcher, err := dailybar.NewRouter(provider.NewRouter(registry)).RouteDailyBars(context.Background(), dailybar.RouteInput{
+		ProviderID:   provider.ProviderKRX,
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeStock,
+	})
+	if err != nil {
+		t.Fatalf("route daily bars: %v", err)
+	}
+	if _, ok := fetcher.(dailybar.BatchFetcher); !ok {
+		t.Fatalf("routed fetcher type = %T, want BatchFetcher", fetcher)
+	}
+	if _, ok := fetcher.(dailybar.PageFetcher); ok {
+		t.Fatalf("routed fetcher type = %T, want no PageFetcher compatibility shim", fetcher)
+	}
+
+	writer := &fakeDailyWriter{}
+	service, err := dailyservice.NewService(fakeDailyReader{}, writer, dailybar.NewRouter(provider.NewRouter(registry)))
+	if err != nil {
+		t.Fatalf("new daily service: %v", err)
+	}
+	result, err := service.Backfill(context.Background(), dailyservice.Request{
+		ProviderID:   provider.ProviderKRX,
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeStock,
+		From:         "20240415",
+		To:           "20240415",
+		Workers:      4,
+	})
+	if err != nil {
+		t.Fatalf("backfill stock daily: %v", err)
+	}
+	if result.BarsFetched != 1003 || result.BarsStored != 1003 || writer.bars != 1003 {
+		t.Fatalf("result = %+v writer=%d, want 1003 fetched/stored", result, writer.bars)
+	}
+
+	countsMu.Lock()
+	gotCounts := map[string]int{
+		"/sto/stk_bydd_trd": counts["/sto/stk_bydd_trd"],
+		"/sto/ksq_bydd_trd": counts["/sto/ksq_bydd_trd"],
+		"/sto/knx_bydd_trd": counts["/sto/knx_bydd_trd"],
+	}
+	countsMu.Unlock()
+	for path, got := range gotCounts {
+		if got != 1 {
+			t.Fatalf("%s calls = %d, want 1", path, got)
+		}
+	}
+}
+
 func TestDisabledAPIIsExplicitUnsupported(t *testing.T) {
 	p := NewWithClient(nil, map[provider.OperationID]bool{
 		provider.OperationETFByddTrd: false,
@@ -133,4 +216,46 @@ func TestDisabledAPIIsExplicitUnsupported(t *testing.T) {
 	if !strings.Contains(err.Error(), "service is disabled") {
 		t.Fatalf("error = %q, want disabled service context", err.Error())
 	}
+}
+
+func writeStockDailyRows(w http.ResponseWriter, market string, count int) {
+	fmt.Fprint(w, `{"OutBlock_1":[`)
+	for i := 0; i < count; i++ {
+		if i > 0 {
+			fmt.Fprint(w, ",")
+		}
+		fmt.Fprintf(w, `{
+			"BAS_DD":"20240415",
+			"ISU_CD":"%06d",
+			"ISU_NM":"%s %06d",
+			"MKT_NM":"%s",
+			"SECT_TP_NM":"stock",
+			"TDD_CLSPRC":"70000",
+			"CMPPREVDD_PRC":"100",
+			"FLUC_RT":"0.14",
+			"TDD_OPNPRC":"69900",
+			"TDD_HGPRC":"70100",
+			"TDD_LWPRC":"69800",
+			"ACC_TRDVOL":"1000",
+			"ACC_TRDVAL":"70000000",
+			"MKTCAP":"1000000000",
+			"LIST_SHRS":"100000"
+		}`, i+1, market, i+1, market)
+	}
+	fmt.Fprint(w, `]}`)
+}
+
+type fakeDailyReader struct{}
+
+func (fakeDailyReader) QueryDailyBars(context.Context, dailyservice.Query) ([]dailybar.Bar, error) {
+	return nil, nil
+}
+
+type fakeDailyWriter struct {
+	bars int
+}
+
+func (w *fakeDailyWriter) UpsertDailyBars(_ context.Context, bars []dailybar.Bar) (dailyservice.WriteResult, error) {
+	w.bars += len(bars)
+	return dailyservice.WriteResult{BarsWritten: len(bars), RowsAffected: len(bars)}, nil
 }
