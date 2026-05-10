@@ -193,3 +193,4 @@ provider 와 group 을 한 문자열로 합쳐 `datago/securitiesProductPrice` �
 
 - `docs/adr/0003-provider-group-role-registration.md`
 - `docs/providers/datago/README.md`
+- `docs/providers/krx/README.md`
