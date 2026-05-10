@@ -11,14 +11,26 @@ type DataLatency string
 type Role string
 
 const (
+	ProviderKIS                    ProviderID = "kis"
 	ProviderDataGo                 ProviderID = "datago"
 	ProviderDataGoCorporateFinance ProviderID = "datago-corpfin"
 
-	GroupSecuritiesProductPrice GroupID = "securitiesProductPrice"
-	GroupStockPrice             GroupID = "stockPrice"
-	GroupCorporateFinance       GroupID = "corporateFinance"
-	GroupKRXListedInfo          GroupID = "krxListedInfo"
+	GroupKISDomesticStockQuotation  GroupID = "domesticStockQuotation"
+	GroupKISDomesticStockInstrument GroupID = "domesticStockInstrument"
+	GroupSecuritiesProductPrice     GroupID = "securitiesProductPrice"
+	GroupStockPrice                 GroupID = "stockPrice"
+	GroupCorporateFinance           GroupID = "corporateFinance"
+	GroupKRXListedInfo              GroupID = "krxListedInfo"
 
+	OperationKISPrice             OperationID = "price"
+	OperationKISDaily             OperationID = "daily"
+	OperationKISIntraday          OperationID = "intraday"
+	OperationKISOrderbook         OperationID = "orderbook"
+	OperationKISTrades            OperationID = "trades"
+	OperationKISTimeTrades        OperationID = "timeTrades"
+	OperationKISProduct           OperationID = "product"
+	OperationKISStock             OperationID = "stock"
+	OperationKISETFETNPrice       OperationID = "etfetnPrice"
 	OperationGetETFPriceInfo      OperationID = "getETFPriceInfo"
 	OperationGetETNPriceInfo      OperationID = "getETNPriceInfo"
 	OperationGetELWPriceInfo      OperationID = "getELWPriceInfo"
@@ -35,20 +47,25 @@ const (
 	SecurityTypeELW   SecurityType = "elw"
 	SecurityTypeStock SecurityType = "stock"
 
+	CredentialScopeKIS    CredentialScope = "kis"
 	CredentialScopeDataGo CredentialScope = "datago"
 
-	FreshnessDaily  Freshness = "daily"
-	FreshnessFiling Freshness = "filing"
+	FreshnessDaily    Freshness = "daily"
+	FreshnessFiling   Freshness = "filing"
+	FreshnessIntraday Freshness = "intraday"
 
 	DataLatencyRealtime            DataLatency = "realtime"
 	DataLatencyEndOfDay            DataLatency = "end_of_day"
 	DataLatencyPreviousBusinessDay DataLatency = "previous_business_day"
 	DataLatencyHistorical          DataLatency = "historical"
 
-	RoleDailyBar   Role = "daily_bar"
-	RoleFinancials Role = "financials"
-	RoleInstrument Role = "instrument"
-	RoleQuote      Role = "quote_snapshot"
+	RoleDailyBar    Role = "daily_bar"
+	RoleFinancials  Role = "financials"
+	RoleInstrument  Role = "instrument"
+	RoleIntradayBar Role = "intraday_bar"
+	RoleOrderbook   Role = "orderbook"
+	RoleQuote       Role = "quote_snapshot"
+	RoleTrades      Role = "trades"
 )
 
 type Compatibility struct {

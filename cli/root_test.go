@@ -59,6 +59,23 @@ func TestRootHelpHasOutputFlag(t *testing.T) {
 	}
 }
 
+func TestMarketDataCommandsAreRegistered(t *testing.T) {
+	cmd := NewRootCommand(BuildInfo{})
+	for _, args := range [][]string{
+		{"get", "intraday", "005930"},
+		{"get", "orderbook", "005930"},
+		{"list", "trades", "005930"},
+	} {
+		found, _, err := cmd.Find(args)
+		if err != nil {
+			t.Fatalf("find %v: %v", args, err)
+		}
+		if found == nil || found.Use == "" {
+			t.Fatalf("find %v returned no command", args)
+		}
+	}
+}
+
 func TestCompletionBashGeneratesScriptWithoutConfigLoad(t *testing.T) {
 	configPath := filepath.Join(t.TempDir(), "config.json")
 	cmd := NewRootCommand(BuildInfo{})
@@ -271,6 +288,25 @@ func TestConfigSetUpdatesProviderConfigAndMasksSecretOutput(t *testing.T) {
 	}
 }
 
+func TestConfigSetMasksProviderAuthAccessToken(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "config.json")
+	cmd := NewRootCommand(BuildInfo{})
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	cmd.SetArgs([]string{
+		"--config", configPath,
+		"config", "set", "providers.kis.auth.access_token", "issued-token",
+	})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("execute config set: %v\n%s", err, out.String())
+	}
+	if strings.Contains(out.String(), "issued-token") {
+		t.Fatalf("config set output should mask access token:\n%s", out.String())
+	}
+}
+
 func TestLoginProviderDataGoWritesProviderConfigAndMasksOutput(t *testing.T) {
 	configPath := filepath.Join(t.TempDir(), "config.json")
 	cmd := NewRootCommand(BuildInfo{})
@@ -311,6 +347,52 @@ func TestLoginProviderDataGoWritesProviderConfigAndMasksOutput(t *testing.T) {
 	}
 	if got := cfg.Providers[0].String("auth", "service_key"); got != "secret-key" {
 		t.Fatalf("service key = %q, want secret-key", got)
+	}
+}
+
+func TestLoginAndDoctorKISMaskSecrets(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "config.json")
+	loginCmd := NewRootCommand(BuildInfo{})
+	var loginOut bytes.Buffer
+	loginCmd.SetOut(&loginOut)
+	loginCmd.SetErr(&loginOut)
+	loginCmd.SetArgs([]string{
+		"--config", configPath,
+		"login", "provider", "kis",
+		"--app-key", "app-key-secret",
+		"--app-secret", "app-secret-secret",
+		"--access-token", "access-token-secret",
+	})
+
+	if err := loginCmd.Execute(); err != nil {
+		t.Fatalf("execute login provider kis: %v\n%s", err, loginOut.String())
+	}
+	for _, secret := range []string{"app-key-secret", "app-secret-secret", "access-token-secret"} {
+		if strings.Contains(loginOut.String(), secret) {
+			t.Fatalf("login provider output should not include %q:\n%s", secret, loginOut.String())
+		}
+	}
+
+	doctorCmd := NewRootCommand(BuildInfo{})
+	var doctorOut bytes.Buffer
+	doctorCmd.SetOut(&doctorOut)
+	doctorCmd.SetErr(&doctorOut)
+	doctorCmd.SetArgs([]string{
+		"--config", configPath,
+		"doctor", "provider", "kis",
+	})
+	if err := doctorCmd.Execute(); err != nil {
+		t.Fatalf("execute doctor provider kis: %v\n%s", err, doctorOut.String())
+	}
+	for _, secret := range []string{"app-key-secret", "app-secret-secret", "access-token-secret"} {
+		if strings.Contains(doctorOut.String(), secret) {
+			t.Fatalf("doctor provider output should not include %q:\n%s", secret, doctorOut.String())
+		}
+	}
+	for _, want := range []string{`"status": "ok"`, `"path": "auth.access_token"`, `"configured": true`} {
+		if !strings.Contains(doctorOut.String(), want) {
+			t.Fatalf("doctor provider output missing %q in:\n%s", want, doctorOut.String())
+		}
 	}
 }
 

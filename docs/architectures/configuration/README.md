@@ -21,15 +21,17 @@
 
 초기 기본 경로는 아래처럼 둔다. config file 이름은 현재 후보인 `config.json` 으로 예시를 든다. 최종 file format 이 바뀌면 파일명만 함께 조정한다.
 
-| OS | config file | database file |
-| --- | --- | --- |
-| Linux | `~/.config/mwosa/config.json` | `~/.local/share/mwosa/mwosa.db` |
-| macOS | `~/.config/mwosa/config.json` | `~/.local/share/mwosa/mwosa.db` |
-| Windows | `%AppData%\mwosa\config.json` | `%LocalAppData%\mwosa\mwosa.db` |
+| OS | config file | database file | provider token cache |
+| --- | --- | --- | --- |
+| Linux | `~/.config/mwosa/config.json` | `~/.local/share/mwosa/mwosa.db` | `~/.local/share/mwosa/provider-token-cache.sqlite` |
+| macOS | `~/.config/mwosa/config.json` | `~/.local/share/mwosa/mwosa.db` | `~/.local/share/mwosa/provider-token-cache.sqlite` |
+| Windows | `%AppData%\mwosa\config.json` | `%LocalAppData%\mwosa\mwosa.db` | `%LocalAppData%\mwosa\provider-token-cache.sqlite` |
 
 Linux 와 macOS 에서는 사용자가 `XDG_CONFIG_HOME` 또는 `XDG_DATA_HOME` 을 지정했다면 그 값을 우선한다. 예를 들어 `XDG_CONFIG_HOME=/custom/config` 이면 config file 은 `/custom/config/mwosa/config.json` 이 된다.
 
 macOS 에서도 CLI 도구는 `~/.config` 아래에 설정을 두는 경우가 많다. data 는 config 와 같은 디렉터리에 섞지 않고, XDG 의 data 대응 경로인 `~/.local/share` 아래에 둔다. SQLite 파일은 cache 가 아니라 사용자 로컬 앱 데이터의 정본이므로 cache 디렉터리에 두지 않는다.
+
+provider token cache 도 앱이 관리하는 local data 이므로 같은 data directory 에 두되, canonical market data database 와는 별도 SQLite 파일로 분리한다. 예를 들어 KIS OAuth access token cache 는 `provider-token-cache.sqlite` 에 저장하고 `mwosa.db` 에 저장하지 않는다.
 
 macOS native 앱 관례를 더 강하게 따르는 배포 형태가 필요해지면 `~/Library/Application Support/mwosa` 를 다시 검토할 수 있다. 현재 기준에서는 CLI 사용자의 dotfiles, backup, shell scripting 경험을 우선해 Unix 계열 기본 경로를 통일한다.
 
@@ -84,6 +86,7 @@ config file 은 사용자가 검토할 수 있는 최소 설정만 담는다. pr
 
 - config file path
 - database file path
+- provider token cache database file path
 - 각 경로가 결정된 source: flag, env, config file, default
 - config file 존재 여부
 - data directory 존재 여부

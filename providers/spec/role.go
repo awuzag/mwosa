@@ -5,7 +5,10 @@ import (
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
 	"github.com/ev3rlit/mwosa/providers/core/financials"
 	"github.com/ev3rlit/mwosa/providers/core/instrument"
+	"github.com/ev3rlit/mwosa/providers/core/intradaybar"
+	"github.com/ev3rlit/mwosa/providers/core/orderbook"
 	"github.com/ev3rlit/mwosa/providers/core/quote"
+	"github.com/ev3rlit/mwosa/providers/core/trades"
 	"github.com/samber/oops"
 )
 
@@ -431,6 +434,276 @@ func (b QuoteBuilder) Build() (quote.Profile, error) {
 }
 
 func (b QuoteBuilder) MustBuild() quote.Profile {
+	profile, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
+	return profile
+}
+
+type IntradayBarBuilder struct {
+	role roleBuilder
+}
+
+func IntradayBar() IntradayBarBuilder {
+	return IntradayBarBuilder{role: newRoleBuilder(provider.RoleIntradayBar)}
+}
+
+func (b IntradayBarBuilder) Markets(markets ...provider.Market) IntradayBarBuilder {
+	b.role = b.role.markets(markets...)
+	return b
+}
+
+func (b IntradayBarBuilder) SecurityTypes(securityTypes ...provider.SecurityType) IntradayBarBuilder {
+	b.role = b.role.securityTypes(securityTypes...)
+	return b
+}
+
+func (b IntradayBarBuilder) Group(group provider.GroupID) IntradayBarBuilder {
+	b.role = b.role.group(group)
+	return b
+}
+
+func (b IntradayBarBuilder) Operations(operations ...provider.OperationID) IntradayBarBuilder {
+	b.role = b.role.operations(operations...)
+	return b
+}
+
+func (b IntradayBarBuilder) RequiresAuth(scope provider.CredentialScope) IntradayBarBuilder {
+	b.role = b.role.requiresAuth(scope)
+	return b
+}
+
+func (b IntradayBarBuilder) NoAuth() IntradayBarBuilder {
+	b.role = b.role.noAuth()
+	return b
+}
+
+func (b IntradayBarBuilder) Freshness(freshness provider.Freshness) IntradayBarBuilder {
+	b.role = b.role.freshness(freshness)
+	return b
+}
+
+func (b IntradayBarBuilder) Compatibility(source CompatibilitySource) IntradayBarBuilder {
+	b.role = b.role.compatibility(source)
+	return b
+}
+
+func (b IntradayBarBuilder) CompatibilityValue(compatibility provider.Compatibility) IntradayBarBuilder {
+	b.role = b.role.compatibilityValue(compatibility)
+	return b
+}
+
+func (b IntradayBarBuilder) Priority(priority int) IntradayBarBuilder {
+	b.role = b.role.priority(priority)
+	return b
+}
+
+func (b IntradayBarBuilder) Limitations(limitations ...string) IntradayBarBuilder {
+	b.role = b.role.limitations(limitations...)
+	return b
+}
+
+func (b IntradayBarBuilder) Build() (intradaybar.Profile, error) {
+	profile, err := b.role.build()
+	if err != nil {
+		return intradaybar.Profile{}, err
+	}
+	return intradaybar.Profile{
+		Markets:       profile.Markets,
+		SecurityTypes: profile.SecurityTypes,
+		Group:         profile.Group,
+		Operations:    profile.Operations,
+		AuthScope:     profile.AuthScope,
+		Freshness:     profile.Freshness,
+		Compatibility: profile.Compatibility,
+		RequiresAuth:  profile.RequiresAuth,
+		Priority:      profile.Priority,
+		Limitations:   profile.Limitations,
+	}, nil
+}
+
+func (b IntradayBarBuilder) MustBuild() intradaybar.Profile {
+	profile, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
+	return profile
+}
+
+type OrderbookBuilder struct {
+	role roleBuilder
+}
+
+func Orderbook() OrderbookBuilder {
+	return OrderbookBuilder{role: newRoleBuilder(provider.RoleOrderbook)}
+}
+
+func (b OrderbookBuilder) Markets(markets ...provider.Market) OrderbookBuilder {
+	b.role = b.role.markets(markets...)
+	return b
+}
+
+func (b OrderbookBuilder) SecurityTypes(securityTypes ...provider.SecurityType) OrderbookBuilder {
+	b.role = b.role.securityTypes(securityTypes...)
+	return b
+}
+
+func (b OrderbookBuilder) Group(group provider.GroupID) OrderbookBuilder {
+	b.role = b.role.group(group)
+	return b
+}
+
+func (b OrderbookBuilder) Operations(operations ...provider.OperationID) OrderbookBuilder {
+	b.role = b.role.operations(operations...)
+	return b
+}
+
+func (b OrderbookBuilder) RequiresAuth(scope provider.CredentialScope) OrderbookBuilder {
+	b.role = b.role.requiresAuth(scope)
+	return b
+}
+
+func (b OrderbookBuilder) NoAuth() OrderbookBuilder {
+	b.role = b.role.noAuth()
+	return b
+}
+
+func (b OrderbookBuilder) Freshness(freshness provider.Freshness) OrderbookBuilder {
+	b.role = b.role.freshness(freshness)
+	return b
+}
+
+func (b OrderbookBuilder) Compatibility(source CompatibilitySource) OrderbookBuilder {
+	b.role = b.role.compatibility(source)
+	return b
+}
+
+func (b OrderbookBuilder) CompatibilityValue(compatibility provider.Compatibility) OrderbookBuilder {
+	b.role = b.role.compatibilityValue(compatibility)
+	return b
+}
+
+func (b OrderbookBuilder) Priority(priority int) OrderbookBuilder {
+	b.role = b.role.priority(priority)
+	return b
+}
+
+func (b OrderbookBuilder) Limitations(limitations ...string) OrderbookBuilder {
+	b.role = b.role.limitations(limitations...)
+	return b
+}
+
+func (b OrderbookBuilder) Build() (orderbook.Profile, error) {
+	profile, err := b.role.build()
+	if err != nil {
+		return orderbook.Profile{}, err
+	}
+	return orderbook.Profile{
+		Markets:       profile.Markets,
+		SecurityTypes: profile.SecurityTypes,
+		Group:         profile.Group,
+		Operations:    profile.Operations,
+		AuthScope:     profile.AuthScope,
+		Freshness:     profile.Freshness,
+		Compatibility: profile.Compatibility,
+		RequiresAuth:  profile.RequiresAuth,
+		Priority:      profile.Priority,
+		Limitations:   profile.Limitations,
+	}, nil
+}
+
+func (b OrderbookBuilder) MustBuild() orderbook.Profile {
+	profile, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
+	return profile
+}
+
+type TradesBuilder struct {
+	role roleBuilder
+}
+
+func Trades() TradesBuilder {
+	return TradesBuilder{role: newRoleBuilder(provider.RoleTrades)}
+}
+
+func (b TradesBuilder) Markets(markets ...provider.Market) TradesBuilder {
+	b.role = b.role.markets(markets...)
+	return b
+}
+
+func (b TradesBuilder) SecurityTypes(securityTypes ...provider.SecurityType) TradesBuilder {
+	b.role = b.role.securityTypes(securityTypes...)
+	return b
+}
+
+func (b TradesBuilder) Group(group provider.GroupID) TradesBuilder {
+	b.role = b.role.group(group)
+	return b
+}
+
+func (b TradesBuilder) Operations(operations ...provider.OperationID) TradesBuilder {
+	b.role = b.role.operations(operations...)
+	return b
+}
+
+func (b TradesBuilder) RequiresAuth(scope provider.CredentialScope) TradesBuilder {
+	b.role = b.role.requiresAuth(scope)
+	return b
+}
+
+func (b TradesBuilder) NoAuth() TradesBuilder {
+	b.role = b.role.noAuth()
+	return b
+}
+
+func (b TradesBuilder) Freshness(freshness provider.Freshness) TradesBuilder {
+	b.role = b.role.freshness(freshness)
+	return b
+}
+
+func (b TradesBuilder) Compatibility(source CompatibilitySource) TradesBuilder {
+	b.role = b.role.compatibility(source)
+	return b
+}
+
+func (b TradesBuilder) CompatibilityValue(compatibility provider.Compatibility) TradesBuilder {
+	b.role = b.role.compatibilityValue(compatibility)
+	return b
+}
+
+func (b TradesBuilder) Priority(priority int) TradesBuilder {
+	b.role = b.role.priority(priority)
+	return b
+}
+
+func (b TradesBuilder) Limitations(limitations ...string) TradesBuilder {
+	b.role = b.role.limitations(limitations...)
+	return b
+}
+
+func (b TradesBuilder) Build() (trades.Profile, error) {
+	profile, err := b.role.build()
+	if err != nil {
+		return trades.Profile{}, err
+	}
+	return trades.Profile{
+		Markets:       profile.Markets,
+		SecurityTypes: profile.SecurityTypes,
+		Group:         profile.Group,
+		Operations:    profile.Operations,
+		AuthScope:     profile.AuthScope,
+		Freshness:     profile.Freshness,
+		Compatibility: profile.Compatibility,
+		RequiresAuth:  profile.RequiresAuth,
+		Priority:      profile.Priority,
+		Limitations:   profile.Limitations,
+	}, nil
+}
+
+func (b TradesBuilder) MustBuild() trades.Profile {
 	profile, err := b.Build()
 	if err != nil {
 		panic(err)

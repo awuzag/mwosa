@@ -44,6 +44,9 @@ func TestLoadOrCreateCreatesConfigWithAppAndProviderDefaults(t *testing.T) {
 	if resolved.DatabasePath != databasePath {
 		t.Fatalf("DatabasePath = %q, want %q", resolved.DatabasePath, databasePath)
 	}
+	if resolved.ProviderAuthDatabasePath != filepath.Join(filepath.Dir(databasePath), ProviderAuthDatabaseFileName) {
+		t.Fatalf("ProviderAuthDatabasePath = %q, want sidecar token cache path", resolved.ProviderAuthDatabasePath)
+	}
 
 	data, err := os.ReadFile(configPath)
 	if err != nil {

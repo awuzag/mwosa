@@ -13,9 +13,10 @@ import (
 )
 
 const (
-	AppName          = "mwosa"
-	ConfigFileName   = "config.json"
-	DatabaseFileName = "mwosa.db"
+	AppName                      = "mwosa"
+	ConfigFileName               = "config.json"
+	DatabaseFileName             = "mwosa.db"
+	ProviderAuthDatabaseFileName = "provider-token-cache.sqlite"
 
 	ConfigPathEnv   = "MWOSA_CONFIG"
 	DatabasePathEnv = "MWOSA_DATABASE"
@@ -64,16 +65,17 @@ type DatabaseConfig struct {
 }
 
 type Resolved struct {
-	ConfigPath          string
-	ConfigPathSource    Source
-	ConfigFileExists    bool
-	ConfigFileCreated   bool
-	DatabasePath        string
-	DatabasePathSource  Source
-	DataDirectory       string
-	DataDirectoryExists bool
-	ProviderConfig      provider.Config
-	File                File
+	ConfigPath               string
+	ConfigPathSource         Source
+	ConfigFileExists         bool
+	ConfigFileCreated        bool
+	DatabasePath             string
+	DatabasePathSource       Source
+	DataDirectory            string
+	DataDirectoryExists      bool
+	ProviderAuthDatabasePath string
+	ProviderConfig           provider.Config
+	File                     File
 }
 
 func LoadOrCreate(opts Options) (Resolved, error) {
@@ -110,16 +112,17 @@ func LoadOrCreate(opts Options) (Resolved, error) {
 	_, configFileErr := os.Stat(configPath)
 
 	return Resolved{
-		ConfigPath:          configPath,
-		ConfigPathSource:    configSource,
-		ConfigFileExists:    configFileErr == nil,
-		ConfigFileCreated:   !existed,
-		DatabasePath:        databasePath,
-		DatabasePathSource:  databaseSource,
-		DataDirectory:       dataDirectory,
-		DataDirectoryExists: dataDirErr == nil,
-		ProviderConfig:      providerConfigFromFile(cfg),
-		File:                cfg,
+		ConfigPath:               configPath,
+		ConfigPathSource:         configSource,
+		ConfigFileExists:         configFileErr == nil,
+		ConfigFileCreated:        !existed,
+		DatabasePath:             databasePath,
+		DatabasePathSource:       databaseSource,
+		DataDirectory:            dataDirectory,
+		DataDirectoryExists:      dataDirErr == nil,
+		ProviderAuthDatabasePath: filepath.Join(dataDirectory, ProviderAuthDatabaseFileName),
+		ProviderConfig:           providerConfigFromFile(cfg),
+		File:                     cfg,
 	}, nil
 }
 
