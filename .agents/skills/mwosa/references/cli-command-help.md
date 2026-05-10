@@ -19,10 +19,10 @@ MWOSA_HELP_REPO_ROOT=/path/to/mwosa skills/mwosa/references/generate-cli-command
 ## Captured Help
 
 ```text
-mwosa v0.1.1-0.20260509143438-c016c3d00b63
+mwosa v0.1.1-0.20260510134931-7dd452b0c514
 schema dev
-commit c016c3d00b630740311902e879dc6f27a74cf148
-built 2026-05-09T14:34:38Z
+commit 7dd452b0c514cc5bbf03dcd4d063cb02287a1692
+built 2026-05-10T13:49:31Z
 go go1.25.6
 Investment research CLI for provider-backed market data
 
@@ -433,6 +433,9 @@ Usage:
 Available Commands:
   daily       Read stored daily bars for a symbol
   financials  Fetch provider-backed financial statements by company name or KRX code
+  intraday    Fetch provider intraday bars for a symbol
+  orderbook   Fetch a provider orderbook snapshot for a symbol
+  quote       Fetch a provider quote snapshot for a symbol
 
 Flags:
   -h, --help   help for get
@@ -483,6 +486,65 @@ Flags:
       --security-type string   security type: stock, etf, etn, elw (default "stock")
       --statement string       statement type: summary, income_statement, balance_sheet, cash_flow; empty fetches all
       --year string            fiscal year, for example 2025
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa get intraday --help
+Fetch provider intraday bars for a symbol
+
+Usage:
+  mwosa get intraday <symbol> [flags]
+
+Flags:
+      --at string              provider-neutral time anchor in HHMMSS or HH:MM:SS form
+  -h, --help                   help for intraday
+      --limit int              maximum number of intraday bars to return
+      --security-type string   security type: stock, etf, etn (default "stock")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa get orderbook --help
+Fetch a provider orderbook snapshot for a symbol
+
+Usage:
+  mwosa get orderbook <symbol> [flags]
+
+Flags:
+  -h, --help                   help for orderbook
+      --security-type string   security type: stock, etf, etn (default "stock")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa get quote --help
+Fetch a provider quote snapshot for a symbol
+
+Usage:
+  mwosa get quote <symbol> [flags]
+
+Flags:
+  -h, --help                   help for quote
+      --security-type string   security type: stock, etf, etn (default "stock")
 
 Global Flags:
       --config string            config file path
@@ -562,6 +624,7 @@ Usage:
 
 Available Commands:
   config      Inspect resolved config and data paths
+  instrument  Inspect one provider instrument
   provider    Inspect provider configuration and readiness
   screen      Inspect a saved screening run
   strategy    Inspect a saved screening strategy
@@ -588,6 +651,25 @@ Usage:
 
 Flags:
   -h, --help   help for config
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa inspect instrument --help
+Inspect one provider instrument
+
+Usage:
+  mwosa inspect instrument <symbol> [flags]
+
+Flags:
+  -h, --help                   help for instrument
+      --security-type string   security type: stock, etf, etn, elw (default "stock")
 
 Global Flags:
       --config string            config file path
@@ -659,8 +741,10 @@ Usage:
   mwosa list [command]
 
 Available Commands:
+  instruments Search provider instruments
   providers   List configured and available providers
   strategies  List saved screening strategies
+  trades      List recent market trade prints for a symbol
 
 Flags:
   -h, --help   help for list
@@ -674,6 +758,26 @@ Global Flags:
       --provider string          force a provider by id
 
 Use "mwosa list [command] --help" for more information about a command.
+
+
+### mwosa list instruments --help
+Search provider instruments
+
+Usage:
+  mwosa list instruments <query> [flags]
+
+Flags:
+  -h, --help                   help for instruments
+      --limit int              maximum number of instruments to return (default 25)
+      --security-type string   security type: stock, etf, etn, elw (default "stock")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
 
 
 ### mwosa list providers --help
@@ -702,6 +806,27 @@ Usage:
 
 Flags:
   -h, --help   help for strategies
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa list trades --help
+List recent market trade prints for a symbol
+
+Usage:
+  mwosa list trades <symbol> [flags]
+
+Flags:
+      --at string              provider-neutral time anchor in HHMMSS or HH:MM:SS form
+  -h, --help                   help for trades
+      --limit int              maximum number of market trades to return
+      --security-type string   security type: stock, etf, etn (default "stock")
 
 Global Flags:
       --config string            config file path
@@ -744,6 +869,7 @@ Usage:
 Available Commands:
   datago         Register datago provider credentials
   datago-corpfin Register datago-corpfin provider credentials
+  kis            Register kis provider credentials
 
 Flags:
   -h, --help   help for provider
@@ -795,6 +921,32 @@ Flags:
       --krx-listed-base-url string      override datago krxListedInfo API base URL
       --krx-listed-service-key string   공공데이터포털 krxListedInfo service key used for company-name and KRX-code resolution
       --service-key string              공공데이터포털 corporateFinance service key
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa login provider kis --help
+Register kis provider credentials
+
+Usage:
+  mwosa login provider kis [flags]
+
+Flags:
+      --access-token string       optional pre-issued KIS OAuth access token
+      --account string            optional KIS account identifier for future read-only account capabilities
+      --app-key string            KIS Developers app key
+      --app-secret string         KIS Developers app secret
+      --base-url string           override KIS real API base URL
+      --customer-type string      KIS custtype header value
+  -h, --help                      help for kis
+      --virtual string            use KIS virtual investment domain
+      --virtual-base-url string   override KIS virtual API base URL
 
 Global Flags:
       --config string            config file path
