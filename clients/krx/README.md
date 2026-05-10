@@ -6,11 +6,19 @@
 endpoint path, `AUTH_KEY` header, provider-native `OutBlock_1` parsing, remote error
 context 만 소유한다.
 
-현재 구현 범위는 ETP 일별매매정보 3개 API 다.
+현재 구현 범위는 KRX OPEN API 문서에 수집된 전체 31개 API 다.
 
-- `ETF(ctx, baseDate)`: `etf_bydd_trd`
-- `ETN(ctx, baseDate)`: `etn_bydd_trd`
-- `ELW(ctx, baseDate)`: `elw_bydd_trd`
+- 지수: `krx_dd_trd`, `kospi_dd_trd`, `kosdaq_dd_trd`, `bon_dd_trd`,
+  `drvprod_dd_trd`
+- 주식: `stk_bydd_trd`, `ksq_bydd_trd`, `knx_bydd_trd`, `sw_bydd_trd`,
+  `sr_bydd_trd`, `stk_isu_base_info`, `ksq_isu_base_info`,
+  `knx_isu_base_info`
+- 증권상품: `etf_bydd_trd`, `etn_bydd_trd`, `elw_bydd_trd`
+- 채권: `kts_bydd_trd`, `bnd_bydd_trd`, `smb_bydd_trd`
+- 파생상품: `fut_bydd_trd`, `eqsfu_stk_bydd_trd`, `eqkfu_ksq_bydd_trd`,
+  `opt_bydd_trd`, `eqsop_bydd_trd`, `eqkop_bydd_trd`
+- 일반상품: `oil_bydd_trd`, `gold_bydd_trd`, `ets_bydd_trd`
+- ESG: `esg_etp_info`, `sri_bond_info`, `esg_index_info`
 
 ## Docs
 
@@ -35,6 +43,17 @@ rows, err := client.ETF(ctx, "20250131")
 기본 base URL 은 `https://data-dbg.krx.co.kr/svc/apis` 이다. 테스트나 로컬 검증에서는
 `WithBaseURL(server.URL)` 로 교체한다. 샘플 endpoint 를 명시적으로 쓰려면
 `WithSampleBaseURL(...)` 을 사용한다.
+
+## Tests
+
+```bash
+go test ./...
+go test -tags=e2e ./...
+go mod verify
+```
+
+`e2e` build tag 테스트는 샘플 endpoint 만 호출한다. 샘플 인증키는
+`KRX_SAMPLE_AUTH_KEY` 환경변수에서만 읽고, 값은 코드나 fixture 에 저장하지 않는다.
 
 ## Scripts
 
