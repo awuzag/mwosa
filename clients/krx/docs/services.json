@@ -1,0 +1,5710 @@
+{
+  "source": "https://openapi.krx.co.kr/contents/OPP/INFO/service/OPPINFO004.cmd",
+  "collected_at": "2026-05-10",
+  "service_count": 31,
+  "services": [
+    {
+      "category": "지수",
+      "category_slug": "index",
+      "service_name": "KRX 시리즈 일별시세정보",
+      "description": "KRX 시리즈 지수의 시세정보 제공 ('10년01월04일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES001_S2.cmd?BO_ID=SsgXTEspyJESKvyXZtCU",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES001_S2.cmd?BO_ID=SsgXTEspyJESKvyXZtCU",
+      "screen": "OPPUSES001",
+      "bo_id": "SsgXTEspyJESKvyXZtCU",
+      "api_id": "krx_dd_trd",
+      "path": "idx",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/15",
+      "updated_at": "2026/01/16",
+      "detail_description": "KRX 시리즈 지수의 시세정보 제공 ('10년01월04일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/idx/krx_dd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/idx/krx_dd_trd",
+      "endpoint_path": "/svc/apis/idx/krx_dd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/idx/krx_dd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "KRX 시리즈 일별시세정보",
+        "description": "KRX 시리즈 지수의 시세정보 제공 ('10년01월04일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "SsgXTEspyJESKvyXZtCU",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "IDX_CLSS",
+              "label": "계열구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "IDX_NM",
+              "label": "지수명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "CLSPRC_IDX",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_IDX",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "FLUC_RT",
+              "label": "등락률",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "OPNPRC_IDX",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "HGPRC_IDX",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "LWPRC_IDX",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "MKTCAP",
+              "label": "상장시가총액",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "지수",
+      "category_slug": "index",
+      "service_name": "KOSPI 시리즈 일별시세정보",
+      "description": "KOSPI 시리즈 지수의 시세정보 제공 ('10년01월04일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES001_S2.cmd?BO_ID=EREKZauXnMmxyIlqzeDN",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES001_S2.cmd?BO_ID=EREKZauXnMmxyIlqzeDN",
+      "screen": "OPPUSES001",
+      "bo_id": "EREKZauXnMmxyIlqzeDN",
+      "api_id": "kospi_dd_trd",
+      "path": "idx",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/15",
+      "updated_at": "2026/01/16",
+      "detail_description": "KOSPI 시리즈 지수의 시세정보 제공 ('10년01월04일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/idx/kospi_dd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/idx/kospi_dd_trd",
+      "endpoint_path": "/svc/apis/idx/kospi_dd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/idx/kospi_dd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "KOSPI 시리즈 일별시세정보",
+        "description": "KOSPI 시리즈 지수의 시세정보 제공 ('10년01월04일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "EREKZauXnMmxyIlqzeDN",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "IDX_CLSS",
+              "label": "계열구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "IDX_NM",
+              "label": "지수명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "CLSPRC_IDX",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_IDX",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "FLUC_RT",
+              "label": "등락률",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "OPNPRC_IDX",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "HGPRC_IDX",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "LWPRC_IDX",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "MKTCAP",
+              "label": "상장시가총액",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "지수",
+      "category_slug": "index",
+      "service_name": "KOSDAQ 시리즈 일별시세정보",
+      "description": "KOSDAQ 시리즈 지수의 시세정보 제공 ('10년01월04일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES001_S2.cmd?BO_ID=nimebcamqFNIPNcRrHoO",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES001_S2.cmd?BO_ID=nimebcamqFNIPNcRrHoO",
+      "screen": "OPPUSES001",
+      "bo_id": "nimebcamqFNIPNcRrHoO",
+      "api_id": "kosdaq_dd_trd",
+      "path": "idx",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/15",
+      "updated_at": "2026/01/16",
+      "detail_description": "KOSDAQ 시리즈 지수의 시세정보 제공 ('10년01월04일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/idx/kosdaq_dd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/idx/kosdaq_dd_trd",
+      "endpoint_path": "/svc/apis/idx/kosdaq_dd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/idx/kosdaq_dd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "KOSDAQ 시리즈 일별시세정보",
+        "description": "KOSDAQ 시리즈 지수의 시세정보 제공 ('10년01월04일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "nimebcamqFNIPNcRrHoO",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "IDX_CLSS",
+              "label": "계열구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "IDX_NM",
+              "label": "지수명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "CLSPRC_IDX",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_IDX",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "FLUC_RT",
+              "label": "등락률",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "OPNPRC_IDX",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "HGPRC_IDX",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "LWPRC_IDX",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "MKTCAP",
+              "label": "상장시가총액",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "지수",
+      "category_slug": "index",
+      "service_name": "채권지수 시세정보",
+      "description": "채권지수의 시세정보 제공 ('10년01월04일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES001_S2.cmd?BO_ID=vMxIKCtPBUeRytCqkoFv",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES001_S2.cmd?BO_ID=vMxIKCtPBUeRytCqkoFv",
+      "screen": "OPPUSES001",
+      "bo_id": "vMxIKCtPBUeRytCqkoFv",
+      "api_id": "bon_dd_trd",
+      "path": "idx",
+      "bo_version": "1.0",
+      "registered_at": "2022/07/04",
+      "updated_at": "2026/01/16",
+      "detail_description": "채권지수의 시세정보 제공 ('10년01월04일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/idx/bon_dd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/idx/bon_dd_trd",
+      "endpoint_path": "/svc/apis/idx/bon_dd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/idx/bon_dd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "채권지수 시세정보",
+        "description": "채권지수의 시세정보 제공 ('10년01월04일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "vMxIKCtPBUeRytCqkoFv",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "BND_IDX_GRP_NM",
+              "label": "지수명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TOT_EARNG_IDX",
+              "label": "총수익지수_종가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TOT_EARNG_IDX_CMPPREVDD",
+              "label": "총수익지수_대비",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "NETPRC_IDX",
+              "label": "순가격지수_종가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "NETPRC_IDX_CMPPREVDD",
+              "label": "순가격지수_대비",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ZERO_REINVST_IDX",
+              "label": "제로재투자지수_종가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ZERO_REINVST_IDX_CMPPREVDD",
+              "label": "제로재투자지수_대비",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CALL_REINVST_IDX",
+              "label": "콜재투자지수_종가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CALL_REINVST_IDX_CMPPREVDD",
+              "label": "콜재투자지수_대비",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "MKT_PRC_IDX",
+              "label": "시장가격지수_종가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "MKT_PRC_IDX_CMPPREVDD",
+              "label": "시장가격지수_대비",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "AVG_DURATION",
+              "label": "듀레이션",
+              "type": "string",
+              "size": "",
+              "format": "###0.000",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "AVG_CONVEXITY_PRC",
+              "label": "컨벡시티",
+              "type": "string",
+              "size": "",
+              "format": "###0.000",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "BND_IDX_AVG_YD",
+              "label": "YTM",
+              "type": "string",
+              "size": "",
+              "format": "###0.000",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "지수",
+      "category_slug": "index",
+      "service_name": "파생상품지수 시세정보",
+      "description": "파생상품지수의 시세정보를 제공 ('10년01월04일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES001_S2.cmd?BO_ID=rPBjbLtScMwmSXWDOYPd",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES001_S2.cmd?BO_ID=rPBjbLtScMwmSXWDOYPd",
+      "screen": "OPPUSES001",
+      "bo_id": "rPBjbLtScMwmSXWDOYPd",
+      "api_id": "drvprod_dd_trd",
+      "path": "idx",
+      "bo_version": "1.0",
+      "registered_at": "2022/07/04",
+      "updated_at": "2026/01/16",
+      "detail_description": "파생상품지수의 시세정보를 제공 ('10년01월04일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/idx/drvprod_dd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/idx/drvprod_dd_trd",
+      "endpoint_path": "/svc/apis/idx/drvprod_dd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/idx/drvprod_dd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "파생상품지수 시세정보",
+        "description": "파생상품지수의 시세정보를 제공 ('10년01월04일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "rPBjbLtScMwmSXWDOYPd",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "IDX_CLSS",
+              "label": "계열구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "IDX_NM",
+              "label": "지수명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "CLSPRC_IDX",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_IDX",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "FLUC_RT",
+              "label": "등락률",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "OPNPRC_IDX",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "HGPRC_IDX",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "LWPRC_IDX",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "주식",
+      "category_slug": "stock",
+      "service_name": "유가증권 일별매매정보",
+      "description": "유가증권시장에 상장되어 있는 주권의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES002_S2.cmd?BO_ID=JvJFzlAENzZlPBDNGAWC",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES002_S2.cmd?BO_ID=JvJFzlAENzZlPBDNGAWC",
+      "screen": "OPPUSES002",
+      "bo_id": "JvJFzlAENzZlPBDNGAWC",
+      "api_id": "stk_bydd_trd",
+      "path": "sto",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/22",
+      "updated_at": "2026/01/16",
+      "detail_description": "유가증권시장에 상장되어 있는 주권의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/sto/stk_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/sto/stk_bydd_trd",
+      "endpoint_path": "/svc/apis/sto/stk_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/sto/stk_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "유가증권 일별매매정보",
+        "description": "유가증권시장에 상장되어 있는 주권의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "JvJFzlAENzZlPBDNGAWC",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "MKT_NM",
+              "label": "시장구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "SECT_TP_NM",
+              "label": "소속부",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_CLSPRC",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "FLUC_RT",
+              "label": "등락률",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_OPNPRC",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_HGPRC",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_LWPRC",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "MKTCAP",
+              "label": "시가총액",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "LIST_SHRS",
+              "label": "상장주식수",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "주식",
+      "category_slug": "stock",
+      "service_name": "코스닥 일별매매정보",
+      "description": "코스닥시장에 상장되어 있는 주권의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES002_S2.cmd?BO_ID=hZjGpkllgCBCWqeTsYFj",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES002_S2.cmd?BO_ID=hZjGpkllgCBCWqeTsYFj",
+      "screen": "OPPUSES002",
+      "bo_id": "hZjGpkllgCBCWqeTsYFj",
+      "api_id": "ksq_bydd_trd",
+      "path": "sto",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/22",
+      "updated_at": "2026/01/16",
+      "detail_description": "코스닥시장에 상장되어 있는 주권의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/sto/ksq_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/sto/ksq_bydd_trd",
+      "endpoint_path": "/svc/apis/sto/ksq_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/sto/ksq_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "코스닥 일별매매정보",
+        "description": "코스닥시장에 상장되어 있는 주권의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "hZjGpkllgCBCWqeTsYFj",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "MKT_NM",
+              "label": "시장구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "SECT_TP_NM",
+              "label": "소속부",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_CLSPRC",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "FLUC_RT",
+              "label": "등락률",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_OPNPRC",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_HGPRC",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_LWPRC",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "MKTCAP",
+              "label": "시가총액",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "LIST_SHRS",
+              "label": "상장주식수",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "주식",
+      "category_slug": "stock",
+      "service_name": "코넥스 일별매매정보",
+      "description": "코넥스시장에 상장되어 있는 주권의 매매정보 제공 ('13년07월01일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES002_S2.cmd?BO_ID=HSiRvxGSYnvaKuAuqpqp",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES002_S2.cmd?BO_ID=HSiRvxGSYnvaKuAuqpqp",
+      "screen": "OPPUSES002",
+      "bo_id": "HSiRvxGSYnvaKuAuqpqp",
+      "api_id": "knx_bydd_trd",
+      "path": "sto",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/22",
+      "updated_at": "2026/01/16",
+      "detail_description": "코넥스시장에 상장되어 있는 주권의 매매정보 제공 ('13년07월01일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/sto/knx_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/sto/knx_bydd_trd",
+      "endpoint_path": "/svc/apis/sto/knx_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/sto/knx_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "코넥스 일별매매정보",
+        "description": "코넥스시장에 상장되어 있는 주권의 매매정보 제공 ('13년07월01일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "HSiRvxGSYnvaKuAuqpqp",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "MKT_NM",
+              "label": "시장구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "SECT_TP_NM",
+              "label": "소속부",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_CLSPRC",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "FLUC_RT",
+              "label": "등락률",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_OPNPRC",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_HGPRC",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_LWPRC",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "MKTCAP",
+              "label": "시가총액",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "LIST_SHRS",
+              "label": "상장주식수",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "주식",
+      "category_slug": "stock",
+      "service_name": "신주인수권증권 일별매매정보",
+      "description": "유가증권/코스닥시장에 상장되어 있는 신주인수권증권의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES002_S2.cmd?BO_ID=erXKnEAzTqcGnkcoSdGA",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES002_S2.cmd?BO_ID=erXKnEAzTqcGnkcoSdGA",
+      "screen": "OPPUSES002",
+      "bo_id": "erXKnEAzTqcGnkcoSdGA",
+      "api_id": "sw_bydd_trd",
+      "path": "sto",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/22",
+      "updated_at": "2026/01/16",
+      "detail_description": "유가증권/코스닥시장에 상장되어 있는 신주인수권증권의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/sto/sw_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/sto/sw_bydd_trd",
+      "endpoint_path": "/svc/apis/sto/sw_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/sto/sw_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "신주인수권증권 일별매매정보",
+        "description": "유가증권/코스닥시장에 상장되어 있는 신주인수권증권의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "erXKnEAzTqcGnkcoSdGA",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "MKT_NM",
+              "label": "시장구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TDD_CLSPRC",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "FLUC_RT",
+              "label": "등락률",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_OPNPRC",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_HGPRC",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_LWPRC",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "MKTCAP",
+              "label": "시가총액",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "LIST_SHRS",
+              "label": "상장증권수",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "EXER_PRC",
+              "label": "행사가격",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "EXST_STRT_DD",
+              "label": "존속기간_시작일",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "EXST_END_DD",
+              "label": "존속기간_종료일",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TARSTK_ISU_SRT_CD",
+              "label": "목적주권_종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TARSTK_ISU_NM",
+              "label": "목적주권_종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TARSTK_ISU_PRSNT_PRC",
+              "label": "목적주권_종가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "주식",
+      "category_slug": "stock",
+      "service_name": "신주인수권증서 일별매매정보",
+      "description": "유가증권/코스닥시장에 상장되어 있는 신주인수권증서의 매매정보 제공 ('10년02월12일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES002_S2.cmd?BO_ID=YieGrzzJtKhbaNLuKmhz",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES002_S2.cmd?BO_ID=YieGrzzJtKhbaNLuKmhz",
+      "screen": "OPPUSES002",
+      "bo_id": "YieGrzzJtKhbaNLuKmhz",
+      "api_id": "sr_bydd_trd",
+      "path": "sto",
+      "bo_version": "1.0",
+      "registered_at": "2022/07/04",
+      "updated_at": "2026/01/16",
+      "detail_description": "유가증권/코스닥시장에 상장되어 있는 신주인수권증서의 매매정보 제공 ('10년02월12일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/sto/sr_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/sto/sr_bydd_trd",
+      "endpoint_path": "/svc/apis/sto/sr_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/sto/sr_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "신주인수권증서 일별매매정보",
+        "description": "유가증권/코스닥시장에 상장되어 있는 신주인수권증서의 매매정보 제공 ('10년02월12일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "YieGrzzJtKhbaNLuKmhz",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "MKT_NM",
+              "label": "시장구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TDD_CLSPRC",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "FLUC_RT",
+              "label": "등락률",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_OPNPRC",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_HGPRC",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_LWPRC",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "MKTCAP",
+              "label": "시가총액",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "LIST_SHRS",
+              "label": "상장증서수",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_PRC",
+              "label": "신주발행가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "DELIST_DD",
+              "label": "상장폐지일",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TARSTK_ISU_SRT_CD",
+              "label": "목적주권_종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TARSTK_ISU_NM",
+              "label": "목적주권_종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TARSTK_ISU_PRSNT_PRC",
+              "label": "목적주권_종가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "주식",
+      "category_slug": "stock",
+      "service_name": "유가증권 종목기본정보",
+      "description": "유가증권 종목기본정보 ('10년01월04일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES002_S2.cmd?BO_ID=PiwgMdTwmsenXhmqqxuj",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES002_S2.cmd?BO_ID=PiwgMdTwmsenXhmqqxuj",
+      "screen": "OPPUSES002",
+      "bo_id": "PiwgMdTwmsenXhmqqxuj",
+      "api_id": "stk_isu_base_info",
+      "path": "sto",
+      "bo_version": "1.0",
+      "registered_at": "2022/05/06",
+      "updated_at": "2026/01/16",
+      "detail_description": "유가증권 종목기본정보 ('10년01월04일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/sto/stk_isu_base_info",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/sto/stk_isu_base_info",
+      "endpoint_path": "/svc/apis/sto/stk_isu_base_info",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/sto/stk_isu_base_info",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "유가증권 종목기본정보",
+        "description": "유가증권 종목기본정보 ('10년01월04일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "PiwgMdTwmsenXhmqqxuj",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "ISU_CD",
+              "label": "표준코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_SRT_CD",
+              "label": "단축코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "한글 종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_ABBRV",
+              "label": "한글 종목약명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_ENG_NM",
+              "label": "영문 종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "LIST_DD",
+              "label": "상장일",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "MKT_TP_NM",
+              "label": "시장구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "SECUGRP_NM",
+              "label": "증권구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "SECT_TP_NM",
+              "label": "소속부",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "KIND_STKCERT_TP_NM",
+              "label": "주식종류",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "PARVAL",
+              "label": "액면가",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "LIST_SHRS",
+              "label": "상장주식수",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "주식",
+      "category_slug": "stock",
+      "service_name": "코스닥 종목기본정보",
+      "description": "코스닥 종목기본정보 ('10년01월04일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES002_S2.cmd?BO_ID=CifLHplnUFMgpHIMMPXs",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES002_S2.cmd?BO_ID=CifLHplnUFMgpHIMMPXs",
+      "screen": "OPPUSES002",
+      "bo_id": "CifLHplnUFMgpHIMMPXs",
+      "api_id": "ksq_isu_base_info",
+      "path": "sto",
+      "bo_version": "1.0",
+      "registered_at": "2022/05/06",
+      "updated_at": "2026/01/16",
+      "detail_description": "코스닥 종목기본정보 ('10년01월04일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/sto/ksq_isu_base_info",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/sto/ksq_isu_base_info",
+      "endpoint_path": "/svc/apis/sto/ksq_isu_base_info",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/sto/ksq_isu_base_info",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "코스닥 종목기본정보",
+        "description": "코스닥 종목기본정보 ('10년01월04일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "CifLHplnUFMgpHIMMPXs",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "ISU_CD",
+              "label": "표준코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_SRT_CD",
+              "label": "단축코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "한글 종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_ABBRV",
+              "label": "한글 종목약명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_ENG_NM",
+              "label": "영문 종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "LIST_DD",
+              "label": "상장일",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "MKT_TP_NM",
+              "label": "시장구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "SECUGRP_NM",
+              "label": "증권구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "SECT_TP_NM",
+              "label": "소속부",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "KIND_STKCERT_TP_NM",
+              "label": "주식종류",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "PARVAL",
+              "label": "액면가",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "LIST_SHRS",
+              "label": "상장주식수",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "주식",
+      "category_slug": "stock",
+      "service_name": "코넥스 종목기본정보",
+      "description": "코넥스 종목기본정보 ('13년07월01일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES002_S2.cmd?BO_ID=COgTLqgmGlqyJvaEFNIc",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES002_S2.cmd?BO_ID=COgTLqgmGlqyJvaEFNIc",
+      "screen": "OPPUSES002",
+      "bo_id": "COgTLqgmGlqyJvaEFNIc",
+      "api_id": "knx_isu_base_info",
+      "path": "sto",
+      "bo_version": "1.0",
+      "registered_at": "2022/05/06",
+      "updated_at": "2026/01/16",
+      "detail_description": "코넥스 종목기본정보 ('13년07월01일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/sto/knx_isu_base_info",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/sto/knx_isu_base_info",
+      "endpoint_path": "/svc/apis/sto/knx_isu_base_info",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/sto/knx_isu_base_info",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "코넥스 종목기본정보",
+        "description": "코넥스 종목기본정보 ('13년07월01일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "COgTLqgmGlqyJvaEFNIc",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "ISU_CD",
+              "label": "표준코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_SRT_CD",
+              "label": "단축코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "한글 종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_ABBRV",
+              "label": "한글 종목약명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_ENG_NM",
+              "label": "영문 종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "LIST_DD",
+              "label": "상장일",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "MKT_TP_NM",
+              "label": "시장구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "SECUGRP_NM",
+              "label": "증권구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "SECT_TP_NM",
+              "label": "소속부",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "KIND_STKCERT_TP_NM",
+              "label": "주식종류",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "PARVAL",
+              "label": "액면가",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "LIST_SHRS",
+              "label": "상장주식수",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "증권상품",
+      "category_slug": "etp",
+      "service_name": "ETF 일별매매정보",
+      "description": "ETF(상장지수펀드)의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES003_S2.cmd?BO_ID=nrEpCLaZpoLCTzPUMxuF",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES003_S2.cmd?BO_ID=nrEpCLaZpoLCTzPUMxuF",
+      "screen": "OPPUSES003",
+      "bo_id": "nrEpCLaZpoLCTzPUMxuF",
+      "api_id": "etf_bydd_trd",
+      "path": "etp",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/22",
+      "updated_at": "2026/01/16",
+      "detail_description": "ETF(상장지수펀드)의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/etp/etf_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/etp/etf_bydd_trd",
+      "endpoint_path": "/svc/apis/etp/etf_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/etp/etf_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "ETF 일별매매정보",
+        "description": "ETF(상장지수펀드)의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "nrEpCLaZpoLCTzPUMxuF",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TDD_CLSPRC",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "FLUC_RT",
+              "label": "등락률",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "NAV",
+              "label": "순자산가치(NAV)",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_OPNPRC",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_HGPRC",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_LWPRC",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "MKTCAP",
+              "label": "시가총액",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "INVSTASST_NETASST_TOTAMT",
+              "label": "순자산총액",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "LIST_SHRS",
+              "label": "상장좌수",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "IDX_IND_NM",
+              "label": "기초지수_지수명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "OBJ_STKPRC_IDX",
+              "label": "기초지수_종가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_IDX",
+              "label": "기초지수_대비",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "FLUC_RT_IDX",
+              "label": "기초지수_등락률",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "증권상품",
+      "category_slug": "etp",
+      "service_name": "ETN 일별매매정보",
+      "description": "ETN(상장지수증권)의 매매정보 제공 ('14년11월17일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES003_S2.cmd?BO_ID=VujebrcOsZQMybnUuwLk",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES003_S2.cmd?BO_ID=VujebrcOsZQMybnUuwLk",
+      "screen": "OPPUSES003",
+      "bo_id": "VujebrcOsZQMybnUuwLk",
+      "api_id": "etn_bydd_trd",
+      "path": "etp",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/22",
+      "updated_at": "2026/01/16",
+      "detail_description": "ETN(상장지수증권)의 매매정보 제공 ('14년11월17일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/etp/etn_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/etp/etn_bydd_trd",
+      "endpoint_path": "/svc/apis/etp/etn_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/etp/etn_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "ETN 일별매매정보",
+        "description": "ETN(상장지수증권)의 매매정보 제공 ('14년11월17일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "VujebrcOsZQMybnUuwLk",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TDD_CLSPRC",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "FLUC_RT",
+              "label": "등락률",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "PER1SECU_INDIC_VAL",
+              "label": "지표가치(IV)",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_OPNPRC",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_HGPRC",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_LWPRC",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "MKTCAP",
+              "label": "시가총액",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "INDIC_VAL_AMT",
+              "label": "지표가치총액",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "LIST_SHRS",
+              "label": "상장증권수",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "IDX_IND_NM",
+              "label": "기초지수_지수명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "OBJ_STKPRC_IDX",
+              "label": "기초지수_종가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_IDX",
+              "label": "기초지수_대비",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "FLUC_RT_IDX",
+              "label": "기초지수_등락률",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "증권상품",
+      "category_slug": "etp",
+      "service_name": "ELW 일별매매정보",
+      "description": "ELW(주식위런트증권)의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES003_S2.cmd?BO_ID=brBhSEuDCUNpmfsCslfM",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES003_S2.cmd?BO_ID=brBhSEuDCUNpmfsCslfM",
+      "screen": "OPPUSES003",
+      "bo_id": "brBhSEuDCUNpmfsCslfM",
+      "api_id": "elw_bydd_trd",
+      "path": "etp",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/22",
+      "updated_at": "2026/01/16",
+      "detail_description": "ELW(주식위런트증권)의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/etp/elw_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/etp/elw_bydd_trd",
+      "endpoint_path": "/svc/apis/etp/elw_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/etp/elw_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "ELW 일별매매정보",
+        "description": "ELW(주식위런트증권)의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "brBhSEuDCUNpmfsCslfM",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TDD_CLSPRC",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_OPNPRC",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_HGPRC",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_LWPRC",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "MKTCAP",
+              "label": "시가총액",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "LIST_SHRS",
+              "label": "상장증권수",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ULY_NM",
+              "label": "기초자산_자산명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ULY_PRC",
+              "label": "기초자산_종가",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC_ULY",
+              "label": "기초자산_대비",
+              "type": "string",
+              "size": "",
+              "format": "###0.##",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "FLUC_RT_ULY",
+              "label": "기초자산_등락률",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "채권",
+      "category_slug": "bond",
+      "service_name": "국채전문유통시장 일별매매정보",
+      "description": "국채전문유통시장에 상장되어있는 채권의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES004_S2.cmd?BO_ID=CEnOyORzHgXWpdbUfWyf",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES004_S2.cmd?BO_ID=CEnOyORzHgXWpdbUfWyf",
+      "screen": "OPPUSES004",
+      "bo_id": "CEnOyORzHgXWpdbUfWyf",
+      "api_id": "kts_bydd_trd",
+      "path": "bon",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/22",
+      "updated_at": "2026/01/16",
+      "detail_description": "국채전문유통시장에 상장되어있는 채권의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/bon/kts_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/bon/kts_bydd_trd",
+      "endpoint_path": "/svc/apis/bon/kts_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/bon/kts_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "국채전문유통시장 일별매매정보",
+        "description": "국채전문유통시장에 상장되어있는 채권의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "CEnOyORzHgXWpdbUfWyf",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "MKT_NM",
+              "label": "시장구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "BND_EXP_TP_NM",
+              "label": "만기년수",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "GOVBND_ISU_TP_NM",
+              "label": "종목구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "CLSPRC",
+              "label": "종가_가격",
+              "type": "string",
+              "size": "",
+              "format": "###0.0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "종가_대비",
+              "type": "string",
+              "size": "",
+              "format": "###0.0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "CLSPRC_YD",
+              "label": "종가_수익률",
+              "type": "string",
+              "size": "",
+              "format": "###0.000",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "OPNPRC",
+              "label": "시가_가격",
+              "type": "string",
+              "size": "",
+              "format": "###0.0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "OPNPRC_YD",
+              "label": "시가_수익률",
+              "type": "string",
+              "size": "",
+              "format": "###0.000",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "HGPRC",
+              "label": "고가_가격",
+              "type": "string",
+              "size": "",
+              "format": "###0.0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "HGPRC_YD",
+              "label": "고가_수익률",
+              "type": "string",
+              "size": "",
+              "format": "###0.000",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "LWPRC",
+              "label": "저가_가격",
+              "type": "string",
+              "size": "",
+              "format": "###0.0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "LWPRC_YD",
+              "label": "저가_수익률",
+              "type": "string",
+              "size": "",
+              "format": "###0.000",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "채권",
+      "category_slug": "bond",
+      "service_name": "일반채권시장 일별매매정보",
+      "description": "일반채권시장에 상장되어있는 채권의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES004_S2.cmd?BO_ID=JfStBNhXISpVVfBHgspT",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES004_S2.cmd?BO_ID=JfStBNhXISpVVfBHgspT",
+      "screen": "OPPUSES004",
+      "bo_id": "JfStBNhXISpVVfBHgspT",
+      "api_id": "bnd_bydd_trd",
+      "path": "bon",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/22",
+      "updated_at": "2026/01/16",
+      "detail_description": "일반채권시장에 상장되어있는 채권의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/bon/bnd_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/bon/bnd_bydd_trd",
+      "endpoint_path": "/svc/apis/bon/bnd_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/bon/bnd_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "일반채권시장 일별매매정보",
+        "description": "일반채권시장에 상장되어있는 채권의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "JfStBNhXISpVVfBHgspT",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "MKT_NM",
+              "label": "시장구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "CLSPRC",
+              "label": "종가_가격",
+              "type": "string",
+              "size": "",
+              "format": "###0.0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "종가_대비",
+              "type": "string",
+              "size": "",
+              "format": "###0.0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "CLSPRC_YD",
+              "label": "종가_수익률",
+              "type": "string",
+              "size": "",
+              "format": "###0.000",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "OPNPRC",
+              "label": "시가_가격",
+              "type": "string",
+              "size": "",
+              "format": "###0.0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "OPNPRC_YD",
+              "label": "시가_수익률",
+              "type": "string",
+              "size": "",
+              "format": "###0.000",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "HGPRC",
+              "label": "고가_가격",
+              "type": "string",
+              "size": "",
+              "format": "###0.0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "HGPRC_YD",
+              "label": "고가_수익률",
+              "type": "string",
+              "size": "",
+              "format": "###0.000",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "LWPRC",
+              "label": "저가_가격",
+              "type": "string",
+              "size": "",
+              "format": "###0.0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "LWPRC_YD",
+              "label": "저가_수익률",
+              "type": "string",
+              "size": "",
+              "format": "###0.000",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "채권",
+      "category_slug": "bond",
+      "service_name": "소액채권시장 일별매매정보",
+      "description": "소액채권시장에 상장되어있는 채권의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES004_S2.cmd?BO_ID=yrTTOsXuYzHprbWLuYzd",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES004_S2.cmd?BO_ID=yrTTOsXuYzHprbWLuYzd",
+      "screen": "OPPUSES004",
+      "bo_id": "yrTTOsXuYzHprbWLuYzd",
+      "api_id": "smb_bydd_trd",
+      "path": "bon",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/22",
+      "updated_at": "2026/01/16",
+      "detail_description": "소액채권시장에 상장되어있는 채권의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/bon/smb_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/bon/smb_bydd_trd",
+      "endpoint_path": "/svc/apis/bon/smb_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/bon/smb_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "소액채권시장 일별매매정보",
+        "description": "소액채권시장에 상장되어있는 채권의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "yrTTOsXuYzHprbWLuYzd",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "MKT_NM",
+              "label": "시장구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "CLSPRC",
+              "label": "종가_가격",
+              "type": "string",
+              "size": "",
+              "format": "###0.0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "종가_대비",
+              "type": "string",
+              "size": "",
+              "format": "###0.0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "CLSPRC_YD",
+              "label": "종가_수익률",
+              "type": "string",
+              "size": "",
+              "format": "###0.000",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "OPNPRC",
+              "label": "시가_가격",
+              "type": "string",
+              "size": "",
+              "format": "###0.0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "OPNPRC_YD",
+              "label": "시가_수익률",
+              "type": "string",
+              "size": "",
+              "format": "###0.000",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "HGPRC",
+              "label": "고가_가격",
+              "type": "string",
+              "size": "",
+              "format": "###0.0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "HGPRC_YD",
+              "label": "고가_수익률",
+              "type": "string",
+              "size": "",
+              "format": "###0.000",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "LWPRC",
+              "label": "저가_가격",
+              "type": "string",
+              "size": "",
+              "format": "###0.0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "LWPRC_YD",
+              "label": "저가_수익률",
+              "type": "string",
+              "size": "",
+              "format": "###0.000",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "파생상품",
+      "category_slug": "derivatives",
+      "service_name": "선물 일별매매정보 (주식선물外)",
+      "description": "파생상품시장의 선물 중 주식선물을 제외한 선물의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES005_S2.cmd?BO_ID=ilaVYOabbaicHbKTsqga",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES005_S2.cmd?BO_ID=ilaVYOabbaicHbKTsqga",
+      "screen": "OPPUSES005",
+      "bo_id": "ilaVYOabbaicHbKTsqga",
+      "api_id": "fut_bydd_trd",
+      "path": "drv",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/22",
+      "updated_at": "2026/01/16",
+      "detail_description": "파생상품시장의 선물 중 주식선물을 제외한 선물의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/drv/fut_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/drv/fut_bydd_trd",
+      "endpoint_path": "/svc/apis/drv/fut_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/drv/fut_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "선물 일별매매정보 (주식선물外)",
+        "description": "파생상품시장의 선물 중 주식선물을 제외한 선물의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "ilaVYOabbaicHbKTsqga",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "PROD_NM",
+              "label": "상품구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "MKT_NM",
+              "label": "시장구분(정규/야간)",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TDD_CLSPRC",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_OPNPRC",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_HGPRC",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_LWPRC",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "SPOT_PRC",
+              "label": "현물가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "SETL_PRC",
+              "label": "정산가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "0",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_OPNINT_QTY",
+              "label": "미결제약정",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "파생상품",
+      "category_slug": "derivatives",
+      "service_name": "주식선물(유가) 일별매매정보",
+      "description": "파생상품시장의 주식선물 중 기초자산이 유가증권시장에 속하는 주식선물의 거래정보 제공 ('10년01월04일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES005_S2.cmd?BO_ID=JzVvQnspImpuqtZlFWpJ",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES005_S2.cmd?BO_ID=JzVvQnspImpuqtZlFWpJ",
+      "screen": "OPPUSES005",
+      "bo_id": "JzVvQnspImpuqtZlFWpJ",
+      "api_id": "eqsfu_stk_bydd_trd",
+      "path": "drv",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/22",
+      "updated_at": "2026/01/16",
+      "detail_description": "파생상품시장의 주식선물 중 기초자산이 유가증권시장에 속하는 주식선물의 거래정보 제공 ('10년01월04일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/drv/eqsfu_stk_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/drv/eqsfu_stk_bydd_trd",
+      "endpoint_path": "/svc/apis/drv/eqsfu_stk_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/drv/eqsfu_stk_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "주식선물(유가) 일별매매정보",
+        "description": "파생상품시장의 주식선물 중 기초자산이 유가증권시장에 속하는 주식선물의 거래정보 제공 ('10년01월04일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "JzVvQnspImpuqtZlFWpJ",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "PROD_NM",
+              "label": "상품구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "MKT_NM",
+              "label": "시장구분(정규/야간)",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TDD_CLSPRC",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_OPNPRC",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_HGPRC",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_LWPRC",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "SPOT_PRC",
+              "label": "현물가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "SETL_PRC",
+              "label": "정산가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "0",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_OPNINT_QTY",
+              "label": "미결제약정",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "파생상품",
+      "category_slug": "derivatives",
+      "service_name": "주식선물(코스닥) 일별매매정보",
+      "description": "파생상품시장의 주식선물 중 기초자산이 코스닥시장에 속하는 주식선물의 거래정보 제공 ('15년08월03일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES005_S2.cmd?BO_ID=henfdJADfLTCUCBWIRCj",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES005_S2.cmd?BO_ID=henfdJADfLTCUCBWIRCj",
+      "screen": "OPPUSES005",
+      "bo_id": "henfdJADfLTCUCBWIRCj",
+      "api_id": "eqkfu_ksq_bydd_trd",
+      "path": "drv",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/22",
+      "updated_at": "2026/01/16",
+      "detail_description": "파생상품시장의 주식선물 중 기초자산이 코스닥시장에 속하는 주식선물의 거래정보 제공 ('15년08월03일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/drv/eqkfu_ksq_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/drv/eqkfu_ksq_bydd_trd",
+      "endpoint_path": "/svc/apis/drv/eqkfu_ksq_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/drv/eqkfu_ksq_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "주식선물(코스닥) 일별매매정보",
+        "description": "파생상품시장의 주식선물 중 기초자산이 코스닥시장에 속하는 주식선물의 거래정보 제공 ('15년08월03일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "henfdJADfLTCUCBWIRCj",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "PROD_NM",
+              "label": "상품구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "MKT_NM",
+              "label": "시장구분(정규/야간)",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TDD_CLSPRC",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_OPNPRC",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_HGPRC",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_LWPRC",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "SPOT_PRC",
+              "label": "현물가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "SETL_PRC",
+              "label": "정산가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "0",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_OPNINT_QTY",
+              "label": "미결제약정",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "파생상품",
+      "category_slug": "derivatives",
+      "service_name": "옵션 일별매매정보 (주식옵션外)",
+      "description": "파생상품시장의 옵션 중 주식옵션을 제외한 옵션의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES005_S2.cmd?BO_ID=AoTvuFpukvuBsfypkZbq",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES005_S2.cmd?BO_ID=AoTvuFpukvuBsfypkZbq",
+      "screen": "OPPUSES005",
+      "bo_id": "AoTvuFpukvuBsfypkZbq",
+      "api_id": "opt_bydd_trd",
+      "path": "drv",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/22",
+      "updated_at": "2026/01/16",
+      "detail_description": "파생상품시장의 옵션 중 주식옵션을 제외한 옵션의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/drv/opt_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/drv/opt_bydd_trd",
+      "endpoint_path": "/svc/apis/drv/opt_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/drv/opt_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "옵션 일별매매정보 (주식옵션外)",
+        "description": "파생상품시장의 옵션 중 주식옵션을 제외한 옵션의 매매정보 제공 ('10년01월04일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "AoTvuFpukvuBsfypkZbq",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "PROD_NM",
+              "label": "상품구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "RGHT_TP_NM",
+              "label": "권리유형(CALL/PUT)",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TDD_CLSPRC",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_OPNPRC",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_HGPRC",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_LWPRC",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "IMP_VOLT",
+              "label": "내재변동성",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "NXTDD_BAS_PRC",
+              "label": "익일정산가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_OPNINT_QTY",
+              "label": "미결제약정",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "파생상품",
+      "category_slug": "derivatives",
+      "service_name": "주식옵션(유가) 일별매매정보",
+      "description": "파생상품시장의 주식옵션 중 기초자산이 유가증권시장에 속하는 주식옵션의 거래정보 제공 ('10년01월04일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES005_S2.cmd?BO_ID=fwWKgzbevDVtAoECgkpA",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES005_S2.cmd?BO_ID=fwWKgzbevDVtAoECgkpA",
+      "screen": "OPPUSES005",
+      "bo_id": "fwWKgzbevDVtAoECgkpA",
+      "api_id": "eqsop_bydd_trd",
+      "path": "drv",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/22",
+      "updated_at": "2026/01/16",
+      "detail_description": "파생상품시장의 주식옵션 중 기초자산이 유가증권시장에 속하는 주식옵션의 거래정보 제공 ('10년01월04일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/drv/eqsop_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/drv/eqsop_bydd_trd",
+      "endpoint_path": "/svc/apis/drv/eqsop_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/drv/eqsop_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "주식옵션(유가) 일별매매정보",
+        "description": "파생상품시장의 주식옵션 중 기초자산이 유가증권시장에 속하는 주식옵션의 거래정보 제공 ('10년01월04일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "fwWKgzbevDVtAoECgkpA",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "PROD_NM",
+              "label": "상품구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "RGHT_TP_NM",
+              "label": "권리유형(CALL/PUT)",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TDD_CLSPRC",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_OPNPRC",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_HGPRC",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_LWPRC",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "IMP_VOLT",
+              "label": "내재변동성",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "NXTDD_BAS_PRC",
+              "label": "익일정산가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_OPNINT_QTY",
+              "label": "미결제약정",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "파생상품",
+      "category_slug": "derivatives",
+      "service_name": "주식옵션(코스닥) 일별매매정보",
+      "description": "파생상품시장의 주식옵션 중 기초자산이 코스닥시장에 속하는 주식옵션의 거래정보 제공 ('17년06월26일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES005_S2.cmd?BO_ID=AFNbHSizSPnEssZoUqiS",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES005_S2.cmd?BO_ID=AFNbHSizSPnEssZoUqiS",
+      "screen": "OPPUSES005",
+      "bo_id": "AFNbHSizSPnEssZoUqiS",
+      "api_id": "eqkop_bydd_trd",
+      "path": "drv",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/22",
+      "updated_at": "2026/01/16",
+      "detail_description": "파생상품시장의 주식옵션 중 기초자산이 코스닥시장에 속하는 주식옵션의 거래정보 제공 ('17년06월26일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/drv/eqkop_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/drv/eqkop_bydd_trd",
+      "endpoint_path": "/svc/apis/drv/eqkop_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/drv/eqkop_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "주식옵션(코스닥) 일별매매정보",
+        "description": "파생상품시장의 주식옵션 중 기초자산이 코스닥시장에 속하는 주식옵션의 거래정보 제공 ('17년06월26일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "AFNbHSizSPnEssZoUqiS",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "PROD_NM",
+              "label": "상품구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "RGHT_TP_NM",
+              "label": "권리유형(CALL/PUT)",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TDD_CLSPRC",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_OPNPRC",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_HGPRC",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_LWPRC",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "IMP_VOLT",
+              "label": "내재변동성",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "NXTDD_BAS_PRC",
+              "label": "익일정산가",
+              "type": "string",
+              "size": "",
+              "format": "###0.00#",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_OPNINT_QTY",
+              "label": "미결제약정",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "일반상품",
+      "category_slug": "commodity",
+      "service_name": "석유시장 일별매매정보",
+      "description": "KRX 석유시장의 매매정보 제공 ('12년03월30일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES006_S2.cmd?BO_ID=rTvrZvAFKfcaLPOggJtW",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES006_S2.cmd?BO_ID=rTvrZvAFKfcaLPOggJtW",
+      "screen": "OPPUSES006",
+      "bo_id": "rTvrZvAFKfcaLPOggJtW",
+      "api_id": "oil_bydd_trd",
+      "path": "gen",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/22",
+      "updated_at": "2026/01/16",
+      "detail_description": "KRX 석유시장의 매매정보 제공 ('12년03월30일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/gen/oil_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/gen/oil_bydd_trd",
+      "endpoint_path": "/svc/apis/gen/oil_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/gen/oil_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "석유시장 일별매매정보",
+        "description": "KRX 석유시장의 매매정보 제공 ('12년03월30일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "rTvrZvAFKfcaLPOggJtW",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "OIL_NM",
+              "label": "유종구분",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "WT_AVG_PRC",
+              "label": "가중평균가격_경쟁",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "WT_DIS_AVG_PRC",
+              "label": "가중평균가격_협의",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "일반상품",
+      "category_slug": "commodity",
+      "service_name": "금시장 일별매매정보",
+      "description": "KRX 금시장 매매정보 제공 ('14년03월24일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES006_S2.cmd?BO_ID=sxveSnWzWNzWxQASsgEG",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES006_S2.cmd?BO_ID=sxveSnWzWNzWxQASsgEG",
+      "screen": "OPPUSES006",
+      "bo_id": "sxveSnWzWNzWxQASsgEG",
+      "api_id": "gold_bydd_trd",
+      "path": "gen",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/22",
+      "updated_at": "2026/01/16",
+      "detail_description": "KRX 금시장 매매정보 제공 ('14년03월24일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/gen/gold_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/gen/gold_bydd_trd",
+      "endpoint_path": "/svc/apis/gen/gold_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/gen/gold_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "금시장 일별매매정보",
+        "description": "KRX 금시장 매매정보 제공 ('14년03월24일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "sxveSnWzWNzWxQASsgEG",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TDD_CLSPRC",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "####",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "####",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "FLUC_RT",
+              "label": "등락률",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_OPNPRC",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "####",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_HGPRC",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "####",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_LWPRC",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "####",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "####",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "####",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "일반상품",
+      "category_slug": "commodity",
+      "service_name": "배출권 시장 일별매매정보",
+      "description": "KRX 탄소배출권 시장의 매매정보 제공 ('15년01월12일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES006_S2.cmd?BO_ID=IZiYdcgRQFMeENJPEMKG",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES006_S2.cmd?BO_ID=IZiYdcgRQFMeENJPEMKG",
+      "screen": "OPPUSES006",
+      "bo_id": "IZiYdcgRQFMeENJPEMKG",
+      "api_id": "ets_bydd_trd",
+      "path": "gen",
+      "bo_version": "1.0",
+      "registered_at": "2020/09/22",
+      "updated_at": "2026/01/16",
+      "detail_description": "KRX 탄소배출권 시장의 매매정보 제공 ('15년01월12일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/gen/ets_bydd_trd",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/gen/ets_bydd_trd",
+      "endpoint_path": "/svc/apis/gen/ets_bydd_trd",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/gen/ets_bydd_trd",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "배출권 시장 일별매매정보",
+        "description": "KRX 탄소배출권 시장의 매매정보 제공 ('15년01월12일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "IZiYdcgRQFMeENJPEMKG",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "종목코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TDD_CLSPRC",
+              "label": "종가",
+              "type": "string",
+              "size": "",
+              "format": "####",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "대비",
+              "type": "string",
+              "size": "",
+              "format": "####",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "FLUC_RT",
+              "label": "등락률",
+              "type": "string",
+              "size": "",
+              "format": "###0.00",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_OPNPRC",
+              "label": "시가",
+              "type": "string",
+              "size": "",
+              "format": "####",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_HGPRC",
+              "label": "고가",
+              "type": "string",
+              "size": "",
+              "format": "####",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "TDD_LWPRC",
+              "label": "저가",
+              "type": "string",
+              "size": "",
+              "format": "####",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량",
+              "type": "string",
+              "size": "",
+              "format": "####",
+              "default": "-",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금",
+              "type": "string",
+              "size": "",
+              "format": "####",
+              "default": "-",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "ESG",
+      "category_slug": "esg",
+      "service_name": "ESG 증권상품",
+      "description": "ESG 증권상품 정보를 제공 ('20년01월02일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES007_S2.cmd?BO_ID=dpRoGGhdnfSZSrMFtUCz",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES007_S2.cmd?BO_ID=dpRoGGhdnfSZSrMFtUCz",
+      "screen": "OPPUSES007",
+      "bo_id": "dpRoGGhdnfSZSrMFtUCz",
+      "api_id": "esg_etp_info",
+      "path": "esg",
+      "bo_version": "1.0",
+      "registered_at": "2025/12/26",
+      "updated_at": "2026/03/30",
+      "detail_description": "ESG 증권상품 정보를 제공 ('20년01월02일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/esg/esg_etp_info",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/esg/esg_etp_info",
+      "endpoint_path": "/svc/apis/esg/esg_etp_info",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/esg/esg_etp_info",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "ESG 증권상품",
+        "description": "ESG 증권상품 정보를 제공 ('20년01월02일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "dpRoGGhdnfSZSrMFtUCz",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_ABBRV",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TDD_CLSPRC",
+              "label": "현재가",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "CMPPREVDD_PRC",
+              "label": "전일비",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "FLUC_RT",
+              "label": "등락률",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "LIST_SHRS",
+              "label": "상장좌수",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량(좌)",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금(원)",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "ESG",
+      "category_slug": "esg",
+      "service_name": "사회책임투자채권 정보",
+      "description": "사회책임투자채권 정보를 제공 ('19년01월01일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES007_S2.cmd?BO_ID=MwsSXzVIceQhMSJUeCdp",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES007_S2.cmd?BO_ID=MwsSXzVIceQhMSJUeCdp",
+      "screen": "OPPUSES007",
+      "bo_id": "MwsSXzVIceQhMSJUeCdp",
+      "api_id": "sri_bond_info",
+      "path": "esg",
+      "bo_version": "1.0",
+      "registered_at": "2023/11/15",
+      "updated_at": "2026/01/16",
+      "detail_description": "사회책임투자채권 정보를 제공 ('19년01월01일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/esg/sri_bond_info",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/esg/sri_bond_info",
+      "endpoint_path": "/svc/apis/esg/sri_bond_info",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/esg/sri_bond_info",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "사회책임투자채권 정보",
+        "description": "사회책임투자채권 정보를 제공 ('19년01월01일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "MwsSXzVIceQhMSJUeCdp",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "8",
+              "format": "",
+              "default": "",
+              "sample": "20200414"
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISUR_NM",
+              "label": "발행기관",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_CD",
+              "label": "표준코드",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "SRI_BND_TP_NM",
+              "label": "채권종류",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_NM",
+              "label": "종목명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "LIST_DD",
+              "label": "상장일",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_DD",
+              "label": "발행일",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "REDMPT_DD",
+              "label": "상환일",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_RT",
+              "label": "표면이자율",
+              "type": "string",
+              "size": "",
+              "format": "###0.00000",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ISU_AMT",
+              "label": "발행금액",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "LIST_AMT",
+              "label": "상장금액",
+              "type": "string",
+              "size": "",
+              "format": "###0",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "BND_TP_NM",
+              "label": "채권유형",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "category": "ESG",
+      "category_slug": "esg",
+      "service_name": "ESG 지수",
+      "description": "ESG 지수 정보를 제공 ('20년01월02일 데이터부터 제공)",
+      "detail_path": "/contents/OPP/USES/service/OPPUSES007_S2.cmd?BO_ID=WgFYvEvsseQMARfMVZCq",
+      "detail_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/OPPUSES007_S2.cmd?BO_ID=WgFYvEvsseQMARfMVZCq",
+      "screen": "OPPUSES007",
+      "bo_id": "WgFYvEvsseQMARfMVZCq",
+      "api_id": "esg_index_info",
+      "path": "esg",
+      "bo_version": "1.0",
+      "registered_at": "2025/12/26",
+      "updated_at": "2026/03/30",
+      "detail_description": "ESG 지수 정보를 제공 ('20년01월02일 데이터부터 제공)",
+      "sample_path": "/svc/sample/apis/esg/esg_index_info",
+      "sample_url": "https://data-dbg.krx.co.kr/svc/sample/apis/esg/esg_index_info",
+      "endpoint_path": "/svc/apis/esg/esg_index_info",
+      "endpoint_url": "https://data-dbg.krx.co.kr/svc/apis/esg/esg_index_info",
+      "download_doc_url": "https://openapi.krx.co.kr/contents/OPP/USES/service/downloadApiDoc.cmd",
+      "bld_info": {
+        "name": "ESG 지수",
+        "description": "ESG 지수 정보를 제공 ('20년01월02일 데이터부터 제공)",
+        "author": "mdcadmin",
+        "id": "WgFYvEvsseQMARfMVZCq",
+        "version": "1.0",
+        "http-access": "true",
+        "status": "confirmation",
+        "open-api": "true"
+      },
+      "request_blocks": [
+        {
+          "id": "InBlock_1",
+          "name": "InBlock_1",
+          "label": "InBlock_1",
+          "repeat": "1",
+          "fields": [
+            {
+              "name": "basDd",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            }
+          ]
+        }
+      ],
+      "response_blocks": [
+        {
+          "id": "OutBlock_1",
+          "name": "OutBlock_1",
+          "label": "OutBlock_1",
+          "repeat": "",
+          "fields": [
+            {
+              "name": "BAS_DD",
+              "label": "기준일자",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "IDX_NM",
+              "label": "지수명",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "CLSPRC_IDX",
+              "label": "현재가",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "PRV_DD_CMPR",
+              "label": "전일비",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "UPDN_RATE",
+              "label": "등락률",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "TRD_ISU_CNT",
+              "label": "구성종목수",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVOL",
+              "label": "거래량(천주)",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            },
+            {
+              "name": "ACC_TRDVAL",
+              "label": "거래대금(백만원)",
+              "type": "string",
+              "size": "",
+              "format": "",
+              "default": "",
+              "sample": ""
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}
