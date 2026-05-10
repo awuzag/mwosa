@@ -156,13 +156,15 @@ provider 이름은 큰 데이터 소스 단위로 둔다. 공공데이터포털�
 ### Core packages
 
 - `packages/indicators`
+- `packages/backtest`
 
 결정:
 
 - 투자 리서치에 필요한 보조지표 계산은 provider 나 CLI command 내부에 두지 않는다.
 - `packages/indicators` 를 독립 계산 패키지 후보로 둔다.
+- YAML 기반 백테스트 engine 은 `packages/backtest` 를 독립 core package 후보로 둔다.
 - MACD, 일목균형표, 이동평균은 검토 대상의 예시일 뿐 전체 범위를 제한하지 않는다.
-- 이 패키지는 provider, storage, Cobra, presentation 에 의존하지 않는다.
+- 이 core package 들은 provider, storage, Cobra, presentation 에 의존하지 않는다.
 - service layer 는 canonical candle 데이터를 indicators 입력 타입으로 변환한 뒤 계산 패키지를 호출한다.
 - 외부 보조지표 라이브러리는 public API 로 노출하지 않고, 필요하면 package 내부 구현 세부사항으로만 사용한다.
 
@@ -199,6 +201,7 @@ provider 이름은 큰 데이터 소스 단위로 둔다. 공공데이터포털�
 - NDJSON 이후 추가 저장 포맷
 - provider package repository strategy
 - indicator engine implementation library
+- backtester engine implementation library
 
 ## 관련 문서
 
@@ -208,6 +211,8 @@ provider 이름은 큰 데이터 소스 단위로 둔다. 공공데이터포털�
 - `docs/architectures/packages/README.md`
 - `docs/architectures/configuration/README.md`
 - `docs/architectures/packages/indicators/README.md`
+- `docs/architectures/packages/backtest/README.md`
 - `docs/architectures/completion/README.md`
+- `docs/features/backtester/README.md`
 - `docs/development/README.md`
 - `docs/canonical-schema.md`

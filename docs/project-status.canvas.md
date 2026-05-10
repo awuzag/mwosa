@@ -64,7 +64,11 @@ viewport:
 - `docs/architectures/indicator/README.md`: 지표와 추세 계산 레이어
 - `docs/architectures/packages/README.md`: 독립 core package 경계
 - `docs/architectures/packages/indicators/README.md`: 투자 보조지표 계산 패키지 논의
+- `docs/architectures/packages/backtest/README.md`: 독립 백테스트 시뮬레이션 엔진 경계
+- `docs/architectures/packages/backtest/trading-engine-layers.md`: eolmasa 에서 가져온 백테스트 엔진 레이어 결정
+- `docs/architectures/packages/backtest/references/strategy-asset-schema-references.md`: QuantConnect/KIS 전략 에셋 스키마 레퍼런스
 - `docs/features/indicators/README.md`: 보조지표 패키지 구현 태스크
+- `docs/features/backtester/README.md`: YAML 기반 백테스터 구조 분석과 첫 spike 범위
 - `docs/development/README.md`: 개발 협업 기준, HTTP client 선택 기준
 - `docs/providers/datago/README.md`: `datago` provider 와 첫 provider group 구현 계획
 
