@@ -65,7 +65,7 @@ provider 와 group 을 한 문자열로 합쳐 `datago/securitiesProductPrice` �
 
 | provider | 상태 | 호환 범위 | 주요 capability | 비고 |
 | --- | --- | --- | --- | --- |
-| `kis` | `core` | 한국 주식, ETF | `quote`, `candles`, `orderbook`, `trades`, `instrument` | 국내 현재가와 일봉의 핵심 provider 로 둔다. 주문 기능은 초기 범위에서 제외한다. |
+| `kis` | `core` | 한국 주식, ETF, ETN | `quote`, `candles`, `instrument` | 국내 현재가와 심볼 단위 일봉의 핵심 provider 로 둔다. 주문 기능은 초기 범위에서 제외하며, 분봉/호가/체결은 범용 role 추가 후 연결한다. |
 | `datago` | `core` | 한국 ETF, ETN, ELW, 주식 | `candles`, `instrument` | group별 공공 OpenAPI 를 묶는 provider 다. 실시간 quote provider 로 보지 않는다. |
 | `krx` | `planned` | 한국 거래소, 시장, 종목, 지수 | `instrument`, `candles`, `index`, `market` | 국내 종목 reference 와 시장 calendar 보강용이다. |
 | `kiwoom` | `planned` | 한국 주식, ETF | `quote`, `candles`, `orderbook`, `trades` | 국내 실시간/브로커 데이터 확장 대상으로 둔다. |
@@ -80,6 +80,8 @@ provider 와 group 을 한 문자열로 합쳐 `datago/securitiesProductPrice` �
 | `datago` | `stockPrice` | `core` | `getStockPriceInfo` | `candles`, `instrument` | 금융위원회 주식시세정보 OpenAPI 다. |
 | `datago` | `krxListedInstrument` | `planned` | KRX상장종목정보 | `instrument` | 종목코드와 `crno` 같은 reference identifier 를 canonical instrument store 에 저장하는 source 로 둔다. |
 | `datago` | `corporateFinancial` | `planned` | 기업 재무 정보 | `fundamentals`, `financials` | `crno` 데이터 의존성을 가진다. |
+| `kis` | `domesticStockQuotation` | `core` | `price`, `daily`, `etfetnPrice` | `quote`, `candles` | KIS client 의 국내 주식/ETF/ETN 현재가와 심볼 단위 일봉 조회를 연결한다. |
+| `kis` | `domesticStockInstrument` | `core` | `product`, `stock` | `instrument` | 상품기본조회와 주식기본조회 기반의 정확한 코드 조회를 연결한다. |
 | `krx` | `etpDailyTrade` | `planned` | KRX ETF/ETN/ELW 일별매매정보 | `candles`, `instrument` | KRX OpenAPI 승인 후 보조 후보로 둔다. |
 | `krx` | `stockDailyTrade` | `planned` | KRX 주식 일별매매정보 | `candles`, `instrument` | datago 와 중복되는 범위는 router 우선순위로 다룬다. |
 

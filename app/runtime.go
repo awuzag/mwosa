@@ -10,7 +10,9 @@ import (
 	"github.com/ev3rlit/mwosa/providers/core/quote"
 	"github.com/ev3rlit/mwosa/service/daily"
 	financialsservice "github.com/ev3rlit/mwosa/service/financials"
+	instrumentservice "github.com/ev3rlit/mwosa/service/instrument"
 	providerservice "github.com/ev3rlit/mwosa/service/providers"
+	quoteservice "github.com/ev3rlit/mwosa/service/quote"
 	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
 	"github.com/ev3rlit/mwosa/storage"
 	dailybarstorage "github.com/ev3rlit/mwosa/storage/dailybar"
@@ -55,16 +57,20 @@ type ProviderRuntime struct {
 }
 
 type ServiceRuntime struct {
-	Daily      DailyServices
-	Financials financialsservice.Service
-	Providers  providerservice.Service
-	Strategy   strategyservice.Service
+	Daily       DailyServices
+	Financials  financialsservice.Service
+	Instruments instrumentservice.Service
+	Providers   providerservice.Service
+	Quotes      quoteservice.Service
+	Strategy    strategyservice.Service
 }
 
 type Handlers struct {
-	Daily      handler.Daily
-	Financials handler.Financials
-	Strategy   handler.Strategy
+	Daily       handler.Daily
+	Financials  handler.Financials
+	Instruments handler.Instrument
+	Quotes      handler.Quote
+	Strategy    handler.Strategy
 }
 
 type DailyServices struct {
@@ -144,6 +150,20 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 			database.Close(),
 		)
 	}
+	instrumentService, err := instrumentservice.NewService(providerRuntime.Instruments)
+	if err != nil {
+		return nil, oops.Join(
+			errb.Wrapf(err, "create instrument service"),
+			database.Close(),
+		)
+	}
+	quoteService, err := quoteservice.NewService(providerRuntime.Quotes)
+	if err != nil {
+		return nil, oops.Join(
+			errb.Wrapf(err, "create quote service"),
+			database.Close(),
+		)
+	}
 	datasetReader, err := strategyservice.NewDailyBarDatasetReader(reader, opts.Market)
 	if err != nil {
 		return nil, oops.Join(
@@ -160,6 +180,8 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	}
 	dailyHandler := handler.NewDaily(dailyReader, dailyCollector)
 	financialsHandler := handler.NewFinancials(financialsService)
+	instrumentHandler := handler.NewInstrument(instrumentService)
+	quoteHandler := handler.NewQuote(quoteService)
 	strategyHandler := handler.NewStrategy(strategyService)
 
 	return &Runtime{
@@ -177,14 +199,18 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 				Reader:    dailyReader,
 				Collector: dailyCollector,
 			},
-			Financials: financialsService,
-			Providers:  providersService,
-			Strategy:   strategyService,
+			Financials:  financialsService,
+			Instruments: instrumentService,
+			Providers:   providersService,
+			Quotes:      quoteService,
+			Strategy:    strategyService,
 		},
 		Handlers: Handlers{
-			Daily:      dailyHandler,
-			Financials: financialsHandler,
-			Strategy:   strategyHandler,
+			Daily:       dailyHandler,
+			Financials:  financialsHandler,
+			Instruments: instrumentHandler,
+			Quotes:      quoteHandler,
+			Strategy:    strategyHandler,
 		},
 	}, nil
 }

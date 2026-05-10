@@ -92,11 +92,13 @@ v1 은 시장 데이터 provider 로 제한한다.
 
 ### 3. `providers/kis` adapter
 
-- SDK result 를 canonical model 로 정규화한다.
-- provider profile 에 market, security type, freshness, 실전/모의 지원 여부를
-  명시한다.
-- `quote` 와 `daily_bar` 부터 registry 에 등록한다.
-- 분봉, 호가, 체결은 role interface 가 정리된 뒤 등록한다.
+- SDK result 를 canonical model 로 정규화한다. `(구현됨: quote, daily_bar, instrument)`
+- provider profile 에 market, security type, freshness, 인증 범위를 명시한다.
+  `(구현됨)`
+- `quote`, `daily_bar`, `instrument` 를 registry 에 등록한다. `(구현됨)`
+- 분봉, 호가, 체결은 role interface 가 정리된 뒤 등록한다. `(보류)`
+
+현재 adapter 문서는 `docs/providers/kis/README.md` 에 둔다.
 
 ## 완료 기준
 

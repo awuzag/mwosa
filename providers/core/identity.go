@@ -11,14 +11,26 @@ type DataLatency string
 type Role string
 
 const (
+	ProviderKIS                    ProviderID = "kis"
 	ProviderDataGo                 ProviderID = "datago"
 	ProviderDataGoCorporateFinance ProviderID = "datago-corpfin"
 
-	GroupSecuritiesProductPrice GroupID = "securitiesProductPrice"
-	GroupStockPrice             GroupID = "stockPrice"
-	GroupCorporateFinance       GroupID = "corporateFinance"
-	GroupKRXListedInfo          GroupID = "krxListedInfo"
+	GroupKISDomesticStockQuotation  GroupID = "domesticStockQuotation"
+	GroupKISDomesticStockInstrument GroupID = "domesticStockInstrument"
+	GroupSecuritiesProductPrice     GroupID = "securitiesProductPrice"
+	GroupStockPrice                 GroupID = "stockPrice"
+	GroupCorporateFinance           GroupID = "corporateFinance"
+	GroupKRXListedInfo              GroupID = "krxListedInfo"
 
+	OperationKISPrice             OperationID = "price"
+	OperationKISDaily             OperationID = "daily"
+	OperationKISIntraday          OperationID = "intraday"
+	OperationKISOrderbook         OperationID = "orderbook"
+	OperationKISTrades            OperationID = "trades"
+	OperationKISTimeTrades        OperationID = "timeTrades"
+	OperationKISProduct           OperationID = "product"
+	OperationKISStock             OperationID = "stock"
+	OperationKISETFETNPrice       OperationID = "etfetnPrice"
 	OperationGetETFPriceInfo      OperationID = "getETFPriceInfo"
 	OperationGetETNPriceInfo      OperationID = "getETNPriceInfo"
 	OperationGetELWPriceInfo      OperationID = "getELWPriceInfo"
@@ -35,6 +47,7 @@ const (
 	SecurityTypeELW   SecurityType = "elw"
 	SecurityTypeStock SecurityType = "stock"
 
+	CredentialScopeKIS    CredentialScope = "kis"
 	CredentialScopeDataGo CredentialScope = "datago"
 
 	FreshnessDaily  Freshness = "daily"
