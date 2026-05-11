@@ -23,6 +23,8 @@ func TestDecodeYAMLStreamLoadsStrategyAndBacktestRun(t *testing.T) {
 	assert.Equal(t, core.KindBacktestRun, bundle.Run.Kind)
 	assert.Equal(t, "sma-cross-run", bundle.Run.Name)
 	assert.Equal(t, []string{"069500"}, bundle.Run.Universe.Symbols)
+	assert.Equal(t, "core", bundle.Run.Report.Metrics.Preset)
+	assert.Equal(t, []string{"trade_count"}, bundle.Run.Report.Metrics.Exclude)
 }
 
 func TestLoadFileLoadsYAMLAndRunsBacktest(t *testing.T) {
@@ -111,9 +113,11 @@ execution:
     value: 0
 report:
   metrics:
-    - total_return
-    - max_drawdown
-    - trade_count
+    preset: core
+    include:
+      - average_trade_return
+    exclude:
+      - trade_count
 `
 }
 

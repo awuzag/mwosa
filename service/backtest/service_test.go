@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
 
 	provider "github.com/ev3rlit/mwosa/providers/core"
@@ -30,6 +31,7 @@ func TestServiceValidatesAndRunsYAMLAgainstDailyBarRepository(t *testing.T) {
 	assert.Equal(t, "sma-cross-run", validation.RunName)
 	assert.Equal(t, "next_open", validation.Execution.Fill)
 	assert.Equal(t, "sma", validation.Indicators["trend"])
+	assert.Equal(t, []string{"total_return", "final_equity", "max_drawdown", "win_rate", "average_trade_return"}, validation.Metrics)
 
 	result, err := service.Run(context.Background(), path)
 	require.NoError(t, err)
@@ -48,7 +50,30 @@ func TestServiceValidatesAndRunsYAMLAgainstDailyBarRepository(t *testing.T) {
 	assert.Equal(t, "next_open", result.Execution.Fill)
 	require.Len(t, result.Trades, 2)
 	assert.NotEmpty(t, result.EquityCurve)
+	assert.NotContains(t, result.Metrics, "trade_count")
+	assert.Contains(t, result.Metrics, "average_trade_return")
 	assert.NotEmpty(t, result.ResultHash)
+}
+
+func TestServiceLoadsBenchmarkBarsForBenchmarkMetrics(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "sma-cross.yaml")
+	require.NoError(t, os.WriteFile(path, []byte(sampleYAMLWithBenchmarkMetrics()), 0o644))
+
+	repo := &recordingDailyBarRepository{bars: map[string][]dailybar.Bar{
+		"069500": sampleCanonicalDailyBars(),
+		"102110": sampleBenchmarkCanonicalDailyBars(),
+	}}
+	service, err := NewService(repo)
+	require.NoError(t, err)
+
+	result, err := service.Run(context.Background(), path)
+	require.NoError(t, err)
+
+	require.Len(t, repo.queries, 2)
+	assert.Equal(t, "069500", repo.queries[0].Symbol)
+	assert.Equal(t, "102110", repo.queries[1].Symbol)
+	assert.Contains(t, result.Metrics, "benchmark_total_return")
+	assert.Contains(t, result.Metrics, "excess_return")
 }
 
 func TestServiceErrorsWhenDailyBarsAreMissing(t *testing.T) {
@@ -84,14 +109,28 @@ func sampleCanonicalDailyBars() []dailybar.Bar {
 	}
 }
 
+func sampleBenchmarkCanonicalDailyBars() []dailybar.Bar {
+	return []dailybar.Bar{
+		canonicalDailyBarForSymbol("102110", "2024-01-02", "100", "100", "100", "100"),
+		canonicalDailyBarForSymbol("102110", "2024-01-03", "105", "105", "105", "105"),
+		canonicalDailyBarForSymbol("102110", "2024-01-04", "95", "95", "95", "95"),
+		canonicalDailyBarForSymbol("102110", "2024-01-05", "110", "110", "110", "110"),
+		canonicalDailyBarForSymbol("102110", "2024-01-08", "110", "110", "110", "110"),
+	}
+}
+
 func canonicalDailyBar(date string, open string, high string, low string, closePrice string) dailybar.Bar {
+	return canonicalDailyBarForSymbol("069500", date, open, high, low, closePrice)
+}
+
+func canonicalDailyBarForSymbol(symbol string, date string, open string, high string, low string, closePrice string) dailybar.Bar {
 	return dailybar.Bar{
 		Provider:     provider.ProviderDataGo,
 		Group:        provider.GroupSecuritiesProductPrice,
 		Operation:    provider.OperationGetETFPriceInfo,
 		Market:       provider.MarketKRX,
 		SecurityType: provider.SecurityTypeETF,
-		Symbol:       "069500",
+		Symbol:       symbol,
 		TradingDate:  date,
 		Open:         open,
 		High:         high,
@@ -99,4 +138,22 @@ func canonicalDailyBar(date string, open string, high string, low string, closeP
 		Close:        closePrice,
 		Volume:       "1000",
 	}
+}
+
+func sampleYAMLWithBenchmarkMetrics() string {
+	return strings.Replace(sampleYAML(), `report:
+  metrics:
+    preset: core
+    include:
+      - average_trade_return
+    exclude:
+      - trade_count`, `benchmark:
+  symbol: "102110"
+  name: benchmark
+report:
+  metrics:
+    preset: core
+    include:
+      - benchmark_total_return
+      - excess_return`, 1)
 }

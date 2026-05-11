@@ -38,12 +38,89 @@ func TestEngineRunsCompiledStrategyPlanWithNextOpenFills(t *testing.T) {
 	assert.InDelta(t, -1152.0, result.RealizedPnL, 0.0001)
 	assert.InDelta(t, 0.0, result.WinRate, 0.0001)
 	assert.InDelta(t, -0.230769, result.AverageTradeRet, 0.0001)
-	assert.Equal(t, result.TotalReturn, result.Metrics.TotalReturn)
+	assert.Equal(t, []string{"total_return", "final_equity", "max_drawdown", "trade_count", "win_rate"}, result.SelectedMetrics)
+	assert.InDelta(t, result.TotalReturn, result.Metrics["total_return"], 0.0001)
+	assert.InDelta(t, result.FinalEquity, result.Metrics["final_equity"], 0.0001)
 	assert.NotEmpty(t, result.ResultHash)
 
 	repeated, err := engine.Run(context.Background(), plan)
 	require.NoError(t, err)
 	assert.Equal(t, result.ResultHash, repeated.ResultHash)
+}
+
+func TestCompileDefaultsToCoreMetrics(t *testing.T) {
+	registry, err := DefaultIndicatorRegistry()
+	require.NoError(t, err)
+
+	plan, err := Compile(testStrategySpec(), testRunSpec(), registry)
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{"total_return", "final_equity", "max_drawdown", "trade_count", "win_rate"}, plan.SelectedMetrics)
+}
+
+func TestCompileIncludesAndExcludesMetrics(t *testing.T) {
+	registry, err := DefaultIndicatorRegistry()
+	require.NoError(t, err)
+
+	run := testRunSpec()
+	run.Report.Metrics = MetricSelectionSpec{
+		Include: []string{"average_trade_return", "average_trade_return"},
+		Exclude: []string{"trade_count"},
+	}
+	plan, err := Compile(testStrategySpec(), run, registry)
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{"total_return", "final_equity", "max_drawdown", "win_rate", "average_trade_return"}, plan.SelectedMetrics)
+}
+
+func TestCompileRejectsUnknownMetric(t *testing.T) {
+	registry, err := DefaultIndicatorRegistry()
+	require.NoError(t, err)
+
+	run := testRunSpec()
+	run.Report.Metrics = MetricSelectionSpec{Include: []string{"mystery_return"}}
+	_, err = Compile(testStrategySpec(), run, registry)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "metric is not registered")
+	assert.Contains(t, err.Error(), "mystery_return")
+}
+
+func TestCompileRejectsBenchmarkMetricWithoutBenchmark(t *testing.T) {
+	registry, err := DefaultIndicatorRegistry()
+	require.NoError(t, err)
+
+	run := testRunSpec()
+	run.Report.Metrics = MetricSelectionSpec{Include: []string{"benchmark_total_return"}}
+	_, err = Compile(testStrategySpec(), run, registry)
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "benchmark metric requires benchmark")
+	assert.Contains(t, err.Error(), "benchmark_total_return")
+}
+
+func TestEngineReportsBenchmarkMetricsWhenBenchmarkConfigured(t *testing.T) {
+	registry, err := DefaultIndicatorRegistry()
+	require.NoError(t, err)
+
+	run := testRunSpec()
+	run.Benchmark = BenchmarkSpec{Symbol: "102110", Name: "benchmark"}
+	run.Report.Metrics = MetricSelectionSpec{
+		Include: []string{"benchmark_total_return", "excess_return", "benchmark_max_drawdown", "relative_drawdown", "monthly_win_rate_vs_benchmark"},
+	}
+	plan, err := Compile(testStrategySpec(), run, registry)
+	require.NoError(t, err)
+
+	engine, err := NewEngine(NewMemoryFeed(append(testBars(), benchmarkBars()...)))
+	require.NoError(t, err)
+
+	result, err := engine.Run(context.Background(), plan)
+	require.NoError(t, err)
+
+	assert.Contains(t, result.Metrics, "benchmark_total_return")
+	assert.Contains(t, result.Metrics, "excess_return")
+	assert.Contains(t, result.Metrics, "benchmark_max_drawdown")
+	assert.Contains(t, result.Metrics, "relative_drawdown")
+	assert.Contains(t, result.Metrics, "monthly_win_rate_vs_benchmark")
+	assert.InDelta(t, 0.10, result.Metrics["benchmark_total_return"], 0.0001)
 }
 
 func TestEngineReportsRiskRejections(t *testing.T) {
@@ -272,6 +349,16 @@ func testBars() []Bar {
 		{Time: date("2024-01-04"), Symbol: "069500", Open: 12, High: 12, Low: 12, Close: 12},
 		{Time: date("2024-01-05"), Symbol: "069500", Open: 13, High: 13, Low: 11, Close: 11},
 		{Time: date("2024-01-08"), Symbol: "069500", Open: 10, High: 10, Low: 10, Close: 10},
+	}
+}
+
+func benchmarkBars() []Bar {
+	return []Bar{
+		{Time: date("2024-01-02"), Symbol: "102110", Open: 100, High: 100, Low: 100, Close: 100},
+		{Time: date("2024-01-03"), Symbol: "102110", Open: 105, High: 105, Low: 105, Close: 105},
+		{Time: date("2024-01-04"), Symbol: "102110", Open: 95, High: 95, Low: 95, Close: 95},
+		{Time: date("2024-01-05"), Symbol: "102110", Open: 110, High: 110, Low: 110, Close: 110},
+		{Time: date("2024-01-08"), Symbol: "102110", Open: 110, High: 110, Low: 110, Close: 110},
 	}
 }
 

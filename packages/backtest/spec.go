@@ -24,6 +24,7 @@ type BacktestRunSpec struct {
 	Strategy      StrategyRef   `json:"strategy" yaml:"strategy"`
 	Data          DataSpec      `json:"data" yaml:"data"`
 	Universe      UniverseSpec  `json:"universe" yaml:"universe"`
+	Benchmark     BenchmarkSpec `json:"benchmark,omitempty" yaml:"benchmark,omitempty"`
 	Portfolio     PortfolioSpec `json:"portfolio" yaml:"portfolio"`
 	Execution     ExecutionSpec `json:"execution" yaml:"execution"`
 	Report        ReportSpec    `json:"report,omitempty" yaml:"report,omitempty"`
@@ -47,6 +48,11 @@ type UniverseSpec struct {
 	Ref     string   `json:"ref,omitempty" yaml:"ref,omitempty"`
 }
 
+type BenchmarkSpec struct {
+	Symbol string `json:"symbol,omitempty" yaml:"symbol,omitempty"`
+	Name   string `json:"name,omitempty" yaml:"name,omitempty"`
+}
+
 type PortfolioSpec struct {
 	InitialCash float64 `json:"initial_cash" yaml:"initial_cash"`
 	Currency    string  `json:"currency,omitempty" yaml:"currency,omitempty"`
@@ -64,7 +70,13 @@ type CostSpec struct {
 }
 
 type ReportSpec struct {
-	Metrics []string `json:"metrics,omitempty" yaml:"metrics,omitempty"`
+	Metrics MetricSelectionSpec `json:"metrics,omitempty" yaml:"metrics,omitempty"`
+}
+
+type MetricSelectionSpec struct {
+	Preset  string   `json:"preset,omitempty" yaml:"preset,omitempty"`
+	Include []string `json:"include,omitempty" yaml:"include,omitempty"`
+	Exclude []string `json:"exclude,omitempty" yaml:"exclude,omitempty"`
 }
 
 type SizingSpec struct {
@@ -100,24 +112,27 @@ type ValueExpr struct {
 }
 
 type StrategyPlan struct {
-	StrategyName string
-	RunName      string
-	Symbols      []string
-	From         time.Time
-	To           time.Time
-	Timeframe    string
-	Market       string
-	SecurityType string
-	InitialCash  float64
-	Currency     string
-	Fill         string
-	Commission   CostSpec
-	Slippage     CostSpec
-	Indicators   map[string]IndicatorSpec
-	Entry        RuleExpr
-	Exit         RuleExpr
-	Sizing       SizingSpec
-	Risk         RiskSpec
-	Report       ReportSpec
-	registry     IndicatorRegistry
+	StrategyName    string
+	RunName         string
+	Symbols         []string
+	From            time.Time
+	To              time.Time
+	Timeframe       string
+	Market          string
+	SecurityType    string
+	Benchmark       BenchmarkSpec
+	InitialCash     float64
+	Currency        string
+	Fill            string
+	Commission      CostSpec
+	Slippage        CostSpec
+	Indicators      map[string]IndicatorSpec
+	Entry           RuleExpr
+	Exit            RuleExpr
+	Sizing          SizingSpec
+	Risk            RiskSpec
+	Report          ReportSpec
+	SelectedMetrics []string
+	metricRegistry  MetricRegistry
+	registry        IndicatorRegistry
 }

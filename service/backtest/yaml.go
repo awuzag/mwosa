@@ -127,6 +127,23 @@ type indicatorDocument struct {
 	Output string             `yaml:"output"`
 }
 
+type runDocument struct {
+	Kind          string             `yaml:"kind"`
+	SchemaVersion int                `yaml:"schema_version"`
+	Name          string             `yaml:"name"`
+	Strategy      core.StrategyRef   `yaml:"strategy"`
+	Data          core.DataSpec      `yaml:"data"`
+	Universe      core.UniverseSpec  `yaml:"universe"`
+	Benchmark     core.BenchmarkSpec `yaml:"benchmark"`
+	Portfolio     core.PortfolioSpec `yaml:"portfolio"`
+	Execution     core.ExecutionSpec `yaml:"execution"`
+	Report        reportDocument     `yaml:"report"`
+}
+
+type reportDocument struct {
+	Metrics yaml.Node `yaml:"metrics"`
+}
+
 func decodeStrategy(node *yaml.Node) (core.StrategySpec, error) {
 	var document strategyDocument
 	if err := node.Decode(&document); err != nil {
@@ -168,11 +185,48 @@ func decodeStrategy(node *yaml.Node) (core.StrategySpec, error) {
 }
 
 func decodeRun(node *yaml.Node) (core.BacktestRunSpec, error) {
-	var run core.BacktestRunSpec
-	if err := node.Decode(&run); err != nil {
+	var document runDocument
+	if err := node.Decode(&document); err != nil {
 		return core.BacktestRunSpec{}, oops.In("backtest_yaml").Wrapf(err, "decode BacktestRun document")
 	}
-	return run, nil
+	metrics, err := decodeMetricSelection(&document.Report.Metrics)
+	if err != nil {
+		return core.BacktestRunSpec{}, oops.In("backtest_yaml").Wrapf(err, "decode report metrics")
+	}
+	return core.BacktestRunSpec{
+		Kind:          document.Kind,
+		SchemaVersion: document.SchemaVersion,
+		Name:          document.Name,
+		Strategy:      document.Strategy,
+		Data:          document.Data,
+		Universe:      document.Universe,
+		Benchmark:     document.Benchmark,
+		Portfolio:     document.Portfolio,
+		Execution:     document.Execution,
+		Report:        core.ReportSpec{Metrics: metrics},
+	}, nil
+}
+
+func decodeMetricSelection(node *yaml.Node) (core.MetricSelectionSpec, error) {
+	if node == nil || node.Kind == 0 {
+		return core.MetricSelectionSpec{}, nil
+	}
+	switch node.Kind {
+	case yaml.SequenceNode:
+		include := make([]string, 0, len(node.Content))
+		for _, child := range node.Content {
+			include = append(include, child.Value)
+		}
+		return core.MetricSelectionSpec{Include: include}, nil
+	case yaml.MappingNode:
+		var selection core.MetricSelectionSpec
+		if err := node.Decode(&selection); err != nil {
+			return core.MetricSelectionSpec{}, oops.In("backtest_yaml").Wrapf(err, "decode metric selection")
+		}
+		return selection, nil
+	default:
+		return core.MetricSelectionSpec{}, oops.In("backtest_yaml").New("report metrics must be mapping or sequence")
+	}
 }
 
 func decodeRule(node *yaml.Node) (core.RuleExpr, error) {

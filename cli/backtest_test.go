@@ -83,6 +83,45 @@ func TestBacktestValidateAndRunUseStoredDailyBars(t *testing.T) {
 	}
 }
 
+func TestBacktestRunJSONUsesSelectedMetrics(t *testing.T) {
+	ctx := context.Background()
+	databasePath := filepath.Join(t.TempDir(), "mwosa.db")
+	seedBacktestDailyBars(t, ctx, databasePath)
+
+	yamlPath := filepath.Join(t.TempDir(), "sma-cross.yaml")
+	requireWriteFile(t, yamlPath, sampleBacktestYAMLWithMetricSelection())
+
+	var runOut bytes.Buffer
+	runCmd := NewRootCommand(BuildInfo{})
+	runCmd.SetOut(&runOut)
+	runCmd.SetErr(&runOut)
+	if err := executeForTest(t, ctx, runCmd,
+		"--database", databasePath,
+		"--output", "json",
+		"run", "backtest", yamlPath,
+	); err != nil {
+		t.Fatalf("backtest run: %v\n%s", err, runOut.String())
+	}
+
+	var result map[string]any
+	if err := json.Unmarshal(runOut.Bytes(), &result); err != nil {
+		t.Fatalf("run output should be json: %v\n%s", err, runOut.String())
+	}
+	metrics, ok := result["metrics"].(map[string]any)
+	if !ok {
+		t.Fatalf("metrics should be object:\n%s", runOut.String())
+	}
+	if _, ok := metrics["trade_count"]; ok {
+		t.Fatalf("excluded metric trade_count should not be present:\n%s", runOut.String())
+	}
+	if _, ok := metrics["average_trade_return"]; !ok {
+		t.Fatalf("included metric average_trade_return should be present:\n%s", runOut.String())
+	}
+	if _, ok := result["trade_count"]; ok {
+		t.Fatalf("metric trade_count should not be duplicated at top-level:\n%s", runOut.String())
+	}
+}
+
 func seedBacktestDailyBars(t *testing.T, ctx context.Context, databasePath string) {
 	t.Helper()
 	database := storage.NewDatabase(databasePath)
@@ -184,6 +223,20 @@ report:
     - max_drawdown
     - trade_count
 `
+}
+
+func sampleBacktestYAMLWithMetricSelection() string {
+	return strings.Replace(sampleBacktestYAML(), `report:
+  metrics:
+    - total_return
+    - max_drawdown
+    - trade_count`, `report:
+  metrics:
+    preset: core
+    include:
+      - average_trade_return
+    exclude:
+      - trade_count`, 1)
 }
 
 func requireWriteFile(t *testing.T, path string, payload string) {

@@ -157,16 +157,19 @@ func (o BacktestRunOutput) CSVRows() any {
 
 func (o BacktestRunOutput) TableRows() ([]string, [][]string) {
 	result := o.Result
-	return []string{"strategy", "run", "symbols", "total_return", "max_drawdown", "trades", "unfilled", "hash"}, [][]string{{
+	header := []string{"strategy", "run", "symbols"}
+	row := []string{
 		result.StrategyName,
 		result.RunName,
 		fmt.Sprint(len(result.Symbols)),
-		fmt.Sprintf("%.6f", result.TotalReturn),
-		fmt.Sprintf("%.6f", result.MaxDrawdown),
-		fmt.Sprint(result.TradeCount),
-		fmt.Sprint(result.UnfilledCount),
-		result.ResultHash,
-	}}
+	}
+	for _, metric := range result.SelectedMetrics {
+		header = append(header, metric)
+		row = append(row, fmt.Sprintf("%.6f", result.Metrics[metric]))
+	}
+	header = append(header, "hash")
+	row = append(row, result.ResultHash)
+	return header, [][]string{row}
 }
 
 type BacktestStrategyOutput struct {

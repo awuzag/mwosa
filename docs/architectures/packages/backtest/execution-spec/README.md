@@ -42,9 +42,12 @@ execution:
 
 report:
   metrics:
-    - total_return
-    - max_drawdown
-    - trade_count
+    preset: core
+    include:
+      - benchmark_total_return
+      - excess_return
+    exclude:
+      - trade_count
 ```
 
 ## 맡는 일
@@ -102,6 +105,39 @@ strategy:
 
 첫 구현에서는 한 파일 안의 `strategy.name` 참조를 우선 지원하고, 저장소 참조는
 service layer 에서 확장한다.
+
+## Report metric 선택
+
+`report.metrics` 를 생략하면 기본 core metric 만 출력한다.
+
+```yaml
+report:
+  metrics:
+    preset: core
+    include:
+      - average_trade_return
+    exclude:
+      - trade_count
+```
+
+metric id 는 schema enum 으로 고정하지 않고 backtest package 의 metric registry
+에서 검증한다. 알 수 없는 metric id 는 compile 단계에서 실패한다.
+
+benchmark 관련 metric 은 `benchmark.symbol` 이 있을 때만 사용할 수 있다.
+
+```yaml
+benchmark:
+  symbol: "069500"
+  name: "KODEX 200"
+
+report:
+  metrics:
+    include:
+      - benchmark_total_return
+      - excess_return
+      - benchmark_max_drawdown
+      - monthly_win_rate_vs_benchmark
+```
 
 ## Compile 결과
 

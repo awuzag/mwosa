@@ -19,10 +19,15 @@ const (
 
 func Compile(strategy StrategySpec, run BacktestRunSpec, registry IndicatorRegistry) (StrategyPlan, error) {
 	errb := oops.In("backtest_compiler").With("strategy", strategy.Name, "run", run.Name)
+	metricRegistry, err := DefaultMetricRegistry()
+	if err != nil {
+		return StrategyPlan{}, errb.Wrapf(err, "create metric registry")
+	}
 	if err := validateStrategy(strategy, registry); err != nil {
 		return StrategyPlan{}, errb.Wrap(err)
 	}
-	if err := validateRun(run, strategy.Name); err != nil {
+	selectedMetrics, err := validateRun(run, strategy.Name, metricRegistry)
+	if err != nil {
 		return StrategyPlan{}, errb.Wrap(err)
 	}
 
@@ -42,26 +47,29 @@ func Compile(strategy StrategySpec, run BacktestRunSpec, registry IndicatorRegis
 	slices.Sort(symbols)
 
 	return StrategyPlan{
-		StrategyName: strategy.Name,
-		RunName:      run.Name,
-		Symbols:      symbols,
-		From:         from,
-		To:           to,
-		Timeframe:    run.Data.Timeframe,
-		Market:       run.Data.Market,
-		SecurityType: run.Data.SecurityType,
-		InitialCash:  run.Portfolio.InitialCash,
-		Currency:     withDefault(run.Portfolio.Currency, "KRW"),
-		Fill:         run.Execution.Fill,
-		Commission:   run.Execution.Commission,
-		Slippage:     run.Execution.Slippage,
-		Indicators:   cloneIndicators(strategy.Indicators),
-		Entry:        strategy.Entry,
-		Exit:         strategy.Exit,
-		Sizing:       strategy.Sizing,
-		Risk:         strategy.Risk,
-		Report:       run.Report,
-		registry:     registry,
+		StrategyName:    strategy.Name,
+		RunName:         run.Name,
+		Symbols:         symbols,
+		From:            from,
+		To:              to,
+		Timeframe:       run.Data.Timeframe,
+		Market:          run.Data.Market,
+		SecurityType:    run.Data.SecurityType,
+		Benchmark:       run.Benchmark,
+		InitialCash:     run.Portfolio.InitialCash,
+		Currency:        withDefault(run.Portfolio.Currency, "KRW"),
+		Fill:            run.Execution.Fill,
+		Commission:      run.Execution.Commission,
+		Slippage:        run.Execution.Slippage,
+		Indicators:      cloneIndicators(strategy.Indicators),
+		Entry:           strategy.Entry,
+		Exit:            strategy.Exit,
+		Sizing:          strategy.Sizing,
+		Risk:            strategy.Risk,
+		Report:          run.Report,
+		SelectedMetrics: selectedMetrics,
+		metricRegistry:  metricRegistry,
+		registry:        registry,
 	}, nil
 }
 
@@ -103,45 +111,52 @@ func validateStrategy(strategy StrategySpec, registry IndicatorRegistry) error {
 	return nil
 }
 
-func validateRun(run BacktestRunSpec, strategyName string) error {
+func validateRun(run BacktestRunSpec, strategyName string, metricRegistry MetricRegistry) ([]string, error) {
 	errb := oops.In("backtest_run_spec").With("run", run.Name)
 	if run.Kind != KindBacktestRun {
-		return errb.With("kind", run.Kind).New("backtest run kind must be BacktestRun")
+		return nil, errb.With("kind", run.Kind).New("backtest run kind must be BacktestRun")
 	}
 	if run.SchemaVersion != SchemaVersion {
-		return errb.With("schema_version", run.SchemaVersion).New("unsupported backtest run schema version")
+		return nil, errb.With("schema_version", run.SchemaVersion).New("unsupported backtest run schema version")
 	}
 	if strings.TrimSpace(run.Name) == "" {
-		return errb.New("backtest run name is required")
+		return nil, errb.New("backtest run name is required")
 	}
 	if run.Strategy.Name != strategyName {
-		return errb.With("strategy_name", run.Strategy.Name, "expected_strategy_name", strategyName).New("backtest run strategy reference does not match strategy")
+		return nil, errb.With("strategy_name", run.Strategy.Name, "expected_strategy_name", strategyName).New("backtest run strategy reference does not match strategy")
 	}
 	if len(run.Universe.Symbols) == 0 {
-		return errb.New("backtest run universe requires symbols")
+		return nil, errb.New("backtest run universe requires symbols")
 	}
 	if run.Portfolio.InitialCash <= 0 {
-		return errb.With("initial_cash", run.Portfolio.InitialCash).New("initial cash must be positive")
+		return nil, errb.With("initial_cash", run.Portfolio.InitialCash).New("initial cash must be positive")
 	}
 	if run.Execution.Fill != FillNextOpen {
-		return errb.With("fill", run.Execution.Fill).New("unsupported execution fill")
+		return nil, errb.With("fill", run.Execution.Fill).New("unsupported execution fill")
 	}
 	if run.Execution.Commission.Type != "" && run.Execution.Commission.Type != "bps" {
-		return errb.With("commission_type", run.Execution.Commission.Type).New("unsupported commission type")
+		return nil, errb.With("commission_type", run.Execution.Commission.Type).New("unsupported commission type")
 	}
 	if run.Execution.Slippage.Type != "" && run.Execution.Slippage.Type != "bps" {
-		return errb.With("slippage_type", run.Execution.Slippage.Type).New("unsupported slippage type")
+		return nil, errb.With("slippage_type", run.Execution.Slippage.Type).New("unsupported slippage type")
 	}
 	if strings.TrimSpace(run.Data.Market) == "" {
-		return errb.New("data market is required")
+		return nil, errb.New("data market is required")
 	}
 	if strings.TrimSpace(run.Data.SecurityType) == "" {
-		return errb.New("data security type is required")
+		return nil, errb.New("data security type is required")
 	}
 	if run.Data.Timeframe != "1d" {
-		return errb.With("timeframe", run.Data.Timeframe).New("only 1d timeframe is supported")
+		return nil, errb.With("timeframe", run.Data.Timeframe).New("only 1d timeframe is supported")
 	}
-	return nil
+	if strings.TrimSpace(run.Benchmark.Name) != "" && strings.TrimSpace(run.Benchmark.Symbol) == "" {
+		return nil, errb.New("benchmark symbol is required when benchmark is configured")
+	}
+	selectedMetrics, err := resolveMetricSelection(run.Report, strings.TrimSpace(run.Benchmark.Symbol) != "", metricRegistry)
+	if err != nil {
+		return nil, errb.Wrap(err)
+	}
+	return selectedMetrics, nil
 }
 
 func validateRule(rule RuleExpr, indicators map[string]IndicatorSpec, registry IndicatorRegistry) error {

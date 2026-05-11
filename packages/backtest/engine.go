@@ -33,19 +33,21 @@ type Result struct {
 	Currency        string              `json:"currency"`
 	Execution       ExecutionAssumption `json:"execution"`
 	InitialCash     float64             `json:"initial_cash"`
-	FinalEquity     float64             `json:"final_equity"`
-	TotalReturn     float64             `json:"total_return"`
-	MaxDrawdown     float64             `json:"max_drawdown"`
-	TradeCount      int                 `json:"trade_count"`
-	WinRate         float64             `json:"win_rate"`
-	AverageTradeRet float64             `json:"average_trade_return"`
-	RealizedPnL     float64             `json:"realized_pnl"`
+	Benchmark       BenchmarkSpec       `json:"benchmark,omitempty"`
+	FinalEquity     float64             `json:"-"`
+	TotalReturn     float64             `json:"-"`
+	MaxDrawdown     float64             `json:"-"`
+	TradeCount      int                 `json:"-"`
+	WinRate         float64             `json:"-"`
+	AverageTradeRet float64             `json:"-"`
+	RealizedPnL     float64             `json:"-"`
 	Metrics         Metrics             `json:"metrics"`
+	SelectedMetrics []string            `json:"-"`
 	Trades          []Trade             `json:"trades"`
 	EquityCurve     []EquityPoint       `json:"equity_curve"`
 	RiskEvents      []Event             `json:"risk_events,omitempty"`
 	ExecutionEvents []Event             `json:"execution_events,omitempty"`
-	UnfilledCount   int                 `json:"unfilled_count,omitempty"`
+	UnfilledCount   int                 `json:"-"`
 	ResultHash      string              `json:"result_hash"`
 }
 
@@ -58,16 +60,6 @@ type ExecutionAssumption struct {
 	Fill       string   `json:"fill"`
 	Commission CostSpec `json:"commission,omitempty"`
 	Slippage   CostSpec `json:"slippage,omitempty"`
-}
-
-type Metrics struct {
-	TotalReturn        float64 `json:"total_return"`
-	MaxDrawdown        float64 `json:"max_drawdown"`
-	TradeCount         int     `json:"trade_count"`
-	WinRate            float64 `json:"win_rate"`
-	AverageTradeReturn float64 `json:"average_trade_return"`
-	RealizedPnL        float64 `json:"realized_pnl"`
-	UnfilledCount      int     `json:"unfilled_count"`
 }
 
 type EquityPoint struct {
@@ -88,7 +80,7 @@ type Event struct {
 
 func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 	errb := oops.In("backtest_engine").With("strategy", plan.StrategyName, "run", plan.RunName)
-	bars, err := e.feed.Bars(ctx, DataRequest{Symbols: plan.Symbols, From: plan.From, To: plan.To})
+	bars, err := e.feed.Bars(ctx, DataRequest{Symbols: plan.DataSymbols(), From: plan.From, To: plan.To})
 	if err != nil {
 		return Result{}, errb.Wrapf(err, "load historical bars")
 	}
@@ -202,8 +194,10 @@ func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 			Commission: plan.Commission,
 			Slippage:   plan.Slippage,
 		},
+		Benchmark:       plan.Benchmark,
 		InitialCash:     plan.InitialCash,
 		TradeCount:      len(portfolio.trades),
+		SelectedMetrics: append([]string(nil), plan.SelectedMetrics...),
 		Trades:          append([]Trade(nil), portfolio.trades...),
 		EquityCurve:     curve,
 		RiskEvents:      riskEvents,
@@ -216,17 +210,20 @@ func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 		result.MaxDrawdown = maxDrawdown(curve)
 	}
 	result.RealizedPnL, result.WinRate, result.AverageTradeRet = tradeStats(result.Trades)
-	result.Metrics = Metrics{
-		TotalReturn:        result.TotalReturn,
-		MaxDrawdown:        result.MaxDrawdown,
-		TradeCount:         result.TradeCount,
-		WinRate:            result.WinRate,
-		AverageTradeReturn: result.AverageTradeRet,
-		RealizedPnL:        result.RealizedPnL,
-		UnfilledCount:      result.UnfilledCount,
+	result.Metrics, err = calculateSelectedMetrics(plan, result, series)
+	if err != nil {
+		return Result{}, errb.Wrap(err)
 	}
 	result.ResultHash = resultHash(result)
 	return result, nil
+}
+
+func (p StrategyPlan) DataSymbols() []string {
+	out := append([]string(nil), p.Symbols...)
+	if p.Benchmark.Symbol != "" && !slices.Contains(out, p.Benchmark.Symbol) {
+		out = append(out, p.Benchmark.Symbol)
+	}
+	return out
 }
 
 func evaluateSignals(plan StrategyPlan, portfolio portfolio, currentBars map[string]Bar, currentIndexes map[string]int, series map[string][]Bar, indicators map[string]map[string][]float64) ([]orderIntent, error) {

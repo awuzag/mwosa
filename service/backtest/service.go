@@ -74,6 +74,7 @@ type ValidationResult struct {
 	Timeframe    string            `json:"timeframe"`
 	Currency     string            `json:"currency"`
 	Execution    ExecutionSummary  `json:"execution"`
+	Metrics      []string          `json:"metrics"`
 	Indicators   map[string]string `json:"indicators,omitempty"`
 }
 
@@ -240,7 +241,7 @@ func (s Service) loadBars(ctx context.Context, plan core.StrategyPlan) ([]core.B
 		"to", plan.To.Format(time.DateOnly),
 	)
 	bars := make([]core.Bar, 0)
-	for _, symbol := range plan.Symbols {
+	for _, symbol := range plan.DataSymbols() {
 		rows, err := s.reader.QueryDailyBars(ctx, daily.Query{
 			Market:       provider.Market(plan.Market),
 			SecurityType: provider.SecurityType(plan.SecurityType),
@@ -341,6 +342,7 @@ func validationResultFromPlan(plan core.StrategyPlan) ValidationResult {
 		SecurityType: plan.SecurityType,
 		Timeframe:    plan.Timeframe,
 		Currency:     plan.Currency,
+		Metrics:      append([]string(nil), plan.SelectedMetrics...),
 		Execution: ExecutionSummary{
 			Fill:       plan.Fill,
 			Commission: plan.Commission,
