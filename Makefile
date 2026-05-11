@@ -13,8 +13,15 @@ CONFIG_PKG := github.com/ev3rlit/mwosa/app/config
 BIN_PATH := $(BIN_DIR)/$(BINARY)
 BASE_LDFLAGS := -X main.version=$(VERSION) -X main.commit=$(COMMIT) -X main.date=$(DATE)
 DEV_LDFLAGS := $(BASE_LDFLAGS) -X $(CONFIG_PKG).defaultConfigPath=$(DEV_CONFIG_PATH) -X $(CONFIG_PKG).defaultDatabasePath=$(DEV_DATABASE_PATH)
+CLIENT_MODULES := \
+	clients/datago-corpfin \
+	clients/datago-etp \
+	clients/datago-krxlisted \
+	clients/datago-stock-price \
+	clients/kis \
+	clients/krx
 
-.PHONY: help build build-release install run test test-clients verify clean
+.PHONY: help build build-release install run fmt-check test test-clients pre-commit install-hooks verify clean
 
 help:
 	@printf "%s\n" "mwosa make targets"
@@ -22,8 +29,11 @@ help:
 	@printf "%s\n" "  make build-release Build with OS default paths and GOWORK=off"
 	@printf "%s\n" "  make install       Install mwosa with go install"
 	@printf "%s\n" "  make run ARGS='...' Run mwosa from source"
+	@printf "%s\n" "  make fmt-check     Check Go formatting"
 	@printf "%s\n" "  make test          Run root module tests"
 	@printf "%s\n" "  make test-clients  Run provider client module tests"
+	@printf "%s\n" "  make pre-commit    Run local pre-commit checks"
+	@printf "%s\n" "  make install-hooks Install repo-managed git hooks"
 	@printf "%s\n" "  make verify        Run all repo checks"
 	@printf "%s\n" "  make clean         Remove build outputs"
 
@@ -41,14 +51,34 @@ install:
 run:
 	$(GO) run -ldflags "$(DEV_LDFLAGS)" $(CMD_PKG) $(ARGS)
 
+fmt-check:
+	@files="$$(git ls-files '*.go')"; \
+	if [ -n "$$files" ]; then \
+		unformatted="$$(gofmt -l $$files)"; \
+		if [ -n "$$unformatted" ]; then \
+			printf "%s\n" "gofmt required:"; \
+			printf "%s\n" "$$unformatted"; \
+			exit 1; \
+		fi; \
+	fi
+
 test:
 	$(GO) test ./...
 
 test-clients:
-	cd clients/datago-etp && $(GO) test ./... && $(GO) mod verify
-	cd clients/datago-stock-price && $(GO) test ./... && $(GO) mod verify
+	@for module in $(CLIENT_MODULES); do \
+		printf "%s\n" "==> $$module"; \
+		(cd "$$module" && $(GO) test ./... && $(GO) mod verify) || exit $$?; \
+	done
 
-verify: test test-clients
+pre-commit:
+	scripts/check/pre-commit.sh
+
+install-hooks:
+	git config core.hooksPath .githooks
+	@printf "%s\n" "installed git hooks from .githooks"
+
+verify: pre-commit
 
 clean:
 	rm -rf $(BIN_DIR)
