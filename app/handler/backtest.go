@@ -31,6 +31,10 @@ type InspectBacktestStrategyRequest struct {
 	Name string
 }
 
+type InspectBacktestUniverseRequest struct {
+	Path string
+}
+
 type UpdateBacktestStrategyRequest struct {
 	Name     string
 	YAMLPath string
@@ -76,6 +80,14 @@ func (h Backtest) InspectStrategy(ctx context.Context, req InspectBacktestStrate
 	return BacktestStrategyOutput{Detail: detail, IncludeSpec: true}, nil
 }
 
+func (h Backtest) InspectUniverse(ctx context.Context, req InspectBacktestUniverseRequest) (BacktestUniverseOutput, error) {
+	explain, err := h.service.InspectUniverse(ctx, req.Path)
+	if err != nil {
+		return BacktestUniverseOutput{}, err
+	}
+	return BacktestUniverseOutput{Explain: explain}, nil
+}
+
 func (h Backtest) UpdateStrategy(ctx context.Context, req UpdateBacktestStrategyRequest) (BacktestStrategyOutput, error) {
 	detail, err := h.service.UpsertStrategy(ctx, backtestservice.SaveStrategyRequest{Name: req.Name, YAMLPath: req.YAMLPath})
 	if err != nil {
@@ -118,11 +130,13 @@ func (o BacktestValidationOutput) CSVRows() any {
 
 func (o BacktestValidationOutput) TableRows() ([]string, [][]string) {
 	result := o.Result
-	return []string{"valid", "strategy", "run", "symbols", "from", "to", "fill"}, [][]string{{
+	return []string{"valid", "strategy", "run", "symbols", "schedule", "steps", "from", "to", "fill"}, [][]string{{
 		fmt.Sprint(result.Valid),
 		result.StrategyName,
 		result.RunName,
 		fmt.Sprint(len(result.Symbols)),
+		result.Universe.Schedule,
+		fmt.Sprint(len(result.Universe.Steps)),
 		result.Period.From.Format("2006-01-02"),
 		result.Period.To.Format("2006-01-02"),
 		result.Execution.Fill,
@@ -137,6 +151,54 @@ type backtestValidationRow struct {
 	From         string `json:"from" csv:"from"`
 	To           string `json:"to" csv:"to"`
 	Fill         string `json:"fill" csv:"fill"`
+}
+
+type BacktestUniverseOutput struct {
+	Explain core.UniverseExplain
+}
+
+func (o BacktestUniverseOutput) JSONValue() any {
+	return o.Explain
+}
+
+func (o BacktestUniverseOutput) NDJSONRows() any {
+	return o.Explain.Snapshots
+}
+
+func (o BacktestUniverseOutput) CSVRows() any {
+	return []backtestUniverseRow{universeRow(o.Explain)}
+}
+
+func (o BacktestUniverseOutput) TableRows() ([]string, [][]string) {
+	row := universeRow(o.Explain)
+	return []string{"mode", "schedule", "symbols", "snapshots", "steps", "policy"}, [][]string{{
+		row.Mode,
+		row.Schedule,
+		fmt.Sprint(row.Symbols),
+		fmt.Sprint(row.Snapshots),
+		fmt.Sprint(row.Steps),
+		row.PositionPolicy,
+	}}
+}
+
+type backtestUniverseRow struct {
+	Mode           string `json:"mode" csv:"mode"`
+	Schedule       string `json:"schedule" csv:"schedule"`
+	Symbols        int    `json:"symbols" csv:"symbols"`
+	Snapshots      int    `json:"snapshots" csv:"snapshots"`
+	Steps          int    `json:"steps" csv:"steps"`
+	PositionPolicy string `json:"position_policy" csv:"position_policy"`
+}
+
+func universeRow(explain core.UniverseExplain) backtestUniverseRow {
+	return backtestUniverseRow{
+		Mode:           explain.Mode,
+		Schedule:       explain.Schedule,
+		Symbols:        len(explain.SelectedSymbols),
+		Snapshots:      len(explain.Snapshots),
+		Steps:          len(explain.Steps),
+		PositionPolicy: explain.PositionPolicy,
+	}
 }
 
 type BacktestRunOutput struct {
@@ -163,6 +225,8 @@ func (o BacktestRunOutput) TableRows() ([]string, [][]string) {
 		result.RunName,
 		fmt.Sprint(len(result.Symbols)),
 	}
+	header = append(header, "universe")
+	row = append(row, result.Universe.Schedule+"/"+fmt.Sprint(len(result.Universe.Steps))+"steps")
 	for _, metric := range result.SelectedMetrics {
 		header = append(header, metric)
 		row = append(row, fmt.Sprintf("%.6f", result.Metrics[metric]))

@@ -9,6 +9,7 @@ import (
 func registerBacktestCommands(roots commandRoots, opts *Options) {
 	roots.List.AddCommand(newListBacktestCommand(opts))
 	roots.Inspect.AddCommand(newInspectBacktestCommand(opts))
+	roots.Inspect.AddCommand(newInspectBacktestUniverseCommand(opts))
 	roots.Update.AddCommand(newUpdateBacktestCommand(opts))
 	roots.Delete.AddCommand(newDeleteBacktestCommand(opts))
 	roots.Validate.AddCommand(newValidateBacktestCommand(opts))
@@ -47,6 +48,7 @@ func newInspectBacktestCommand(opts *Options) *cobra.Command {
 		Short: "Inspect backtest resources",
 	}
 	cmd.AddCommand(newInspectBacktestStrategyCommand(opts))
+	cmd.AddCommand(newInspectBacktestUniverseNestedCommand(opts))
 	return cmd
 }
 
@@ -65,6 +67,31 @@ func newInspectBacktestStrategyCommand(opts *Options) *cobra.Command {
 			return runtime.Handlers.Backtest.InspectStrategy(cmd.Context(), handler.InspectBacktestStrategyRequest{Name: args[0]})
 		}),
 	}
+}
+
+func newInspectBacktestUniverseNestedCommand(opts *Options) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "universe <yaml>",
+		Short: "Inspect a YAML backtest universe pipeline",
+		Args:  cobra.ExactArgs(1),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			runtime, err := newAppRuntime(opts, false)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Backtest.InspectUniverse(cmd.Context(), handler.InspectBacktestUniverseRequest{Path: args[0]})
+		}),
+	}
+	mustMarkBacktestYAML(cmd)
+	return cmd
+}
+
+func newInspectBacktestUniverseCommand(opts *Options) *cobra.Command {
+	cmd := newInspectBacktestUniverseNestedCommand(opts)
+	cmd.Use = "backtest-universe <yaml>"
+	return cmd
 }
 
 func newUpdateBacktestCommand(opts *Options) *cobra.Command {

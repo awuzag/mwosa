@@ -1,0 +1,87 @@
+kind: Strategy
+schema_version: 1
+name: liquidity-leader-sma
+indicators:
+  trend:
+    id: sma
+    source:
+      price: close
+    params:
+      window: 20
+entry:
+  crosses_above:
+    - price: close
+    - ref: trend
+exit:
+  crosses_below:
+    - price: close
+    - ref: trend
+sizing:
+  type: percent_of_equity
+  value: 20
+risk:
+  max_positions: 5
+  max_symbol_weight_pct: 25
+---
+kind: BacktestRun
+schema_version: 1
+name: liquidity-leaders-krx-etf
+strategy:
+  name: liquidity-leader-sma
+data:
+  market: krx
+  security_type: etf
+  timeframe: 1d
+  from: 2024-01-02
+  to: 2024-12-31
+universe:
+  schedule:
+    frequency: monthly
+    anchor: first_trading_day
+    lookback_policy: closed_bars_only
+  position_policy: liquidate
+  pipeline:
+    - id: source.daily_bars
+      params:
+        market: krx
+        security_type: etf
+        lookback_days: 63
+    - id: transform.window_metrics
+      params:
+        metrics:
+          return_20d:
+            id: return
+            params:
+              window: 20
+          traded_amount_avg_20d:
+            id: average
+            params:
+              field: traded_amount
+              window: 20
+    - id: transform.latest_per_symbol
+    - id: filter.field
+      params:
+        field: traded_amount_avg_20d
+        op: gte
+        value: 1000000000
+    - id: rank.weighted
+      params:
+        fields:
+          return_20d: 0.7
+          traded_amount_avg_20d: 0.3
+        order: desc
+        limit: 10
+portfolio:
+  initial_cash: 10000000
+  currency: KRW
+execution:
+  fill: next_open
+  commission:
+    type: bps
+    value: 1.5
+  slippage:
+    type: bps
+    value: 0
+report:
+  metrics:
+    preset: core

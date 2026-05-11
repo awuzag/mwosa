@@ -50,6 +50,138 @@ func TestLoadFileLoadsYAMLAndRunsBacktest(t *testing.T) {
 	assert.NotEmpty(t, result.ResultHash)
 }
 
+func TestUniversePipelineExampleFixtureCompiles(t *testing.T) {
+	bundle, err := LoadFile(context.Background(), "../../examples/backtest/universe-pipeline.yaml")
+	require.NoError(t, err)
+
+	registry, err := core.DefaultIndicatorRegistry()
+	require.NoError(t, err)
+	plan, err := core.Compile(bundle.Strategy, bundle.Run, registry)
+	require.NoError(t, err)
+
+	assert.Equal(t, "liquidity-leader-sma", plan.StrategyName)
+	assert.Equal(t, "liquidity-leaders-krx-etf", plan.RunName)
+	assert.Equal(t, "monthly", plan.Universe.Schedule.Frequency)
+	assert.Equal(t, "liquidate", plan.Universe.PositionPolicy)
+	require.Len(t, plan.Universe.Pipeline, 5)
+	assert.Equal(t, "source.daily_bars", plan.Universe.Pipeline[0].ID)
+	assert.Equal(t, "rank.weighted", plan.Universe.Pipeline[4].ID)
+}
+
+func TestDecodeStrategyOnlySupportsNestedRulesAndInlineIndicators(t *testing.T) {
+	strategy, err := DecodeStrategy(context.Background(), strings.NewReader(`
+kind: Strategy
+schema_version: 1
+name: nested-rules
+indicators:
+  trend:
+    id: sma
+    source:
+      price: close
+    params:
+      window: 3
+entry:
+  all:
+    - any:
+        - gt:
+            - price: close
+            - ref: trend
+        - gt:
+            - indicator:
+                id: rsi
+                source:
+                  price: close
+                params:
+                  window: 2
+            - value: 50
+    - not:
+        lt:
+          - price: close
+          - value: 0
+exit:
+  lt:
+    - price: close
+    - value: 1
+sizing:
+  type: percent_of_equity
+  value: 10
+`))
+	require.NoError(t, err)
+	assert.Equal(t, "nested-rules", strategy.Name)
+	assert.Equal(t, "all", strategy.Entry.Operator)
+	require.Len(t, strategy.Entry.Rules, 2)
+	assert.Equal(t, "not", strategy.Entry.Rules[1].Operator)
+}
+
+func TestDecodeYAMLErrorsAreExplicit(t *testing.T) {
+	_, err := Decode(context.Background(), strings.NewReader(`kind: Unknown`))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "unsupported YAML document kind")
+
+	_, err = Decode(context.Background(), strings.NewReader(`
+kind: Strategy
+schema_version: 1
+name: bad
+entry:
+  gt:
+    price: close
+exit:
+  gt:
+    - price: close
+    - value: 1
+sizing:
+  type: percent_of_equity
+  value: 10
+`))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "comparison rule requires sequence args")
+
+	_, err = Decode(context.Background(), strings.NewReader(`
+kind: Strategy
+schema_version: 1
+name: bad
+entry:
+  gt:
+    - price: close
+    - value: abc
+exit:
+  gt:
+    - price: close
+    - value: 1
+sizing:
+  type: percent_of_equity
+  value: 10
+`))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "parse numeric value expression")
+}
+
+func TestDecodeReportMetricsSequenceAndInvalidShape(t *testing.T) {
+	bundle, err := Decode(context.Background(), strings.NewReader(strings.Replace(sampleYAML(), `report:
+  metrics:
+    preset: core
+    include:
+      - average_trade_return
+    exclude:
+      - trade_count`, `report:
+  metrics:
+    - total_return
+    - win_rate`, 1)))
+	require.NoError(t, err)
+	assert.Equal(t, []string{"total_return", "win_rate"}, bundle.Run.Report.Metrics.Include)
+
+	_, err = Decode(context.Background(), strings.NewReader(strings.Replace(sampleYAML(), `report:
+  metrics:
+    preset: core
+    include:
+      - average_trade_return
+    exclude:
+      - trade_count`, `report:
+  metrics: 10`, 1)))
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "report metrics must be mapping or sequence")
+}
+
 func writeTempYAML(t *testing.T, payload string) string {
 	t.Helper()
 	file, err := os.CreateTemp(t.TempDir(), "backtest-*.yaml")

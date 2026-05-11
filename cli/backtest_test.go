@@ -122,6 +122,103 @@ func TestBacktestRunJSONUsesSelectedMetrics(t *testing.T) {
 	}
 }
 
+func TestBacktestInspectUniverseOutputsExplainJSON(t *testing.T) {
+	ctx := context.Background()
+	databasePath := filepath.Join(t.TempDir(), "mwosa.db")
+	seedBacktestDailyBars(t, ctx, databasePath)
+
+	yamlPath := filepath.Join(t.TempDir(), "sma-cross.yaml")
+	requireWriteFile(t, yamlPath, sampleBacktestYAML())
+
+	var out bytes.Buffer
+	cmd := NewRootCommand(BuildInfo{})
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	if err := executeForTest(t, ctx, cmd,
+		"--database", databasePath,
+		"--output", "json",
+		"inspect", "backtest-universe", yamlPath,
+	); err != nil {
+		t.Fatalf("inspect backtest universe: %v\n%s", err, out.String())
+	}
+
+	var result struct {
+		Mode            string   `json:"mode"`
+		Schedule        string   `json:"schedule"`
+		SelectedSymbols []string `json:"selected_symbols"`
+		Steps           []struct {
+			ID          string `json:"id"`
+			OutputCount int    `json:"output_count"`
+		} `json:"steps"`
+		Snapshots []map[string]any `json:"snapshots"`
+	}
+	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
+		t.Fatalf("inspect output should be json: %v\n%s", err, out.String())
+	}
+	if result.Mode != "pipeline" || result.Schedule != "once" {
+		t.Fatalf("unexpected universe identity: %#v", result)
+	}
+	if len(result.SelectedSymbols) != 1 || result.SelectedSymbols[0] != "069500" {
+		t.Fatalf("selected symbols = %#v, want [069500]", result.SelectedSymbols)
+	}
+	if len(result.Steps) != 1 || result.Steps[0].ID != "source.symbols" || result.Steps[0].OutputCount != 1 {
+		t.Fatalf("unexpected steps: %#v", result.Steps)
+	}
+	if len(result.Snapshots) != 1 {
+		t.Fatalf("snapshots = %d, want 1", len(result.Snapshots))
+	}
+}
+
+func TestBacktestValidateJSONIncludesUniverseExplain(t *testing.T) {
+	ctx := context.Background()
+	databasePath := filepath.Join(t.TempDir(), "mwosa.db")
+	seedBacktestDailyBars(t, ctx, databasePath)
+
+	yamlPath := filepath.Join(t.TempDir(), "sma-cross.yaml")
+	requireWriteFile(t, yamlPath, sampleBacktestYAML())
+
+	var out bytes.Buffer
+	cmd := NewRootCommand(BuildInfo{})
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	if err := executeForTest(t, ctx, cmd,
+		"--database", databasePath,
+		"--output", "json",
+		"validate", "backtest", yamlPath,
+	); err != nil {
+		t.Fatalf("backtest validate: %v\n%s", err, out.String())
+	}
+	if !strings.Contains(out.String(), `"universe": {`) || !strings.Contains(out.String(), `"selected_symbols": [`) {
+		t.Fatalf("validate output should include universe explain:\n%s", out.String())
+	}
+}
+
+func TestBacktestInspectUniverseNestedCommandSupportsTableOutput(t *testing.T) {
+	ctx := context.Background()
+	databasePath := filepath.Join(t.TempDir(), "mwosa.db")
+	seedBacktestDailyBars(t, ctx, databasePath)
+
+	yamlPath := filepath.Join(t.TempDir(), "sma-cross.yaml")
+	requireWriteFile(t, yamlPath, sampleBacktestYAML())
+
+	var out bytes.Buffer
+	cmd := NewRootCommand(BuildInfo{})
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	if err := executeForTest(t, ctx, cmd,
+		"--database", databasePath,
+		"--output", "table",
+		"inspect", "backtest", "universe", yamlPath,
+	); err != nil {
+		t.Fatalf("inspect backtest universe table: %v\n%s", err, out.String())
+	}
+	for _, want := range []string{"schedule", "once", "symbols", "policy", "hold"} {
+		if !strings.Contains(out.String(), want) {
+			t.Fatalf("table output missing %q in:\n%s", want, out.String())
+		}
+	}
+}
+
 func seedBacktestDailyBars(t *testing.T, ctx context.Context, databasePath string) {
 	t.Helper()
 	database := storage.NewDatabase(databasePath)

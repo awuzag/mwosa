@@ -43,7 +43,16 @@ func Compile(strategy StrategySpec, run BacktestRunSpec, registry IndicatorRegis
 		return StrategyPlan{}, errb.With("from", run.Data.From, "to", run.Data.To).New("backtest to date must be on or after from date")
 	}
 
-	symbols := append([]string(nil), run.Universe.Symbols...)
+	universePlan, err := CompileUniverseSpec(run.Universe, UniverseDataWindow{
+		Market:       run.Data.Market,
+		SecurityType: run.Data.SecurityType,
+		From:         from,
+		To:           to,
+	}, DefaultUniverseSelectorRegistry())
+	if err != nil {
+		return StrategyPlan{}, errb.Wrap(err)
+	}
+	symbols := append([]string(nil), universePlan.StaticSymbols...)
 	slices.Sort(symbols)
 
 	return StrategyPlan{
@@ -68,6 +77,7 @@ func Compile(strategy StrategySpec, run BacktestRunSpec, registry IndicatorRegis
 		Risk:            strategy.Risk,
 		Report:          run.Report,
 		SelectedMetrics: selectedMetrics,
+		Universe:        universePlan,
 		metricRegistry:  metricRegistry,
 		registry:        registry,
 	}, nil
@@ -125,8 +135,8 @@ func validateRun(run BacktestRunSpec, strategyName string, metricRegistry Metric
 	if run.Strategy.Name != strategyName {
 		return nil, errb.With("strategy_name", run.Strategy.Name, "expected_strategy_name", strategyName).New("backtest run strategy reference does not match strategy")
 	}
-	if len(run.Universe.Symbols) == 0 {
-		return nil, errb.New("backtest run universe requires symbols")
+	if len(run.Universe.Symbols) == 0 && len(run.Universe.Pipeline) == 0 {
+		return nil, errb.New("backtest run universe requires symbols or pipeline")
 	}
 	if run.Portfolio.InitialCash <= 0 {
 		return nil, errb.With("initial_cash", run.Portfolio.InitialCash).New("initial cash must be positive")

@@ -190,7 +190,7 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 			database.Close(),
 		)
 	}
-	backtestService, err := backtestservice.NewServiceWithRepository(reader, backtestStrategyRepository)
+	backtestService, err := backtestservice.NewServiceWithUniverseSources(reader, backtestStrategyRepository, strategyRepository, strategyService)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create backtest service"),

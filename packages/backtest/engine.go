@@ -47,6 +47,7 @@ type Result struct {
 	EquityCurve     []EquityPoint       `json:"equity_curve"`
 	RiskEvents      []Event             `json:"risk_events,omitempty"`
 	ExecutionEvents []Event             `json:"execution_events,omitempty"`
+	Universe        UniverseExplain     `json:"universe"`
 	UnfilledCount   int                 `json:"-"`
 	ResultHash      string              `json:"result_hash"`
 }
@@ -115,6 +116,7 @@ func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 		if len(currentBars) == 0 {
 			continue
 		}
+		activeSymbols := plan.activeSymbolsAt(currentTime)
 
 		nextPending := pending[:0]
 		for _, intent := range pending {
@@ -149,10 +151,11 @@ func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 		pending = nextPending
 
 		closePrices := closePrices(currentBars)
-		nextIntents, err := evaluateSignals(plan, portfolio, currentBars, currentIndexes, series, indicatorValues)
+		nextIntents, err := evaluateSignals(plan, portfolio, activeSymbols, currentBars, currentIndexes, series, indicatorValues)
 		if err != nil {
 			return Result{}, errb.Wrap(err)
 		}
+		nextIntents = append(nextIntents, universeRemovalIntents(plan, portfolio, activeSymbols)...)
 		sizedIntents := sizer.Size(nextIntents, portfolio, closePrices, plan)
 		review := risk.Review(currentTime, sizedIntents, portfolio, closePrices, plan)
 		riskEvents = append(riskEvents, review.Events...)
@@ -180,7 +183,7 @@ func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 	result := Result{
 		RunName:      plan.RunName,
 		StrategyName: plan.StrategyName,
-		Symbols:      append([]string(nil), plan.Symbols...),
+		Symbols:      plan.resultSymbols(),
 		Period: Period{
 			From: plan.From,
 			To:   plan.To,
@@ -202,6 +205,7 @@ func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 		EquityCurve:     curve,
 		RiskEvents:      riskEvents,
 		ExecutionEvents: executionEvents,
+		Universe:        plan.universeExplainForResult(),
 		UnfilledCount:   len(executionEvents),
 	}
 	if len(curve) > 0 {
@@ -219,16 +223,16 @@ func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 }
 
 func (p StrategyPlan) DataSymbols() []string {
-	out := append([]string(nil), p.Symbols...)
+	out := append([]string(nil), p.resultSymbols()...)
 	if p.Benchmark.Symbol != "" && !slices.Contains(out, p.Benchmark.Symbol) {
 		out = append(out, p.Benchmark.Symbol)
 	}
 	return out
 }
 
-func evaluateSignals(plan StrategyPlan, portfolio portfolio, currentBars map[string]Bar, currentIndexes map[string]int, series map[string][]Bar, indicators map[string]map[string][]float64) ([]orderIntent, error) {
+func evaluateSignals(plan StrategyPlan, portfolio portfolio, activeSymbols []string, currentBars map[string]Bar, currentIndexes map[string]int, series map[string][]Bar, indicators map[string]map[string][]float64) ([]orderIntent, error) {
 	intents := make([]orderIntent, 0)
-	for _, symbol := range plan.Symbols {
+	for _, symbol := range activeSymbols {
 		if _, ok := currentBars[symbol]; !ok {
 			continue
 		}
@@ -258,6 +262,81 @@ func evaluateSignals(plan StrategyPlan, portfolio portfolio, currentBars map[str
 		}
 	}
 	return intents, nil
+}
+
+func universeRemovalIntents(plan StrategyPlan, p portfolio, activeSymbols []string) []orderIntent {
+	if plan.Universe.PositionPolicy != UniversePositionPolicyLiquidate {
+		return nil
+	}
+	active := make(map[string]struct{}, len(activeSymbols))
+	for _, symbol := range activeSymbols {
+		active[symbol] = struct{}{}
+	}
+	out := make([]orderIntent, 0)
+	for symbol, position := range p.positions {
+		if position.Quantity <= 0 {
+			continue
+		}
+		if _, ok := active[symbol]; ok {
+			continue
+		}
+		out = append(out, orderIntent{Symbol: symbol, Side: SideSell, Reason: "universe_removed"})
+	}
+	return out
+}
+
+func (p StrategyPlan) activeSymbolsAt(currentTime time.Time) []string {
+	if len(p.UniverseExplain.Snapshots) == 0 {
+		return append([]string(nil), p.Symbols...)
+	}
+	var active []string
+	for _, snapshot := range p.UniverseExplain.Snapshots {
+		if snapshot.Time.After(currentTime) {
+			continue
+		}
+		active = snapshot.Symbols
+	}
+	return append([]string(nil), active...)
+}
+
+func (p StrategyPlan) resultSymbols() []string {
+	seen := make(map[string]struct{})
+	out := make([]string, 0, len(p.Symbols))
+	for _, symbol := range p.Symbols {
+		if _, ok := seen[symbol]; ok {
+			continue
+		}
+		seen[symbol] = struct{}{}
+		out = append(out, symbol)
+	}
+	for _, snapshot := range p.UniverseExplain.Snapshots {
+		for _, symbol := range snapshot.Symbols {
+			if _, ok := seen[symbol]; ok {
+				continue
+			}
+			seen[symbol] = struct{}{}
+			out = append(out, symbol)
+		}
+	}
+	slices.Sort(out)
+	return out
+}
+
+func (p StrategyPlan) universeExplainForResult() UniverseExplain {
+	explain := p.UniverseExplain
+	if explain.Mode == "" {
+		explain.Mode = p.Universe.Mode
+	}
+	if explain.Schedule == "" {
+		explain.Schedule = p.Universe.Schedule.Frequency
+	}
+	if explain.PositionPolicy == "" {
+		explain.PositionPolicy = p.Universe.PositionPolicy
+	}
+	if len(explain.SelectedSymbols) == 0 {
+		explain.SelectedSymbols = p.resultSymbols()
+	}
+	return explain
 }
 
 func calculateIndicators(plan StrategyPlan, series map[string][]Bar) (map[string]map[string][]float64, error) {

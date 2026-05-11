@@ -44,8 +44,25 @@ type DataSpec struct {
 }
 
 type UniverseSpec struct {
-	Symbols []string `json:"symbols,omitempty" yaml:"symbols,omitempty"`
-	Ref     string   `json:"ref,omitempty" yaml:"ref,omitempty"`
+	Symbols        []string                   `json:"symbols,omitempty" yaml:"symbols,omitempty"`
+	Ref            string                     `json:"ref,omitempty" yaml:"ref,omitempty"`
+	Schedule       UniverseScheduleSpec       `json:"schedule,omitempty" yaml:"schedule,omitempty"`
+	Pipeline       []UniverseSelectorStepSpec `json:"pipeline,omitempty" yaml:"pipeline,omitempty"`
+	PositionPolicy string                     `json:"position_policy,omitempty" yaml:"position_policy,omitempty"`
+}
+
+type UniverseScheduleSpec struct {
+	Frequency      string   `json:"frequency,omitempty" yaml:"frequency,omitempty"`
+	Anchor         string   `json:"anchor,omitempty" yaml:"anchor,omitempty"`
+	LookbackPolicy string   `json:"lookback_policy,omitempty" yaml:"lookback_policy,omitempty"`
+	Dates          []string `json:"dates,omitempty" yaml:"dates,omitempty"`
+}
+
+type UniverseSelectorStepSpec struct {
+	ID       string                     `json:"id" yaml:"id"`
+	Name     string                     `json:"name,omitempty" yaml:"name,omitempty"`
+	Params   map[string]any             `json:"params,omitempty" yaml:"params,omitempty"`
+	Pipeline []UniverseSelectorStepSpec `json:"pipeline,omitempty" yaml:"pipeline,omitempty"`
 }
 
 type BenchmarkSpec struct {
@@ -133,6 +150,8 @@ type StrategyPlan struct {
 	Risk            RiskSpec
 	Report          ReportSpec
 	SelectedMetrics []string
+	Universe        UniversePlan
+	UniverseExplain UniverseExplain
 	metricRegistry  MetricRegistry
 	registry        IndicatorRegistry
 }
