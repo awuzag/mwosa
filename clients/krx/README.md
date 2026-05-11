@@ -48,12 +48,39 @@ rows, err := client.ETF(ctx, "20250131")
 
 ```bash
 go test ./...
-go test -tags=e2e ./...
 go mod verify
 ```
 
-`e2e` build tag 테스트는 샘플 endpoint 만 호출한다. 샘플 인증키는
-`KRX_SAMPLE_AUTH_KEY` 환경변수에서만 읽고, 값은 코드나 fixture 에 저장하지 않는다.
+라이브 e2e 테스트는 `e2e` build tag 와 `KRX_E2E=1` 환경변수 gate 뒤에 둔다.
+기본 `go test ./...`, root `make pre-commit`, root `make verify` 에서는 실행하지
+않는다. 실제 KRX OPEN API 승인 상태, 네트워크, quota 에 영향을 받기 때문이다.
+
+```bash
+cd clients/krx
+
+KRX_E2E=1 \
+MWOSA_KRX_AUTH_KEY="..." \
+go test -tags=e2e -count=1 ./...
+```
+
+기본 라이브 e2e 는 `20240415` 기준 `etf_bydd_trd` 와 `stk_bydd_trd` 를 호출해
+응답 성공, `row_count > 0`, 기본 식별 필드 존재를 확인한다. 전체 31개 API 승인
+범위를 얕게 확인하려면 `KRX_E2E_ALL=1` 을 추가한다.
+느린 네트워크에서는 `KRX_E2E_TIMEOUT=30s` 처럼 Go duration 형식으로 timeout 을
+늘릴 수 있다.
+
+```bash
+cd clients/krx
+
+KRX_E2E=1 \
+KRX_E2E_ALL=1 \
+MWOSA_KRX_AUTH_KEY="..." \
+go test -tags=e2e -count=1 ./...
+```
+
+샘플 endpoint e2e 는 별도 인증키인 `KRX_SAMPLE_AUTH_KEY` 를 사용한다. 모든 인증키는
+환경변수 또는 repo root 의 `.gitignore` 된 `.env` 에서만 읽고, 코드, 문서, fixture,
+로그에 값을 남기지 않는다. 외부 API 응답 전체도 fixture 로 저장하지 않는다.
 
 ## Scripts
 
