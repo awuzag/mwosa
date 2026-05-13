@@ -4,14 +4,20 @@ import (
 	"context"
 
 	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
+	universeservice "github.com/ev3rlit/mwosa/service/universe"
 )
 
 type Strategy struct {
-	service strategyservice.Service
+	service  strategyservice.Service
+	universe universeservice.Runner
 }
 
-func NewStrategy(service strategyservice.Service) Strategy {
-	return Strategy{service: service}
+func NewStrategy(service strategyservice.Service, universe ...universeservice.Runner) Strategy {
+	handler := Strategy{service: service}
+	if len(universe) > 0 {
+		handler.universe = universe[0]
+	}
+	return handler
 }
 
 type CreateStrategyRequest struct {
@@ -42,6 +48,10 @@ type ScreenStrategyRequest struct {
 	Alias string
 }
 
+type ScreenPipelineRequest struct {
+	Path string
+}
+
 type ScreenHistoryRequest struct {
 	Limit int
 }
@@ -52,6 +62,10 @@ type InspectStrategyRequest struct {
 
 type InspectScreenRequest struct {
 	Ref string
+}
+
+type InspectScreenPipelineRequest struct {
+	Path string
 }
 
 func (h Strategy) Create(ctx context.Context, req CreateStrategyRequest) (StrategyDetailOutput, error) {
@@ -115,6 +129,14 @@ func (h Strategy) Screen(ctx context.Context, req ScreenStrategyRequest) (Screen
 	return ScreenRunDetailOutput{Detail: detail}, nil
 }
 
+func (h Strategy) ScreenPipeline(ctx context.Context, req ScreenPipelineRequest) (ScreenPipelineOutput, error) {
+	result, err := h.universe.InspectScreenPipeline(ctx, req.Path)
+	if err != nil {
+		return ScreenPipelineOutput{}, err
+	}
+	return ScreenPipelineOutput{Result: result}, nil
+}
+
 func (h Strategy) History(ctx context.Context, req ScreenHistoryRequest) (ScreenRunHistoryOutput, error) {
 	runs, err := h.service.History(ctx, req.Limit)
 	if err != nil {
@@ -137,4 +159,12 @@ func (h Strategy) InspectScreen(ctx context.Context, req InspectScreenRequest) (
 		return ScreenRunDetailOutput{}, err
 	}
 	return ScreenRunDetailOutput{Detail: detail}, nil
+}
+
+func (h Strategy) InspectScreenPipeline(ctx context.Context, req InspectScreenPipelineRequest) (ScreenPipelineOutput, error) {
+	result, err := h.universe.InspectScreenPipeline(ctx, req.Path)
+	if err != nil {
+		return ScreenPipelineOutput{}, err
+	}
+	return ScreenPipelineOutput{Result: result}, nil
 }

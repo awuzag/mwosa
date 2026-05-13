@@ -13,6 +13,7 @@ import (
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
 	"github.com/ev3rlit/mwosa/service/daily"
 	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
+	universeservice "github.com/ev3rlit/mwosa/service/universe"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -116,15 +117,15 @@ func TestServiceUniverseFileReadersSupportJSONAndNDJSON(t *testing.T) {
 	require.NoError(t, os.WriteFile(jsonPath, []byte(`[{"symbol":"069500","score":1},{"symbol":"102110","score":2}]`), 0o644))
 	require.NoError(t, os.WriteFile(ndjsonPath, []byte("{\"symbol\":\"069500\",\"score\":1}\n{\"symbol\":\"102110\",\"score\":2}\n"), 0o644))
 
-	jsonRows, err := readUniverseFile(jsonPath)
+	jsonRows, err := universeservice.ReadCandidateFile(jsonPath)
 	require.NoError(t, err)
 	assert.Equal(t, []coreSymbol{{"069500"}, {"102110"}}, candidateSymbols(jsonRows))
 
-	ndjsonRows, err := readUniverseFile(ndjsonPath)
+	ndjsonRows, err := universeservice.ReadCandidateFile(ndjsonPath)
 	require.NoError(t, err)
 	assert.Equal(t, []coreSymbol{{"069500"}, {"102110"}}, candidateSymbols(ndjsonRows))
 
-	_, err = readUniverseFile(filepath.Join(dir, "missing.json"))
+	_, err = universeservice.ReadCandidateFile(filepath.Join(dir, "missing.json"))
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "open universe source file")
 }
@@ -162,7 +163,7 @@ func TestServiceMapperAndLookbackErrorPaths(t *testing.T) {
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "parse daily bar numeric field")
 
-	lookback := maxUniverseLookbackDays([]core.UniverseSelectorStepSpec{
+	lookback := universeservice.MaxLookbackDays([]core.UniverseSelectorStepSpec{
 		{ID: "combine.union", Params: map[string]any{"pipelines": []any{
 			map[string]any{"pipeline": []any{
 				map[string]any{"id": "source.daily_bars", "params": map[string]any{"lookback_days": "30"}},

@@ -13,9 +13,11 @@ func registerStrategyCommands(roots commandRoots, opts *Options) {
 	roots.Delete.AddCommand(newDeleteStrategyCommand(opts))
 	roots.Screen.AddCommand(newScreenETFCommand(opts))
 	roots.Screen.AddCommand(newScreenStrategyCommand(opts))
+	roots.Screen.AddCommand(newScreenPipelineCommand(opts))
 	roots.History.AddCommand(newHistoryScreenCommand(opts))
 	roots.Inspect.AddCommand(newInspectStrategyCommand(opts))
 	roots.Inspect.AddCommand(newInspectScreenCommand(opts))
+	roots.Inspect.AddCommand(newInspectScreenPipelineCommand(opts))
 }
 
 func newCreateStrategyCommand(opts *Options) *cobra.Command {
@@ -160,6 +162,25 @@ func newScreenStrategyCommand(opts *Options) *cobra.Command {
 	return cmd
 }
 
+func newScreenPipelineCommand(opts *Options) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "pipeline <yaml>",
+		Short: "Run a YAML screen universe pipeline",
+		Args:  cobra.ExactArgs(1),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			runtime, err := newAppRuntime(opts, false)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Strategy.ScreenPipeline(cmd.Context(), handler.ScreenPipelineRequest{Path: args[0]})
+		}),
+	}
+	mustMarkScreenPipelineYAML(cmd)
+	return cmd
+}
+
 func newHistoryScreenCommand(opts *Options) *cobra.Command {
 	flags := strategySourceFlags{History: 50}
 	cmd := &cobra.Command{
@@ -212,4 +233,27 @@ func newInspectScreenCommand(opts *Options) *cobra.Command {
 			return runtime.Handlers.Strategy.InspectScreen(cmd.Context(), handler.InspectScreenRequest{Ref: args[0]})
 		}),
 	}
+}
+
+func newInspectScreenPipelineCommand(opts *Options) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "screen-pipeline <yaml>",
+		Short: "Inspect a YAML screen universe pipeline",
+		Args:  cobra.ExactArgs(1),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			runtime, err := newAppRuntime(opts, false)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Strategy.InspectScreenPipeline(cmd.Context(), handler.InspectScreenPipelineRequest{Path: args[0]})
+		}),
+	}
+	mustMarkScreenPipelineYAML(cmd)
+	return cmd
+}
+
+func mustMarkScreenPipelineYAML(cmd *cobra.Command) {
+	cmd.ValidArgsFunction = cobra.FixedCompletions([]string{"yaml", "yml"}, cobra.ShellCompDirectiveFilterFileExt)
 }

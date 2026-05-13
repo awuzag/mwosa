@@ -4,6 +4,7 @@ import (
 	"fmt"
 
 	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
+	universeservice "github.com/ev3rlit/mwosa/service/universe"
 )
 
 type DeleteStrategyResult struct {
@@ -157,6 +158,10 @@ type ScreenResultOutput struct {
 	Result strategyservice.ScreenResult
 }
 
+type ScreenPipelineOutput struct {
+	Result universeservice.ScreenPipelineResult
+}
+
 func (o ScreenResultOutput) JSONValue() any {
 	return o.Result
 }
@@ -179,6 +184,30 @@ func (o ScreenResultOutput) TableRows() ([]string, [][]string) {
 		rows = append(rows, []string{"", "", fmt.Sprintf("screen %s with %d results", result.QueryHash, result.ResultCount)})
 	}
 	return []string{"ordinal", "symbol", "payload"}, rows
+}
+
+func (o ScreenPipelineOutput) JSONValue() any {
+	return o.Result
+}
+
+func (o ScreenPipelineOutput) NDJSONRows() any {
+	return o.Result.Candidates
+}
+
+func (o ScreenPipelineOutput) CSVRows() any {
+	return o.Result.Candidates
+}
+
+func (o ScreenPipelineOutput) TableRows() ([]string, [][]string) {
+	result := o.Result
+	return []string{"kind", "market", "security_type", "as_of", "symbols", "steps"}, [][]string{{
+		result.Kind,
+		result.Market,
+		result.SecurityType,
+		result.AsOf,
+		fmt.Sprint(result.ResultCount),
+		fmt.Sprint(len(result.Explain.Steps)),
+	}}
 }
 
 const timeLayout = "2006-01-02T15:04:05Z07:00"

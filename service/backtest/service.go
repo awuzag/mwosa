@@ -2,11 +2,7 @@ package backtest
 
 import (
 	"context"
-	"encoding/csv"
 	"encoding/json"
-	"io"
-	"os"
-	"path/filepath"
 	"strconv"
 	"strings"
 	"time"
@@ -18,6 +14,7 @@ import (
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
 	"github.com/ev3rlit/mwosa/service/daily"
 	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
+	universeservice "github.com/ev3rlit/mwosa/service/universe"
 	"github.com/samber/oops"
 )
 
@@ -45,6 +42,7 @@ type Service struct {
 	strategies   StrategyRepository
 	screenRepo   ScreenRepository
 	screenRunner ScreenRunner
+	universe     universeservice.Runner
 	registry     core.IndicatorRegistry
 }
 
@@ -132,7 +130,11 @@ func newService(reader DailyBarRepository, strategies StrategyRepository, screen
 	if reader == nil {
 		return Service{}, oops.In("backtest_service").New("daily bar reader is nil")
 	}
-	return Service{reader: reader, strategies: strategies, screenRepo: screenRepo, screenRunner: screenRunner, registry: registry}, nil
+	universeRunner, err := universeservice.NewRunner(reader, screenRepo, screenRunner)
+	if err != nil {
+		return Service{}, oops.In("backtest_service").Wrap(err)
+	}
+	return Service{reader: reader, strategies: strategies, screenRepo: screenRepo, screenRunner: screenRunner, universe: universeRunner, registry: registry}, nil
 }
 
 func (s Service) Validate(ctx context.Context, path string) (ValidationResult, error) {
@@ -311,294 +313,21 @@ func (s Service) loadBars(ctx context.Context, plan core.StrategyPlan) ([]core.B
 }
 
 func (s Service) resolveUniverse(ctx context.Context, yamlPath string, plan core.StrategyPlan) (core.StrategyPlan, error) {
-	execCtx, err := s.universeExecutionContext(ctx, yamlPath, plan)
-	if err != nil {
-		return core.StrategyPlan{}, err
-	}
-	explain, err := core.BuildUniverseSnapshots(ctx, plan.Universe, execCtx)
+	explain, err := s.universe.Explain(ctx, universeservice.ContextRequest{
+		YAMLPath:     yamlPath,
+		Market:       plan.Market,
+		SecurityType: plan.SecurityType,
+		From:         plan.From,
+		To:           plan.To,
+		Pipeline:     plan.Universe.Pipeline,
+	}, plan.Universe.Core)
 	if err != nil {
 		return core.StrategyPlan{}, oops.In("backtest_service").With("run", plan.RunName).Wrap(err)
 	}
+	explain.PositionPolicy = plan.Universe.PositionPolicy
 	plan.UniverseExplain = explain
 	plan.Symbols = symbolsFromUniverseExplain(explain)
 	return plan, nil
-}
-
-func (s Service) universeExecutionContext(ctx context.Context, yamlPath string, plan core.StrategyPlan) (core.UniverseExecutionContext, error) {
-	execCtx := core.UniverseExecutionContext{
-		From:             plan.From,
-		To:               plan.To,
-		Market:           plan.Market,
-		SecurityType:     plan.SecurityType,
-		SavedScreens:     make(map[string][]core.UniverseCandidate),
-		ScreenStrategies: make(map[string][]core.UniverseCandidate),
-		Files:            make(map[string][]core.UniverseCandidate),
-		Metadata:         make(map[string]core.UniverseCandidate),
-		Watchlists:       make(map[string][]core.UniverseCandidate),
-	}
-	if universePipelineNeedsDailyBars(plan.Universe.Pipeline) {
-		bars, err := s.loadUniverseDailyBars(ctx, plan)
-		if err != nil {
-			return core.UniverseExecutionContext{}, err
-		}
-		execCtx.DailyBars = bars
-	}
-	if err := s.loadExternalUniverseSources(ctx, yamlPath, plan.Universe.Pipeline, &execCtx); err != nil {
-		return core.UniverseExecutionContext{}, err
-	}
-	return execCtx, nil
-}
-
-func universePipelineNeedsDailyBars(pipeline []core.UniverseSelectorStepSpec) bool {
-	for _, step := range pipeline {
-		switch step.ID {
-		case "source.daily_bars", "source.instrument_master", "filter.has_daily_bars", "filter.listing_age":
-			return true
-		case "combine.union", "combine.intersect", "combine.difference", "combine.concat":
-			for _, sub := range subPipelineSpecs(step) {
-				if universePipelineNeedsDailyBars(sub) {
-					return true
-				}
-			}
-		}
-	}
-	return false
-}
-
-func (s Service) loadUniverseDailyBars(ctx context.Context, plan core.StrategyPlan) ([]core.Bar, error) {
-	from := plan.From
-	if lookback := maxUniverseLookbackDays(plan.Universe.Pipeline); lookback > 0 {
-		from = from.AddDate(0, 0, -lookback)
-	}
-	rows, err := s.reader.QueryDailyBars(ctx, daily.Query{
-		Market:       provider.Market(plan.Market),
-		SecurityType: provider.SecurityType(plan.SecurityType),
-		From:         from.Format(time.DateOnly),
-		To:           plan.To.Format(time.DateOnly),
-	})
-	if err != nil {
-		return nil, oops.In("backtest_service").With("market", plan.Market, "security_type", plan.SecurityType).Wrapf(err, "query universe daily bars")
-	}
-	bars := make([]core.Bar, 0, len(rows))
-	for _, row := range rows {
-		bar, err := canonicalDailyBarToBacktestBar(row)
-		if err != nil {
-			return nil, err
-		}
-		bars = append(bars, bar)
-	}
-	return bars, nil
-}
-
-func maxUniverseLookbackDays(pipeline []core.UniverseSelectorStepSpec) int {
-	maxLookback := 0
-	for _, step := range pipeline {
-		if value := intParam(step.Params, "lookback_days"); value > maxLookback {
-			maxLookback = value
-		}
-		if step.ID == "transform.window_metrics" {
-			if metrics, ok := step.Params["metrics"].(map[string]any); ok {
-				for _, raw := range metrics {
-					if spec, ok := raw.(map[string]any); ok {
-						if params, ok := spec["params"].(map[string]any); ok {
-							if value := intParam(params, "window"); value > maxLookback {
-								maxLookback = value
-							}
-						}
-					}
-				}
-			}
-		}
-		for _, sub := range subPipelineSpecs(step) {
-			if value := maxUniverseLookbackDays(sub); value > maxLookback {
-				maxLookback = value
-			}
-		}
-	}
-	return maxLookback
-}
-
-func (s Service) loadExternalUniverseSources(ctx context.Context, yamlPath string, pipeline []core.UniverseSelectorStepSpec, execCtx *core.UniverseExecutionContext) error {
-	for _, step := range pipeline {
-		switch step.ID {
-		case "source.saved_screen":
-			name := stringParam(step.Params, "name", stringParam(step.Params, "ref", ""))
-			if name == "" {
-				return oops.In("backtest_service").New("source.saved_screen requires name")
-			}
-			if _, ok := execCtx.SavedScreens[name]; !ok {
-				if s.screenRepo == nil {
-					return oops.In("backtest_service").With("name", name).New("screen repository is nil")
-				}
-				detail, err := s.screenRepo.GetScreenRun(ctx, name)
-				if err != nil {
-					return oops.In("backtest_service").With("name", name).Wrapf(err, "load saved screen")
-				}
-				execCtx.SavedScreens[name] = screenRunItemsToCandidates(detail.Items)
-			}
-		case "source.screen_strategy":
-			name := stringParam(step.Params, "name", "")
-			if name == "" {
-				return oops.In("backtest_service").New("source.screen_strategy requires name")
-			}
-			if _, ok := execCtx.ScreenStrategies[name]; !ok {
-				if s.screenRunner == nil {
-					return oops.In("backtest_service").With("name", name).New("screen runner is nil")
-				}
-				detail, err := s.screenRunner.Screen(ctx, strategyservice.ScreenStrategyRequest{Name: name, Alias: stringParam(step.Params, "alias", "")})
-				if err != nil {
-					return oops.In("backtest_service").With("name", name).Wrapf(err, "run screen strategy")
-				}
-				execCtx.ScreenStrategies[name] = screenRunItemsToCandidates(detail.Items)
-			}
-		case "source.file":
-			path := stringParam(step.Params, "path", "")
-			if path == "" {
-				return oops.In("backtest_service").New("source.file requires path")
-			}
-			resolved := resolveUniverseFilePath(yamlPath, path)
-			rows, err := readUniverseFile(resolved)
-			if err != nil {
-				return err
-			}
-			execCtx.Files[path] = rows
-			execCtx.Files[resolved] = rows
-		case "combine.union", "combine.intersect", "combine.difference", "combine.concat":
-			for _, sub := range subPipelineSpecs(step) {
-				if err := s.loadExternalUniverseSources(ctx, yamlPath, sub, execCtx); err != nil {
-					return err
-				}
-			}
-		}
-	}
-	return nil
-}
-
-func screenRunItemsToCandidates(items []strategyservice.ScreenRunItem) []core.UniverseCandidate {
-	out := make([]core.UniverseCandidate, 0, len(items))
-	for _, item := range items {
-		fields := map[string]any{"ordinal": item.Ordinal}
-		var payload map[string]any
-		if err := json.Unmarshal(item.PayloadJSON, &payload); err == nil {
-			for key, value := range payload {
-				fields[key] = value
-			}
-		}
-		symbol := item.Symbol
-		if symbol == "" {
-			symbol = stringParam(fields, "symbol", "")
-		}
-		out = append(out, core.UniverseCandidate{Symbol: symbol, Fields: fields})
-	}
-	return out
-}
-
-func readUniverseFile(path string) ([]core.UniverseCandidate, error) {
-	file, err := os.Open(path)
-	if err != nil {
-		return nil, oops.In("backtest_service").With("path", path).Wrapf(err, "open universe source file")
-	}
-	defer file.Close()
-	if strings.HasSuffix(path, ".csv") {
-		return readUniverseCSV(file, path)
-	}
-	if strings.HasSuffix(path, ".ndjson") || strings.HasSuffix(path, ".jsonl") {
-		return readUniverseNDJSON(file, path)
-	}
-	return readUniverseJSON(file, path)
-}
-
-func readUniverseCSV(reader io.Reader, path string) ([]core.UniverseCandidate, error) {
-	records, err := csv.NewReader(reader).ReadAll()
-	if err != nil {
-		return nil, oops.In("backtest_service").With("path", path).Wrapf(err, "read universe csv")
-	}
-	if len(records) == 0 {
-		return nil, nil
-	}
-	headers := records[0]
-	out := make([]core.UniverseCandidate, 0, len(records)-1)
-	for _, record := range records[1:] {
-		fields := make(map[string]any, len(headers))
-		for i, header := range headers {
-			if i < len(record) {
-				fields[header] = record[i]
-			}
-		}
-		out = append(out, core.UniverseCandidate{Symbol: stringParam(fields, "symbol", ""), Fields: fields})
-	}
-	return out, nil
-}
-
-func readUniverseJSON(reader io.Reader, path string) ([]core.UniverseCandidate, error) {
-	var rows []map[string]any
-	if err := json.NewDecoder(reader).Decode(&rows); err != nil {
-		return nil, oops.In("backtest_service").With("path", path).Wrapf(err, "read universe json")
-	}
-	return mapsToCandidates(rows), nil
-}
-
-func readUniverseNDJSON(reader io.Reader, path string) ([]core.UniverseCandidate, error) {
-	decoder := json.NewDecoder(reader)
-	rows := make([]map[string]any, 0)
-	for {
-		var row map[string]any
-		err := decoder.Decode(&row)
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			return nil, oops.In("backtest_service").With("path", path).Wrapf(err, "read universe ndjson")
-		}
-		rows = append(rows, row)
-	}
-	return mapsToCandidates(rows), nil
-}
-
-func mapsToCandidates(rows []map[string]any) []core.UniverseCandidate {
-	out := make([]core.UniverseCandidate, 0, len(rows))
-	for _, row := range rows {
-		out = append(out, core.UniverseCandidate{Symbol: stringParam(row, "symbol", ""), Fields: row})
-	}
-	return out
-}
-
-func resolveUniverseFilePath(yamlPath string, sourcePath string) string {
-	if filepath.IsAbs(sourcePath) {
-		return sourcePath
-	}
-	return filepath.Join(filepath.Dir(yamlPath), sourcePath)
-}
-
-func subPipelineSpecs(step core.UniverseSelectorStepSpec) [][]core.UniverseSelectorStepSpec {
-	raw, ok := step.Params["pipelines"].([]any)
-	if !ok {
-		return nil
-	}
-	out := make([][]core.UniverseSelectorStepSpec, 0, len(raw))
-	for _, item := range raw {
-		object, ok := item.(map[string]any)
-		if !ok {
-			continue
-		}
-		rawSteps, ok := object["pipeline"].([]any)
-		if !ok {
-			continue
-		}
-		steps := make([]core.UniverseSelectorStepSpec, 0, len(rawSteps))
-		for _, rawStep := range rawSteps {
-			payload, err := json.Marshal(rawStep)
-			if err != nil {
-				continue
-			}
-			var step core.UniverseSelectorStepSpec
-			if err := json.Unmarshal(payload, &step); err == nil {
-				steps = append(steps, step)
-			}
-		}
-		out = append(out, steps)
-	}
-	return out
 }
 
 func symbolsFromUniverseExplain(explain core.UniverseExplain) []string {
@@ -614,36 +343,6 @@ func symbolsFromUniverseExplain(explain core.UniverseExplain) []string {
 		}
 	}
 	return out
-}
-
-func intParam(params map[string]any, key string) int {
-	value, ok := params[key]
-	if !ok {
-		return 0
-	}
-	switch typed := value.(type) {
-	case int:
-		return typed
-	case float64:
-		return int(typed)
-	case string:
-		parsed, _ := strconv.Atoi(typed)
-		return parsed
-	default:
-		return 0
-	}
-}
-
-func stringParam(params map[string]any, key string, fallback string) string {
-	value, ok := params[key]
-	if !ok {
-		return fallback
-	}
-	text, ok := value.(string)
-	if !ok {
-		return fallback
-	}
-	return text
 }
 
 func canonicalDailyBarToBacktestBar(row dailybar.Bar) (core.Bar, error) {

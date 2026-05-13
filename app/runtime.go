@@ -14,6 +14,7 @@ import (
 	financialsservice "github.com/ev3rlit/mwosa/service/financials"
 	providerservice "github.com/ev3rlit/mwosa/service/providers"
 	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
+	universeservice "github.com/ev3rlit/mwosa/service/universe"
 	"github.com/ev3rlit/mwosa/storage"
 	backteststorage "github.com/ev3rlit/mwosa/storage/backtest"
 	dailybarstorage "github.com/ev3rlit/mwosa/storage/dailybar"
@@ -190,6 +191,13 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 			database.Close(),
 		)
 	}
+	universeRunner, err := universeservice.NewRunner(reader, strategyRepository, strategyService)
+	if err != nil {
+		return nil, oops.Join(
+			errb.Wrapf(err, "create universe service"),
+			database.Close(),
+		)
+	}
 	backtestService, err := backtestservice.NewServiceWithUniverseSources(reader, backtestStrategyRepository, strategyRepository, strategyService)
 	if err != nil {
 		return nil, oops.Join(
@@ -200,7 +208,7 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	backtestHandler := handler.NewBacktest(backtestService)
 	dailyHandler := handler.NewDaily(dailyReader, dailyCollector)
 	financialsHandler := handler.NewFinancials(financialsService)
-	strategyHandler := handler.NewStrategy(strategyService)
+	strategyHandler := handler.NewStrategy(strategyService, universeRunner)
 	migrationHandler := handler.NewMigration(migrationRunner)
 
 	return &Runtime{

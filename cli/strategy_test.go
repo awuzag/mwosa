@@ -179,6 +179,63 @@ func TestScreenETFExecutesInlineJQWithoutSavedStrategy(t *testing.T) {
 	}
 }
 
+func TestScreenPipelineAndInspectScreenPipelineOutputExplainJSON(t *testing.T) {
+	ctx := context.Background()
+	databasePath := filepath.Join(t.TempDir(), "mwosa.db")
+	seedStrategyDailyBars(t, ctx, databasePath)
+
+	yamlPath := filepath.Join(t.TempDir(), "screen-pipeline.yaml")
+	if err := os.WriteFile(yamlPath, []byte(`kind: ScreenRun
+schema_version: 1
+data:
+  market: krx
+  security_type: etf
+  as_of: "2024-04-16"
+pipeline:
+  - id: source.daily_bars
+  - id: transform.latest_per_symbol
+  - id: filter.include_symbols
+    params:
+      symbols: ["069500"]
+`), 0o644); err != nil {
+		t.Fatalf("write screen pipeline yaml: %v", err)
+	}
+
+	var screenOut bytes.Buffer
+	screenCmd := NewRootCommand(BuildInfo{})
+	screenCmd.SetOut(&screenOut)
+	screenCmd.SetErr(&screenOut)
+	if err := executeForTest(t, ctx, screenCmd,
+		"--database", databasePath,
+		"--output", "json",
+		"screen", "pipeline", yamlPath,
+	); err != nil {
+		t.Fatalf("screen pipeline: %v\n%s", err, screenOut.String())
+	}
+	for _, want := range []string{`"kind": "ScreenRun"`, `"selected_symbols": [`, `"069500"`, `"explain": {`} {
+		if !strings.Contains(screenOut.String(), want) {
+			t.Fatalf("screen pipeline output missing %q in:\n%s", want, screenOut.String())
+		}
+	}
+
+	var inspectOut bytes.Buffer
+	inspectCmd := NewRootCommand(BuildInfo{})
+	inspectCmd.SetOut(&inspectOut)
+	inspectCmd.SetErr(&inspectOut)
+	if err := executeForTest(t, ctx, inspectCmd,
+		"--database", databasePath,
+		"--output", "json",
+		"inspect", "screen-pipeline", yamlPath,
+	); err != nil {
+		t.Fatalf("inspect screen-pipeline: %v\n%s", err, inspectOut.String())
+	}
+	for _, want := range []string{`"result_count": 1`, `"source.daily_bars"`, `"decisions": [`} {
+		if !strings.Contains(inspectOut.String(), want) {
+			t.Fatalf("inspect screen-pipeline output missing %q in:\n%s", want, inspectOut.String())
+		}
+	}
+}
+
 func seedStrategyDailyBars(t *testing.T, ctx context.Context, databasePath string) {
 	t.Helper()
 	database := storage.NewDatabase(databasePath)
