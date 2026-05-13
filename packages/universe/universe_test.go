@@ -263,8 +263,50 @@ func TestBuildSnapshotsUsesClosedDataOnly(t *testing.T) {
 	assert.Equal(t, []string{"A"}, explain.Snapshots[2].Symbols)
 }
 
+func TestSourceDailyBarsPreservesRowIdentityAndFiltersSecurityType(t *testing.T) {
+	plan, err := Compile(PipelineSpec{Pipeline: []StepSpec{
+		{ID: "source.daily_bars"},
+	}}, testDataWindow(), DefaultSelectorRegistry())
+	require.NoError(t, err)
+
+	snapshot, err := ExecutePipeline(context.Background(), plan, ExecutionContext{
+		SelectionTime: date("2024-01-04"),
+		Market:        "krx",
+		DailyBars: []Bar{
+			{Time: date("2024-01-03"), Symbol: "005930", Market: "krx", SecurityType: "stock", Open: 1, High: 1, Low: 1, Close: 1},
+			{Time: date("2024-01-03"), Symbol: "069500", Market: "krx", SecurityType: "etf", Open: 1, High: 1, Low: 1, Close: 1},
+			{Time: date("2024-01-03"), Symbol: "580001", Market: "krx", SecurityType: "etn", Open: 1, High: 1, Low: 1, Close: 1},
+		},
+	})
+	require.NoError(t, err)
+	require.Len(t, snapshot.Candidates, 3)
+	assert.Equal(t, "stock", snapshot.Candidates[0].Fields["security_type"])
+	assert.Equal(t, "etf", snapshot.Candidates[1].Fields["security_type"])
+	assert.Equal(t, "etn", snapshot.Candidates[2].Fields["security_type"])
+
+	plan, err = Compile(PipelineSpec{Pipeline: []StepSpec{
+		{ID: "source.daily_bars"},
+		{ID: "filter.security_type", Params: map[string]any{"value": "etf"}},
+	}}, testDataWindow(), DefaultSelectorRegistry())
+	require.NoError(t, err)
+
+	snapshot, err = ExecutePipeline(context.Background(), plan, ExecutionContext{
+		SelectionTime: date("2024-01-04"),
+		Market:        "krx",
+		DailyBars: []Bar{
+			{Time: date("2024-01-03"), Symbol: "005930", Market: "krx", SecurityType: "stock", Open: 1, High: 1, Low: 1, Close: 1},
+			{Time: date("2024-01-03"), Symbol: "069500", Market: "krx", SecurityType: "etf", Open: 1, High: 1, Low: 1, Close: 1},
+			{Time: date("2024-01-03"), Symbol: "580001", Market: "krx", SecurityType: "etn", Open: 1, High: 1, Low: 1, Close: 1},
+		},
+	})
+	require.NoError(t, err)
+	assert.Equal(t, []string{"069500"}, snapshot.Symbols)
+	require.Len(t, snapshot.Candidates, 1)
+	assert.Equal(t, "etf", snapshot.Candidates[0].Fields["security_type"])
+}
+
 func testDataWindow() DataWindow {
-	return DataWindow{Market: "krx", SecurityType: "etf", From: date("2024-01-02"), To: date("2024-01-08")}
+	return DataWindow{Market: "krx", From: date("2024-01-02"), To: date("2024-01-08")}
 }
 
 func date(value string) time.Time {

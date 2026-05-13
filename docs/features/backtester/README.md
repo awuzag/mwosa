@@ -171,10 +171,18 @@ strategy:
 
 data:
   market: krx
-  security_type: etf
   timeframe: 1d
   from: 2024-01-01
   to: 2026-05-01
+
+universe:
+  pipeline:
+    - id: source.symbols
+      params:
+        symbols: ["069500", "102110"]
+        fields:
+          market: krx
+          security_type: etf
 
 portfolio:
   initial_cash: 10000000
@@ -286,7 +294,7 @@ storage/presentation 에 넘긴다.
 - `name`
 - `strategy.name`
 - `data.market`
-- `data.security_type`
+- `universe` 후보 field 또는 `filter.security_type`
 - `data.timeframe`
 - `data.from`
 - `data.to`

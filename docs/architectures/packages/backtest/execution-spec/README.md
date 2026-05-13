@@ -19,13 +19,18 @@ strategy:
 
 data:
   market: krx
-  security_type: etf
   timeframe: 1d
   from: 2024-01-01
   to: 2026-05-01
 
 universe:
-  symbols: ["069500", "102110"]
+  pipeline:
+    - id: source.symbols
+      params:
+        symbols: ["069500", "102110"]
+        fields:
+          market: krx
+          security_type: etf
 
 portfolio:
   initial_cash: 10000000
@@ -55,7 +60,7 @@ report:
 `BacktestRun` 이 맡는 일:
 
 - 어떤 strategy 를 실행할지 참조한다.
-- market, security type, timeframe, 기간을 정한다.
+- market, timeframe, 기간을 정한다.
 - 실행할 종목 universe 를 정한다.
 - 초기 현금과 기준 통화를 정한다.
 - 체결 가격, 수수료, 슬리피지 같은 execution model 을 정한다.
@@ -79,13 +84,16 @@ report:
 | `name` | 실행 기록 식별 이름 |
 | `strategy` | 같은 YAML stream 안의 strategy 또는 저장된 strategy 참조 |
 | `data.market` | market id |
-| `data.security_type` | security type |
 | `data.timeframe` | 실행 timeframe |
 | `data.from` | 시작일 |
 | `data.to` | 종료일 |
 | `universe` | 실행할 종목 집합 또는 selector |
 | `portfolio.initial_cash` | 초기 현금 |
 | `execution.fill` | 체결 가격 가정 |
+
+`data.security_type` 은 실행 전체를 잠그는 필수 필드가 아니다. 기존 YAML 호환을
+위해 읽을 수는 있지만, 새 스펙에서는 `source.*` 후보 field 와
+`filter.security_type` 으로 상품군을 제한한다.
 
 ## Strategy 참조
 

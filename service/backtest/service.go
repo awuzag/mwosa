@@ -3,6 +3,7 @@ package backtest
 import (
 	"context"
 	"encoding/json"
+	"fmt"
 	"strconv"
 	"strings"
 	"time"
@@ -77,19 +78,19 @@ type SaveStrategyRequest struct {
 }
 
 type ValidationResult struct {
-	Valid        bool                 `json:"valid"`
-	StrategyName string               `json:"strategy_name"`
-	RunName      string               `json:"run_name"`
-	Symbols      []string             `json:"symbols"`
-	Period       core.Period          `json:"period"`
-	Market       string               `json:"market"`
-	SecurityType string               `json:"security_type"`
-	Timeframe    string               `json:"timeframe"`
-	Currency     string               `json:"currency"`
-	Execution    ExecutionSummary     `json:"execution"`
-	Metrics      []string             `json:"metrics"`
-	Indicators   map[string]string    `json:"indicators,omitempty"`
-	Universe     core.UniverseExplain `json:"universe"`
+	Valid        bool                      `json:"valid"`
+	StrategyName string                    `json:"strategy_name"`
+	RunName      string                    `json:"run_name"`
+	Symbols      []string                  `json:"symbols"`
+	Instruments  []core.InstrumentIdentity `json:"instruments,omitempty"`
+	Period       core.Period               `json:"period"`
+	Market       string                    `json:"market"`
+	Timeframe    string                    `json:"timeframe"`
+	Currency     string                    `json:"currency"`
+	Execution    ExecutionSummary          `json:"execution"`
+	Metrics      []string                  `json:"metrics"`
+	Indicators   map[string]string         `json:"indicators,omitempty"`
+	Universe     core.UniverseExplain      `json:"universe"`
 }
 
 type ExecutionSummary struct {
@@ -282,29 +283,32 @@ func (s Service) compileFile(ctx context.Context, path string) (Bundle, core.Str
 func (s Service) loadBars(ctx context.Context, plan core.StrategyPlan) ([]core.Bar, error) {
 	errb := oops.In("backtest_service").With(
 		"market", plan.Market,
-		"security_type", plan.SecurityType,
 		"from", plan.From.Format(time.DateOnly),
 		"to", plan.To.Format(time.DateOnly),
 	)
 	bars := make([]core.Bar, 0)
-	for _, symbol := range plan.DataSymbols() {
+	instruments, err := dataInstruments(plan)
+	if err != nil {
+		return nil, errb.Wrap(err)
+	}
+	for _, instrument := range instruments {
 		rows, err := s.reader.QueryDailyBars(ctx, daily.Query{
-			Market:       provider.Market(plan.Market),
-			SecurityType: provider.SecurityType(plan.SecurityType),
-			Symbol:       symbol,
+			Market:       provider.Market(instrument.Market),
+			SecurityType: provider.SecurityType(instrument.SecurityType),
+			Symbol:       instrument.Symbol,
 			From:         plan.From.Format(time.DateOnly),
 			To:           plan.To.Format(time.DateOnly),
 		})
 		if err != nil {
-			return nil, errb.With("symbol", symbol).Wrapf(err, "query canonical daily bars")
+			return nil, errb.With("symbol", instrument.Symbol, "instrument_market", instrument.Market, "instrument_security_type", instrument.SecurityType).Wrapf(err, "query canonical daily bars")
 		}
 		if len(rows) == 0 {
-			return nil, errb.With("symbol", symbol).Errorf("canonical daily bars not found for backtest symbol: symbol=%s", symbol)
+			return nil, errb.With("symbol", instrument.Symbol, "instrument_market", instrument.Market, "instrument_security_type", instrument.SecurityType).Errorf("canonical daily bars not found for backtest symbol: symbol=%s market=%s security_type=%s", instrument.Symbol, instrument.Market, instrument.SecurityType)
 		}
 		for _, row := range rows {
 			bar, err := canonicalDailyBarToBacktestBar(row)
 			if err != nil {
-				return nil, errb.With("symbol", symbol, "trading_date", row.TradingDate).Wrap(err)
+				return nil, errb.With("symbol", instrument.Symbol, "trading_date", row.TradingDate).Wrap(err)
 			}
 			bars = append(bars, bar)
 		}
@@ -314,12 +318,11 @@ func (s Service) loadBars(ctx context.Context, plan core.StrategyPlan) ([]core.B
 
 func (s Service) resolveUniverse(ctx context.Context, yamlPath string, plan core.StrategyPlan) (core.StrategyPlan, error) {
 	explain, err := s.universe.Explain(ctx, universeservice.ContextRequest{
-		YAMLPath:     yamlPath,
-		Market:       plan.Market,
-		SecurityType: plan.SecurityType,
-		From:         plan.From,
-		To:           plan.To,
-		Pipeline:     plan.Universe.Pipeline,
+		YAMLPath: yamlPath,
+		Market:   plan.Market,
+		From:     plan.From,
+		To:       plan.To,
+		Pipeline: plan.Universe.Pipeline,
 	}, plan.Universe.Core)
 	if err != nil {
 		return core.StrategyPlan{}, oops.In("backtest_service").With("run", plan.RunName).Wrap(err)
@@ -327,6 +330,7 @@ func (s Service) resolveUniverse(ctx context.Context, yamlPath string, plan core
 	explain.PositionPolicy = plan.Universe.PositionPolicy
 	plan.UniverseExplain = explain
 	plan.Symbols = symbolsFromUniverseExplain(explain)
+	plan.Instruments = instrumentsFromUniverseExplain(explain, plan.Market)
 	return plan, nil
 }
 
@@ -343,6 +347,71 @@ func symbolsFromUniverseExplain(explain core.UniverseExplain) []string {
 		}
 	}
 	return out
+}
+
+func instrumentsFromUniverseExplain(explain core.UniverseExplain, defaultMarket string) []core.InstrumentIdentity {
+	seen := map[string]struct{}{}
+	out := make([]core.InstrumentIdentity, 0)
+	for _, snapshot := range explain.Snapshots {
+		for _, candidate := range snapshot.Candidates {
+			instrument := core.InstrumentIdentity{
+				Symbol:       candidate.Symbol,
+				Market:       stringField(candidate.Fields, "market", defaultMarket),
+				SecurityType: stringField(candidate.Fields, "security_type", ""),
+			}
+			key := instrument.Market + "\x00" + instrument.SecurityType + "\x00" + instrument.Symbol
+			if _, ok := seen[key]; ok {
+				continue
+			}
+			seen[key] = struct{}{}
+			out = append(out, instrument)
+		}
+	}
+	return out
+}
+
+func dataInstruments(plan core.StrategyPlan) ([]core.InstrumentIdentity, error) {
+	instruments := append([]core.InstrumentIdentity(nil), plan.Instruments...)
+	if len(instruments) == 0 {
+		for _, symbol := range plan.Symbols {
+			instruments = append(instruments, core.InstrumentIdentity{Symbol: symbol, Market: plan.Market})
+		}
+	}
+	if plan.Benchmark.Symbol != "" {
+		instruments = append(instruments, core.InstrumentIdentity{
+			Symbol:       plan.Benchmark.Symbol,
+			Market:       withDefault(plan.Benchmark.Market, plan.Market),
+			SecurityType: plan.Benchmark.SecurityType,
+		})
+	}
+	seen := map[string]struct{}{}
+	out := make([]core.InstrumentIdentity, 0, len(instruments))
+	symbolIdentities := map[string]string{}
+	for _, instrument := range instruments {
+		instrument.Market = withDefault(instrument.Market, plan.Market)
+		if strings.TrimSpace(instrument.Symbol) == "" {
+			return nil, oops.In("backtest_service").New("backtest instrument symbol is required")
+		}
+		if strings.TrimSpace(instrument.Market) == "" {
+			return nil, oops.In("backtest_service").With("symbol", instrument.Symbol).New("backtest instrument market is required")
+		}
+		if strings.TrimSpace(instrument.SecurityType) == "" {
+			return nil, oops.In("backtest_service").With("symbol", instrument.Symbol, "market", instrument.Market).New("backtest instrument security_type is required")
+		}
+		key := instrument.Market + "\x00" + instrument.SecurityType + "\x00" + instrument.Symbol
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		symbolKey := instrument.Symbol
+		identityKey := instrument.Market + "/" + instrument.SecurityType
+		if existing, ok := symbolIdentities[symbolKey]; ok && existing != identityKey {
+			return nil, oops.In("backtest_service").With("symbol", instrument.Symbol).New("backtest engine requires unique symbol per instrument identity")
+		}
+		symbolIdentities[symbolKey] = identityKey
+		out = append(out, instrument)
+	}
+	return out, nil
 }
 
 func canonicalDailyBarToBacktestBar(row dailybar.Bar) (core.Bar, error) {
@@ -378,6 +447,8 @@ func canonicalDailyBarToBacktestBar(row dailybar.Bar) (core.Bar, error) {
 	return core.Bar{
 		Time:         tradingDate,
 		Symbol:       row.Symbol,
+		Market:       string(row.Market),
+		SecurityType: string(row.SecurityType),
 		Open:         open,
 		High:         high,
 		Low:          low,
@@ -416,9 +487,9 @@ func validationResultFromPlan(plan core.StrategyPlan) ValidationResult {
 		StrategyName: plan.StrategyName,
 		RunName:      plan.RunName,
 		Symbols:      append([]string(nil), plan.Symbols...),
+		Instruments:  append([]core.InstrumentIdentity(nil), plan.Instruments...),
 		Period:       core.Period{From: plan.From, To: plan.To},
 		Market:       plan.Market,
-		SecurityType: plan.SecurityType,
 		Timeframe:    plan.Timeframe,
 		Currency:     plan.Currency,
 		Metrics:      append([]string(nil), plan.SelectedMetrics...),
@@ -429,5 +500,37 @@ func validationResultFromPlan(plan core.StrategyPlan) ValidationResult {
 		},
 		Indicators: indicators,
 		Universe:   plan.UniverseExplain,
+	}
+}
+
+func stringField(fields map[string]any, key string, fallback string) string {
+	value, ok := fields[key]
+	if !ok {
+		return fallback
+	}
+	text := strings.TrimSpace(valueString(value))
+	if text == "" {
+		return fallback
+	}
+	return text
+}
+
+func withDefault(value string, fallback string) string {
+	if strings.TrimSpace(value) == "" {
+		return fallback
+	}
+	return value
+}
+
+func valueString(value any) string {
+	switch typed := value.(type) {
+	case string:
+		return typed
+	case []byte:
+		return string(typed)
+	case nil:
+		return ""
+	default:
+		return fmt.Sprint(value)
 	}
 }

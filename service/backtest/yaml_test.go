@@ -63,9 +63,10 @@ func TestUniversePipelineExampleFixtureCompiles(t *testing.T) {
 	assert.Equal(t, "liquidity-leaders-krx-etf", plan.RunName)
 	assert.Equal(t, "monthly", plan.Universe.Schedule.Frequency)
 	assert.Equal(t, "liquidate", plan.Universe.PositionPolicy)
-	require.Len(t, plan.Universe.Pipeline, 5)
+	require.Len(t, plan.Universe.Pipeline, 6)
 	assert.Equal(t, "source.daily_bars", plan.Universe.Pipeline[0].ID)
-	assert.Equal(t, "rank.weighted", plan.Universe.Pipeline[4].ID)
+	assert.Equal(t, "filter.security_type", plan.Universe.Pipeline[1].ID)
+	assert.Equal(t, "rank.weighted", plan.Universe.Pipeline[5].ID)
 }
 
 func TestDecodeStrategyOnlySupportsNestedRulesAndInlineIndicators(t *testing.T) {

@@ -5,7 +5,9 @@ import (
 	"os"
 	"path/filepath"
 	"testing"
+	"time"
 
+	core "github.com/ev3rlit/mwosa/packages/universe"
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
 	"github.com/ev3rlit/mwosa/service/daily"
@@ -46,6 +48,37 @@ pipeline:
 	assert.Equal(t, "source.daily_bars", result.Explain.Steps[0].ID)
 	require.Len(t, result.Candidates, 1)
 	assert.Equal(t, "069500", result.Candidates[0].Symbol)
+}
+
+func TestRunnerDailyBarsSourceCanLoadMixedSecurityTypesAndFilter(t *testing.T) {
+	ctx := context.Background()
+	runner, err := NewRunner(fakeDailyBarRepository{rows: []dailybar.Bar{
+		screenDailyBarWithType("005930", provider.SecurityTypeStock, "2024-04-15", "70000"),
+		screenDailyBarWithType("069500", provider.SecurityTypeETF, "2024-04-15", "35120"),
+		screenDailyBarWithType("580001", provider.SecurityTypeETN, "2024-04-15", "10000"),
+	}}, nil, nil)
+	require.NoError(t, err)
+
+	plan, err := core.Compile(core.PipelineSpec{
+		Pipeline: []core.StepSpec{
+			{ID: "source.daily_bars", Params: map[string]any{"lookback_days": 5}},
+			{ID: "filter.security_type", Params: map[string]any{"value": "etf"}},
+		},
+	}, core.DataWindow{Market: "krx", From: mustDate("2024-04-16"), To: mustDate("2024-04-16")}, core.DefaultSelectorRegistry())
+	require.NoError(t, err)
+
+	explain, err := runner.Explain(ctx, ContextRequest{
+		Market:   "krx",
+		From:     mustDate("2024-04-16"),
+		To:       mustDate("2024-04-16"),
+		Pipeline: plan.Pipeline,
+	}, plan)
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{"069500"}, explain.SelectedSymbols)
+	require.Len(t, explain.Snapshots, 1)
+	require.Len(t, explain.Snapshots[0].Candidates, 1)
+	assert.Equal(t, "etf", explain.Snapshots[0].Candidates[0].Fields["security_type"])
 }
 
 func TestRunnerReturnsSelectorValidationErrors(t *testing.T) {
@@ -92,14 +125,26 @@ func (r fakeDailyBarRepository) QueryDailyBars(_ context.Context, query daily.Qu
 }
 
 func screenDailyBar(symbol string, tradingDate string, closePrice string) dailybar.Bar {
+	return screenDailyBarWithType(symbol, provider.SecurityTypeETF, tradingDate, closePrice)
+}
+
+func screenDailyBarWithType(symbol string, securityType provider.SecurityType, tradingDate string, closePrice string) dailybar.Bar {
 	return dailybar.Bar{
 		Provider:     provider.ProviderDataGo,
 		Group:        provider.GroupSecuritiesProductPrice,
 		Operation:    provider.OperationGetETFPriceInfo,
 		Market:       provider.MarketKRX,
-		SecurityType: provider.SecurityTypeETF,
+		SecurityType: securityType,
 		Symbol:       symbol,
 		TradingDate:  tradingDate,
 		Close:        closePrice,
 	}
+}
+
+func mustDate(value string) time.Time {
+	parsed, err := time.Parse(time.DateOnly, value)
+	if err != nil {
+		panic(err)
+	}
+	return parsed
 }

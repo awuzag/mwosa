@@ -41,12 +41,12 @@ type Runner struct {
 }
 
 type ContextRequest struct {
-	YAMLPath     string
-	Market       string
-	SecurityType string
-	From         time.Time
-	To           time.Time
-	Pipeline     []core.StepSpec
+	YAMLPath      string
+	Market        string
+	From          time.Time
+	To            time.Time
+	Pipeline      []core.StepSpec
+	SecurityTypes []string
 }
 
 type ScreenRunSpec struct {
@@ -100,7 +100,6 @@ func (r Runner) ExecutionContext(ctx context.Context, req ContextRequest) (core.
 		From:             req.From,
 		To:               req.To,
 		Market:           req.Market,
-		SecurityType:     req.SecurityType,
 		SavedScreens:     make(map[string][]core.Candidate),
 		ScreenStrategies: make(map[string][]core.Candidate),
 		Files:            make(map[string][]core.Candidate),
@@ -189,21 +188,20 @@ func compileScreenRun(spec ScreenRunSpec, path string) (core.Plan, ContextReques
 		Pipeline: spec.Pipeline,
 	}
 	plan, err := core.Compile(pipelineSpec, core.DataWindow{
-		Market:       spec.Data.Market,
-		SecurityType: spec.Data.SecurityType,
-		From:         asOf,
-		To:           asOf,
+		Market: spec.Data.Market,
+		From:   asOf,
+		To:     asOf,
 	}, core.DefaultSelectorRegistry())
 	if err != nil {
 		return core.Plan{}, ContextRequest{}, errb.Wrap(err)
 	}
 	return plan, ContextRequest{
-		YAMLPath:     path,
-		Market:       spec.Data.Market,
-		SecurityType: spec.Data.SecurityType,
-		From:         from,
-		To:           to,
-		Pipeline:     spec.Pipeline,
+		YAMLPath:      path,
+		Market:        spec.Data.Market,
+		From:          from,
+		To:            to,
+		Pipeline:      spec.Pipeline,
+		SecurityTypes: []string{spec.Data.SecurityType},
 	}, nil
 }
 
@@ -297,24 +295,88 @@ func (r Runner) loadDailyBars(ctx context.Context, req ContextRequest) ([]core.B
 	if !from.IsZero() {
 		fromText = from.Format(time.DateOnly)
 	}
-	rows, err := r.reader.QueryDailyBars(ctx, daily.Query{
-		Market:       provider.Market(req.Market),
-		SecurityType: provider.SecurityType(req.SecurityType),
-		From:         fromText,
-		To:           req.To.Format(time.DateOnly),
-	})
-	if err != nil {
-		return nil, oops.In("universe_service").With("market", req.Market, "security_type", req.SecurityType).Wrapf(err, "query universe daily bars")
-	}
-	bars := make([]core.Bar, 0, len(rows))
-	for _, row := range rows {
-		bar, err := canonicalDailyBarToUniverseBar(row)
+	queries := dailyBarQueries(req)
+	bars := make([]core.Bar, 0)
+	for _, query := range queries {
+		rows, err := r.reader.QueryDailyBars(ctx, daily.Query{
+			Market:       provider.Market(query.Market),
+			SecurityType: provider.SecurityType(query.SecurityType),
+			From:         fromText,
+			To:           req.To.Format(time.DateOnly),
+		})
 		if err != nil {
-			return nil, err
+			return nil, oops.In("universe_service").With("market", query.Market, "security_type", query.SecurityType).Wrapf(err, "query universe daily bars")
 		}
-		bars = append(bars, bar)
+		for _, row := range rows {
+			bar, err := canonicalDailyBarToUniverseBar(row)
+			if err != nil {
+				return nil, err
+			}
+			bars = append(bars, bar)
+		}
 	}
 	return bars, nil
+}
+
+type dailyBarQuery struct {
+	Market       string
+	SecurityType string
+}
+
+func dailyBarQueries(req ContextRequest) []dailyBarQuery {
+	queries := collectDailyBarQueries(req.Pipeline, req.Market, req.SecurityTypes)
+	if len(queries) == 0 {
+		for _, securityType := range req.SecurityTypes {
+			queries = append(queries, dailyBarQuery{Market: req.Market, SecurityType: securityType})
+		}
+	}
+	if len(queries) == 0 {
+		queries = append(queries, dailyBarQuery{Market: req.Market})
+	}
+	return dedupeDailyBarQueries(queries)
+}
+
+func collectDailyBarQueries(pipeline []core.StepSpec, defaultMarket string, fallbackSecurityTypes []string) []dailyBarQuery {
+	queries := make([]dailyBarQuery, 0)
+	for _, step := range pipeline {
+		switch step.ID {
+		case "source.daily_bars":
+			market := stringParam(step.Params, "market", defaultMarket)
+			securityTypes := stringSliceParam(step.Params, "security_types")
+			if len(securityTypes) == 0 {
+				securityType := stringParam(step.Params, "security_type", "")
+				if securityType == "" && len(fallbackSecurityTypes) > 0 {
+					for _, fallback := range fallbackSecurityTypes {
+						queries = append(queries, dailyBarQuery{Market: market, SecurityType: fallback})
+					}
+					continue
+				}
+				queries = append(queries, dailyBarQuery{Market: market, SecurityType: securityType})
+				continue
+			}
+			for _, securityType := range securityTypes {
+				queries = append(queries, dailyBarQuery{Market: market, SecurityType: securityType})
+			}
+		case "combine.union", "combine.intersect", "combine.difference", "combine.concat":
+			for _, sub := range SubPipelineSpecs(step) {
+				queries = append(queries, collectDailyBarQueries(sub, defaultMarket, fallbackSecurityTypes)...)
+			}
+		}
+	}
+	return queries
+}
+
+func dedupeDailyBarQueries(queries []dailyBarQuery) []dailyBarQuery {
+	seen := map[dailyBarQuery]struct{}{}
+	out := make([]dailyBarQuery, 0, len(queries))
+	for _, query := range queries {
+		if _, ok := seen[query]; ok {
+			continue
+		}
+		seen[query] = struct{}{}
+		out = append(out, query)
+	}
+	return out
 }
 
 func (r Runner) loadExternalSources(ctx context.Context, yamlPath string, pipeline []core.StepSpec, execCtx *core.ExecutionContext) error {
@@ -533,6 +595,8 @@ func canonicalDailyBarToUniverseBar(row dailybar.Bar) (core.Bar, error) {
 	return core.Bar{
 		Time:         tradingDate,
 		Symbol:       row.Symbol,
+		Market:       string(row.Market),
+		SecurityType: string(row.SecurityType),
 		Open:         open,
 		High:         high,
 		Low:          low,
@@ -570,6 +634,29 @@ func stringParam(params map[string]any, key string, fallback string) string {
 		return fallback
 	}
 	return text
+}
+
+func stringSliceParam(params map[string]any, key string) []string {
+	raw, ok := params[key]
+	if !ok {
+		return nil
+	}
+	items, ok := raw.([]any)
+	if !ok {
+		if values, ok := raw.([]string); ok {
+			return append([]string(nil), values...)
+		}
+		return nil
+	}
+	out := make([]string, 0, len(items))
+	for _, item := range items {
+		text, ok := item.(string)
+		if !ok {
+			continue
+		}
+		out = append(out, text)
+	}
+	return out
 }
 
 func optionalFloat(value string, field string) (float64, error) {

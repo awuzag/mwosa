@@ -22,10 +22,9 @@ const (
 )
 
 type DataWindow struct {
-	Market       string
-	SecurityType string
-	From         time.Time
-	To           time.Time
+	Market string
+	From   time.Time
+	To     time.Time
 }
 
 type Plan struct {
@@ -84,7 +83,6 @@ type ExecutionContext struct {
 	From             time.Time
 	To               time.Time
 	Market           string
-	SecurityType     string
 	DailyBars        []Bar
 	Metadata         map[string]Candidate
 	Watchlists       map[string][]Candidate
@@ -506,10 +504,14 @@ func sourceSymbols(_ context.Context, step StepSpec, _ []Candidate, execCtx Exec
 	if !ok || len(symbols) == 0 {
 		return nil, StepSummary{}, nil, oops.In("universe").New("source.symbols requires symbols")
 	}
+	fields, _ := mapParam(step.Params, "fields")
 	out := make([]Candidate, 0, len(symbols))
 	decisions := make([]Decision, 0, len(symbols))
 	for _, symbol := range symbols {
 		candidate := newCandidate(symbol)
+		for key, value := range fields {
+			candidate.Fields[key] = value
+		}
 		out = append(out, candidate)
 		decisions = append(decisions, includeDecision(execCtx.SelectionTime, step.ID, symbol, "source.symbols"))
 	}
@@ -522,17 +524,19 @@ func sourceDailyBars(_ context.Context, step StepSpec, _ []Candidate, execCtx Ex
 	if lookback > 0 && !execCtx.SelectionTime.IsZero() {
 		from = execCtx.SelectionTime.AddDate(0, 0, -lookback)
 	}
+	market := stringParamDefault(step.Params, "market", execCtx.Market)
+	securityType := stringParamDefault(step.Params, "security_type", "")
 	out := make([]Candidate, 0)
 	for _, bar := range closedBars(execCtx.DailyBars, execCtx.SelectionTime, execCtx.closedDataOnly) {
 		if !from.IsZero() && bar.Time.Before(from) {
 			continue
 		}
 		fields := barFields(bar)
-		if market := stringParamDefault(step.Params, "market", execCtx.Market); market != "" {
-			fields["market"] = market
+		if market != "" && valueString(fields["market"]) != market {
+			continue
 		}
-		if securityType := stringParamDefault(step.Params, "security_type", execCtx.SecurityType); securityType != "" {
-			fields["security_type"] = securityType
+		if securityType != "" && valueString(fields["security_type"]) != securityType {
+			continue
 		}
 		out = append(out, Candidate{Symbol: bar.Symbol, Fields: fields, Tags: []string{"liquid"}})
 	}
@@ -549,8 +553,8 @@ func sourceInstrumentMaster(_ context.Context, step StepSpec, _ []Candidate, exe
 	}
 	if len(out) == 0 {
 		latest := latestBarsBySymbol(closedBars(execCtx.DailyBars, execCtx.SelectionTime, execCtx.closedDataOnly))
-		for symbol, bar := range latest {
-			out = append(out, Candidate{Symbol: symbol, Fields: barFields(bar)})
+		for _, bar := range latest {
+			out = append(out, Candidate{Symbol: bar.Symbol, Fields: barFields(bar)})
 		}
 	}
 	return out, StepSummary{Reason: "instrument metadata"}, includeDecisions(execCtx.SelectionTime, step.ID, out, "instrument_master"), nil
@@ -615,9 +619,10 @@ func sourceInline(_ context.Context, step StepSpec, _ []Candidate, execCtx Execu
 func transformLatestPerSymbol(_ context.Context, step StepSpec, input []Candidate, execCtx ExecutionContext, _ SelectorRegistry) ([]Candidate, StepSummary, []Decision, error) {
 	latest := map[string]Candidate{}
 	for _, candidate := range input {
-		current, ok := latest[candidate.Symbol]
+		key := candidateKey(candidate)
+		current, ok := latest[key]
 		if !ok || compareField(candidate, current, "trading_date") > 0 {
-			latest[candidate.Symbol] = cloneCandidate(candidate)
+			latest[key] = cloneCandidate(candidate)
 		}
 	}
 	out := make([]Candidate, 0, len(latest))
@@ -778,10 +783,10 @@ func filterHasDailyBars(_ context.Context, step StepSpec, input []Candidate, exe
 	minCount := intParamDefault(step.Params, "min_count", 1)
 	counts := map[string]int{}
 	for _, bar := range closedBars(execCtx.DailyBars, execCtx.SelectionTime, execCtx.closedDataOnly) {
-		counts[bar.Symbol]++
+		counts[barKey(bar)]++
 	}
 	return filterCandidates(step.ID, execCtx.SelectionTime, input, "has_daily_bars", func(candidate Candidate) bool {
-		return counts[candidate.Symbol] >= minCount
+		return counts[candidateKey(candidate)] >= minCount
 	})
 }
 
@@ -1022,11 +1027,12 @@ func combineUnion(ctx context.Context, step StepSpec, _ []Candidate, execCtx Exe
 		}
 		decisions = append(decisions, snapshot.Decisions...)
 		for _, candidate := range snapshot.Candidates {
-			if existing, ok := seen[candidate.Symbol]; ok {
-				seen[candidate.Symbol] = mergeCandidate(existing, candidate)
+			key := candidateKey(candidate)
+			if existing, ok := seen[key]; ok {
+				seen[key] = mergeCandidate(existing, candidate)
 				continue
 			}
-			seen[candidate.Symbol] = cloneCandidate(candidate)
+			seen[key] = cloneCandidate(candidate)
 		}
 	}
 	out := mapCandidates(seen)
@@ -1048,8 +1054,9 @@ func combineIntersect(ctx context.Context, step StepSpec, _ []Candidate, execCtx
 		}
 		decisions = append(decisions, snapshot.Decisions...)
 		for _, candidate := range snapshot.Candidates {
-			counts[candidate.Symbol]++
-			values[candidate.Symbol] = mergeCandidate(values[candidate.Symbol], candidate)
+			key := candidateKey(candidate)
+			counts[key]++
+			values[key] = mergeCandidate(values[key], candidate)
 		}
 	}
 	out := make([]Candidate, 0)
@@ -1082,13 +1089,13 @@ func combineDifference(ctx context.Context, step StepSpec, _ []Candidate, execCt
 			return nil, StepSummary{}, nil, err
 		}
 		decisions = append(decisions, snapshot.Decisions...)
-		for _, symbol := range snapshot.Symbols {
-			blocked[symbol] = struct{}{}
+		for _, candidate := range snapshot.Candidates {
+			blocked[candidateKey(candidate)] = struct{}{}
 		}
 	}
 	out := make([]Candidate, 0)
 	for _, candidate := range first.Candidates {
-		if _, ok := blocked[candidate.Symbol]; !ok {
+		if _, ok := blocked[candidateKey(candidate)]; !ok {
 			out = append(out, candidate)
 		}
 	}
@@ -1301,7 +1308,7 @@ func closedBars(bars []Bar, selection time.Time, closedOnly bool) []Bar {
 }
 
 func barFields(bar Bar) map[string]any {
-	return map[string]any{
+	fields := map[string]any{
 		"trading_date":  bar.Time.Format(time.DateOnly),
 		"time":          bar.Time.Format(time.DateOnly),
 		"open":          bar.Open,
@@ -1311,14 +1318,22 @@ func barFields(bar Bar) map[string]any {
 		"volume":        bar.Volume,
 		"traded_amount": bar.TradedAmount,
 	}
+	if bar.Market != "" {
+		fields["market"] = bar.Market
+	}
+	if bar.SecurityType != "" {
+		fields["security_type"] = bar.SecurityType
+	}
+	return fields
 }
 
 func latestBarsBySymbol(bars []Bar) map[string]Bar {
 	out := map[string]Bar{}
 	for _, bar := range bars {
-		current, ok := out[bar.Symbol]
+		key := barKey(bar)
+		current, ok := out[key]
 		if !ok || bar.Time.After(current.Time) {
-			out[bar.Symbol] = bar
+			out[key] = bar
 		}
 	}
 	return out
@@ -1409,6 +1424,12 @@ func sortCandidates(candidates []Candidate) {
 		if a.Symbol > b.Symbol {
 			return 1
 		}
+		if cmp := strings.Compare(valueString(a.Fields["market"]), valueString(b.Fields["market"])); cmp != 0 {
+			return cmp
+		}
+		if cmp := strings.Compare(valueString(a.Fields["security_type"]), valueString(b.Fields["security_type"])); cmp != 0 {
+			return cmp
+		}
 		return compareField(a, b, "trading_date")
 	})
 }
@@ -1473,7 +1494,7 @@ func excludeDecision(at time.Time, stepID, symbol, reason string) Decision {
 func candidatesBySymbol(candidates []Candidate) map[string][]Candidate {
 	out := map[string][]Candidate{}
 	for _, candidate := range candidates {
-		out[candidate.Symbol] = append(out[candidate.Symbol], cloneCandidate(candidate))
+		out[candidateKey(candidate)] = append(out[candidateKey(candidate)], cloneCandidate(candidate))
 	}
 	return out
 }
@@ -1494,6 +1515,8 @@ func barsFromCandidates(candidates []Candidate) []Bar {
 		out = append(out, Bar{
 			Time:         tradingDate,
 			Symbol:       candidate.Symbol,
+			Market:       valueString(candidate.Fields["market"]),
+			SecurityType: valueString(candidate.Fields["security_type"]),
 			Open:         floatField(candidate, "open"),
 			High:         floatField(candidate, "high"),
 			Low:          floatField(candidate, "low"),
@@ -1503,6 +1526,22 @@ func barsFromCandidates(candidates []Candidate) []Bar {
 		})
 	}
 	return out
+}
+
+func candidateKey(candidate Candidate) string {
+	market := valueString(candidate.Fields["market"])
+	securityType := valueString(candidate.Fields["security_type"])
+	if market == "" && securityType == "" {
+		return candidate.Symbol
+	}
+	return market + "\x00" + securityType + "\x00" + candidate.Symbol
+}
+
+func barKey(bar Bar) string {
+	if bar.Market == "" && bar.SecurityType == "" {
+		return bar.Symbol
+	}
+	return bar.Market + "\x00" + bar.SecurityType + "\x00" + bar.Symbol
 }
 
 func ensureFields(candidate *Candidate) {

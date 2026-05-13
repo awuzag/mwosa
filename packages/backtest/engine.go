@@ -23,33 +23,33 @@ func NewEngine(feed Feed) (Engine, error) {
 }
 
 type Result struct {
-	RunName         string              `json:"run_name"`
-	StrategyName    string              `json:"strategy_name"`
-	Symbols         []string            `json:"symbols"`
-	Period          Period              `json:"period"`
-	Market          string              `json:"market"`
-	SecurityType    string              `json:"security_type"`
-	Timeframe       string              `json:"timeframe"`
-	Currency        string              `json:"currency"`
-	Execution       ExecutionAssumption `json:"execution"`
-	InitialCash     float64             `json:"initial_cash"`
-	Benchmark       BenchmarkSpec       `json:"benchmark,omitempty"`
-	FinalEquity     float64             `json:"-"`
-	TotalReturn     float64             `json:"-"`
-	MaxDrawdown     float64             `json:"-"`
-	TradeCount      int                 `json:"-"`
-	WinRate         float64             `json:"-"`
-	AverageTradeRet float64             `json:"-"`
-	RealizedPnL     float64             `json:"-"`
-	Metrics         Metrics             `json:"metrics"`
-	SelectedMetrics []string            `json:"-"`
-	Trades          []Trade             `json:"trades"`
-	EquityCurve     []EquityPoint       `json:"equity_curve"`
-	RiskEvents      []Event             `json:"risk_events,omitempty"`
-	ExecutionEvents []Event             `json:"execution_events,omitempty"`
-	Universe        UniverseExplain     `json:"universe"`
-	UnfilledCount   int                 `json:"-"`
-	ResultHash      string              `json:"result_hash"`
+	RunName         string               `json:"run_name"`
+	StrategyName    string               `json:"strategy_name"`
+	Symbols         []string             `json:"symbols"`
+	Instruments     []InstrumentIdentity `json:"instruments,omitempty"`
+	Period          Period               `json:"period"`
+	Market          string               `json:"market"`
+	Timeframe       string               `json:"timeframe"`
+	Currency        string               `json:"currency"`
+	Execution       ExecutionAssumption  `json:"execution"`
+	InitialCash     float64              `json:"initial_cash"`
+	Benchmark       BenchmarkSpec        `json:"benchmark,omitempty"`
+	FinalEquity     float64              `json:"-"`
+	TotalReturn     float64              `json:"-"`
+	MaxDrawdown     float64              `json:"-"`
+	TradeCount      int                  `json:"-"`
+	WinRate         float64              `json:"-"`
+	AverageTradeRet float64              `json:"-"`
+	RealizedPnL     float64              `json:"-"`
+	Metrics         Metrics              `json:"metrics"`
+	SelectedMetrics []string             `json:"-"`
+	Trades          []Trade              `json:"trades"`
+	EquityCurve     []EquityPoint        `json:"equity_curve"`
+	RiskEvents      []Event              `json:"risk_events,omitempty"`
+	ExecutionEvents []Event              `json:"execution_events,omitempty"`
+	Universe        UniverseExplain      `json:"universe"`
+	UnfilledCount   int                  `json:"-"`
+	ResultHash      string               `json:"result_hash"`
 }
 
 type Period struct {
@@ -184,14 +184,14 @@ func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 		RunName:      plan.RunName,
 		StrategyName: plan.StrategyName,
 		Symbols:      plan.resultSymbols(),
+		Instruments:  plan.resultInstruments(),
 		Period: Period{
 			From: plan.From,
 			To:   plan.To,
 		},
-		Market:       plan.Market,
-		SecurityType: plan.SecurityType,
-		Timeframe:    plan.Timeframe,
-		Currency:     plan.Currency,
+		Market:    plan.Market,
+		Timeframe: plan.Timeframe,
+		Currency:  plan.Currency,
 		Execution: ExecutionAssumption{
 			Fill:       plan.Fill,
 			Commission: plan.Commission,
@@ -228,6 +228,45 @@ func (p StrategyPlan) DataSymbols() []string {
 		out = append(out, p.Benchmark.Symbol)
 	}
 	return out
+}
+
+func (p StrategyPlan) resultInstruments() []InstrumentIdentity {
+	seen := map[string]struct{}{}
+	out := make([]InstrumentIdentity, 0, len(p.Instruments))
+	for _, instrument := range p.Instruments {
+		key := instrumentKey(instrument)
+		if _, ok := seen[key]; ok {
+			continue
+		}
+		seen[key] = struct{}{}
+		out = append(out, instrument)
+	}
+	slices.SortFunc(out, func(a, b InstrumentIdentity) int {
+		if a.Symbol < b.Symbol {
+			return -1
+		}
+		if a.Symbol > b.Symbol {
+			return 1
+		}
+		if a.Market < b.Market {
+			return -1
+		}
+		if a.Market > b.Market {
+			return 1
+		}
+		if a.SecurityType < b.SecurityType {
+			return -1
+		}
+		if a.SecurityType > b.SecurityType {
+			return 1
+		}
+		return 0
+	})
+	return out
+}
+
+func instrumentKey(instrument InstrumentIdentity) string {
+	return instrument.Market + "\x00" + instrument.SecurityType + "\x00" + instrument.Symbol
 }
 
 func evaluateSignals(plan StrategyPlan, portfolio portfolio, activeSymbols []string, currentBars map[string]Bar, currentIndexes map[string]int, series map[string][]Bar, indicators map[string]map[string][]float64) ([]orderIntent, error) {

@@ -30,7 +30,6 @@ strategy:
   name: liquidity-leader-sma
 data:
   market: krx
-  security_type: etf
   timeframe: 1d
   from: 2024-01-02
   to: 2024-12-31
@@ -44,8 +43,10 @@ universe:
     - id: source.daily_bars
       params:
         market: krx
-        security_type: etf
         lookback_days: 63
+    - id: filter.security_type
+      params:
+        value: etf
     - id: transform.window_metrics
       params:
         metrics:

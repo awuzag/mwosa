@@ -26,6 +26,8 @@ type StepSpec struct {
 type Bar struct {
 	Time         time.Time `json:"time"`
 	Symbol       string    `json:"symbol"`
+	Market       string    `json:"market,omitempty"`
+	SecurityType string    `json:"security_type,omitempty"`
 	Open         float64   `json:"open"`
 	High         float64   `json:"high"`
 	Low          float64   `json:"low"`

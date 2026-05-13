@@ -48,8 +48,8 @@ func TestServiceValidatesAndRunsYAMLAgainstDailyBarRepository(t *testing.T) {
 	assert.Equal(t, "2024-01-08", repo.queries[0].To)
 	assert.Equal(t, "sma-cross", result.StrategyName)
 	assert.Equal(t, []string{"069500"}, result.Symbols)
+	assert.Equal(t, []core.InstrumentIdentity{{Symbol: "069500", Market: "krx", SecurityType: "etf"}}, result.Instruments)
 	assert.Equal(t, "krx", result.Market)
-	assert.Equal(t, "etf", result.SecurityType)
 	assert.Equal(t, "1d", result.Timeframe)
 	assert.Equal(t, "next_open", result.Execution.Fill)
 	require.Len(t, result.Trades, 2)
@@ -83,6 +83,39 @@ func TestServiceValidatesDailyBarsUniversePipelineWithExplain(t *testing.T) {
 	assert.Equal(t, "source.daily_bars", validation.Universe.Steps[0].ID)
 	assert.Equal(t, "rank.by_field", validation.Universe.Steps[2].ID)
 	assert.NotEmpty(t, validation.Universe.Decisions)
+}
+
+func TestServiceRunsMixedUniverseUsingCandidateSecurityTypes(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "mixed.yaml")
+	require.NoError(t, os.WriteFile(path, []byte(sampleMixedUniverseYAML()), 0o644))
+
+	repo := &recordingDailyBarRepository{bars: map[string][]dailybar.Bar{
+		"005930": mixedCanonicalDailyBars("005930", provider.SecurityTypeStock),
+		"069500": mixedCanonicalDailyBars("069500", provider.SecurityTypeETF),
+		"580001": mixedCanonicalDailyBars("580001", provider.SecurityTypeETN),
+	}}
+	service, err := NewService(repo)
+	require.NoError(t, err)
+
+	result, err := service.Run(context.Background(), path)
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{"005930", "069500", "580001"}, result.Symbols)
+	assert.ElementsMatch(t, []core.InstrumentIdentity{
+		{Symbol: "005930", Market: "krx", SecurityType: "stock"},
+		{Symbol: "069500", Market: "krx", SecurityType: "etf"},
+		{Symbol: "580001", Market: "krx", SecurityType: "etn"},
+	}, result.Instruments)
+	require.Len(t, repo.queries, 4)
+	assert.Empty(t, repo.queries[0].SecurityType)
+	assert.Equal(t, "", repo.queries[0].Symbol)
+	queried := map[string]provider.SecurityType{}
+	for _, query := range repo.queries[1:] {
+		queried[query.Symbol] = query.SecurityType
+	}
+	assert.Equal(t, provider.SecurityTypeStock, queried["005930"])
+	assert.Equal(t, provider.SecurityTypeETF, queried["069500"])
+	assert.Equal(t, provider.SecurityTypeETN, queried["580001"])
 }
 
 func TestServiceInspectUniverseLoadsFileAndScreenSources(t *testing.T) {
@@ -269,11 +302,29 @@ func (r *recordingDailyBarRepository) QueryDailyBars(_ context.Context, query da
 	if query.Symbol == "" {
 		out := make([]dailybar.Bar, 0)
 		for _, rows := range r.bars {
-			out = append(out, rows...)
+			for _, row := range rows {
+				if query.Market != "" && row.Market != query.Market {
+					continue
+				}
+				if query.SecurityType != "" && row.SecurityType != query.SecurityType {
+					continue
+				}
+				out = append(out, row)
+			}
 		}
 		return out, nil
 	}
-	return append([]dailybar.Bar(nil), r.bars[query.Symbol]...), nil
+	out := make([]dailybar.Bar, 0, len(r.bars[query.Symbol]))
+	for _, row := range r.bars[query.Symbol] {
+		if query.Market != "" && row.Market != query.Market {
+			continue
+		}
+		if query.SecurityType != "" && row.SecurityType != query.SecurityType {
+			continue
+		}
+		out = append(out, row)
+	}
+	return out, nil
 }
 
 func sampleCanonicalDailyBars() []dailybar.Bar {
@@ -315,6 +366,20 @@ func canonicalDailyBarForSymbol(symbol string, date string, open string, high st
 		Close:        closePrice,
 		Volume:       "1000",
 	}
+}
+
+func mixedCanonicalDailyBars(symbol string, securityType provider.SecurityType) []dailybar.Bar {
+	return []dailybar.Bar{
+		canonicalDailyBarForIdentity(symbol, securityType, "2024-01-02", "10", "10", "10", "10"),
+		canonicalDailyBarForIdentity(symbol, securityType, "2024-01-03", "11", "11", "11", "11"),
+		canonicalDailyBarForIdentity(symbol, securityType, "2024-01-04", "12", "12", "12", "12"),
+	}
+}
+
+func canonicalDailyBarForIdentity(symbol string, securityType provider.SecurityType, date string, open string, high string, low string, closePrice string) dailybar.Bar {
+	row := canonicalDailyBarForSymbol(symbol, date, open, high, low, closePrice)
+	row.SecurityType = securityType
+	return row
 }
 
 func sampleYAMLWithBenchmarkMetrics() string {
@@ -420,6 +485,71 @@ universe:
       params:
         field: score
         order: desc
+portfolio:
+  initial_cash: 10000
+execution:
+  fill: next_open
+`
+}
+
+func sampleMixedUniverseYAML() string {
+	return `
+kind: Strategy
+schema_version: 1
+name: mixed-universe
+entry:
+  gt:
+    - price: close
+    - value: 0
+exit:
+  lt:
+    - price: close
+    - value: 0
+sizing:
+  type: percent_of_equity
+  value: 10
+risk:
+  max_positions: 3
+---
+kind: BacktestRun
+schema_version: 1
+name: mixed-universe-run
+strategy:
+  name: mixed-universe
+data:
+  market: krx
+  timeframe: 1d
+  from: 2024-01-03
+  to: 2024-01-04
+universe:
+  pipeline:
+    - id: combine.union
+      params:
+        pipelines:
+          - pipeline:
+              - id: source.daily_bars
+                params:
+                  lookback_days: 5
+              - id: transform.latest_per_symbol
+              - id: filter.security_type
+                params:
+                  value: stock
+          - pipeline:
+              - id: source.daily_bars
+                params:
+                  lookback_days: 5
+              - id: transform.latest_per_symbol
+              - id: filter.security_type
+                params:
+                  value: etf
+          - pipeline:
+              - id: source.daily_bars
+                params:
+                  lookback_days: 5
+              - id: transform.latest_per_symbol
+              - id: filter.security_type
+                params:
+                  value: etn
 portfolio:
   initial_cash: 10000
 execution:

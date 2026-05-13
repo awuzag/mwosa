@@ -43,28 +43,35 @@ func Compile(strategy StrategySpec, run BacktestRunSpec, registry IndicatorRegis
 		return StrategyPlan{}, errb.With("from", run.Data.From, "to", run.Data.To).New("backtest to date must be on or after from date")
 	}
 
-	universePlan, err := CompileUniverseSpec(run.Universe, UniverseDataWindow{
-		Market:       run.Data.Market,
-		SecurityType: run.Data.SecurityType,
-		From:         from,
-		To:           to,
+	normalizedUniverse := NormalizeUniverseSpecWithData(run.Universe, run.Data)
+	universePlan, err := CompileUniverseSpec(normalizedUniverse, UniverseDataWindow{
+		Market: run.Data.Market,
+		From:   from,
+		To:     to,
 	}, DefaultUniverseSelectorRegistry())
 	if err != nil {
 		return StrategyPlan{}, errb.Wrap(err)
 	}
 	symbols := append([]string(nil), universePlan.StaticSymbols...)
 	slices.Sort(symbols)
+	benchmark := run.Benchmark
+	if benchmark.Market == "" {
+		benchmark.Market = run.Data.Market
+	}
+	if benchmark.SecurityType == "" {
+		benchmark.SecurityType = run.Data.SecurityType
+	}
 
 	return StrategyPlan{
 		StrategyName:    strategy.Name,
 		RunName:         run.Name,
 		Symbols:         symbols,
+		Instruments:     instrumentsFromStaticSymbols(symbols, run.Data),
 		From:            from,
 		To:              to,
 		Timeframe:       run.Data.Timeframe,
 		Market:          run.Data.Market,
-		SecurityType:    run.Data.SecurityType,
-		Benchmark:       run.Benchmark,
+		Benchmark:       benchmark,
 		InitialCash:     run.Portfolio.InitialCash,
 		Currency:        withDefault(run.Portfolio.Currency, "KRW"),
 		Fill:            run.Execution.Fill,
@@ -152,9 +159,6 @@ func validateRun(run BacktestRunSpec, strategyName string, metricRegistry Metric
 	}
 	if strings.TrimSpace(run.Data.Market) == "" {
 		return nil, errb.New("data market is required")
-	}
-	if strings.TrimSpace(run.Data.SecurityType) == "" {
-		return nil, errb.New("data security type is required")
 	}
 	if run.Data.Timeframe != "1d" {
 		return nil, errb.With("timeframe", run.Data.Timeframe).New("only 1d timeframe is supported")

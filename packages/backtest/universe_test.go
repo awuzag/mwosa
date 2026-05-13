@@ -355,5 +355,5 @@ func TestEngineUsesScheduledUniverseSnapshotsAndLiquidatesDroppedPositions(t *te
 }
 
 func testDataWindow() UniverseDataWindow {
-	return UniverseDataWindow{Market: "krx", SecurityType: "etf", From: date("2024-01-02"), To: date("2024-01-08")}
+	return UniverseDataWindow{Market: "krx", From: date("2024-01-02"), To: date("2024-01-08")}
 }

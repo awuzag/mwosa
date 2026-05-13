@@ -41,7 +41,7 @@ type StrategyRef struct {
 
 type DataSpec struct {
 	Market       string `json:"market" yaml:"market"`
-	SecurityType string `json:"security_type" yaml:"security_type"`
+	SecurityType string `json:"security_type,omitempty" yaml:"security_type,omitempty"`
 	Timeframe    string `json:"timeframe" yaml:"timeframe"`
 	From         string `json:"from" yaml:"from"`
 	To           string `json:"to" yaml:"to"`
@@ -59,8 +59,10 @@ type UniverseScheduleSpec = universe.ScheduleSpec
 type UniverseSelectorStepSpec = universe.StepSpec
 
 type BenchmarkSpec struct {
-	Symbol string `json:"symbol,omitempty" yaml:"symbol,omitempty"`
-	Name   string `json:"name,omitempty" yaml:"name,omitempty"`
+	Symbol       string `json:"symbol,omitempty" yaml:"symbol,omitempty"`
+	Name         string `json:"name,omitempty" yaml:"name,omitempty"`
+	Market       string `json:"market,omitempty" yaml:"market,omitempty"`
+	SecurityType string `json:"security_type,omitempty" yaml:"security_type,omitempty"`
 }
 
 type PortfolioSpec struct {
@@ -125,11 +127,11 @@ type StrategyPlan struct {
 	StrategyName    string
 	RunName         string
 	Symbols         []string
+	Instruments     []InstrumentIdentity
 	From            time.Time
 	To              time.Time
 	Timeframe       string
 	Market          string
-	SecurityType    string
 	Benchmark       BenchmarkSpec
 	InitialCash     float64
 	Currency        string
@@ -147,4 +149,10 @@ type StrategyPlan struct {
 	UniverseExplain UniverseExplain
 	metricRegistry  MetricRegistry
 	registry        IndicatorRegistry
+}
+
+type InstrumentIdentity struct {
+	Symbol       string `json:"symbol"`
+	Market       string `json:"market,omitempty"`
+	SecurityType string `json:"security_type,omitempty"`
 }
