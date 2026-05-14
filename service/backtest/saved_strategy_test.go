@@ -95,8 +95,9 @@ func TestServiceSavedStrategyLifecycle(t *testing.T) {
 }
 
 type memoryBacktestStrategyRepository struct {
-	strategies map[string]SavedStrategy
-	versions   []SavedStrategyVersion
+	strategies  map[string]SavedStrategy
+	versions    []SavedStrategyVersion
+	evaluations []SavedEvaluationDetail
 }
 
 func newMemoryBacktestStrategyRepository() *memoryBacktestStrategyRepository {
@@ -167,6 +168,55 @@ func (r *memoryBacktestStrategyRepository) DeleteStrategy(_ context.Context, nam
 	strategy.UpdatedAt = deletedAt
 	r.strategies[name] = strategy
 	return nil
+}
+
+func (r *memoryBacktestStrategyRepository) SaveEvaluation(_ context.Context, experiment SavedExperiment, cases []SavedExperimentCase, steps []SavedWalkForwardStep, now time.Time) (SavedEvaluationDetail, error) {
+	if experiment.CreatedAt.IsZero() {
+		experiment.CreatedAt = now
+	}
+	for index := range cases {
+		if cases[index].CreatedAt.IsZero() {
+			cases[index].CreatedAt = now
+		}
+	}
+	for index := range steps {
+		if steps[index].CreatedAt.IsZero() {
+			steps[index].CreatedAt = now
+		}
+	}
+	detail := SavedEvaluationDetail{Experiment: experiment, Cases: cases, WalkForward: steps}
+	r.evaluations = append(r.evaluations, detail)
+	return detail, nil
+}
+
+func (r *memoryBacktestStrategyRepository) ListEvaluations(context.Context) ([]SavedEvaluationSummary, error) {
+	out := make([]SavedEvaluationSummary, 0, len(r.evaluations))
+	for _, detail := range r.evaluations {
+		var best *SavedExperimentCase
+		for index := range detail.Cases {
+			if detail.Cases[index].Rank == 1 {
+				item := detail.Cases[index]
+				best = &item
+				break
+			}
+		}
+		out = append(out, SavedEvaluationSummary{
+			Experiment: detail.Experiment,
+			CaseCount:  len(detail.Cases),
+			BestCase:   best,
+		})
+	}
+	return out, nil
+}
+
+func (r *memoryBacktestStrategyRepository) GetEvaluation(_ context.Context, ref string) (SavedEvaluationDetail, error) {
+	for index := len(r.evaluations) - 1; index >= 0; index-- {
+		detail := r.evaluations[index]
+		if detail.Experiment.ID == ref || detail.Experiment.Name == ref {
+			return detail, nil
+		}
+	}
+	return SavedEvaluationDetail{}, assert.AnError
 }
 
 func (r *memoryBacktestStrategyRepository) versionByID(id string) SavedStrategyVersion {

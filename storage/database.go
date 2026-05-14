@@ -3,6 +3,7 @@ package storage
 import (
 	"context"
 	stdsql "database/sql"
+	"net/url"
 	"os"
 	"path/filepath"
 	"strings"
@@ -15,9 +16,10 @@ import (
 )
 
 type Database struct {
-	path   string
-	mu     sync.Mutex
-	client *bun.DB
+	path       string
+	mu         sync.Mutex
+	client     *bun.DB
+	readClient *bun.DB
 }
 
 func NewDatabase(path string) *Database {
@@ -26,6 +28,36 @@ func NewDatabase(path string) *Database {
 
 func (db *Database) Client(ctx context.Context) (*bun.DB, error) {
 	return db.DB(ctx)
+}
+
+func (db *Database) Reader(ctx context.Context) (*bun.DB, error) {
+	if db == nil || strings.TrimSpace(db.path) == "" {
+		return nil, oops.In("storage_database").New("sqlite database path is empty")
+	}
+	if _, err := db.DB(ctx); err != nil {
+		return nil, err
+	}
+	errb := oops.In("storage_database").With("path", db.path)
+
+	db.mu.Lock()
+	defer db.mu.Unlock()
+
+	if db.readClient != nil {
+		return db.readClient, nil
+	}
+	rawDB, err := stdsql.Open("sqlite", sqliteReadOnlyDSN(db.path))
+	if err != nil {
+		return nil, errb.Wrapf(err, "open read-only sqlite database")
+	}
+	rawDB.SetMaxOpenConns(4)
+
+	if err := setupReadDatabase(ctx, rawDB); err != nil {
+		_ = rawDB.Close()
+		return nil, errb.Wrap(err)
+	}
+
+	db.readClient = bun.NewDB(rawDB, sqlitedialect.New())
+	return db.readClient, nil
 }
 
 func (db *Database) DB(ctx context.Context) (*bun.DB, error) {
@@ -76,15 +108,42 @@ func (db *Database) Close() error {
 	db.mu.Lock()
 	defer db.mu.Unlock()
 
+	var out error
+	if db.readClient != nil {
+		if err := db.readClient.Close(); err != nil {
+			out = oops.Join(out, errb.Wrapf(err, "close read-only sqlite database"))
+		}
+		db.readClient = nil
+	}
 	if db.client == nil {
-		return nil
+		return out
 	}
 	err := db.client.Close()
 	db.client = nil
 	if err != nil {
-		return errb.Wrapf(err, "close sqlite database")
+		out = oops.Join(out, errb.Wrapf(err, "close sqlite database"))
+	}
+	return out
+}
+
+func setupReadDatabase(ctx context.Context, db *stdsql.DB) error {
+	errb := oops.In("storage_database")
+	for _, statement := range []string{
+		`PRAGMA foreign_keys = ON`,
+	} {
+		if _, err := db.ExecContext(ctx, statement); err != nil {
+			return errb.With("statement", statement).Wrapf(err, "configure read-only sqlite database")
+		}
 	}
 	return nil
+}
+
+func sqliteReadOnlyDSN(path string) string {
+	dsn := url.URL{Scheme: "file", Path: path}
+	query := dsn.Query()
+	query.Set("mode", "ro")
+	dsn.RawQuery = query.Encode()
+	return dsn.String()
 }
 
 func setupDatabase(ctx context.Context, db *stdsql.DB) error {

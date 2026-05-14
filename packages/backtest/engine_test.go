@@ -48,6 +48,23 @@ func TestEngineRunsCompiledStrategyPlanWithNextOpenFills(t *testing.T) {
 	assert.Equal(t, result.ResultHash, repeated.ResultHash)
 }
 
+func TestEngineEquityCurveMatchesIndependentTradeReplay(t *testing.T) {
+	registry, err := DefaultIndicatorRegistry()
+	require.NoError(t, err)
+
+	plan, err := Compile(testStrategySpec(), testRunSpec(), registry)
+	require.NoError(t, err)
+
+	bars := testBars()
+	engine, err := NewEngine(NewMemoryFeed(bars))
+	require.NoError(t, err)
+
+	result, err := engine.Run(context.Background(), plan)
+	require.NoError(t, err)
+
+	assertEquityCurveMatchesReplay(t, result, bars)
+}
+
 func TestCompileDefaultsToCoreMetrics(t *testing.T) {
 	registry, err := DefaultIndicatorRegistry()
 	require.NoError(t, err)
@@ -360,6 +377,74 @@ func benchmarkBars() []Bar {
 		{Time: date("2024-01-05"), Symbol: "102110", Open: 110, High: 110, Low: 110, Close: 110},
 		{Time: date("2024-01-08"), Symbol: "102110", Open: 110, High: 110, Low: 110, Close: 110},
 	}
+}
+
+func assertEquityCurveMatchesReplay(t *testing.T, result Result, bars []Bar) {
+	t.Helper()
+
+	require.NotEmpty(t, result.EquityCurve)
+	assert.InDelta(t, result.FinalEquity, result.EquityCurve[len(result.EquityCurve)-1].Equity, 0.0001)
+
+	barsByTime := map[time.Time]map[string]Bar{}
+	for _, bar := range bars {
+		if barsByTime[bar.Time] == nil {
+			barsByTime[bar.Time] = map[string]Bar{}
+		}
+		barsByTime[bar.Time][bar.Symbol] = bar
+	}
+
+	tradesByTime := map[time.Time][]Trade{}
+	for _, trade := range result.Trades {
+		require.Greater(t, trade.Price, 0.0)
+		require.Greater(t, trade.Quantity, 0.0)
+		require.Greater(t, trade.Notional, 0.0)
+		assert.InDelta(t, trade.Price*trade.Quantity, trade.Notional, 0.0001)
+		assert.GreaterOrEqual(t, trade.Commission, 0.0)
+		tradesByTime[trade.Time] = append(tradesByTime[trade.Time], trade)
+	}
+
+	cash := result.InitialCash
+	positions := map[string]float64{}
+	var lastTime time.Time
+	appliedTrades := 0
+	for index, point := range result.EquityCurve {
+		if index > 0 {
+			require.True(t, point.Time.After(lastTime), "equity curve time must be ascending")
+		}
+		lastTime = point.Time
+
+		for _, trade := range tradesByTime[point.Time] {
+			switch trade.Side {
+			case SideBuy:
+				cash -= trade.Notional + trade.Commission
+				positions[trade.Symbol] += trade.Quantity
+			case SideSell:
+				require.GreaterOrEqual(t, positions[trade.Symbol]+1e-9, trade.Quantity)
+				cash += trade.Notional - trade.Commission
+				positions[trade.Symbol] -= trade.Quantity
+				if positions[trade.Symbol] <= 1e-9 {
+					delete(positions, trade.Symbol)
+				}
+			default:
+				t.Fatalf("unsupported trade side: %s", trade.Side)
+			}
+			appliedTrades++
+		}
+
+		var positionsValue float64
+		for symbol, quantity := range positions {
+			bySymbol, ok := barsByTime[point.Time]
+			require.True(t, ok, "missing bars for equity point %s", point.Time.Format(time.DateOnly))
+			bar, ok := bySymbol[symbol]
+			require.True(t, ok, "missing close price for %s at %s", symbol, point.Time.Format(time.DateOnly))
+			positionsValue += quantity * bar.Close
+		}
+
+		assert.InDelta(t, cash, point.Cash, 0.0001)
+		assert.InDelta(t, positionsValue, point.PositionsValue, 0.0001)
+		assert.InDelta(t, cash+positionsValue, point.Equity, 0.0001)
+	}
+	assert.Equal(t, len(result.Trades), appliedTrades)
 }
 
 func date(value string) time.Time {

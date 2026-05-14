@@ -5,8 +5,11 @@ import (
 	"encoding/json"
 	"os"
 	"path/filepath"
+	"sort"
 	"strings"
+	"sync"
 	"testing"
+	"time"
 
 	core "github.com/ev3rlit/mwosa/packages/backtest"
 	provider "github.com/ev3rlit/mwosa/providers/core"
@@ -42,8 +45,8 @@ func TestServiceValidatesAndRunsYAMLAgainstDailyBarRepository(t *testing.T) {
 
 	require.Len(t, repo.queries, 1)
 	assert.Equal(t, provider.MarketKRX, repo.queries[0].Market)
-	assert.Equal(t, provider.SecurityTypeETF, repo.queries[0].SecurityType)
-	assert.Equal(t, "069500", repo.queries[0].Symbol)
+	assert.Empty(t, repo.queries[0].SecurityType)
+	assert.Empty(t, repo.queries[0].Symbol)
 	assert.Equal(t, "2024-01-02", repo.queries[0].From)
 	assert.Equal(t, "2024-01-08", repo.queries[0].To)
 	assert.Equal(t, "sma-cross", result.StrategyName)
@@ -106,16 +109,11 @@ func TestServiceRunsMixedUniverseUsingCandidateSecurityTypes(t *testing.T) {
 		{Symbol: "069500", Market: "krx", SecurityType: "etf"},
 		{Symbol: "580001", Market: "krx", SecurityType: "etn"},
 	}, result.Instruments)
-	require.Len(t, repo.queries, 4)
+	require.Len(t, repo.queries, 2)
 	assert.Empty(t, repo.queries[0].SecurityType)
 	assert.Equal(t, "", repo.queries[0].Symbol)
-	queried := map[string]provider.SecurityType{}
-	for _, query := range repo.queries[1:] {
-		queried[query.Symbol] = query.SecurityType
-	}
-	assert.Equal(t, provider.SecurityTypeStock, queried["005930"])
-	assert.Equal(t, provider.SecurityTypeETF, queried["069500"])
-	assert.Equal(t, provider.SecurityTypeETN, queried["580001"])
+	assert.Empty(t, repo.queries[1].SecurityType)
+	assert.Empty(t, repo.queries[1].Symbol)
 }
 
 func TestServiceInspectUniverseLoadsFileAndScreenSources(t *testing.T) {
@@ -237,11 +235,71 @@ func TestServiceLoadsBenchmarkBarsForBenchmarkMetrics(t *testing.T) {
 	result, err := service.Run(context.Background(), path)
 	require.NoError(t, err)
 
-	require.Len(t, repo.queries, 2)
-	assert.Equal(t, "069500", repo.queries[0].Symbol)
-	assert.Equal(t, "102110", repo.queries[1].Symbol)
+	require.Len(t, repo.queries, 1)
+	assert.Equal(t, provider.MarketKRX, repo.queries[0].Market)
+	assert.Empty(t, repo.queries[0].SecurityType)
+	assert.Empty(t, repo.queries[0].Symbol)
 	assert.Contains(t, result.Metrics, "benchmark_total_return")
 	assert.Contains(t, result.Metrics, "excess_return")
+}
+
+func TestDailyBarFeedUsesSingleMarketCursorForMultiSymbolFrames(t *testing.T) {
+	repo := &recordingDailyBarRepository{bars: map[string][]dailybar.Bar{
+		"AAA": {
+			canonicalDailyBarForSymbol("AAA", "2024-01-02", "10", "10", "10", "10"),
+			canonicalDailyBarForSymbol("AAA", "2024-01-03", "11", "11", "11", "11"),
+		},
+		"BBB": {
+			canonicalDailyBarForSymbol("BBB", "2024-01-02", "20", "20", "20", "20"),
+			canonicalDailyBarForSymbol("BBB", "2024-01-03", "21", "21", "21", "21"),
+		},
+	}}
+	from, err := time.Parse(time.DateOnly, "2024-01-02")
+	require.NoError(t, err)
+	to, err := time.Parse(time.DateOnly, "2024-01-03")
+	require.NoError(t, err)
+
+	stream, err := newDailyBarFeed(repo).Open(context.Background(), core.DataRequest{
+		From: from,
+		To:   to,
+		Instruments: []core.InstrumentIdentity{
+			{Symbol: "AAA", Market: "krx", SecurityType: "etf"},
+			{Symbol: "BBB", Market: "krx", SecurityType: "etf"},
+		},
+	})
+	require.NoError(t, err)
+	defer stream.Close()
+
+	require.Len(t, repo.queries, 1)
+	assert.Equal(t, provider.Market("krx"), repo.queries[0].Market)
+	assert.Empty(t, repo.queries[0].SecurityType)
+	assert.Empty(t, repo.queries[0].Symbol)
+
+	first, ok, err := stream.Next(context.Background())
+	require.NoError(t, err)
+	require.True(t, ok)
+	assert.Equal(t, "2024-01-02", first.Time.Format(time.DateOnly))
+	assert.ElementsMatch(t, []string{"AAA", "BBB"}, mapKeys(first.Bars))
+
+	second, ok, err := stream.Next(context.Background())
+	require.NoError(t, err)
+	require.True(t, ok)
+	assert.Equal(t, "2024-01-03", second.Time.Format(time.DateOnly))
+	assert.ElementsMatch(t, []string{"AAA", "BBB"}, mapKeys(second.Bars))
+
+	_, ok, err = stream.Next(context.Background())
+	require.NoError(t, err)
+	assert.False(t, ok)
+}
+
+func TestServiceEvaluationParallelismIsDeterministic(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "evaluation.yaml")
+	require.NoError(t, os.WriteFile(path, []byte(sampleDeterministicEvaluationYAML()), 0o644))
+
+	sequential := runEvaluationForParallelism(t, path, 1)
+	parallel := runEvaluationForParallelism(t, path, 4)
+
+	assertEvaluationRunDeterministic(t, sequential, parallel)
 }
 
 func TestServiceErrorsWhenDailyBarsAreMissing(t *testing.T) {
@@ -258,6 +316,7 @@ func TestServiceErrorsWhenDailyBarsAreMissing(t *testing.T) {
 }
 
 type recordingDailyBarRepository struct {
+	mu      sync.Mutex
 	bars    map[string][]dailybar.Bar
 	queries []daily.Query
 }
@@ -298,7 +357,9 @@ func (r fakeScreenRunner) Screen(context.Context, strategyservice.ScreenStrategy
 }
 
 func (r *recordingDailyBarRepository) QueryDailyBars(_ context.Context, query daily.Query) ([]dailybar.Bar, error) {
+	r.mu.Lock()
 	r.queries = append(r.queries, query)
+	r.mu.Unlock()
 	if query.Symbol == "" {
 		out := make([]dailybar.Bar, 0)
 		for _, rows := range r.bars {
@@ -312,6 +373,7 @@ func (r *recordingDailyBarRepository) QueryDailyBars(_ context.Context, query da
 				out = append(out, row)
 			}
 		}
+		sortDailyBars(out)
 		return out, nil
 	}
 	out := make([]dailybar.Bar, 0, len(r.bars[query.Symbol]))
@@ -324,6 +386,7 @@ func (r *recordingDailyBarRepository) QueryDailyBars(_ context.Context, query da
 		}
 		out = append(out, row)
 	}
+	sortDailyBars(out)
 	return out, nil
 }
 
@@ -354,6 +417,23 @@ func (s *recordingDailyBarStream) Next(ctx context.Context) (dailybar.Bar, bool,
 
 func (s *recordingDailyBarStream) Close() error {
 	return nil
+}
+
+func sortDailyBars(rows []dailybar.Bar) {
+	sort.Slice(rows, func(i, j int) bool {
+		if rows[i].TradingDate != rows[j].TradingDate {
+			return rows[i].TradingDate < rows[j].TradingDate
+		}
+		return rows[i].Symbol < rows[j].Symbol
+	})
+}
+
+func mapKeys[K comparable, V any](values map[K]V) []K {
+	keys := make([]K, 0, len(values))
+	for key := range values {
+		keys = append(keys, key)
+	}
+	return keys
 }
 
 func sampleCanonicalDailyBars() []dailybar.Bar {
@@ -584,4 +664,86 @@ portfolio:
 execution:
   fill: next_open
 `
+}
+
+func sampleDeterministicEvaluationYAML() string {
+	return strings.Replace(sampleYAML(), `report:
+  metrics:
+    preset: core
+    include:
+      - average_trade_return
+    exclude:
+      - trade_count`, `---
+kind: Evaluation
+schema_version: 1
+name: deterministic-evaluation
+strategy:
+  name: sma-cross
+base_run:
+  ref: sma-cross-run
+periods:
+  mode: explicit
+  from: 2024-01-02
+  to: 2024-01-08
+parameters:
+  indicators.trend.params.window: [2, 3]
+  sizing.value: [25, 50]
+metrics:
+  preset: research
+ranking:
+  objective: calmar
+  order: desc`, 1)
+}
+
+func runEvaluationForParallelism(t *testing.T, path string, parallelism int) EvaluationRunResult {
+	t.Helper()
+
+	repo := &recordingDailyBarRepository{bars: map[string][]dailybar.Bar{
+		"069500": sampleCanonicalDailyBars(),
+	}}
+	service, err := NewServiceWithRepository(repo, newMemoryBacktestStrategyRepository())
+	require.NoError(t, err)
+
+	result, err := service.RunEvaluation(context.Background(), path, RunEvaluationOptions{Parallelism: parallelism})
+	require.NoError(t, err)
+	return result
+}
+
+func assertEvaluationRunDeterministic(t *testing.T, want EvaluationRunResult, got EvaluationRunResult) {
+	t.Helper()
+
+	require.Len(t, got.Cases, len(want.Cases))
+	require.Len(t, got.Ranking, len(want.Ranking))
+
+	for index := range want.Cases {
+		assertEvaluationCaseDeterministic(t, want.Cases[index], got.Cases[index])
+	}
+	for index := range want.Ranking {
+		assertEvaluationCaseDeterministic(t, want.Ranking[index], got.Ranking[index])
+	}
+}
+
+func assertEvaluationCaseDeterministic(t *testing.T, want core.EvaluationCaseResult, got core.EvaluationCaseResult) {
+	t.Helper()
+
+	assert.Equal(t, want.CaseID, got.CaseID)
+	assert.Equal(t, want.CaseName, got.CaseName)
+	assert.Equal(t, want.Period, got.Period)
+	assert.Equal(t, want.Parameters, got.Parameters)
+	assert.Equal(t, want.Result.ResultHash, got.Result.ResultHash)
+	assert.Equal(t, want.Rank, got.Rank)
+	assert.Equal(t, want.Objective, got.Objective)
+	assert.InDelta(t, want.ObjectiveValue, got.ObjectiveValue, 0.0000001)
+
+	for _, metric := range []string{
+		core.MetricTotalReturn,
+		core.MetricMaxDrawdown,
+		core.MetricTradeCount,
+		core.MetricCalmar,
+		core.MetricTurnover,
+	} {
+		require.Contains(t, got.Metrics, metric)
+		require.Contains(t, want.Metrics, metric)
+		assert.InDelta(t, want.Metrics[metric], got.Metrics[metric], 0.0000001, metric)
+	}
 }

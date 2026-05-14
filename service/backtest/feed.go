@@ -27,122 +27,119 @@ func (f dailyBarFeed) Open(ctx context.Context, request core.DataRequest) (core.
 	if err != nil {
 		return nil, errb.Wrap(err)
 	}
-	streams := make([]*dailyBarInstrumentStream, 0, len(instruments))
-	for _, instrument := range instruments {
-		stream, err := f.reader.StreamDailyBars(ctx, daily.Query{
-			Market:       provider.Market(instrument.Market),
-			SecurityType: provider.SecurityType(instrument.SecurityType),
-			Symbol:       instrument.Symbol,
-			From:         request.From.Format(time.DateOnly),
-			To:           request.To.Format(time.DateOnly),
-		})
-		if err != nil {
-			closeDailyBarStreams(streams)
-			return nil, errb.With("symbol", instrument.Symbol, "instrument_market", instrument.Market, "instrument_security_type", instrument.SecurityType).Wrapf(err, "open canonical daily bar stream")
-		}
-		next := &dailyBarInstrumentStream{identity: instrument, stream: stream}
-		if err := next.advance(ctx); err != nil {
-			closeDailyBarStreams(append(streams, next))
-			return nil, errb.With("symbol", instrument.Symbol, "instrument_market", instrument.Market, "instrument_security_type", instrument.SecurityType).Wrap(err)
-		}
-		if !next.hasCurrent {
-			closeDailyBarStreams(append(streams, next))
-			return nil, errb.With("symbol", instrument.Symbol, "instrument_market", instrument.Market, "instrument_security_type", instrument.SecurityType).Errorf("canonical daily bars not found for backtest symbol: symbol=%s market=%s security_type=%s", instrument.Symbol, instrument.Market, instrument.SecurityType)
-		}
-		streams = append(streams, next)
+	market, err := singleMarket(instruments)
+	if err != nil {
+		return nil, errb.Wrap(err)
 	}
-	return &dailyBarFrameStream{streams: streams}, nil
+	stream, err := f.reader.StreamDailyBars(ctx, daily.Query{
+		Market: provider.Market(market),
+		From:   request.From.Format(time.DateOnly),
+		To:     request.To.Format(time.DateOnly),
+	})
+	if err != nil {
+		return nil, errb.With("market", market).Wrapf(err, "open canonical daily bar stream")
+	}
+	return newDailyBarCursorFrameStream(stream, instruments), nil
 }
 
-type dailyBarFrameStream struct {
-	streams []*dailyBarInstrumentStream
-	closed  bool
+type dailyBarCursorFrameStream struct {
+	stream   daily.BarStream
+	allowed  map[string]struct{}
+	required map[string]core.InstrumentIdentity
+	seen     map[string]struct{}
+	buffered *core.Bar
+	closed   bool
 }
 
-func (s *dailyBarFrameStream) Next(ctx context.Context) (core.BarFrame, bool, error) {
+func newDailyBarCursorFrameStream(stream daily.BarStream, instruments []core.InstrumentIdentity) *dailyBarCursorFrameStream {
+	allowed := make(map[string]struct{}, len(instruments))
+	required := make(map[string]core.InstrumentIdentity, len(instruments))
+	for _, instrument := range instruments {
+		key := instrumentKey(instrument.Market, instrument.SecurityType, instrument.Symbol)
+		allowed[key] = struct{}{}
+		required[key] = instrument
+	}
+	return &dailyBarCursorFrameStream{
+		stream:   stream,
+		allowed:  allowed,
+		required: required,
+		seen:     make(map[string]struct{}, len(instruments)),
+	}
+}
+
+func (s *dailyBarCursorFrameStream) Next(ctx context.Context) (core.BarFrame, bool, error) {
 	if err := ctx.Err(); err != nil {
 		return core.BarFrame{}, false, oops.In("backtest_dailybar_feed").Wrap(err)
 	}
-	minTime, ok := s.nextTime()
-	if !ok {
-		return core.BarFrame{}, false, nil
+	first, ok, err := s.takeNextAllowed(ctx)
+	if err != nil || !ok {
+		return core.BarFrame{}, false, err
 	}
-	frame := core.BarFrame{Time: minTime, Bars: map[string]core.Bar{}}
-	for _, stream := range s.streams {
-		if !stream.hasCurrent || !stream.current.Time.Equal(minTime) {
-			continue
-		}
-		frame.Bars[stream.current.Symbol] = stream.current
-		if err := stream.advance(ctx); err != nil {
+	frame := core.BarFrame{Time: first.Time, Bars: map[string]core.Bar{first.Symbol: first}}
+	for {
+		bar, ok, err := s.takeNextAllowed(ctx)
+		if err != nil {
 			return core.BarFrame{}, false, err
 		}
+		if !ok {
+			return frame, true, nil
+		}
+		if !bar.Time.Equal(frame.Time) {
+			s.buffered = &bar
+			return frame, true, nil
+		}
+		frame.Bars[bar.Symbol] = bar
 	}
-	return frame, true, nil
 }
 
-func (s *dailyBarFrameStream) Close() error {
+func (s *dailyBarCursorFrameStream) Close() error {
 	if s.closed {
 		return nil
 	}
 	s.closed = true
-	return closeDailyBarStreams(s.streams)
+	return s.stream.Close()
 }
 
-func (s *dailyBarFrameStream) nextTime() (time.Time, bool) {
-	var out time.Time
-	found := false
-	for _, stream := range s.streams {
-		if !stream.hasCurrent {
-			continue
+func (s *dailyBarCursorFrameStream) takeNextAllowed(ctx context.Context) (core.Bar, bool, error) {
+	if s.buffered != nil {
+		bar := *s.buffered
+		s.buffered = nil
+		return bar, true, nil
+	}
+	for {
+		row, ok, err := s.stream.Next(ctx)
+		if err != nil {
+			return core.Bar{}, false, oops.In("backtest_dailybar_feed").Wrap(err)
 		}
-		if !found || stream.current.Time.Before(out) {
-			out = stream.current.Time
-			found = true
-		}
-	}
-	return out, found
-}
-
-type dailyBarInstrumentStream struct {
-	identity   core.InstrumentIdentity
-	stream     daily.BarStream
-	current    core.Bar
-	hasCurrent bool
-}
-
-func (s *dailyBarInstrumentStream) advance(ctx context.Context) error {
-	row, ok, err := s.stream.Next(ctx)
-	if err != nil {
-		return oops.In("backtest_dailybar_feed").With("symbol", s.identity.Symbol).Wrap(err)
-	}
-	if !ok {
-		s.hasCurrent = false
-		return nil
-	}
-	bar, err := canonicalDailyBarToBacktestBar(row)
-	if err != nil {
-		return oops.In("backtest_dailybar_feed").With("symbol", s.identity.Symbol, "trading_date", row.TradingDate).Wrap(err)
-	}
-	s.current = bar
-	s.hasCurrent = true
-	return nil
-}
-
-func closeDailyBarStreams(streams []*dailyBarInstrumentStream) error {
-	var out error
-	for _, stream := range streams {
-		if stream == nil || stream.stream == nil {
-			continue
-		}
-		if err := stream.stream.Close(); err != nil {
-			if out == nil {
-				out = err
-			} else {
-				out = oops.Join(out, err)
+		if !ok {
+			if err := s.validateSeen(); err != nil {
+				return core.Bar{}, false, err
 			}
+			return core.Bar{}, false, nil
 		}
+		key := instrumentKey(string(row.Market), string(row.SecurityType), row.Symbol)
+		if _, ok := s.allowed[key]; !ok {
+			continue
+		}
+		bar, err := canonicalDailyBarToBacktestBar(row)
+		if err != nil {
+			return core.Bar{}, false, oops.In("backtest_dailybar_feed").With("symbol", row.Symbol, "trading_date", row.TradingDate).Wrap(err)
+		}
+		s.seen[key] = struct{}{}
+		return bar, true, nil
 	}
-	return out
+}
+
+func (s *dailyBarCursorFrameStream) validateSeen() error {
+	for key, instrument := range s.required {
+		if _, ok := s.seen[key]; ok {
+			continue
+		}
+		return oops.In("backtest_dailybar_feed").
+			With("symbol", instrument.Symbol, "instrument_market", instrument.Market, "instrument_security_type", instrument.SecurityType).
+			Errorf("canonical daily bars not found for backtest symbol: symbol=%s market=%s security_type=%s", instrument.Symbol, instrument.Market, instrument.SecurityType)
+	}
+	return nil
 }
 
 func dataInstrumentsFromRequest(request core.DataRequest) ([]core.InstrumentIdentity, error) {
@@ -160,4 +157,24 @@ func dataInstrumentsFromRequest(request core.DataRequest) ([]core.InstrumentIden
 		})
 	}
 	return normalizeDataInstruments(instruments, "")
+}
+
+func singleMarket(instruments []core.InstrumentIdentity) (string, error) {
+	market := ""
+	for _, instrument := range instruments {
+		if market == "" {
+			market = instrument.Market
+			continue
+		}
+		if instrument.Market != market {
+			return "", oops.In("backtest_dailybar_feed").
+				With("market", market, "other_market", instrument.Market).
+				New("repository-backed backtest feed requires one market per stream request")
+		}
+	}
+	return market, nil
+}
+
+func instrumentKey(market string, securityType string, symbol string) string {
+	return market + "\x00" + securityType + "\x00" + symbol
 }

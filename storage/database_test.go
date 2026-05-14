@@ -45,6 +45,42 @@ func TestDatabaseRejectsEmptyPath(t *testing.T) {
 	}
 }
 
+func TestDatabaseReaderOpensReadOnlyClient(t *testing.T) {
+	database := NewDatabase(filepath.Join(t.TempDir(), "mwosa.db"))
+	t.Cleanup(func() {
+		if err := database.Close(); err != nil {
+			t.Fatalf("close database: %v", err)
+		}
+	})
+
+	writer, err := database.Client(context.Background())
+	if err != nil {
+		t.Fatalf("writer client: %v", err)
+	}
+	reader, err := database.Reader(context.Background())
+	if err != nil {
+		t.Fatalf("reader client: %v", err)
+	}
+	if writer == reader {
+		t.Fatal("reader should use a separate sqlite client")
+	}
+	second, err := database.Reader(context.Background())
+	if err != nil {
+		t.Fatalf("second reader client: %v", err)
+	}
+	if reader != second {
+		t.Fatal("database returned a new reader before close")
+	}
+
+	var count int
+	if err := reader.QueryRowContext(context.Background(), "SELECT count(*) FROM sqlite_schema").Scan(&count); err != nil {
+		t.Fatalf("reader query schema: %v", err)
+	}
+	if _, err := reader.ExecContext(context.Background(), "CREATE TABLE reader_write_probe (id INTEGER)"); err == nil {
+		t.Fatal("reader write succeeded")
+	}
+}
+
 func TestDatabaseCreatesDailyBarIndexes(t *testing.T) {
 	database := NewDatabase(filepath.Join(t.TempDir(), "mwosa.db"))
 	t.Cleanup(func() {
