@@ -92,6 +92,7 @@ func setupDatabase(ctx context.Context, db *stdsql.DB) error {
 	for _, statement := range []string{
 		`PRAGMA journal_mode = WAL`,
 		`PRAGMA foreign_keys = ON`,
+		`PRAGMA busy_timeout = 5000`,
 	} {
 		if _, err := db.ExecContext(ctx, statement); err != nil {
 			return errb.With("statement", statement).Wrapf(err, "configure sqlite database")
@@ -109,6 +110,8 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 		{name: "daily_bar", model: (*DailyBarV1Row)(nil)},
 		{name: "market_v2", model: (*MarketV2Row)(nil)},
 		{name: "instrument_v2", model: (*InstrumentV2Row)(nil)},
+		{name: "instrument_source_v1", model: (*InstrumentSourceV1Row)(nil)},
+		{name: "instrument_extension_v1", model: (*InstrumentExtensionV1Row)(nil)},
 		{name: "provider_source_v2", model: (*ProviderSourceV2Row)(nil)},
 		{name: "daily_bar_v2", model: (*DailyBarV2Row)(nil)},
 		{name: "daily_bar_extension_v2", model: (*DailyBarExtensionV2Row)(nil)},
@@ -165,6 +168,22 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 			model:   (*InstrumentV2Row)(nil),
 			columns: []string{"market_id", "security_type", "symbol"},
 			unique:  true,
+		},
+		{
+			name:    "instrument_source_v1_natural_key",
+			model:   (*InstrumentSourceV1Row)(nil),
+			columns: []string{"provider", "provider_group", "operation", "provider_symbol"},
+			unique:  true,
+		},
+		{
+			name:    "idx_instrument_source_v1_instrument",
+			model:   (*InstrumentSourceV1Row)(nil),
+			columns: []string{"instrument_id"},
+		},
+		{
+			name:    "idx_instrument_extension_v1_key_value",
+			model:   (*InstrumentExtensionV1Row)(nil),
+			columns: []string{"key", "value"},
 		},
 		{
 			name:    "provider_source_v2_natural_key",

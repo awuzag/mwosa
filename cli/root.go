@@ -130,6 +130,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 
 	inspectCommand := newInspectCommand()
 	listCommand := newListCommand()
+	searchCommand := newSearchCommand()
 	createCommand := newCreateCommand()
 	updateCommand := newUpdateCommand()
 	deleteCommand := newDeleteCommand()
@@ -150,6 +151,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	roots := commandRoots{
 		Inspect:  inspectCommand,
 		List:     listCommand,
+		Search:   searchCommand,
 		Create:   createCommand,
 		Update:   updateCommand,
 		Delete:   deleteCommand,
@@ -186,6 +188,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	cmd.AddCommand(newConfigCommand(&opts))
 	cmd.AddCommand(createCommand)
 	cmd.AddCommand(listCommand)
+	cmd.AddCommand(searchCommand)
 	cmd.AddCommand(updateCommand)
 	cmd.AddCommand(deleteCommand)
 	cmd.AddCommand(screenCommand)

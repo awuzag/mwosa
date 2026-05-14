@@ -2,6 +2,7 @@ package handler
 
 import (
 	"context"
+	"strconv"
 
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	instrumentrole "github.com/ev3rlit/mwosa/providers/core/instrument"
@@ -33,6 +34,14 @@ type InspectInstrumentRequest struct {
 	Symbol         string
 }
 
+type SyncInstrumentsRequest struct {
+	ProviderID     provider.ProviderID
+	PreferProvider provider.ProviderID
+	Market         provider.Market
+	SecurityType   provider.SecurityType
+	AsOf           string
+}
+
 func (h Instrument) List(ctx context.Context, req ListInstrumentsRequest) (InstrumentsOutput, error) {
 	result, err := h.service.Search(ctx, instrument.SearchRequest{
 		ProviderID:     req.ProviderID,
@@ -60,6 +69,20 @@ func (h Instrument) Inspect(ctx context.Context, req InspectInstrumentRequest) (
 		return InstrumentOutput{}, err
 	}
 	return InstrumentOutput{Result: result}, nil
+}
+
+func (h Instrument) Sync(ctx context.Context, req SyncInstrumentsRequest) (InstrumentSyncOutput, error) {
+	result, err := h.service.Sync(ctx, instrument.SyncRequest{
+		ProviderID:     req.ProviderID,
+		PreferProvider: req.PreferProvider,
+		Market:         req.Market,
+		SecurityType:   req.SecurityType,
+		AsOf:           req.AsOf,
+	})
+	if err != nil {
+		return InstrumentSyncOutput{}, err
+	}
+	return InstrumentSyncOutput{Result: result}, nil
 }
 
 type InstrumentsOutput struct {
@@ -134,4 +157,35 @@ func instrumentOutputRowFromInstrument(item instrumentrole.Instrument) instrumen
 		ISIN:         item.ISIN,
 		Name:         item.Name,
 	}
+}
+
+type InstrumentSyncOutput struct {
+	Result instrument.SyncResult
+}
+
+func (o InstrumentSyncOutput) JSONValue() any {
+	return o.Result
+}
+
+func (o InstrumentSyncOutput) NDJSONRows() any {
+	return []instrument.SyncResult{o.Result}
+}
+
+func (o InstrumentSyncOutput) CSVRows() any {
+	return []instrument.SyncResult{o.Result}
+}
+
+func (o InstrumentSyncOutput) TableRows() ([]string, [][]string) {
+	return []string{"provider", "security_type", "as_of", "fetched", "stored", "rows_affected"}, [][]string{{
+		string(o.Result.ProviderID),
+		string(o.Result.SecurityType),
+		o.Result.AsOf,
+		intString(o.Result.InstrumentsFetched),
+		intString(o.Result.InstrumentsStored),
+		intString(o.Result.RowsAffected),
+	}}
+}
+
+func intString(value int) string {
+	return strconv.Itoa(value)
 }

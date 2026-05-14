@@ -263,6 +263,13 @@ func (p *Provider) searchInstruments(ctx context.Context, input instrument.Searc
 		return instrument.SearchResult{}, errb.New("krx provider client is nil")
 	}
 	baseDate := previousBusinessDay(p.now()).Format("20060102")
+	if strings.TrimSpace(input.AsOf) != "" {
+		parsed, err := parseDate(input.AsOf)
+		if err != nil {
+			return instrument.SearchResult{}, errb.With("as_of", input.AsOf).Wrap(err)
+		}
+		baseDate = parsed.Format("20060102")
+	}
 	switch input.SecurityType {
 	case provider.SecurityTypeETF, provider.SecurityTypeETN, provider.SecurityTypeELW:
 		return p.searchETPInstruments(ctx, input, baseDate)
@@ -558,7 +565,7 @@ func (p *Provider) searchStockInstruments(ctx context.Context, input instrument.
 		return instrument.SearchResult{}, oops.In("krx_adapter").With("operation", provider.OperationStockIssueBaseInfo, "base_date", baseDate).Wrapf(err, "fetch KRX stock issue base info")
 	}
 	for _, row := range rows {
-		if matchesStockIssue(row.IssueCode, row.IssueShortCode, row.IssueName, row.IssueAbbreviation, input.Query) {
+		if matchesStockIssue(row.IssueCode, row.IssueShortCode, row.IssueName, row.IssueAbbreviation, row.IssueEnglishName, input.Query) {
 			instruments = append(instruments, normalizeStockIssue(row, provider.OperationStockIssueBaseInfo))
 		}
 	}
@@ -567,7 +574,7 @@ func (p *Provider) searchStockInstruments(ctx context.Context, input instrument.
 		return instrument.SearchResult{}, oops.In("krx_adapter").With("operation", provider.OperationKOSDAQIssueBaseInfo, "base_date", baseDate).Wrapf(err, "fetch KRX KOSDAQ issue base info")
 	}
 	for _, row := range kosdaqRows {
-		if matchesStockIssue(row.IssueCode, row.IssueShortCode, row.IssueName, row.IssueAbbreviation, input.Query) {
+		if matchesStockIssue(row.IssueCode, row.IssueShortCode, row.IssueName, row.IssueAbbreviation, row.IssueEnglishName, input.Query) {
 			instruments = append(instruments, normalizeKOSDAQIssue(row))
 		}
 	}
@@ -576,7 +583,7 @@ func (p *Provider) searchStockInstruments(ctx context.Context, input instrument.
 		return instrument.SearchResult{}, oops.In("krx_adapter").With("operation", provider.OperationKONEXIssueBaseInfo, "base_date", baseDate).Wrapf(err, "fetch KRX KONEX issue base info")
 	}
 	for _, row := range konexRows {
-		if matchesStockIssue(row.IssueCode, row.IssueShortCode, row.IssueName, row.IssueAbbreviation, input.Query) {
+		if matchesStockIssue(row.IssueCode, row.IssueShortCode, row.IssueName, row.IssueAbbreviation, row.IssueEnglishName, input.Query) {
 			instruments = append(instruments, normalizeKONEXIssue(row))
 		}
 	}
@@ -668,7 +675,7 @@ func matchesQuery(symbol string, name string, query string) bool {
 		strings.Contains(strings.ToLower(name), strings.ToLower(query))
 }
 
-func matchesStockIssue(isin string, shortCode string, name string, abbreviation string, query string) bool {
+func matchesStockIssue(isin string, shortCode string, name string, abbreviation string, englishName string, query string) bool {
 	query = strings.TrimSpace(query)
 	if query == "" {
 		return true
@@ -678,8 +685,10 @@ func matchesStockIssue(isin string, shortCode string, name string, abbreviation 
 		strings.EqualFold(strings.TrimSpace(shortCode), query) ||
 		strings.EqualFold(strings.TrimSpace(name), query) ||
 		strings.EqualFold(strings.TrimSpace(abbreviation), query) ||
+		strings.EqualFold(strings.TrimSpace(englishName), query) ||
 		strings.Contains(strings.ToLower(name), lowerQuery) ||
-		strings.Contains(strings.ToLower(abbreviation), lowerQuery)
+		strings.Contains(strings.ToLower(abbreviation), lowerQuery) ||
+		strings.Contains(strings.ToLower(englishName), lowerQuery)
 }
 
 func limitInstruments(instruments []instrument.Instrument, limit int) []instrument.Instrument {

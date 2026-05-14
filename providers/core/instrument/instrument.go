@@ -41,31 +41,32 @@ type SearchInput struct {
 	SecurityType provider.SecurityType
 	Query        string
 	Limit        int
+	AsOf         string
 }
 
 type Instrument struct {
-	Provider     provider.ProviderID
-	Group        provider.GroupID
-	Operation    provider.OperationID
-	Market       provider.Market
-	SecurityType provider.SecurityType
+	Provider     provider.ProviderID   `json:"provider"`
+	Group        provider.GroupID      `json:"provider_group"`
+	Operation    provider.OperationID  `json:"operation"`
+	Market       provider.Market       `json:"market"`
+	SecurityType provider.SecurityType `json:"security_type"`
 
-	SecurityCode string
-	ISIN         string
-	Name         string
-	ExchangeCode string
-	CountryCode  string
-	Timezone     string
+	SecurityCode string `json:"security_code"`
+	ISIN         string `json:"isin"`
+	Name         string `json:"name"`
+	ExchangeCode string `json:"exchange_code"`
+	CountryCode  string `json:"country_code"`
+	Timezone     string `json:"timezone"`
 
-	Extensions map[string]string
+	Extensions map[string]string `json:"extensions,omitempty"`
 }
 
 type SearchResult struct {
-	Instruments []Instrument
-	Provider    provider.Identity
-	Group       provider.GroupID
-	Operations  []provider.OperationID
-	TotalCount  int
+	Instruments []Instrument           `json:"instruments"`
+	Provider    provider.Identity      `json:"provider_identity"`
+	Group       provider.GroupID       `json:"provider_group"`
+	Operations  []provider.OperationID `json:"operations"`
+	TotalCount  int                    `json:"total_count"`
 }
 
 type Searcher interface {

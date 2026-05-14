@@ -30,6 +30,7 @@ import (
 	"github.com/ev3rlit/mwosa/storage"
 	dailybarstorage "github.com/ev3rlit/mwosa/storage/dailybar"
 	indexbarstorage "github.com/ev3rlit/mwosa/storage/indexbar"
+	instrumentstorage "github.com/ev3rlit/mwosa/storage/instrument"
 	migrationstorage "github.com/ev3rlit/mwosa/storage/migration"
 	"github.com/ev3rlit/mwosa/storage/providerauth"
 	strategystorage "github.com/ev3rlit/mwosa/storage/strategy"
@@ -58,6 +59,7 @@ type StorageRuntime struct {
 	ProviderAuthDatabase *providerauth.Database
 	DailyBars            DailyBarStorage
 	IndexBars            IndexBarStorage
+	Instruments          instrumentservice.Repository
 	Migrations           migrationcore.Store
 	Strategies           strategyservice.Repository
 }
@@ -150,6 +152,14 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create index bar repository"),
+			database.Close(),
+			providerAuthDatabase.Close(),
+		)
+	}
+	instrumentRepository, err := instrumentstorage.NewRepository(database)
+	if err != nil {
+		return nil, oops.Join(
+			errb.Wrapf(err, "create instrument repository"),
 			database.Close(),
 			providerAuthDatabase.Close(),
 		)
@@ -263,7 +273,7 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 			providerAuthDatabase.Close(),
 		)
 	}
-	instrumentService, err := instrumentservice.NewService(providerRuntime.Instruments)
+	instrumentService, err := instrumentservice.NewService(providerRuntime.Instruments, instrumentservice.WithRepository(instrumentRepository))
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create instrument service"),
@@ -342,8 +352,9 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 				Reader: indexReader,
 				Writer: indexWriter,
 			},
-			Migrations: migrationStore,
-			Strategies: strategyRepository,
+			Instruments: instrumentRepository,
+			Migrations:  migrationStore,
+			Strategies:  strategyRepository,
 		},
 		Providers: providerRuntime,
 		Services: ServiceRuntime{

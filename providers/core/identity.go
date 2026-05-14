@@ -118,8 +118,8 @@ type Compatibility struct {
 }
 
 type Identity struct {
-	ID          ProviderID
-	DisplayName string
+	ID          ProviderID `json:"id"`
+	DisplayName string     `json:"display_name"`
 }
 
 func (i Identity) ProviderIdentity() Identity {
