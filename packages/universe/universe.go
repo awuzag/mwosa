@@ -285,7 +285,9 @@ func executeUniversePipeline(ctx context.Context, pipeline []StepSpec, input []C
 		decisions = append(decisions, stepDecisions...)
 		candidates = out
 	}
-	sortCandidates(candidates)
+	if !pipelinePreservesOrder(pipeline) {
+		sortCandidates(candidates)
+	}
 	return Snapshot{
 		Time:       execCtx.SelectionTime,
 		Symbols:    symbolsFromCandidates(candidates),
@@ -293,6 +295,15 @@ func executeUniversePipeline(ctx context.Context, pipeline []StepSpec, input []C
 		Decisions:  decisions,
 		Steps:      steps,
 	}, nil
+}
+
+func pipelinePreservesOrder(pipeline []StepSpec) bool {
+	for _, step := range pipeline {
+		if strings.HasPrefix(step.ID, "rank.") || strings.HasPrefix(step.ID, "limit.") {
+			return true
+		}
+	}
+	return false
 }
 
 func BuildSnapshots(ctx context.Context, plan Plan, execCtx ExecutionContext) (Explain, error) {
@@ -654,7 +665,7 @@ func transformWindowMetrics(_ context.Context, step StepSpec, input []Candidate,
 	out := cloneCandidates(input)
 	latestIndex := map[string]int{}
 	for i, candidate := range out {
-		latestIndex[candidate.Symbol] = i
+		latestIndex[candidateKey(candidate)] = i
 	}
 	for output, raw := range metrics {
 		spec, ok := raw.(map[string]any)
@@ -709,7 +720,7 @@ func transformIndicator(_ context.Context, step StepSpec, input []Candidate, exe
 		}
 		value := values[len(values)-1]
 		for i := range out {
-			if out[i].Symbol == symbol {
+			if candidateKey(out[i]) == symbol {
 				ensureFields(&out[i])
 				out[i].Fields[output] = value
 			}

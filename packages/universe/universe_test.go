@@ -235,6 +235,49 @@ func TestUniverseExpressionOperatorsAndWindowMetrics(t *testing.T) {
 	assert.Contains(t, snapshot.Candidates[0].Fields, "mdd")
 }
 
+func TestWindowMetricsUseInstrumentIdentityKeys(t *testing.T) {
+	spec := PipelineSpec{Pipeline: []StepSpec{
+		{ID: "source.daily_bars"},
+		{ID: "transform.window_metrics", Params: map[string]any{"metrics": map[string]any{
+			"return_2d": map[string]any{"id": "return", "params": map[string]any{"field": "close", "window": 2}},
+		}}},
+		{ID: "transform.latest_per_symbol"},
+	}}
+	plan, err := Compile(spec, testDataWindow(), DefaultSelectorRegistry())
+	require.NoError(t, err)
+
+	snapshot, err := ExecutePipeline(context.Background(), plan, ExecutionContext{
+		SelectionTime: date("2024-01-04"),
+		Market:        "krx",
+		DailyBars: []Bar{
+			{Time: date("2024-01-02"), Symbol: "069500", Market: "krx", SecurityType: "etf", Open: 1, High: 1, Low: 1, Close: 10},
+			{Time: date("2024-01-03"), Symbol: "069500", Market: "krx", SecurityType: "etf", Open: 1, High: 1, Low: 1, Close: 12},
+		},
+	})
+	require.NoError(t, err)
+
+	require.Len(t, snapshot.Candidates, 1)
+	assert.InDelta(t, 0.2, snapshot.Candidates[0].Fields["return_2d"], 0.0000001)
+}
+
+func TestRankSelectorOrderIsPreservedInSnapshot(t *testing.T) {
+	spec := PipelineSpec{Pipeline: []StepSpec{
+		{ID: "source.inline", Params: map[string]any{"rows": []any{
+			map[string]any{"symbol": "A", "score": 1.0},
+			map[string]any{"symbol": "C", "score": 3.0},
+			map[string]any{"symbol": "B", "score": 2.0},
+		}}},
+		{ID: "rank.by_field", Params: map[string]any{"field": "score", "order": "desc"}},
+	}}
+	plan, err := Compile(spec, testDataWindow(), DefaultSelectorRegistry())
+	require.NoError(t, err)
+
+	snapshot, err := ExecutePipeline(context.Background(), plan, ExecutionContext{})
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{"C", "B", "A"}, snapshot.Symbols)
+}
+
 func TestBuildSnapshotsUsesClosedDataOnly(t *testing.T) {
 	spec := PipelineSpec{
 		Schedule: ScheduleSpec{Frequency: ScheduleDaily},

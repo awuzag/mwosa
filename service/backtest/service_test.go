@@ -136,7 +136,7 @@ func TestServiceInspectUniverseLoadsFileAndScreenSources(t *testing.T) {
 	explain, err := service.InspectUniverse(context.Background(), yamlPath)
 	require.NoError(t, err)
 
-	assert.Equal(t, []string{"069500", "102110", "252670"}, explain.SelectedSymbols)
+	assert.Equal(t, []string{"252670", "069500", "102110"}, explain.SelectedSymbols)
 	require.Len(t, explain.Steps, 2)
 	assert.Equal(t, "combine.union", explain.Steps[0].ID)
 }
