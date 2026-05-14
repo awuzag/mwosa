@@ -13,6 +13,7 @@
 | P2 | [Indicators](indicators/README.md) | 계획 | 백테스터와 전략 스펙이 사용할 순수 지표 계산 API 를 제공한다. |
 | P3 | [jq Screening Strategies](jq-screening-strategies/README.md) | 계획 / 진행 | 탐색형 스크리닝과 저장된 jq 전략 실행 흐름을 제공한다. |
 | P4 | [ETF JSON Screening](etf-json-screening/README.md) | 계획 | ETF 데이터를 JSON/NDJSON/CSV 로 다루기 쉽게 만들고 도메인 스크리닝을 시작한다. |
+| P5 | [DART Financial Valuation](dart-financial-valuation/README.md) | 제안 | DART 재무제표와 가격 데이터를 결합해 주식 스크리닝에 밸류에이션 가중치를 추가한다. |
 
 ## 진행 기준
 
