@@ -500,9 +500,9 @@ func (p *Provider) fetchStockDailyRecords(ctx context.Context, symbol string, fr
 }
 
 func (p *Provider) searchETPInstruments(ctx context.Context, input instrument.SearchInput, baseDate string) (instrument.SearchResult, error) {
-	operations := []provider.OperationID{provider.OperationETFByddTrd, provider.OperationETNByddTrd, provider.OperationELWByddTrd}
+	operations := operationsForETPSearch(input.SecurityType)
 	instruments := make([]instrument.Instrument, 0)
-	for _, operation := range operationsForETPSearch(input.SecurityType) {
+	for _, operation := range operations {
 		if err := p.requireAPI(operation, provider.RoleInstrument, input.SecurityType, input.Query); err != nil {
 			return instrument.SearchResult{}, err
 		}

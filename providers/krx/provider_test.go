@@ -192,6 +192,51 @@ func TestSearchStockInstruments(t *testing.T) {
 	}
 }
 
+func TestSearchETPInstrumentsReportsExecutedOperations(t *testing.T) {
+	var pathsMu sync.Mutex
+	paths := map[string]int{}
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		pathsMu.Lock()
+		paths[r.URL.Path]++
+		pathsMu.Unlock()
+		w.Header().Set("Content-Type", "application/json")
+		switch r.URL.Path {
+		case "/etp/etf_bydd_trd":
+			fmt.Fprint(w, `{"OutBlock_1":[{"BAS_DD":"20240415","ISU_CD":"069500","ISU_NM":"KODEX 200"}]}`)
+		default:
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+	}))
+	defer server.Close()
+
+	p, err := New(Config{AuthKey: "test-key", BaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("new provider: %v", err)
+	}
+	result, err := p.SearchInstruments(context.Background(), instrument.SearchInput{
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeETF,
+		Query:        "069500",
+		Limit:        10,
+		AsOf:         "20240415",
+	})
+	if err != nil {
+		t.Fatalf("search ETF instruments: %v", err)
+	}
+	if len(result.Instruments) != 1 {
+		t.Fatalf("instruments len = %d, want 1", len(result.Instruments))
+	}
+	if len(result.Operations) != 1 || result.Operations[0] != provider.OperationETFByddTrd {
+		t.Fatalf("operations = %v, want [%s]", result.Operations, provider.OperationETFByddTrd)
+	}
+
+	pathsMu.Lock()
+	defer pathsMu.Unlock()
+	if paths["/etp/etf_bydd_trd"] != 1 || paths["/etp/etn_bydd_trd"] != 0 || paths["/etp/elw_bydd_trd"] != 0 {
+		t.Fatalf("paths = %+v, want only ETF endpoint called once", paths)
+	}
+}
+
 func TestStockBackfillUsesOneKRXBatchPerEndpoint(t *testing.T) {
 	var countsMu sync.Mutex
 	counts := map[string]int{}
