@@ -34,7 +34,7 @@ func NewIndicatorRegistry(definitions ...IndicatorDefinition) (IndicatorRegistry
 }
 
 func DefaultIndicatorRegistry() (IndicatorRegistry, error) {
-	return NewIndicatorRegistry(SMA(), RSI(), DonchianHigh(), DonchianLow())
+	return NewIndicatorRegistry(SMA(), RSI(), DonchianHigh(), DonchianLow(), ATR(), NATR())
 }
 
 func (r IndicatorRegistry) Definition(id string) (IndicatorDefinition, bool) {
@@ -161,6 +161,43 @@ func DonchianLow() IndicatorDefinition {
 	return rollingExtremeIndicator("donchian_low", func(candidate, current float64) bool {
 		return candidate < current
 	})
+}
+
+func ATR() IndicatorDefinition {
+	return rollingRuntimeIndicator("atr")
+}
+
+func NATR() IndicatorDefinition {
+	return rollingRuntimeIndicator("natr")
+}
+
+func rollingRuntimeIndicator(id string) IndicatorDefinition {
+	return IndicatorDefinition{
+		ID: id,
+		Validate: func(spec IndicatorSpec) error {
+			errb := oops.In("backtest_indicator_registry").With("indicator", id)
+			window := int(spec.Params["window"])
+			if window <= 0 {
+				return errb.New(id + " indicator requires positive window")
+			}
+			return nil
+		},
+		Calculate: func(spec IndicatorSpec, bars []Bar) ([]float64, error) {
+			runtime, err := newIndicatorRuntime(spec)
+			if err != nil {
+				return nil, err
+			}
+			values := nanSeries(len(bars))
+			for i, bar := range bars {
+				value, err := runtime.Add(bar)
+				if err != nil {
+					return nil, err
+				}
+				values[i] = value
+			}
+			return values, nil
+		},
+	}
 }
 
 func rollingExtremeIndicator(id string, better func(candidate, current float64) bool) IndicatorDefinition {

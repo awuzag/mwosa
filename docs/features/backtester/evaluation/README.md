@@ -43,6 +43,8 @@ metrics:
 ranking:
   objective: calmar
   order: desc
+execution:
+  parallelism: 4
 ```
 
 `Evaluation`은 `Strategy` 문법을 뒤집지 않는다. 기간과 파라미터 조합을 펼쳐서
@@ -57,13 +59,14 @@ ranking:
 - `metrics.preset: research`: CAGR, MDD, volatility, Sharpe, Calmar, turnover, trade count, win rate, profit factor, exposure, unfilled count, data issue count를 포함한다.
 - `constraints`: `max_drawdown_lte`, `min_cagr_gte`, `max_turnover_lte`, `min_trade_count_gte`를 평가한다.
 - `ranking`: 통과한 case만 objective 기준으로 정렬한다.
+- `execution.parallelism`: case 실행 worker 수를 지정한다. 없으면 1이다.
 - `walk_forward`: train 구간에서 best parameter를 고르고 다음 test 구간에 적용한다.
 
 ## CLI
 
 ```bash
 mwosa validate evaluation examples/backtest/evaluation-grid.yaml -o json
-mwosa run evaluation examples/backtest/evaluation-grid.yaml -o table
+mwosa run evaluation examples/backtest/evaluation-grid.yaml --parallelism 4 -o table
 mwosa list evaluations -o table
 mwosa inspect evaluation sma-cross-robustness -o json
 mwosa compare evaluation sma-cross-robustness -o table
@@ -73,6 +76,11 @@ mwosa rank evaluation sma-cross-robustness --objective calmar -o json
 JSON 출력은 case, metrics, parameters, constraints, regime tags, result hash를
 구조화해서 제공한다. table 출력은 사람이 빠르게 볼 수 있도록 rank, case, 기간,
 통과 여부, objective, hash 중심으로 줄인다.
+
+병렬도 우선순위는 CLI `--parallelism` > YAML `execution.parallelism` > 기본값 1이다.
+case 결과는 병렬 실행 후 spec 순서로 수집하고, ranking 은 objective 와 case id
+tie-breaker 로 결정론을 유지한다. walk-forward 는 step 순서를 깨지 않으며, 각
+step 안에서 train case만 병렬 실행한 뒤 선택된 parameter 로 test case를 실행한다.
 
 ## 저장 모델
 

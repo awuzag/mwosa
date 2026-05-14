@@ -22,13 +22,26 @@ type Bar struct {
 }
 
 type DataRequest struct {
-	Symbols []string
-	From    time.Time
-	To      time.Time
+	Symbols     []string
+	Instruments []InstrumentIdentity
+	From        time.Time
+	To          time.Time
+	Benchmark   BenchmarkSpec
+	WarmupBars  int
 }
 
-type Feed interface {
-	Bars(ctx context.Context, request DataRequest) ([]Bar, error)
+type BarFrame struct {
+	Time time.Time      `json:"time"`
+	Bars map[string]Bar `json:"bars"`
+}
+
+type BarStream interface {
+	Next(ctx context.Context) (BarFrame, bool, error)
+	Close() error
+}
+
+type StreamingFeed interface {
+	Open(ctx context.Context, request DataRequest) (BarStream, error)
 }
 
 type MemoryFeed struct {
@@ -41,7 +54,7 @@ func NewMemoryFeed(bars []Bar) MemoryFeed {
 	return MemoryFeed{bars: copied}
 }
 
-func (f MemoryFeed) Bars(ctx context.Context, request DataRequest) ([]Bar, error) {
+func (f MemoryFeed) Open(ctx context.Context, request DataRequest) (BarStream, error) {
 	if err := ctx.Err(); err != nil {
 		return nil, oops.In("backtest_memory_feed").Wrap(err)
 	}
@@ -60,7 +73,36 @@ func (f MemoryFeed) Bars(ctx context.Context, request DataRequest) ([]Bar, error
 		out = append(out, bar)
 	}
 	sortBars(out)
-	return out, nil
+	return &memoryBarStream{bars: out}, nil
+}
+
+type memoryBarStream struct {
+	bars   []Bar
+	offset int
+}
+
+func (s *memoryBarStream) Next(ctx context.Context) (BarFrame, bool, error) {
+	if err := ctx.Err(); err != nil {
+		return BarFrame{}, false, oops.In("backtest_memory_feed").Wrap(err)
+	}
+	if s.offset >= len(s.bars) {
+		return BarFrame{}, false, nil
+	}
+	current := s.bars[s.offset].Time
+	frame := BarFrame{
+		Time: current,
+		Bars: make(map[string]Bar),
+	}
+	for s.offset < len(s.bars) && s.bars[s.offset].Time.Equal(current) {
+		bar := s.bars[s.offset]
+		frame.Bars[bar.Symbol] = bar
+		s.offset++
+	}
+	return frame, true, nil
+}
+
+func (s *memoryBarStream) Close() error {
+	return nil
 }
 
 func sortBars(bars []Bar) {

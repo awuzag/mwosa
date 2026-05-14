@@ -32,6 +32,8 @@ drawdown 같은 시간 순서 기반 검증은 다루지 않는다. 백테스터
 - 결과 metric 과 실행 재현 정보
 - YAML spec 을 검증 가능한 실행 계획으로 compile 하는 단계
 - 여러 기간과 파라미터 조합을 반복 검증하는 `Evaluation` 실행 단위
+- 전체 daily bar 를 먼저 메모리에 올리지 않는 streaming/lazy data feed
+- rolling/window 기반 indicator runtime 과 case 단위 bounded parallel evaluation
 
 반복 검증과 walk-forward 흐름은
 [`evaluation/README.md`](evaluation/README.md) 에서 별도로 관리한다.
@@ -72,8 +74,9 @@ async 처리까지 가져오면 repo 영향도가 커진다는 점이다.
 
 ```text
 for each timestamp:
-  load aligned bars
-  evaluate compiled rules
+  consume BarFrame from StreamingFeed
+  update rolling indicator state
+  evaluate compiled rules with current/past-only values
   create intended orders
   simulate fills
   update portfolio

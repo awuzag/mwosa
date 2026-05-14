@@ -7,12 +7,12 @@ import (
 	"slices"
 	"strconv"
 	"strings"
+	"sync"
 	"time"
 
 	core "github.com/ev3rlit/mwosa/packages/backtest"
 	"github.com/ev3rlit/mwosa/packages/hashutil"
 	"github.com/ev3rlit/mwosa/packages/idgen"
-	provider "github.com/ev3rlit/mwosa/providers/core"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
 	"github.com/ev3rlit/mwosa/service/daily"
 	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
@@ -22,6 +22,7 @@ import (
 
 type DailyBarRepository interface {
 	QueryDailyBars(ctx context.Context, query daily.Query) ([]dailybar.Bar, error)
+	StreamDailyBars(ctx context.Context, query daily.Query) (daily.BarStream, error)
 }
 
 type StrategyRepository interface {
@@ -148,6 +149,10 @@ type SaveStrategyRequest struct {
 	YAMLPath string
 }
 
+type RunEvaluationOptions struct {
+	Parallelism int
+}
+
 type ValidationResult struct {
 	Valid        bool                      `json:"valid"`
 	StrategyName string                    `json:"strategy_name"`
@@ -171,6 +176,7 @@ type EvaluationValidationResult struct {
 	BaseRunName      string   `json:"base_run_name"`
 	CaseCount        int      `json:"case_count"`
 	WalkForwardSteps int      `json:"walk_forward_steps"`
+	Parallelism      int      `json:"parallelism"`
 	Metrics          []string `json:"metrics"`
 }
 
@@ -253,11 +259,7 @@ func (s Service) Run(ctx context.Context, path string) (core.Result, error) {
 	if err != nil {
 		return core.Result{}, err
 	}
-	bars, err := s.loadBars(ctx, plan)
-	if err != nil {
-		return core.Result{}, oops.In("backtest_service").With("strategy", bundle.Strategy.Name, "run", bundle.Run.Name).Wrap(err)
-	}
-	engine, err := core.NewEngine(core.NewMemoryFeed(bars))
+	engine, err := core.NewEngine(newDailyBarFeed(s.reader))
 	if err != nil {
 		return core.Result{}, oops.In("backtest_service").With("strategy", bundle.Strategy.Name, "run", bundle.Run.Name).Wrap(err)
 	}
@@ -292,11 +294,12 @@ func (s Service) ValidateEvaluation(ctx context.Context, path string) (Evaluatio
 		BaseRunName:      plan.BaseRun.Name,
 		CaseCount:        len(plan.Cases),
 		WalkForwardSteps: len(plan.WalkForward),
+		Parallelism:      resolveEvaluationParallelism(plan.Spec, RunEvaluationOptions{}),
 		Metrics:          metrics,
 	}, nil
 }
 
-func (s Service) RunEvaluation(ctx context.Context, path string) (EvaluationRunResult, error) {
+func (s Service) RunEvaluation(ctx context.Context, path string, options ...RunEvaluationOptions) (EvaluationRunResult, error) {
 	if s.evaluations == nil {
 		return EvaluationRunResult{}, oops.In("backtest_evaluation_service").New("backtest evaluation repository is nil")
 	}
@@ -304,24 +307,17 @@ func (s Service) RunEvaluation(ctx context.Context, path string) (EvaluationRunR
 	if err != nil {
 		return EvaluationRunResult{}, err
 	}
-	caseResults := make([]core.EvaluationCaseResult, 0, len(plan.Cases))
-	for _, evalCase := range plan.Cases {
-		result, tags, err := s.runEvaluationCase(ctx, path, evalCase)
-		if err != nil {
-			return EvaluationRunResult{}, err
-		}
-		constraints := core.EvaluateConstraints(result.Metrics, plan.Spec.Constraints)
-		caseResults = append(caseResults, core.EvaluationCaseResult{
-			CaseID:            evalCase.ID,
-			CaseName:          evalCase.Name,
-			Period:            evalCase.Period,
-			Parameters:        evalCase.Parameters,
-			Result:            result,
-			Metrics:           result.Metrics,
-			RegimeTags:        tags,
-			ConstraintResults: constraints,
-			PassedConstraints: core.ConstraintsPassed(constraints),
-		})
+	option := RunEvaluationOptions{}
+	if len(options) > 0 {
+		option = options[0]
+	}
+	if option.Parallelism < 0 {
+		return EvaluationRunResult{}, oops.In("backtest_evaluation_service").With("parallelism", option.Parallelism).New("evaluation parallelism must not be negative")
+	}
+	parallelism := resolveEvaluationParallelism(plan.Spec, option)
+	caseResults, err := s.runEvaluationCases(ctx, path, plan.Cases, plan.Spec.Constraints, parallelism)
+	if err != nil {
+		return EvaluationRunResult{}, err
 	}
 	ranking, err := core.RankEvaluationResults(caseResults, plan.Spec.Ranking)
 	if err != nil {
@@ -329,7 +325,7 @@ func (s Service) RunEvaluation(ctx context.Context, path string) (EvaluationRunR
 	}
 	applyRanks(caseResults, ranking)
 
-	walkForward, err := s.runWalkForward(ctx, path, plan)
+	walkForward, err := s.runWalkForward(ctx, path, plan, parallelism)
 	if err != nil {
 		return EvaluationRunResult{}, err
 	}
@@ -516,11 +512,7 @@ func (s Service) runEvaluationCase(ctx context.Context, yamlPath string, evalCas
 	if err != nil {
 		return core.Result{}, nil, err
 	}
-	bars, err := s.loadBars(ctx, plan)
-	if err != nil {
-		return core.Result{}, nil, oops.In("backtest_evaluation_service").With("case", evalCase.Name).Wrap(err)
-	}
-	engine, err := core.NewEngine(core.NewMemoryFeed(bars))
+	engine, err := core.NewEngine(newDailyBarFeed(s.reader))
 	if err != nil {
 		return core.Result{}, nil, oops.In("backtest_evaluation_service").With("case", evalCase.Name).Wrap(err)
 	}
@@ -528,30 +520,106 @@ func (s Service) runEvaluationCase(ctx context.Context, yamlPath string, evalCas
 	if err != nil {
 		return core.Result{}, nil, oops.In("backtest_evaluation_service").With("case", evalCase.Name).Wrap(err)
 	}
-	return result, core.RegimeTags(result, benchmarkBars(result.Benchmark.Symbol, bars)), nil
+	return result, core.RegimeTags(result, result.BenchmarkBars), nil
 }
 
-func (s Service) runWalkForward(ctx context.Context, yamlPath string, plan core.EvaluationPlan) ([]core.WalkForwardStepResult, error) {
+func (s Service) runEvaluationCases(ctx context.Context, yamlPath string, cases []core.EvaluationCasePlan, constraints core.EvaluationConstraintSet, parallelism int) ([]core.EvaluationCaseResult, error) {
+	if len(cases) == 0 {
+		return nil, nil
+	}
+	if parallelism <= 0 {
+		return nil, oops.In("backtest_evaluation_service").With("parallelism", parallelism).New("evaluation parallelism must be positive")
+	}
+	if parallelism > len(cases) {
+		parallelism = len(cases)
+	}
+
+	ctx, cancel := context.WithCancel(ctx)
+	defer cancel()
+	results := make([]core.EvaluationCaseResult, len(cases))
+	jobs := make(chan int)
+	var wg sync.WaitGroup
+	var mu sync.Mutex
+	var firstErr error
+
+	setError := func(err error) {
+		if err == nil {
+			return
+		}
+		mu.Lock()
+		defer mu.Unlock()
+		if firstErr == nil {
+			firstErr = err
+			cancel()
+		}
+	}
+
+	for worker := 0; worker < parallelism; worker++ {
+		wg.Add(1)
+		go func() {
+			defer wg.Done()
+			for index := range jobs {
+				evalCase := cases[index]
+				result, tags, err := s.runEvaluationCase(ctx, yamlPath, evalCase)
+				if err != nil {
+					setError(err)
+					continue
+				}
+				caseConstraints := core.EvaluateConstraints(result.Metrics, constraints)
+				results[index] = core.EvaluationCaseResult{
+					CaseID:            evalCase.ID,
+					CaseName:          evalCase.Name,
+					Period:            evalCase.Period,
+					Parameters:        evalCase.Parameters,
+					Result:            result,
+					Metrics:           result.Metrics,
+					RegimeTags:        tags,
+					ConstraintResults: caseConstraints,
+					PassedConstraints: core.ConstraintsPassed(caseConstraints),
+				}
+			}
+		}()
+	}
+
+	for index := range cases {
+		select {
+		case <-ctx.Done():
+			close(jobs)
+			wg.Wait()
+			if firstErr != nil {
+				return nil, firstErr
+			}
+			return nil, oops.In("backtest_evaluation_service").Wrap(ctx.Err())
+		case jobs <- index:
+		}
+	}
+	close(jobs)
+	wg.Wait()
+	if firstErr != nil {
+		return nil, firstErr
+	}
+	if err := ctx.Err(); err != nil {
+		return nil, oops.In("backtest_evaluation_service").Wrap(err)
+	}
+	return results, nil
+}
+
+func resolveEvaluationParallelism(spec core.EvaluationSpec, option RunEvaluationOptions) int {
+	if option.Parallelism > 0 {
+		return option.Parallelism
+	}
+	if spec.Execution.Parallelism > 0 {
+		return spec.Execution.Parallelism
+	}
+	return 1
+}
+
+func (s Service) runWalkForward(ctx context.Context, yamlPath string, plan core.EvaluationPlan, parallelism int) ([]core.WalkForwardStepResult, error) {
 	out := make([]core.WalkForwardStepResult, 0, len(plan.WalkForward))
 	for _, step := range plan.WalkForward {
-		trainResults := make([]core.EvaluationCaseResult, 0, len(step.Cases))
-		for _, evalCase := range step.Cases {
-			result, tags, err := s.runEvaluationCase(ctx, yamlPath, evalCase)
-			if err != nil {
-				return nil, err
-			}
-			constraints := core.EvaluateConstraints(result.Metrics, core.WalkForwardConstraints(plan.Spec))
-			trainResults = append(trainResults, core.EvaluationCaseResult{
-				CaseID:            evalCase.ID,
-				CaseName:          evalCase.Name,
-				Period:            evalCase.Period,
-				Parameters:        evalCase.Parameters,
-				Result:            result,
-				Metrics:           result.Metrics,
-				RegimeTags:        tags,
-				ConstraintResults: constraints,
-				PassedConstraints: core.ConstraintsPassed(constraints),
-			})
+		trainResults, err := s.runEvaluationCases(ctx, yamlPath, step.Cases, core.WalkForwardConstraints(plan.Spec), parallelism)
+		if err != nil {
+			return nil, err
 		}
 		ranking, err := core.RankEvaluationResults(trainResults, core.ResolveWalkForwardSelection(plan.Spec))
 		if err != nil {
@@ -582,42 +650,6 @@ func (s Service) runWalkForward(ctx context.Context, yamlPath string, plan core.
 		})
 	}
 	return out, nil
-}
-
-func (s Service) loadBars(ctx context.Context, plan core.StrategyPlan) ([]core.Bar, error) {
-	errb := oops.In("backtest_service").With(
-		"market", plan.Market,
-		"from", plan.From.Format(time.DateOnly),
-		"to", plan.To.Format(time.DateOnly),
-	)
-	bars := make([]core.Bar, 0)
-	instruments, err := dataInstruments(plan)
-	if err != nil {
-		return nil, errb.Wrap(err)
-	}
-	for _, instrument := range instruments {
-		rows, err := s.reader.QueryDailyBars(ctx, daily.Query{
-			Market:       provider.Market(instrument.Market),
-			SecurityType: provider.SecurityType(instrument.SecurityType),
-			Symbol:       instrument.Symbol,
-			From:         plan.From.Format(time.DateOnly),
-			To:           plan.To.Format(time.DateOnly),
-		})
-		if err != nil {
-			return nil, errb.With("symbol", instrument.Symbol, "instrument_market", instrument.Market, "instrument_security_type", instrument.SecurityType).Wrapf(err, "query canonical daily bars")
-		}
-		if len(rows) == 0 {
-			return nil, errb.With("symbol", instrument.Symbol, "instrument_market", instrument.Market, "instrument_security_type", instrument.SecurityType).Errorf("canonical daily bars not found for backtest symbol: symbol=%s market=%s security_type=%s", instrument.Symbol, instrument.Market, instrument.SecurityType)
-		}
-		for _, row := range rows {
-			bar, err := canonicalDailyBarToBacktestBar(row)
-			if err != nil {
-				return nil, errb.With("symbol", instrument.Symbol, "trading_date", row.TradingDate).Wrap(err)
-			}
-			bars = append(bars, bar)
-		}
-	}
-	return bars, nil
 }
 
 func (s Service) resolveUniverse(ctx context.Context, yamlPath string, plan core.StrategyPlan) (core.StrategyPlan, error) {
@@ -674,25 +706,12 @@ func instrumentsFromUniverseExplain(explain core.UniverseExplain, defaultMarket 
 	return out
 }
 
-func dataInstruments(plan core.StrategyPlan) ([]core.InstrumentIdentity, error) {
-	instruments := append([]core.InstrumentIdentity(nil), plan.Instruments...)
-	if len(instruments) == 0 {
-		for _, symbol := range plan.Symbols {
-			instruments = append(instruments, core.InstrumentIdentity{Symbol: symbol, Market: plan.Market})
-		}
-	}
-	if plan.Benchmark.Symbol != "" {
-		instruments = append(instruments, core.InstrumentIdentity{
-			Symbol:       plan.Benchmark.Symbol,
-			Market:       withDefault(plan.Benchmark.Market, plan.Market),
-			SecurityType: plan.Benchmark.SecurityType,
-		})
-	}
+func normalizeDataInstruments(instruments []core.InstrumentIdentity, defaultMarket string) ([]core.InstrumentIdentity, error) {
 	seen := map[string]struct{}{}
 	out := make([]core.InstrumentIdentity, 0, len(instruments))
 	symbolIdentities := map[string]string{}
 	for _, instrument := range instruments {
-		instrument.Market = withDefault(instrument.Market, plan.Market)
+		instrument.Market = withDefault(instrument.Market, defaultMarket)
 		if strings.TrimSpace(instrument.Symbol) == "" {
 			return nil, oops.In("backtest_service").New("backtest instrument symbol is required")
 		}
@@ -936,19 +955,6 @@ func applyRanks(results []core.EvaluationCaseResult, ranking []core.EvaluationCa
 			results[i].ObjectiveValue = item.ObjectiveValue
 		}
 	}
-}
-
-func benchmarkBars(symbol string, bars []core.Bar) []core.Bar {
-	if strings.TrimSpace(symbol) == "" {
-		return nil
-	}
-	out := make([]core.Bar, 0)
-	for _, bar := range bars {
-		if bar.Symbol == symbol {
-			out = append(out, bar)
-		}
-	}
-	return out
 }
 
 func matchingTestCase(cases []core.EvaluationCasePlan, parameters map[string]any) (core.EvaluationCasePlan, bool) {

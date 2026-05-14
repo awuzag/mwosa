@@ -224,6 +224,7 @@ func TestEvaluationValidateRunInspectCompareAndRank(t *testing.T) {
 		"--database", databasePath,
 		"--output", "json",
 		"run", "evaluation", yamlPath,
+		"--parallelism", "2",
 	); err != nil {
 		t.Fatalf("evaluation run: %v\n%s", err, runOut.String())
 	}

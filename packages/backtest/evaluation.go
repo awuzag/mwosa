@@ -247,6 +247,9 @@ func validateEvaluationSpec(strategy StrategySpec, baseRun BacktestRunSpec, eval
 			return errb.Wrap(err)
 		}
 	}
+	if evaluation.Execution.Parallelism < 0 {
+		return errb.With("parallelism", evaluation.Execution.Parallelism).New("evaluation execution parallelism must not be negative")
+	}
 	return nil
 }
 

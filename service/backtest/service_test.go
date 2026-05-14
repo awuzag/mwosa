@@ -327,6 +327,35 @@ func (r *recordingDailyBarRepository) QueryDailyBars(_ context.Context, query da
 	return out, nil
 }
 
+func (r *recordingDailyBarRepository) StreamDailyBars(ctx context.Context, query daily.Query) (daily.BarStream, error) {
+	rows, err := r.QueryDailyBars(ctx, query)
+	if err != nil {
+		return nil, err
+	}
+	return &recordingDailyBarStream{rows: rows}, nil
+}
+
+type recordingDailyBarStream struct {
+	rows   []dailybar.Bar
+	offset int
+}
+
+func (s *recordingDailyBarStream) Next(ctx context.Context) (dailybar.Bar, bool, error) {
+	if err := ctx.Err(); err != nil {
+		return dailybar.Bar{}, false, err
+	}
+	if s.offset >= len(s.rows) {
+		return dailybar.Bar{}, false, nil
+	}
+	row := s.rows[s.offset]
+	s.offset++
+	return row, true, nil
+}
+
+func (s *recordingDailyBarStream) Close() error {
+	return nil
+}
+
 func sampleCanonicalDailyBars() []dailybar.Bar {
 	return []dailybar.Bar{
 		canonicalDailyBar("2024-01-02", "10", "10", "10", "10"),

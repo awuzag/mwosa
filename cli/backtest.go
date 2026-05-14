@@ -253,6 +253,7 @@ func newRunBacktestCommand(opts *Options) *cobra.Command {
 }
 
 func newRunEvaluationCommand(opts *Options) *cobra.Command {
+	var parallelism int
 	cmd := &cobra.Command{
 		Use:   "evaluation <yaml>",
 		Short: "Run a YAML backtest evaluation against stored canonical daily bars",
@@ -264,9 +265,10 @@ func newRunEvaluationCommand(opts *Options) *cobra.Command {
 			}
 			defer closeAppRuntime(runtime, &err)
 
-			return runtime.Handlers.Backtest.RunEvaluation(cmd.Context(), handler.RunEvaluationRequest{Path: args[0]})
+			return runtime.Handlers.Backtest.RunEvaluation(cmd.Context(), handler.RunEvaluationRequest{Path: args[0], Parallelism: parallelism})
 		}),
 	}
+	cmd.Flags().IntVar(&parallelism, "parallelism", 0, "bounded worker count for evaluation cases; overrides YAML execution.parallelism when positive")
 	mustMarkBacktestYAML(cmd)
 	return cmd
 }

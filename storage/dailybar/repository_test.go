@@ -79,6 +79,69 @@ func TestDailyBarStoreUpsertIsIdempotent(t *testing.T) {
 	}
 }
 
+func TestDailyBarStoreStreamsRowsInTradingDateOrder(t *testing.T) {
+	database := storage.NewDatabase(filepath.Join(t.TempDir(), "mwosa.db"))
+	t.Cleanup(func() {
+		if err := database.Close(); err != nil {
+			t.Fatalf("close database: %v", err)
+		}
+	})
+	reader, writer, err := NewRepositories(database)
+	if err != nil {
+		t.Fatalf("new repositories: %v", err)
+	}
+	_, err = writer.UpsertDailyBars(context.Background(), []dailybar.Bar{
+		{
+			Provider:     provider.ProviderDataGo,
+			Group:        provider.GroupSecuritiesProductPrice,
+			Operation:    provider.OperationGetETFPriceInfo,
+			Market:       provider.MarketKRX,
+			SecurityType: provider.SecurityTypeETF,
+			Symbol:       "069500",
+			TradingDate:  "2024-04-16",
+			Close:        "35200",
+		},
+		{
+			Provider:     provider.ProviderDataGo,
+			Group:        provider.GroupSecuritiesProductPrice,
+			Operation:    provider.OperationGetETFPriceInfo,
+			Market:       provider.MarketKRX,
+			SecurityType: provider.SecurityTypeETF,
+			Symbol:       "069500",
+			TradingDate:  "2024-04-15",
+			Close:        "35120",
+		},
+	})
+	if err != nil {
+		t.Fatalf("upsert: %v", err)
+	}
+	stream, err := reader.(daily.StreamRepository).StreamDailyBars(context.Background(), daily.Query{
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeETF,
+		Symbol:       "069500",
+		From:         "2024-04-15",
+		To:           "2024-04-16",
+	})
+	if err != nil {
+		t.Fatalf("stream: %v", err)
+	}
+	defer stream.Close()
+	first, ok, err := stream.Next(context.Background())
+	if err != nil || !ok {
+		t.Fatalf("first next: ok=%v err=%v", ok, err)
+	}
+	second, ok, err := stream.Next(context.Background())
+	if err != nil || !ok {
+		t.Fatalf("second next: ok=%v err=%v", ok, err)
+	}
+	if first.TradingDate != "2024-04-15" || second.TradingDate != "2024-04-16" {
+		t.Fatalf("stream order = %s, %s", first.TradingDate, second.TradingDate)
+	}
+	if _, ok, err := stream.Next(context.Background()); err != nil || ok {
+		t.Fatalf("stream end: ok=%v err=%v", ok, err)
+	}
+}
+
 func TestDailyBarStoreUpsertPreservesCreatedAtAndRefreshesUpdatedAt(t *testing.T) {
 	database := storage.NewDatabase(filepath.Join(t.TempDir(), "mwosa.db"))
 	t.Cleanup(func() {

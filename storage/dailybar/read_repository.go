@@ -18,6 +18,7 @@ type readRepository struct {
 }
 
 var _ daily.ReadRepository = (*readRepository)(nil)
+var _ daily.StreamRepository = (*readRepository)(nil)
 
 func NewReadRepository(database *storage.Database) (daily.ReadRepository, error) {
 	if database == nil {
@@ -79,6 +80,62 @@ func (r *readRepository) QueryDailyBars(ctx context.Context, query daily.Query) 
 		bars = append(bars, dailyBarV2ToCanonical(record, extensions[dailyBarV2Key(record.InstrumentID, record.SourceID, record.TradingDate)]))
 	}
 	return bars, nil
+}
+
+func (r *readRepository) StreamDailyBars(ctx context.Context, query daily.Query) (daily.BarStream, error) {
+	errb := oops.In("dailybar_repository").With(
+		"market", query.Market,
+		"security_type", query.SecurityType,
+		"symbol", query.Symbol,
+		"from", query.From,
+		"to", query.To,
+	)
+
+	client, err := r.database.Client(ctx)
+	if err != nil {
+		return nil, errb.Wrap(err)
+	}
+	sqlQuery, args, err := dailyBarV2SelectSQL(query, false)
+	if err != nil {
+		return nil, errb.Wrap(err)
+	}
+	rows, err := client.QueryContext(ctx, sqlQuery, args...)
+	if err != nil {
+		return nil, errb.Wrapf(err, "query daily bars sqlite")
+	}
+	return &dailyBarStream{
+		rows: rows,
+		errb: errb,
+	}, nil
+}
+
+type dailyBarStream struct {
+	rows *sql.Rows
+	errb oops.OopsErrorBuilder
+}
+
+func (s *dailyBarStream) Next(ctx context.Context) (coredailybar.Bar, bool, error) {
+	if err := ctx.Err(); err != nil {
+		return coredailybar.Bar{}, false, s.errb.Wrap(err)
+	}
+	if !s.rows.Next() {
+		if err := s.rows.Err(); err != nil {
+			return coredailybar.Bar{}, false, s.errb.Wrapf(err, "iterate daily bars sqlite")
+		}
+		return coredailybar.Bar{}, false, nil
+	}
+	record, err := scanDailyBarV2Record(s.rows)
+	if err != nil {
+		return coredailybar.Bar{}, false, s.errb.Wrap(err)
+	}
+	return dailyBarV2ToCanonical(record, nil), true, nil
+}
+
+func (s *dailyBarStream) Close() error {
+	if err := s.rows.Close(); err != nil {
+		return s.errb.Wrapf(err, "close daily bars sqlite rows")
+	}
+	return nil
 }
 
 func dailyBarV2SelectSQL(query daily.Query, extension bool) (string, []any, error) {

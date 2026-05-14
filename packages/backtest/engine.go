@@ -12,10 +12,10 @@ import (
 )
 
 type Engine struct {
-	feed Feed
+	feed StreamingFeed
 }
 
-func NewEngine(feed Feed) (Engine, error) {
+func NewEngine(feed StreamingFeed) (Engine, error) {
 	if feed == nil {
 		return Engine{}, oops.In("backtest_engine").New("feed is nil")
 	}
@@ -50,6 +50,7 @@ type Result struct {
 	Universe        UniverseExplain      `json:"universe"`
 	UnfilledCount   int                  `json:"-"`
 	ResultHash      string               `json:"result_hash"`
+	BenchmarkBars   []Bar                `json:"-"`
 }
 
 type Period struct {
@@ -79,42 +80,59 @@ type Event struct {
 	Reason string    `json:"reason"`
 }
 
-func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
+func (e Engine) Run(ctx context.Context, plan StrategyPlan) (result Result, runErr error) {
 	errb := oops.In("backtest_engine").With("strategy", plan.StrategyName, "run", plan.RunName)
-	bars, err := e.feed.Bars(ctx, DataRequest{Symbols: plan.DataSymbols(), From: plan.From, To: plan.To})
+	stream, err := e.feed.Open(ctx, plan.DataRequest())
 	if err != nil {
-		return Result{}, errb.Wrapf(err, "load historical bars")
+		return Result{}, errb.Wrapf(err, "open historical bar stream")
 	}
-	if len(bars) == 0 {
-		return Result{}, errb.New("historical feed returned no bars")
-	}
-	if err := validateBars(bars); err != nil {
+	defer func() {
+		if closeErr := stream.Close(); closeErr != nil {
+			if runErr != nil {
+				runErr = oops.Join(runErr, errb.Wrapf(closeErr, "close historical bar stream"))
+				return
+			}
+			runErr = errb.Wrapf(closeErr, "close historical bar stream")
+		}
+	}()
+
+	indicatorValues := make(map[string]map[string][]float64)
+	indicatorRuntimes, err := newIndicatorRuntimes(plan)
+	if err != nil {
 		return Result{}, errb.Wrap(err)
 	}
 
-	series := groupBars(bars)
-	indicatorValues, err := calculateIndicators(plan, series)
-	if err != nil {
-		return Result{}, errb.Wrap(err)
-	}
-
-	times := orderedTimes(bars)
 	portfolio := newPortfolio(plan.InitialCash)
 	pending := make([]orderIntent, 0)
-	curve := make([]EquityPoint, 0, len(times))
+	curve := make([]EquityPoint, 0)
 	riskEvents := make([]Event, 0)
 	executionEvents := make([]Event, 0)
 	sizer := percentOfEquitySizer{}
 	risk := limitRiskManager{}
 	execution := nextOpenExecutionModel{}
+	series := make(map[string][]Bar)
+	frameCount := 0
 
-	for _, currentTime := range times {
+	for {
 		if err := ctx.Err(); err != nil {
 			return Result{}, errb.Wrap(err)
 		}
-		currentBars, currentIndexes := barsAt(series, currentTime)
+		frame, ok, err := stream.Next(ctx)
+		if err != nil {
+			return Result{}, errb.Wrapf(err, "read historical bar frame")
+		}
+		if !ok {
+			break
+		}
+		frameCount++
+		currentTime := frame.Time
+		currentBars := frame.Bars
 		if len(currentBars) == 0 {
 			continue
+		}
+		currentIndexes, err := appendFrameBars(plan, series, indicatorValues, indicatorRuntimes, frame)
+		if err != nil {
+			return Result{}, errb.Wrap(err)
 		}
 		activeSymbols := plan.activeSymbolsAt(currentTime)
 
@@ -169,6 +187,9 @@ func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 			Equity:         portfolio.cash + positionsValue,
 		})
 	}
+	if frameCount == 0 {
+		return Result{}, errb.New("historical feed returned no bars")
+	}
 
 	for _, intent := range pending {
 		executionEvents = append(executionEvents, Event{
@@ -180,7 +201,7 @@ func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 		})
 	}
 
-	result := Result{
+	result = Result{
 		RunName:      plan.RunName,
 		StrategyName: plan.StrategyName,
 		Symbols:      plan.resultSymbols(),
@@ -207,6 +228,7 @@ func (e Engine) Run(ctx context.Context, plan StrategyPlan) (Result, error) {
 		ExecutionEvents: executionEvents,
 		Universe:        plan.universeExplainForResult(),
 		UnfilledCount:   len(executionEvents),
+		BenchmarkBars:   append([]Bar(nil), series[plan.Benchmark.Symbol]...),
 	}
 	if len(curve) > 0 {
 		result.FinalEquity = curve[len(curve)-1].Equity
@@ -228,6 +250,17 @@ func (p StrategyPlan) DataSymbols() []string {
 		out = append(out, p.Benchmark.Symbol)
 	}
 	return out
+}
+
+func (p StrategyPlan) DataRequest() DataRequest {
+	return DataRequest{
+		Symbols:     p.DataSymbols(),
+		Instruments: p.resultInstruments(),
+		From:        p.From,
+		To:          p.To,
+		Benchmark:   p.Benchmark,
+		WarmupBars:  maxIndicatorLookback(p),
+	}
 }
 
 func (p StrategyPlan) resultInstruments() []InstrumentIdentity {
@@ -263,6 +296,20 @@ func (p StrategyPlan) resultInstruments() []InstrumentIdentity {
 		return 0
 	})
 	return out
+}
+
+func maxIndicatorLookback(plan StrategyPlan) int {
+	maximum := 0
+	for _, spec := range collectIndicatorKeys(plan) {
+		window := int(spec.Params["window"])
+		if spec.ID == "rsi" {
+			window++
+		}
+		if window > maximum {
+			maximum = window
+		}
+	}
+	return maximum
 }
 
 func instrumentKey(instrument InstrumentIdentity) string {
@@ -301,6 +348,49 @@ func evaluateSignals(plan StrategyPlan, portfolio portfolio, activeSymbols []str
 		}
 	}
 	return intents, nil
+}
+
+func newIndicatorRuntimes(plan StrategyPlan) (map[string]map[string]indicatorRuntime, error) {
+	out := make(map[string]map[string]indicatorRuntime)
+	for key, spec := range collectIndicatorKeys(plan) {
+		if _, ok := plan.registry.Definition(spec.ID); !ok {
+			return nil, oops.In("backtest_indicators").With("indicator", spec.ID).New("indicator is not registered")
+		}
+		out[key] = map[string]indicatorRuntime{}
+	}
+	return out, nil
+}
+
+func appendFrameBars(plan StrategyPlan, series map[string][]Bar, indicators map[string]map[string][]float64, runtimes map[string]map[string]indicatorRuntime, frame BarFrame) (map[string]int, error) {
+	indexes := make(map[string]int, len(frame.Bars))
+	for symbol, bar := range frame.Bars {
+		if err := bar.validate(); err != nil {
+			return nil, err
+		}
+		series[symbol] = append(series[symbol], bar)
+		index := len(series[symbol]) - 1
+		indexes[symbol] = index
+		for key, spec := range collectIndicatorKeys(plan) {
+			if indicators[key] == nil {
+				indicators[key] = map[string][]float64{}
+			}
+			runtime := runtimes[key][symbol]
+			if runtime == nil {
+				next, err := newIndicatorRuntime(spec)
+				if err != nil {
+					return nil, oops.In("backtest_indicators").With("indicator", spec.ID, "symbol", symbol).Wrap(err)
+				}
+				runtime = next
+				runtimes[key][symbol] = runtime
+			}
+			value, err := runtime.Add(bar)
+			if err != nil {
+				return nil, oops.In("backtest_indicators").With("indicator", spec.ID, "symbol", symbol).Wrap(err)
+			}
+			indicators[key][symbol] = append(indicators[key][symbol], value)
+		}
+	}
+	return indexes, nil
 }
 
 func universeRemovalIntents(plan StrategyPlan, p portfolio, activeSymbols []string) []orderIntent {

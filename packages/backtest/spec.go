@@ -46,6 +46,7 @@ type EvaluationSpec struct {
 	Constraints   EvaluationConstraintSet `json:"constraints,omitempty" yaml:"constraints,omitempty"`
 	Ranking       EvaluationRankingSpec   `json:"ranking,omitempty" yaml:"ranking,omitempty"`
 	Regime        EvaluationRegimeSpec    `json:"regime,omitempty" yaml:"regime,omitempty"`
+	Execution     EvaluationExecutionSpec `json:"execution,omitempty" yaml:"execution,omitempty"`
 	WalkForward   WalkForwardSpec         `json:"walk_forward,omitempty" yaml:"walk_forward,omitempty"`
 }
 
@@ -91,6 +92,10 @@ type EvaluationRankingSpec struct {
 
 type EvaluationRegimeSpec struct {
 	Benchmark BenchmarkSpec `json:"benchmark,omitempty" yaml:"benchmark,omitempty"`
+}
+
+type EvaluationExecutionSpec struct {
+	Parallelism int `json:"parallelism,omitempty" yaml:"parallelism,omitempty"`
 }
 
 type WalkForwardSpec struct {

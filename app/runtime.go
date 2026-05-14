@@ -198,7 +198,14 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 			database.Close(),
 		)
 	}
-	backtestService, err := backtestservice.NewServiceWithUniverseSources(reader, backtestStrategyRepository, strategyRepository, strategyService)
+	backtestReader, ok := reader.(backtestservice.DailyBarRepository)
+	if !ok {
+		return nil, oops.Join(
+			errb.New("daily bar repository does not support streaming reads"),
+			database.Close(),
+		)
+	}
+	backtestService, err := backtestservice.NewServiceWithUniverseSources(backtestReader, backtestStrategyRepository, strategyRepository, strategyService)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create backtest service"),

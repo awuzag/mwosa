@@ -168,16 +168,18 @@ cli/backtest
   -> packages/indicators
 ```
 
-`service/backtest` 는 저장소에서 canonical bar 를 읽고, YAML 또는 저장된 spec 을
-검증한 뒤 `packages/backtest` 입력 타입으로 바꾼다. 엔진은 이미 정렬된 market
-data 와 compile 된 strategy plan 을 받는다.
+`service/backtest` 는 YAML 또는 저장된 spec 을 검증하고, 저장소의 canonical
+bar reader 를 `packages/backtest` 의 streaming feed port 로 감싼다. 엔진은
+repository, SQLite, YAML 을 직접 알지 않고, compile 된 strategy plan 과
+시간순 `BarFrame` stream 만 소비한다.
 
 ```text
 YAML stream or saved specs
   -> service/backtest schema validation
   -> StrategySpec + BacktestRunSpec
   -> compiled StrategyPlan
-  -> packages/backtest.Engine.Run(plan, market data)
+  -> service/backtest repository-backed StreamingFeed
+  -> packages/backtest.Engine.Run(plan, BarStream)
   -> backtest result
   -> storage/backtest and presentation
 ```
@@ -188,6 +190,28 @@ YAML stream or saved specs
 YAML 은 Kubernetes manifest 처럼 `---` 로 나뉜 여러 document 를 한 파일에 담을
 수 있다. 이때 `kind: Strategy` 는 전략 룰셋만 정의하고, `kind: BacktestRun` 은
 데이터 기간, 초기 현금, 체결 모델, 리포트 설정 같은 실행 조건을 정의한다.
+
+## Streaming feed 와 rolling indicator
+
+`packages/backtest` 의 data port 는 repository 가 아니라 lazy 가능한 market
+data feed 다. 현재 core 계약은 `StreamingFeed.Open(ctx, DataRequest)` 로 stream
+을 열고, `BarStream.Next(ctx)` 가 같은 timestamp 의 종목별 snapshot 인
+`BarFrame` 을 하나씩 반환한다. `MemoryFeed` 는 테스트와 fixture 를 위한 같은
+streaming 계약의 in-memory 구현이다.
+
+engine loop 는 simulation clock 을 frame 단위로 순차 진행한다. pending order
+execution, signal evaluation, sizing, risk review, portfolio mutation, equity
+curve 기록은 결정론을 위해 한 clock 안에서 순차 처리한다.
+
+indicator 는 전체 series 를 먼저 계산하지 않는다. stream 에서 현재 frame 이
+들어오면 종목별 rolling state 를 갱신하고, rule evaluator 는 현재와 이전 값만
+읽는다. warmup 이 끝나기 전 `NaN` 이거나 준비되지 않은 indicator 값은 rule
+match 로 이어지지 않는다.
+
+evaluation 병렬화는 engine 내부 portfolio state 를 병렬 mutation 하지 않는다.
+여러 case 또는 walk-forward train case 를 bounded worker pool 로 독립 실행하고,
+각 worker 는 독립 feed stream, engine instance, rolling indicator state 를 가진다.
+ranking, 저장, walk-forward test 실행은 spec 순서를 기준으로 결정론을 유지한다.
 
 ## Techan 에서 가져올 관점
 

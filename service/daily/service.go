@@ -23,6 +23,15 @@ type ReadRepository interface {
 	QueryDailyBars(ctx context.Context, query Query) ([]dailybar.Bar, error)
 }
 
+type BarStream interface {
+	Next(ctx context.Context) (dailybar.Bar, bool, error)
+	Close() error
+}
+
+type StreamRepository interface {
+	StreamDailyBars(ctx context.Context, query Query) (BarStream, error)
+}
+
 type WriteRepository interface {
 	UpsertDailyBars(ctx context.Context, bars []dailybar.Bar) (WriteResult, error)
 }

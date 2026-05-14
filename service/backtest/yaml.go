@@ -170,6 +170,7 @@ type evaluationDocument struct {
 	Constraints   core.EvaluationConstraintSet `yaml:"constraints"`
 	Ranking       core.EvaluationRankingSpec   `yaml:"ranking"`
 	Regime        core.EvaluationRegimeSpec    `yaml:"regime"`
+	Execution     core.EvaluationExecutionSpec `yaml:"execution"`
 	WalkForward   core.WalkForwardSpec         `yaml:"walk_forward"`
 }
 
@@ -261,6 +262,7 @@ func decodeEvaluation(node *yaml.Node) (core.EvaluationSpec, error) {
 		Constraints:   document.Constraints,
 		Ranking:       document.Ranking,
 		Regime:        document.Regime,
+		Execution:     document.Execution,
 		WalkForward:   document.WalkForward,
 	}, nil
 }

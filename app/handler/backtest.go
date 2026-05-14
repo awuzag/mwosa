@@ -30,7 +30,8 @@ type ValidateEvaluationRequest struct {
 }
 
 type RunEvaluationRequest struct {
-	Path string
+	Path        string
+	Parallelism int
 }
 
 type ListBacktestStrategiesRequest struct{}
@@ -92,7 +93,7 @@ func (h Backtest) ValidateEvaluation(ctx context.Context, req ValidateEvaluation
 }
 
 func (h Backtest) RunEvaluation(ctx context.Context, req RunEvaluationRequest) (EvaluationRunOutput, error) {
-	result, err := h.service.RunEvaluation(ctx, req.Path)
+	result, err := h.service.RunEvaluation(ctx, req.Path, backtestservice.RunEvaluationOptions{Parallelism: req.Parallelism})
 	if err != nil {
 		return EvaluationRunOutput{}, err
 	}
@@ -196,13 +197,14 @@ func (o EvaluationValidationOutput) CSVRows() any {
 
 func (o EvaluationValidationOutput) TableRows() ([]string, [][]string) {
 	result := o.Result
-	return []string{"valid", "evaluation", "strategy", "base_run", "cases", "walk_forward", "metrics"}, [][]string{{
+	return []string{"valid", "evaluation", "strategy", "base_run", "cases", "walk_forward", "parallelism", "metrics"}, [][]string{{
 		fmt.Sprint(result.Valid),
 		result.Name,
 		result.StrategyName,
 		result.BaseRunName,
 		fmt.Sprint(result.CaseCount),
 		fmt.Sprint(result.WalkForwardSteps),
+		fmt.Sprint(result.Parallelism),
 		fmt.Sprint(len(result.Metrics)),
 	}}
 }
