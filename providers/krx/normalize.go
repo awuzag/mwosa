@@ -7,6 +7,7 @@ import (
 	krxclient "github.com/ev3rlit/mwosa/clients/krx"
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
+	"github.com/ev3rlit/mwosa/providers/core/indexbar"
 	"github.com/ev3rlit/mwosa/providers/core/instrument"
 	"github.com/samber/oops"
 )
@@ -56,6 +57,86 @@ func formatDate(value string) string {
 		return strings.TrimSpace(value)
 	}
 	return parsed.Format("2006-01-02")
+}
+
+type indexDailyTradeRow struct {
+	BaseDate            string
+	IndexClass          string
+	IndexName           string
+	IndexClose          string
+	IndexPreviousChange string
+	FluctuationRate     string
+	IndexOpen           string
+	IndexHigh           string
+	IndexLow            string
+	Volume              string
+	Amount              string
+	MarketCap           string
+}
+
+func normalizeKRXIndex(row krxclient.KRXIndexDailyTrade) indexbar.Bar {
+	return normalizeIndexDailyTrade(indexDailyTradeRow(row), provider.OperationKRXDDTrd, "KRX")
+}
+
+func normalizeKOSPIIndex(row krxclient.KOSPIIndexDailyTrade) indexbar.Bar {
+	return normalizeIndexDailyTrade(indexDailyTradeRow(row), provider.OperationKOSPIDDTrd, "KOSPI")
+}
+
+func normalizeKOSDAQIndex(row krxclient.KOSDAQIndexDailyTrade) indexbar.Bar {
+	return normalizeIndexDailyTrade(indexDailyTradeRow(row), provider.OperationKOSDAQDDTrd, "KOSDAQ")
+}
+
+func normalizeDerivativesProductIndex(row krxclient.DerivativesProductIndexDailyTrade) indexbar.Bar {
+	return normalizeIndexDailyTrade(indexDailyTradeRow{
+		BaseDate:            row.BaseDate,
+		IndexClass:          row.IndexClass,
+		IndexName:           row.IndexName,
+		IndexClose:          row.IndexClose,
+		IndexPreviousChange: row.IndexPreviousChange,
+		FluctuationRate:     row.FluctuationRate,
+		IndexOpen:           row.IndexOpen,
+		IndexHigh:           row.IndexHigh,
+		IndexLow:            row.IndexLow,
+	}, provider.OperationDerivativesDDTrd, "DERIVATIVES")
+}
+
+func normalizeIndexDailyTrade(row indexDailyTradeRow, operation provider.OperationID, family string) indexbar.Bar {
+	return indexbar.Bar{
+		Provider:    provider.ProviderKRX,
+		Group:       provider.GroupKRXIndexDailyTrade,
+		Operation:   operation,
+		Market:      provider.MarketKRX,
+		IndexCode:   canonicalIndexCode(firstNonEmpty(row.IndexName, row.IndexClass)),
+		Name:        strings.TrimSpace(row.IndexName),
+		Family:      firstNonEmpty(strings.TrimSpace(row.IndexClass), family),
+		TradingDate: formatDate(row.BaseDate),
+		Currency:    currencyKRW,
+		Open:        row.IndexOpen,
+		High:        row.IndexHigh,
+		Low:         row.IndexLow,
+		Close:       row.IndexClose,
+		Change:      row.IndexPreviousChange,
+		ChangeRate:  row.FluctuationRate,
+		Volume:      row.Volume,
+		TradedValue: row.Amount,
+		MarketCap:   row.MarketCap,
+	}
+}
+
+func canonicalIndexCode(value string) string {
+	trimmed := strings.TrimSpace(value)
+	switch {
+	case trimmed == "코스피":
+		return "KOSPI"
+	case trimmed == "코스닥":
+		return "KOSDAQ"
+	}
+	replacer := strings.NewReplacer(" ", "", "-", "", "_", "", ".", "", "/", "")
+	code := strings.ToUpper(replacer.Replace(trimmed))
+	if code == "" {
+		return ""
+	}
+	return code
 }
 
 func normalizeETF(row krxclient.ETFDailyTrade) dailybar.Bar {

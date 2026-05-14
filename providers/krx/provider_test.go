@@ -12,6 +12,7 @@ import (
 
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
+	"github.com/ev3rlit/mwosa/providers/core/indexbar"
 	"github.com/ev3rlit/mwosa/providers/core/instrument"
 	dailyservice "github.com/ev3rlit/mwosa/service/daily"
 )
@@ -78,6 +79,76 @@ func TestFetchETFDailyBars(t *testing.T) {
 	}
 	if bar.Extensions["nav"] != "35155.1" || bar.Extensions["nPptTotAmt"] != "2000000000" {
 		t.Fatalf("unexpected extensions: %+v", bar.Extensions)
+	}
+}
+
+func TestFetchKOSPIIndexBars(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		w.Header().Set("Content-Type", "application/json")
+		if r.URL.Path != "/idx/kospi_dd_trd" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		if got := r.URL.Query().Get("basDd"); got != "20240415" {
+			t.Fatalf("basDd = %q, want 20240415", got)
+		}
+		fmt.Fprint(w, `{
+			"OutBlock_1": [
+				{
+					"BAS_DD": "20240415",
+					"IDX_CLSS": "KOSPI",
+					"IDX_NM": "KOSPI",
+					"CLSPRC_IDX": "2670.43",
+					"CMPPREVDD_IDX": "11.39",
+					"FLUC_RT": "0.43",
+					"OPNPRC_IDX": "2660.00",
+					"HGPRC_IDX": "2680.10",
+					"LWPRC_IDX": "2655.20",
+					"ACC_TRDVOL": "450000000",
+					"ACC_TRDVAL": "9000000000000",
+					"MKTCAP": "2100000000000000"
+				}
+			]
+		}`)
+	}))
+	defer server.Close()
+
+	p, err := New(Config{AuthKey: "test-key", BaseURL: server.URL})
+	if err != nil {
+		t.Fatalf("new provider: %v", err)
+	}
+	registry := provider.NewRegistry()
+	if err := Register(registry, p); err != nil {
+		t.Fatalf("register provider: %v", err)
+	}
+	fetcher, err := indexbar.NewRouter(provider.NewRouter(registry)).RouteIndexBars(context.Background(), indexbar.RouteInput{
+		ProviderID: provider.ProviderKRX,
+		Market:     provider.MarketKRX,
+		IndexCode:  "KOSPI",
+	})
+	if err != nil {
+		t.Fatalf("route index bars: %v", err)
+	}
+	if _, ok := fetcher.(indexbar.BatchFetcher); !ok {
+		t.Fatalf("routed fetcher type = %T, want BatchFetcher", fetcher)
+	}
+	result, err := fetcher.FetchIndexBars(context.Background(), indexbar.FetchInput{
+		Market:    provider.MarketKRX,
+		IndexCode: "KOSPI",
+		From:      "20240415",
+		To:        "20240415",
+	})
+	if err != nil {
+		t.Fatalf("fetch index bars: %v", err)
+	}
+	if len(result.Bars) != 1 {
+		t.Fatalf("bars len = %d, want 1", len(result.Bars))
+	}
+	bar := result.Bars[0]
+	if bar.Provider != provider.ProviderKRX || bar.Group != provider.GroupKRXIndexDailyTrade || bar.Operation != provider.OperationKOSPIDDTrd {
+		t.Fatalf("unexpected provenance: %+v", bar)
+	}
+	if bar.IndexCode != "KOSPI" || bar.Name != "KOSPI" || bar.Close != "2670.43" || bar.TradingDate != "2024-04-15" {
+		t.Fatalf("unexpected index bar: %+v", bar)
 	}
 }
 

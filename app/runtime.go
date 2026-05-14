@@ -10,6 +10,7 @@ import (
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
 	"github.com/ev3rlit/mwosa/providers/core/financials"
+	"github.com/ev3rlit/mwosa/providers/core/indexbar"
 	"github.com/ev3rlit/mwosa/providers/core/instrument"
 	"github.com/ev3rlit/mwosa/providers/core/intradaybar"
 	"github.com/ev3rlit/mwosa/providers/core/orderbook"
@@ -18,6 +19,7 @@ import (
 	kisprovider "github.com/ev3rlit/mwosa/providers/kis"
 	"github.com/ev3rlit/mwosa/service/daily"
 	financialsservice "github.com/ev3rlit/mwosa/service/financials"
+	indexservice "github.com/ev3rlit/mwosa/service/index"
 	instrumentservice "github.com/ev3rlit/mwosa/service/instrument"
 	intradayservice "github.com/ev3rlit/mwosa/service/intraday"
 	orderbookservice "github.com/ev3rlit/mwosa/service/orderbook"
@@ -27,6 +29,7 @@ import (
 	tradesservice "github.com/ev3rlit/mwosa/service/trades"
 	"github.com/ev3rlit/mwosa/storage"
 	dailybarstorage "github.com/ev3rlit/mwosa/storage/dailybar"
+	indexbarstorage "github.com/ev3rlit/mwosa/storage/indexbar"
 	migrationstorage "github.com/ev3rlit/mwosa/storage/migration"
 	"github.com/ev3rlit/mwosa/storage/providerauth"
 	strategystorage "github.com/ev3rlit/mwosa/storage/strategy"
@@ -54,6 +57,7 @@ type StorageRuntime struct {
 	Database             *storage.Database
 	ProviderAuthDatabase *providerauth.Database
 	DailyBars            DailyBarStorage
+	IndexBars            IndexBarStorage
 	Migrations           migrationcore.Store
 	Strategies           strategyservice.Repository
 }
@@ -63,10 +67,16 @@ type DailyBarStorage struct {
 	Writer daily.WriteRepository
 }
 
+type IndexBarStorage struct {
+	Reader indexservice.ReadRepository
+	Writer indexservice.WriteRepository
+}
+
 type ProviderRuntime struct {
 	Registry    *provider.Registry
 	Router      *provider.Router
 	DailyBars   dailybar.Router
+	IndexBars   indexbar.Router
 	Financials  financials.Router
 	Quotes      quote.Router
 	Instruments instrument.Router
@@ -77,6 +87,7 @@ type ProviderRuntime struct {
 
 type ServiceRuntime struct {
 	Daily       DailyServices
+	Index       IndexServices
 	Financials  financialsservice.Service
 	Instruments instrumentservice.Service
 	Intraday    intradayservice.Service
@@ -89,6 +100,7 @@ type ServiceRuntime struct {
 
 type Handlers struct {
 	Daily       handler.Daily
+	Index       handler.Index
 	Financials  handler.Financials
 	Instruments handler.Instrument
 	Intraday    handler.Intraday
@@ -102,6 +114,11 @@ type Handlers struct {
 type DailyServices struct {
 	Reader    daily.ReadService
 	Collector daily.Service
+}
+
+type IndexServices struct {
+	Reader    indexservice.ReadService
+	Collector indexservice.Service
 }
 
 func NewRuntime(opts Options) (*Runtime, error) {
@@ -125,6 +142,14 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create daily bar repositories"),
+			database.Close(),
+			providerAuthDatabase.Close(),
+		)
+	}
+	indexReader, indexWriter, err := indexbarstorage.NewRepository(database)
+	if err != nil {
+		return nil, oops.Join(
+			errb.Wrapf(err, "create index bar repository"),
 			database.Close(),
 			providerAuthDatabase.Close(),
 		)
@@ -181,6 +206,7 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 		Registry:    registry,
 		Router:      coreRouter,
 		DailyBars:   dailybar.NewRouter(coreRouter),
+		IndexBars:   indexbar.NewRouter(coreRouter),
 		Financials:  financials.NewRouter(coreRouter),
 		Quotes:      quote.NewRouter(coreRouter),
 		Instruments: instrument.NewRouter(coreRouter),
@@ -201,6 +227,22 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create daily collect service"),
+			database.Close(),
+			providerAuthDatabase.Close(),
+		)
+	}
+	indexReaderService, err := indexservice.NewReadService(indexReader)
+	if err != nil {
+		return nil, oops.Join(
+			errb.Wrapf(err, "create index read service"),
+			database.Close(),
+			providerAuthDatabase.Close(),
+		)
+	}
+	indexCollector, err := indexservice.NewService(indexReader, indexWriter, providerRuntime.IndexBars)
+	if err != nil {
+		return nil, oops.Join(
+			errb.Wrapf(err, "create index collect service"),
 			database.Close(),
 			providerAuthDatabase.Close(),
 		)
@@ -278,6 +320,7 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 		)
 	}
 	dailyHandler := handler.NewDaily(dailyReader, dailyCollector)
+	indexHandler := handler.NewIndex(indexReaderService, indexCollector)
 	financialsHandler := handler.NewFinancials(financialsService)
 	instrumentHandler := handler.NewInstrument(instrumentService)
 	quoteHandler := handler.NewQuote(quoteService)
@@ -295,6 +338,10 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 				Reader: reader,
 				Writer: writer,
 			},
+			IndexBars: IndexBarStorage{
+				Reader: indexReader,
+				Writer: indexWriter,
+			},
 			Migrations: migrationStore,
 			Strategies: strategyRepository,
 		},
@@ -303,6 +350,10 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 			Daily: DailyServices{
 				Reader:    dailyReader,
 				Collector: dailyCollector,
+			},
+			Index: IndexServices{
+				Reader:    indexReaderService,
+				Collector: indexCollector,
 			},
 			Financials:  financialsService,
 			Instruments: instrumentService,
@@ -315,6 +366,7 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 		},
 		Handlers: Handlers{
 			Daily:       dailyHandler,
+			Index:       indexHandler,
 			Financials:  financialsHandler,
 			Instruments: instrumentHandler,
 			Intraday:    intradayHandler,

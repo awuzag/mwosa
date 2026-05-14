@@ -65,6 +65,9 @@ func TestListKRXAPIsIncludesAllServices(t *testing.T) {
 	if !strings.Contains(out.String(), `"description": "ETF daily trade rows"`) {
 		t.Fatalf("output missing KRX API description in:\n%s", out.String())
 	}
+	if !strings.Contains(out.String(), `"api_id": "kospi_dd_trd"`) || !strings.Contains(out.String(), `"canonical_support": "index_bar"`) {
+		t.Fatalf("output missing KRX index canonical support in:\n%s", out.String())
+	}
 }
 
 func TestSyncKRXStoresRawSnapshot(t *testing.T) {

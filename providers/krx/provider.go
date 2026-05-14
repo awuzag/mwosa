@@ -9,6 +9,7 @@ import (
 	krxclient "github.com/ev3rlit/mwosa/clients/krx"
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
+	"github.com/ev3rlit/mwosa/providers/core/indexbar"
 	"github.com/ev3rlit/mwosa/providers/core/instrument"
 	"github.com/ev3rlit/mwosa/providers/spec"
 	"github.com/samber/oops"
@@ -96,6 +97,7 @@ func NewWithClient(client client, enabledAPIs map[provider.OperationID]bool, now
 		}
 	}
 	p.groups = []provider.GroupRoleProvider{
+		newIndexDailyTradeGroup(p.fetchIndexBars, p.fetchIndexBatch),
 		newETPDailyTradeGroup(p.fetchDailyBars, p.fetchDailyBatch, p.searchInstruments),
 		newStockDailyTradeGroup(p.fetchDailyBars, p.fetchDailyBatch),
 		newStockInstrumentGroup(p.searchInstruments),
@@ -124,6 +126,14 @@ func (p *Provider) FetchDailyBars(ctx context.Context, input dailybar.FetchInput
 
 func (p *Provider) FetchDailyBatch(ctx context.Context, input dailybar.BatchFetchInput) (dailybar.BatchFetchResult, error) {
 	return p.fetchDailyBatch(ctx, input)
+}
+
+func (p *Provider) FetchIndexBars(ctx context.Context, input indexbar.FetchInput) (indexbar.FetchResult, error) {
+	return p.fetchIndexBars(ctx, input)
+}
+
+func (p *Provider) FetchIndexBatch(ctx context.Context, input indexbar.BatchFetchInput) (indexbar.BatchFetchResult, error) {
+	return p.fetchIndexBatch(ctx, input)
 }
 
 func (p *Provider) SearchInstruments(ctx context.Context, input instrument.SearchInput) (instrument.SearchResult, error) {
@@ -199,6 +209,50 @@ func (p *Provider) fetchDailyBatch(ctx context.Context, input dailybar.BatchFetc
 	}, nil
 }
 
+func (p *Provider) fetchIndexBars(ctx context.Context, input indexbar.FetchInput) (indexbar.FetchResult, error) {
+	result, err := p.fetchIndexBatch(ctx, indexbar.BatchFetchInput{
+		Market:    input.Market,
+		IndexCode: input.IndexCode,
+		From:      input.From,
+		To:        input.To,
+	})
+	if err != nil {
+		return indexbar.FetchResult{}, err
+	}
+	return indexbar.FetchResult{
+		Bars:       result.Bars,
+		Provider:   result.Provider,
+		Group:      result.Group,
+		Operation:  result.Operation,
+		TotalCount: result.TotalCount,
+	}, nil
+}
+
+func (p *Provider) fetchIndexBatch(ctx context.Context, input indexbar.BatchFetchInput) (indexbar.BatchFetchResult, error) {
+	market := withDefaultMarket(input.Market)
+	errb := oops.In("krx_adapter").With("role", provider.RoleIndexBar, "market", market, "index_code", input.IndexCode, "from", input.From, "to", input.To)
+	if err := validateMarket(provider.RoleIndexBar, market, "", input.IndexCode); err != nil {
+		return indexbar.BatchFetchResult{}, errb.Wrap(err)
+	}
+	if p.client == nil {
+		return indexbar.BatchFetchResult{}, errb.New("krx provider client is nil")
+	}
+	from, to, err := resolveInputRange(input.From, input.To)
+	if err != nil {
+		return indexbar.BatchFetchResult{}, errb.Wrap(err)
+	}
+	bars, err := p.fetchIndexRecords(ctx, input.IndexCode, from, to)
+	if err != nil {
+		return indexbar.BatchFetchResult{}, errb.Wrap(err)
+	}
+	return indexbar.BatchFetchResult{
+		Bars:       bars,
+		Provider:   p.Identity,
+		Group:      provider.GroupKRXIndexDailyTrade,
+		TotalCount: len(bars),
+	}, nil
+}
+
 func (p *Provider) searchInstruments(ctx context.Context, input instrument.SearchInput) (instrument.SearchResult, error) {
 	market := withDefaultMarket(input.Market)
 	errb := oops.In("krx_adapter").With("role", provider.RoleInstrument, "market", market, "security_type", input.SecurityType, "query", input.Query)
@@ -216,6 +270,86 @@ func (p *Provider) searchInstruments(ctx context.Context, input instrument.Searc
 		return p.searchStockInstruments(ctx, input, baseDate)
 	default:
 		return instrument.SearchResult{}, unsupportedSecurityTypeError(provider.RoleInstrument, input.SecurityType, input.Query)
+	}
+}
+
+func (p *Provider) fetchIndexRecords(ctx context.Context, indexCode string, from time.Time, to time.Time) ([]indexbar.Bar, error) {
+	operations := indexOperationsForQuery(indexCode)
+	for _, operation := range operations {
+		if err := p.requireAPI(operation, provider.RoleIndexBar, "", indexCode); err != nil {
+			return nil, err
+		}
+	}
+
+	bars := make([]indexbar.Bar, 0)
+	for date := from; !date.After(to); date = date.AddDate(0, 0, 1) {
+		baseDate := date.Format("20060102")
+		for _, operation := range operations {
+			fetched, err := p.fetchIndexOperation(ctx, operation, baseDate)
+			if err != nil {
+				return nil, err
+			}
+			for _, bar := range fetched {
+				if matchesIndexQuery(bar, indexCode) {
+					bars = append(bars, bar)
+				}
+			}
+		}
+	}
+	return bars, nil
+}
+
+func (p *Provider) fetchIndexOperation(ctx context.Context, operation provider.OperationID, baseDate string) ([]indexbar.Bar, error) {
+	switch operation {
+	case provider.OperationKRXDDTrd:
+		rows, err := p.client.KRXIndex(ctx, baseDate)
+		if err != nil {
+			return nil, oops.In("krx_adapter").With("operation", operation, "base_date", baseDate).Wrapf(err, "fetch KRX index daily trade")
+		}
+		bars := make([]indexbar.Bar, 0, len(rows))
+		for _, row := range rows {
+			bars = append(bars, normalizeKRXIndex(row))
+		}
+		return bars, nil
+	case provider.OperationKOSPIDDTrd:
+		rows, err := p.client.KOSPIIndex(ctx, baseDate)
+		if err != nil {
+			return nil, oops.In("krx_adapter").With("operation", operation, "base_date", baseDate).Wrapf(err, "fetch KRX KOSPI index daily trade")
+		}
+		bars := make([]indexbar.Bar, 0, len(rows))
+		for _, row := range rows {
+			bars = append(bars, normalizeKOSPIIndex(row))
+		}
+		return bars, nil
+	case provider.OperationKOSDAQDDTrd:
+		rows, err := p.client.KOSDAQIndex(ctx, baseDate)
+		if err != nil {
+			return nil, oops.In("krx_adapter").With("operation", operation, "base_date", baseDate).Wrapf(err, "fetch KRX KOSDAQ index daily trade")
+		}
+		bars := make([]indexbar.Bar, 0, len(rows))
+		for _, row := range rows {
+			bars = append(bars, normalizeKOSDAQIndex(row))
+		}
+		return bars, nil
+	case provider.OperationDerivativesDDTrd:
+		rows, err := p.client.DerivativesProductIndex(ctx, baseDate)
+		if err != nil {
+			return nil, oops.In("krx_adapter").With("operation", operation, "base_date", baseDate).Wrapf(err, "fetch KRX derivatives product index daily trade")
+		}
+		bars := make([]indexbar.Bar, 0, len(rows))
+		for _, row := range rows {
+			bars = append(bars, normalizeDerivativesProductIndex(row))
+		}
+		return bars, nil
+	default:
+		return nil, provider.NewUnsupported(provider.UnsupportedError{
+			Capability:  provider.RoleIndexBar,
+			ProviderID:  provider.ProviderKRX,
+			GroupID:     provider.GroupKRXIndexDailyTrade,
+			OperationID: operation,
+			Market:      provider.MarketKRX,
+			Reason:      "KRX index operation is unsupported by canonical index_bar adapter",
+		})
 	}
 }
 
@@ -239,6 +373,35 @@ func (p *Provider) fetchDailyRecords(ctx context.Context, securityType provider.
 	default:
 		return nil, "", unsupportedSecurityTypeError(provider.RoleDailyBar, securityType, symbol)
 	}
+}
+
+func indexOperationsForQuery(indexCode string) []provider.OperationID {
+	code := canonicalIndexCode(indexCode)
+	switch {
+	case strings.HasPrefix(code, "KOSPI"):
+		return []provider.OperationID{provider.OperationKOSPIDDTrd}
+	case strings.HasPrefix(code, "KOSDAQ"):
+		return []provider.OperationID{provider.OperationKOSDAQDDTrd}
+	case strings.HasPrefix(code, "KRX"):
+		return []provider.OperationID{provider.OperationKRXDDTrd}
+	default:
+		return []provider.OperationID{
+			provider.OperationKRXDDTrd,
+			provider.OperationKOSPIDDTrd,
+			provider.OperationKOSDAQDDTrd,
+			provider.OperationDerivativesDDTrd,
+		}
+	}
+}
+
+func matchesIndexQuery(bar indexbar.Bar, query string) bool {
+	query = strings.TrimSpace(query)
+	if query == "" {
+		return true
+	}
+	return strings.EqualFold(bar.IndexCode, canonicalIndexCode(query)) ||
+		strings.EqualFold(strings.TrimSpace(bar.Name), query) ||
+		strings.Contains(strings.ToLower(bar.Name), strings.ToLower(query))
 }
 
 func (p *Provider) fetchETPDailyRecords(ctx context.Context, securityType provider.SecurityType, symbol string, from time.Time, to time.Time) ([]dailybar.Bar, error) {
@@ -542,6 +705,35 @@ func previousBusinessDay(now time.Time) time.Time {
 type etpDailyTradeGroup struct {
 	dailybar.Fetcher
 	instrument.Searcher
+}
+
+type indexDailyTradeGroup struct {
+	indexbar.Fetcher
+}
+
+var _ provider.GroupRoleProvider = indexDailyTradeGroup{}
+
+func newIndexDailyTradeGroup(fetch indexbar.FetchFunc, batchFetch indexbar.BatchFetchFunc) indexDailyTradeGroup {
+	return indexDailyTradeGroup{
+		Fetcher: spec.PreviousBusinessDayIndexBar(fetch).
+			BatchFetch(batchFetch).
+			Markets(provider.MarketKRX).
+			Group(provider.GroupKRXIndexDailyTrade).
+			Operations(provider.OperationKRXDDTrd, provider.OperationKOSPIDDTrd, provider.OperationKOSDAQDDTrd, provider.OperationDerivativesDDTrd).
+			RequiresAuth(provider.CredentialScopeKRX).
+			RangeQuery(indexbar.RangeQuerySupported).
+			Priority(45).
+			Limitations("KRX index endpoints are base-date only; ranges are collected one trading date at a time").
+			MustBuild(),
+	}
+}
+
+func (g indexDailyTradeGroup) ProviderGroup() provider.GroupID {
+	return provider.GroupKRXIndexDailyTrade
+}
+
+func (g indexDailyTradeGroup) RoleRegistrations() []provider.RoleRegistration {
+	return []provider.RoleRegistration{g.Fetcher.RoleRegistration()}
 }
 
 var _ provider.GroupRoleProvider = etpDailyTradeGroup{}

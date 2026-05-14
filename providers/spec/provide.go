@@ -3,6 +3,7 @@ package spec
 import (
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
+	"github.com/ev3rlit/mwosa/providers/core/indexbar"
 	"github.com/ev3rlit/mwosa/providers/core/instrument"
 	"github.com/ev3rlit/mwosa/providers/core/intradaybar"
 	"github.com/ev3rlit/mwosa/providers/core/orderbook"
@@ -123,6 +124,112 @@ func (b DailyBarRoleBuilder) Build() (dailybar.Fetcher, error) {
 }
 
 func (b DailyBarRoleBuilder) MustBuild() dailybar.Fetcher {
+	role, err := b.Build()
+	if err != nil {
+		panic(err)
+	}
+	return role
+}
+
+type IndexBarRoleBuilder struct {
+	profile    IndexBarBuilder
+	fetch      indexbar.FetchFunc
+	batchFetch indexbar.BatchFetchFunc
+}
+
+func IndexBarFetcher(fetch indexbar.FetchFunc) IndexBarRoleBuilder {
+	return IndexBarRoleBuilder{
+		profile: IndexBar(),
+		fetch:   fetch,
+	}
+}
+
+func PreviousBusinessDayIndexBar(fetch indexbar.FetchFunc) IndexBarRoleBuilder {
+	return IndexBarFetcher(fetch).
+		Freshness(provider.FreshnessDaily).
+		Compatibility(PreviousBusinessDay())
+}
+
+func (b IndexBarRoleBuilder) Markets(markets ...provider.Market) IndexBarRoleBuilder {
+	b.profile = b.profile.Markets(markets...)
+	return b
+}
+
+func (b IndexBarRoleBuilder) Group(group provider.GroupID) IndexBarRoleBuilder {
+	b.profile = b.profile.Group(group)
+	return b
+}
+
+func (b IndexBarRoleBuilder) Operations(operations ...provider.OperationID) IndexBarRoleBuilder {
+	b.profile = b.profile.Operations(operations...)
+	return b
+}
+
+func (b IndexBarRoleBuilder) RequiresAuth(scope provider.CredentialScope) IndexBarRoleBuilder {
+	b.profile = b.profile.RequiresAuth(scope)
+	return b
+}
+
+func (b IndexBarRoleBuilder) NoAuth() IndexBarRoleBuilder {
+	b.profile = b.profile.NoAuth()
+	return b
+}
+
+func (b IndexBarRoleBuilder) Freshness(freshness provider.Freshness) IndexBarRoleBuilder {
+	b.profile = b.profile.Freshness(freshness)
+	return b
+}
+
+func (b IndexBarRoleBuilder) Compatibility(source CompatibilitySource) IndexBarRoleBuilder {
+	b.profile = b.profile.Compatibility(source)
+	return b
+}
+
+func (b IndexBarRoleBuilder) CompatibilityValue(compatibility provider.Compatibility) IndexBarRoleBuilder {
+	b.profile = b.profile.CompatibilityValue(compatibility)
+	return b
+}
+
+func (b IndexBarRoleBuilder) CompatibilityNotes(notes ...string) IndexBarRoleBuilder {
+	b.profile.role = b.profile.role.compatibilityNotes(notes...)
+	return b
+}
+
+func (b IndexBarRoleBuilder) RangeQuery(rangeQuery indexbar.RangeQuerySupport) IndexBarRoleBuilder {
+	b.profile = b.profile.RangeQuery(rangeQuery)
+	return b
+}
+
+func (b IndexBarRoleBuilder) Priority(priority int) IndexBarRoleBuilder {
+	b.profile = b.profile.Priority(priority)
+	return b
+}
+
+func (b IndexBarRoleBuilder) Limitations(limitations ...string) IndexBarRoleBuilder {
+	b.profile = b.profile.Limitations(limitations...)
+	return b
+}
+
+func (b IndexBarRoleBuilder) BatchFetch(batchFetch indexbar.BatchFetchFunc) IndexBarRoleBuilder {
+	b.batchFetch = batchFetch
+	return b
+}
+
+func (b IndexBarRoleBuilder) Build() (indexbar.Fetcher, error) {
+	if b.fetch == nil {
+		return nil, oops.In("provider_spec").With("role", provider.RoleIndexBar).New("index-bar provider spec requires fetch callable")
+	}
+	profile, err := b.profile.Build()
+	if err != nil {
+		return nil, err
+	}
+	if b.batchFetch != nil {
+		return indexbar.NewBatchFetch(profile, b.fetch, b.batchFetch), nil
+	}
+	return indexbar.NewFetch(profile, b.fetch), nil
+}
+
+func (b IndexBarRoleBuilder) MustBuild() indexbar.Fetcher {
 	role, err := b.Build()
 	if err != nil {
 		panic(err)

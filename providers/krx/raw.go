@@ -175,6 +175,8 @@ func canonicalSupport(apiID provider.OperationID) string {
 		return "daily_bar"
 	case provider.OperationStockIssueBaseInfo, provider.OperationKOSDAQIssueBaseInfo, provider.OperationKONEXIssueBaseInfo:
 		return "instrument"
+	case provider.OperationKRXDDTrd, provider.OperationKOSPIDDTrd, provider.OperationKOSDAQDDTrd, provider.OperationDerivativesDDTrd:
+		return "index_bar"
 	default:
 		return "raw_only"
 	}

@@ -104,6 +104,7 @@ const (
 	RoleFinancials  Role = "financials"
 	RoleInstrument  Role = "instrument"
 	RoleIntradayBar Role = "intraday_bar"
+	RoleIndexBar    Role = "index_bar"
 	RoleOrderbook   Role = "orderbook"
 	RoleQuote       Role = "quote_snapshot"
 	RoleTrades      Role = "trades"

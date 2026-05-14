@@ -170,6 +170,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	}
 	registerConfigCommands(roots, &opts)
 	registerDailyCommands(roots, &opts)
+	registerIndexCommands(roots, &opts)
 	registerFinancialsCommands(roots, &opts)
 	registerInstrumentCommands(roots, &opts)
 	registerMarketDataCommands(roots, &opts)

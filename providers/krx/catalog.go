@@ -12,11 +12,11 @@ type Service struct {
 
 func ServiceCatalog() []Service {
 	return []Service{
-		{Category: "index", Group: provider.GroupKRXIndexDailyTrade, Operation: provider.OperationKRXDDTrd, Description: "KRX index daily trade rows", RawOnly: true},
-		{Category: "index", Group: provider.GroupKRXIndexDailyTrade, Operation: provider.OperationKOSPIDDTrd, Description: "KOSPI index daily trade rows", RawOnly: true},
-		{Category: "index", Group: provider.GroupKRXIndexDailyTrade, Operation: provider.OperationKOSDAQDDTrd, Description: "KOSDAQ index daily trade rows", RawOnly: true},
+		{Category: "index", Group: provider.GroupKRXIndexDailyTrade, Operation: provider.OperationKRXDDTrd, Description: "KRX index daily trade rows"},
+		{Category: "index", Group: provider.GroupKRXIndexDailyTrade, Operation: provider.OperationKOSPIDDTrd, Description: "KOSPI index daily trade rows"},
+		{Category: "index", Group: provider.GroupKRXIndexDailyTrade, Operation: provider.OperationKOSDAQDDTrd, Description: "KOSDAQ index daily trade rows"},
 		{Category: "index", Group: provider.GroupKRXIndexDailyTrade, Operation: provider.OperationBondDDTrd, Description: "Bond index daily trade rows", RawOnly: true},
-		{Category: "index", Group: provider.GroupKRXIndexDailyTrade, Operation: provider.OperationDerivativesDDTrd, Description: "Derivatives product index daily trade rows", RawOnly: true},
+		{Category: "index", Group: provider.GroupKRXIndexDailyTrade, Operation: provider.OperationDerivativesDDTrd, Description: "Derivatives product index daily trade rows"},
 		{Category: "stock", Group: provider.GroupKRXStockDailyTrade, Operation: provider.OperationStockByddTrd, Description: "KOSPI stock daily trade rows"},
 		{Category: "stock", Group: provider.GroupKRXStockDailyTrade, Operation: provider.OperationKOSDAQByddTrd, Description: "KOSDAQ stock daily trade rows"},
 		{Category: "stock", Group: provider.GroupKRXStockDailyTrade, Operation: provider.OperationKONEXByddTrd, Description: "KONEX stock daily trade rows"},

@@ -48,19 +48,21 @@ KRX OPEN API 서비스 목록에서 확인한 서비스는 총 31개다.
 ## 구현 상태
 
 `mwosa` 의 현재 방향이 국내 주식/ETF 리서치와 로컬 일별 데이터 저장에 있으므로
-canonical 저장은 주식/ETP 일별매매정보와 주식 종목기본정보부터 연결한다.
+canonical 저장은 주식/ETP 일별매매정보, 주식 종목기본정보, 지수 일별시세정보부터 연결한다.
 
 | 상태 | API |
 | --- | --- |
 | `daily_bar` + `instrument` | `etf_bydd_trd`, `etn_bydd_trd`, `elw_bydd_trd` |
 | `daily_bar` | `stk_bydd_trd`, `ksq_bydd_trd`, `knx_bydd_trd` |
 | `instrument` | `stk_isu_base_info`, `ksq_isu_base_info`, `knx_isu_base_info` |
-| `raw snapshot` | 위 9개를 포함한 전체 31개 API |
+| `index_bar` | `krx_dd_trd`, `kospi_dd_trd`, `kosdaq_dd_trd`, `drvprod_dd_trd` |
+| `raw snapshot` | 위 canonical API 를 포함한 전체 31개 API |
 
 `raw snapshot` 은 `provider_raw_snapshots` table 에 provider, group, `api_id`,
 base date, row count, canonical support label, provider-native JSON payload 를 저장한다.
-지수, 채권, 파생상품, 일반상품, ESG 처럼 아직 canonical schema 가 분리되지 않은
-데이터는 이 경로로 보관한다.
+채권지수(`bon_dd_trd`), 채권, 파생상품, 일반상품, ESG 처럼 아직 canonical schema 가
+분리되지 않은 데이터는 이 경로로 보관한다. 주식처럼 거래 가능한 증권은
+`daily_bar` / `instrument` 로, KOSPI 같은 벤치마크 지수는 `index_bar` 로 분리한다.
 
 ## CLI
 
@@ -68,6 +70,10 @@ base date, row count, canonical support label, provider-native JSON payload 를 
 mwosa list krx-apis -o json
 mwosa get krx etf_bydd_trd --as-of 20240415 -o json
 mwosa sync krx krx_dd_trd --as-of 20240415 -o json
+
+mwosa get index KOSPI --provider krx --as-of 20240415 -o json
+mwosa sync index KOSPI --provider krx --as-of 20240415 -o json
+mwosa sync index --provider krx --as-of 20240415 -o json
 
 mwosa sync daily --provider krx --security-type etf --as-of 20240415 -o json
 mwosa backfill daily --provider krx --security-type stock --from 20240415 --to 20240416 -o json
