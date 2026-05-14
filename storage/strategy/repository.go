@@ -5,6 +5,7 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"strconv"
 	"strings"
 	"time"
 
@@ -120,8 +121,48 @@ func (r *repository) GetStrategy(ctx context.Context, name string) (strategyserv
 	}, nil
 }
 
-func (r *repository) AddStrategyVersion(ctx context.Context, name string, version strategyservice.StrategyVersion, now time.Time) (strategyservice.StrategyDetail, error) {
-	errb := oops.In("strategy_repository").With("name", name, "version_id", version.ID)
+func (r *repository) GetStrategyVersion(ctx context.Context, name string, ref strategyservice.StrategyVersionRef) (strategyservice.StrategyDetail, error) {
+	errb := oops.In("strategy_repository").With("name", name, "version", ref.Version, "spec_hash", ref.SpecHash)
+	detail, err := r.GetStrategy(ctx, name)
+	if err != nil {
+		return strategyservice.StrategyDetail{}, err
+	}
+	if strings.TrimSpace(ref.Version) == "" && strings.TrimSpace(ref.SpecHash) == "" {
+		return detail, nil
+	}
+	if strings.TrimSpace(ref.Version) == "latest" && strings.TrimSpace(ref.SpecHash) == "" {
+		return detail, nil
+	}
+
+	client, err := r.database.Client(ctx)
+	if err != nil {
+		return strategyservice.StrategyDetail{}, errb.Wrap(err)
+	}
+	var versionRow storage.StrategyVersionRow
+	query := client.NewSelect().
+		Model(&versionRow).
+		Where("strategy_id = ?", detail.Strategy.ID)
+	if strings.TrimSpace(ref.SpecHash) != "" {
+		query = query.Where("spec_hash = ?", ref.SpecHash)
+	} else {
+		version, err := strconv.Atoi(ref.Version)
+		if err != nil {
+			return strategyservice.StrategyDetail{}, errb.Wrapf(err, "parse strategy version")
+		}
+		query = query.Where("version = ?", version)
+	}
+	if err := query.Scan(ctx); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return strategyservice.StrategyDetail{}, errb.Errorf("strategy version not found: %s", name)
+		}
+		return strategyservice.StrategyDetail{}, errb.Wrapf(err, "get strategy version sqlite row")
+	}
+	detail.ActiveVersion = strategyVersionFromRow(&versionRow)
+	return detail, nil
+}
+
+func (r *repository) AddStrategyVersion(ctx context.Context, name string, engine strategyservice.Engine, version strategyservice.StrategyVersion, now time.Time) (strategyservice.StrategyDetail, error) {
+	errb := oops.In("strategy_repository").With("name", name, "engine", engine, "version_id", version.ID)
 	client, err := r.database.Client(ctx)
 	if err != nil {
 		return strategyservice.StrategyDetail{}, errb.Wrap(err)
@@ -156,12 +197,14 @@ func (r *repository) AddStrategyVersion(ctx context.Context, name string, versio
 	if _, err := tx.NewUpdate().
 		Model((*storage.StrategyRow)(nil)).
 		Set("active_version_id = ?", version.ID).
+		Set("engine = ?", string(engine)).
 		Set("updated_at = ?", now).
 		Where("id = ?", strategyRow.ID).
 		Exec(ctx); err != nil {
 		return strategyservice.StrategyDetail{}, errb.Wrapf(err, "update active strategy version")
 	}
 	strategyRow.ActiveVersionID = version.ID
+	strategyRow.Engine = string(engine)
 	strategyRow.UpdatedAt = now
 	if err := tx.Commit(); err != nil {
 		return strategyservice.StrategyDetail{}, errb.Wrapf(err, "commit update strategy transaction")
@@ -338,6 +381,8 @@ func strategyVersionToRow(version strategyservice.StrategyVersion) storage.Strat
 		InputDataset:       version.InputDataset,
 		InputSchemaVersion: version.InputSchemaVersion,
 		ParamsJSON:         string(normalizeRawMessage(version.ParamsJSON)),
+		SpecJSON:           string(normalizeRawMessage(version.SpecJSON)),
+		SpecHash:           version.SpecHash,
 		CreatedAt:          version.CreatedAt,
 		Note:               version.Note,
 	}
@@ -397,6 +442,10 @@ func strategyFromRow(row *storage.StrategyRow) strategyservice.Strategy {
 }
 
 func strategyVersionFromRow(row *storage.StrategyVersionRow) strategyservice.StrategyVersion {
+	specHash := row.SpecHash
+	if specHash == "" {
+		specHash = row.QueryHash
+	}
 	return strategyservice.StrategyVersion{
 		ID:                 row.ID,
 		StrategyID:         row.StrategyID,
@@ -406,6 +455,8 @@ func strategyVersionFromRow(row *storage.StrategyVersionRow) strategyservice.Str
 		InputDataset:       row.InputDataset,
 		InputSchemaVersion: row.InputSchemaVersion,
 		ParamsJSON:         json.RawMessage(row.ParamsJSON),
+		SpecJSON:           json.RawMessage(row.SpecJSON),
+		SpecHash:           specHash,
 		CreatedAt:          row.CreatedAt,
 		Note:               row.Note,
 	}

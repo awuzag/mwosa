@@ -572,12 +572,24 @@ func sourceSavedScreen(_ context.Context, step StepSpec, _ []Candidate, execCtx 
 
 func sourceScreenStrategy(_ context.Context, step StepSpec, _ []Candidate, execCtx ExecutionContext, _ SelectorRegistry) ([]Candidate, StepSummary, []Decision, error) {
 	name := stringParamDefault(step.Params, "name", "")
-	rows := execCtx.ScreenStrategies[name]
+	key := screenStrategySourceKey(step.Params)
+	rows := execCtx.ScreenStrategies[key]
 	if rows == nil {
 		return nil, StepSummary{}, nil, oops.In("universe").With("name", name).New("screen strategy result is not available")
 	}
 	out := cloneCandidates(rows)
 	return out, StepSummary{Reason: "screen_strategy:" + name}, includeDecisions(execCtx.SelectionTime, step.ID, out, "screen_strategy"), nil
+}
+
+func screenStrategySourceKey(params map[string]any) string {
+	name := stringParamDefault(params, "name", "")
+	if specHash := stringParamDefault(params, "spec_hash", ""); specHash != "" {
+		return name + "@hash:" + specHash
+	}
+	if version := stringParamDefault(params, "version", ""); version != "" {
+		return name + "@version:" + version
+	}
+	return name
 }
 
 func sourceWatchlist(_ context.Context, step StepSpec, _ []Candidate, execCtx ExecutionContext, _ SelectorRegistry) ([]Candidate, StepSummary, []Decision, error) {

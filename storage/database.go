@@ -192,6 +192,9 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 			return errb.With("table", table.name).Wrapf(err, "create sqlite table")
 		}
 	}
+	if err := ensureStrategyVersionColumns(ctx, db); err != nil {
+		return errb.Wrap(err)
+	}
 
 	indexes := []struct {
 		name    string
@@ -268,6 +271,11 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 			name:    "idx_strategy_versions_query_hash",
 			model:   (*StrategyVersionRow)(nil),
 			columns: []string{"query_hash"},
+		},
+		{
+			name:    "idx_strategy_versions_spec_hash",
+			model:   (*StrategyVersionRow)(nil),
+			columns: []string{"spec_hash"},
 		},
 		{
 			name:    "screen_runs_alias_unique",
@@ -357,6 +365,25 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 		}
 		if _, err := query.Exec(ctx); err != nil {
 			return errb.With("index", index.name).Wrapf(err, "create daily_bar index")
+		}
+	}
+	return nil
+}
+
+func ensureStrategyVersionColumns(ctx context.Context, db *bun.DB) error {
+	errb := oops.In("storage_database")
+	for _, column := range []struct {
+		name       string
+		definition string
+	}{
+		{name: "spec_json", definition: "TEXT NOT NULL DEFAULT '{}'"},
+		{name: "spec_hash", definition: "TEXT NOT NULL DEFAULT ''"},
+	} {
+		if _, err := db.ExecContext(ctx, "ALTER TABLE strategy_versions ADD COLUMN "+column.name+" "+column.definition); err != nil {
+			if strings.Contains(err.Error(), "duplicate column name") {
+				continue
+			}
+			return errb.With("table", "strategy_versions", "column", column.name).Wrapf(err, "ensure strategy version sqlite column")
 		}
 	}
 	return nil

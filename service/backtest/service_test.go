@@ -141,6 +141,64 @@ func TestServiceInspectUniverseLoadsFileAndScreenSources(t *testing.T) {
 	assert.Equal(t, "combine.union", explain.Steps[0].ID)
 }
 
+func TestServiceInspectUniversePassesScreenStrategyVersionRef(t *testing.T) {
+	dir := t.TempDir()
+	yamlPath := filepath.Join(dir, "screen-strategy-ref.yaml")
+	require.NoError(t, os.WriteFile(yamlPath, []byte(`
+kind: Strategy
+schema_version: 1
+name: screen-ref
+entry:
+  gt:
+    - price: close
+    - value: 0
+exit:
+  lt:
+    - price: close
+    - value: 0
+sizing:
+  type: percent_of_equity
+  value: 10
+---
+kind: BacktestRun
+schema_version: 1
+name: screen-ref-run
+strategy:
+  name: screen-ref
+data:
+  market: krx
+  security_type: etf
+  timeframe: 1d
+  from: 2024-01-02
+  to: 2024-01-08
+universe:
+  pipeline:
+    - id: source.screen_strategy
+      params:
+        name: etf-uptrend
+        spec_hash: sha256:fixed
+portfolio:
+  initial_cash: 10000
+execution:
+  fill: next_open
+`), 0o644))
+
+	repo := &recordingDailyBarRepository{bars: map[string][]dailybar.Bar{}}
+	screenRunner := &recordingScreenRunner{items: []strategyservice.ScreenRunItem{
+		{Ordinal: 0, Symbol: "069500", PayloadJSON: json.RawMessage(`{"symbol":"069500"}`)},
+	}}
+	service, err := NewServiceWithUniverseSources(repo, nil, nil, screenRunner)
+	require.NoError(t, err)
+
+	explain, err := service.InspectUniverse(context.Background(), yamlPath)
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{"069500"}, explain.SelectedSymbols)
+	require.Len(t, screenRunner.requests, 1)
+	assert.Equal(t, "etf-uptrend", screenRunner.requests[0].Name)
+	assert.Equal(t, "sha256:fixed", screenRunner.requests[0].SpecHash)
+}
+
 func TestServiceUniverseFileReadersSupportJSONAndNDJSON(t *testing.T) {
 	dir := t.TempDir()
 	jsonPath := filepath.Join(dir, "universe.json")
@@ -333,6 +391,11 @@ type fakeScreenRunner struct {
 	items []strategyservice.ScreenRunItem
 }
 
+type recordingScreenRunner struct {
+	items    []strategyservice.ScreenRunItem
+	requests []strategyservice.ScreenStrategyRequest
+}
+
 type coreSymbol struct {
 	Symbol string
 }
@@ -353,6 +416,11 @@ func mustIndicatorRegistry(t *testing.T) core.IndicatorRegistry {
 }
 
 func (r fakeScreenRunner) Screen(context.Context, strategyservice.ScreenStrategyRequest) (strategyservice.ScreenRunDetail, error) {
+	return strategyservice.ScreenRunDetail{Items: r.items}, nil
+}
+
+func (r *recordingScreenRunner) Screen(_ context.Context, req strategyservice.ScreenStrategyRequest) (strategyservice.ScreenRunDetail, error) {
+	r.requests = append(r.requests, req)
 	return strategyservice.ScreenRunDetail{Items: r.items}, nil
 }
 

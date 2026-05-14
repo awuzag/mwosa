@@ -34,6 +34,11 @@ type UpdateStrategyRequest struct {
 	QueryText string
 }
 
+type UpsertScreenStrategyRequest struct {
+	Name string
+	Path string
+}
+
 type DeleteStrategyRequest struct {
 	Name string
 }
@@ -44,8 +49,10 @@ type ScreenJQRequest struct {
 }
 
 type ScreenStrategyRequest struct {
-	Name  string
-	Alias string
+	Name     string
+	Alias    string
+	Version  string
+	SpecHash string
 }
 
 type ScreenPipelineRequest struct {
@@ -100,6 +107,21 @@ func (h Strategy) Update(ctx context.Context, req UpdateStrategyRequest) (Strate
 	return StrategyDetailOutput{Detail: detail}, nil
 }
 
+func (h Strategy) UpsertScreenStrategy(ctx context.Context, req UpsertScreenStrategyRequest) (StrategyDetailOutput, error) {
+	spec, err := strategyservice.LoadScreenStrategyFile(ctx, req.Path)
+	if err != nil {
+		return StrategyDetailOutput{}, err
+	}
+	detail, err := h.service.Upsert(ctx, strategyservice.UpsertStrategyRequest{
+		Name: req.Name,
+		Spec: spec,
+	})
+	if err != nil {
+		return StrategyDetailOutput{}, err
+	}
+	return StrategyDetailOutput{Detail: detail}, nil
+}
+
 func (h Strategy) Delete(ctx context.Context, req DeleteStrategyRequest) (DeleteStrategyResult, error) {
 	if err := h.service.Delete(ctx, req.Name); err != nil {
 		return DeleteStrategyResult{}, err
@@ -120,8 +142,10 @@ func (h Strategy) ScreenJQ(ctx context.Context, req ScreenJQRequest) (ScreenResu
 
 func (h Strategy) Screen(ctx context.Context, req ScreenStrategyRequest) (ScreenRunDetailOutput, error) {
 	detail, err := h.service.Screen(ctx, strategyservice.ScreenStrategyRequest{
-		Name:  req.Name,
-		Alias: req.Alias,
+		Name:     req.Name,
+		Alias:    req.Alias,
+		Version:  req.Version,
+		SpecHash: req.SpecHash,
 	})
 	if err != nil {
 		return ScreenRunDetailOutput{}, err

@@ -29,6 +29,8 @@ type StrategyVersionRow struct {
 	InputDataset       string    `bun:"input_dataset,notnull"`
 	InputSchemaVersion int       `bun:"input_schema_version,notnull"`
 	ParamsJSON         string    `bun:"params_json,notnull,default:'{}'"`
+	SpecJSON           string    `bun:"spec_json,notnull,default:'{}'"`
+	SpecHash           string    `bun:"spec_hash,notnull,default:''"`
 	CreatedAt          time.Time `bun:"created_at,notnull,default:CURRENT_TIMESTAMP"`
 	Note               string    `bun:"note,notnull,default:''"`
 }

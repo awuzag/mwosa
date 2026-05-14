@@ -198,6 +198,7 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 			database.Close(),
 		)
 	}
+	strategyService.SetPipelineExecutor(universeRunner)
 	backtestReader, ok := reader.(backtestservice.DailyBarRepository)
 	if !ok {
 		return nil, oops.Join(

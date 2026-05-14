@@ -9,6 +9,7 @@ import (
 
 	"github.com/ev3rlit/mwosa/packages/hashutil"
 	"github.com/ev3rlit/mwosa/packages/idgen"
+	universecore "github.com/ev3rlit/mwosa/packages/universe"
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
 	"github.com/ev3rlit/mwosa/service/daily"
@@ -18,7 +19,10 @@ import (
 
 type Engine string
 
-const EngineJQ Engine = "jq"
+const (
+	EngineJQ           Engine = "jq"
+	EngineYAMLPipeline Engine = "yaml_pipeline"
+)
 
 type ScreenRunStatus string
 
@@ -48,6 +52,8 @@ type StrategyVersion struct {
 	InputDataset       string          `json:"input_dataset" csv:"input_dataset"`
 	InputSchemaVersion int             `json:"input_schema_version" csv:"input_schema_version"`
 	ParamsJSON         json.RawMessage `json:"params,omitempty" csv:"-"`
+	SpecJSON           json.RawMessage `json:"spec_json,omitempty" csv:"-"`
+	SpecHash           string          `json:"spec_hash" csv:"spec_hash"`
 	CreatedAt          time.Time       `json:"created_at" csv:"created_at"`
 	Note               string          `json:"note,omitempty" csv:"note"`
 }
@@ -101,6 +107,11 @@ type StrategyDetail struct {
 	ActiveVersion StrategyVersion `json:"active_version"`
 }
 
+type StrategyVersionRef struct {
+	Version  string
+	SpecHash string
+}
+
 type ScreenRunDetail struct {
 	Run             ScreenRun       `json:"run"`
 	Strategy        Strategy        `json:"strategy"`
@@ -108,11 +119,49 @@ type ScreenRunDetail struct {
 	Items           []ScreenRunItem `json:"items"`
 }
 
+type ScreenStrategySpec struct {
+	Kind          string                      `json:"kind" yaml:"kind"`
+	SchemaVersion int                         `json:"schema_version" yaml:"schema_version"`
+	Name          string                      `json:"name" yaml:"name"`
+	Engine        Engine                      `json:"engine" yaml:"engine"`
+	JQ            *JQStrategySpec             `json:"jq,omitempty" yaml:"jq,omitempty"`
+	Pipeline      *ScreenPipelineStrategySpec `json:"pipeline_strategy,omitempty" yaml:"pipeline_strategy,omitempty"`
+}
+
+type JQStrategySpec struct {
+	InputDataset string          `json:"input_dataset" yaml:"input_dataset"`
+	QueryText    string          `json:"query_text" yaml:"query_text"`
+	Params       json.RawMessage `json:"params,omitempty" yaml:"params,omitempty"`
+}
+
+type ScreenPipelineStrategySpec struct {
+	Data     ScreenPipelineDataSpec  `json:"data" yaml:"data"`
+	Pipeline []universecore.StepSpec `json:"pipeline" yaml:"pipeline"`
+}
+
+type ScreenPipelineDataSpec struct {
+	Market       string `json:"market" yaml:"market"`
+	SecurityType string `json:"security_type" yaml:"security_type"`
+	AsOf         string `json:"as_of,omitempty" yaml:"as_of,omitempty"`
+	From         string `json:"from,omitempty" yaml:"from,omitempty"`
+	To           string `json:"to,omitempty" yaml:"to,omitempty"`
+}
+
+type PipelineExecutionResult struct {
+	InputDataset       string
+	InputSchemaVersion int
+	DataFrom           string
+	DataTo             string
+	DataAsOf           string
+	Rows               []json.RawMessage
+}
+
 type Repository interface {
 	CreateStrategyWithVersion(ctx context.Context, strategy Strategy, version StrategyVersion) (StrategyDetail, error)
 	ListStrategies(ctx context.Context) ([]StrategyDetail, error)
 	GetStrategy(ctx context.Context, name string) (StrategyDetail, error)
-	AddStrategyVersion(ctx context.Context, name string, version StrategyVersion, now time.Time) (StrategyDetail, error)
+	GetStrategyVersion(ctx context.Context, name string, ref StrategyVersionRef) (StrategyDetail, error)
+	AddStrategyVersion(ctx context.Context, name string, engine Engine, version StrategyVersion, now time.Time) (StrategyDetail, error)
 	ArchiveStrategy(ctx context.Context, name string, archivedAt time.Time) error
 	CreateScreenRun(ctx context.Context, run ScreenRun, items []ScreenRunItem) (ScreenRunDetail, error)
 	ListScreenRuns(ctx context.Context, limit int) ([]ScreenRun, error)
@@ -129,10 +178,19 @@ type DatasetReader interface {
 	ReadDataset(ctx context.Context, name string) (Dataset, error)
 }
 
+type PipelineExecutor interface {
+	ExecuteScreenStrategyPipeline(ctx context.Context, spec ScreenStrategySpec) (PipelineExecutionResult, error)
+}
+
+type pipelineExecutorSlot struct {
+	executor PipelineExecutor
+}
+
 type Service struct {
-	repo    Repository
-	dataset DatasetReader
-	now     func() time.Time
+	repo             Repository
+	dataset          DatasetReader
+	pipelineExecutor *pipelineExecutorSlot
+	now              func() time.Time
 }
 
 func NewService(repo Repository, dataset DatasetReader) (Service, error) {
@@ -144,10 +202,18 @@ func NewService(repo Repository, dataset DatasetReader) (Service, error) {
 		return Service{}, errb.New("strategy dataset reader is nil")
 	}
 	return Service{
-		repo:    repo,
-		dataset: dataset,
-		now:     time.Now,
+		repo:             repo,
+		dataset:          dataset,
+		pipelineExecutor: &pipelineExecutorSlot{},
+		now:              time.Now,
 	}, nil
+}
+
+func (s Service) SetPipelineExecutor(executor PipelineExecutor) {
+	if s.pipelineExecutor == nil {
+		return
+	}
+	s.pipelineExecutor.executor = executor
 }
 
 type CreateStrategyRequest struct {
@@ -157,12 +223,28 @@ type CreateStrategyRequest struct {
 	QueryText    string
 }
 
+type UpsertStrategyRequest struct {
+	Name string
+	Spec ScreenStrategySpec
+}
+
 func (s Service) Create(ctx context.Context, req CreateStrategyRequest) (StrategyDetail, error) {
 	errb := oops.In("strategy_service").With("name", req.Name, "engine", req.Engine, "input_dataset", req.InputDataset)
 	if s.repo == nil {
 		return StrategyDetail{}, errb.New("strategy repository is nil")
 	}
-	if err := validateStrategySource(req.Name, req.Engine, req.InputDataset, req.QueryText); err != nil {
+	if req.Engine == "" {
+		req.Engine = EngineJQ
+	}
+	if req.Engine != EngineJQ {
+		return StrategyDetail{}, errb.Errorf("unsupported strategy engine: %s", req.Engine)
+	}
+	spec := JQScreenStrategySpec(req.Name, req.InputDataset, req.QueryText, nil)
+	if err := validateScreenStrategySpec(spec); err != nil {
+		return StrategyDetail{}, errb.Wrap(err)
+	}
+	specJSON, specHash, err := canonicalStrategySpecPayload(spec)
+	if err != nil {
 		return StrategyDetail{}, errb.Wrap(err)
 	}
 
@@ -193,8 +275,68 @@ func (s Service) Create(ctx context.Context, req CreateStrategyRequest) (Strateg
 		InputDataset:       req.InputDataset,
 		InputSchemaVersion: defaultInputSchemaVersion,
 		ParamsJSON:         json.RawMessage(`{}`),
+		SpecJSON:           specJSON,
+		SpecHash:           specHash,
 		CreatedAt:          now,
 	}
+	return s.repo.CreateStrategyWithVersion(ctx, strategy, version)
+}
+
+func (s Service) Upsert(ctx context.Context, req UpsertStrategyRequest) (StrategyDetail, error) {
+	errb := oops.In("strategy_service").With("name", req.Name)
+	if s.repo == nil {
+		return StrategyDetail{}, errb.New("strategy repository is nil")
+	}
+	spec := req.Spec
+	if strings.TrimSpace(spec.Name) == "" {
+		spec.Name = req.Name
+	}
+	if spec.Name != req.Name {
+		return StrategyDetail{}, errb.With("spec_name", spec.Name).Errorf("screen strategy name mismatch: cli=%s yaml=%s", req.Name, spec.Name)
+	}
+	if err := validateScreenStrategySpec(spec); err != nil {
+		return StrategyDetail{}, errb.Wrap(err)
+	}
+	specJSON, specHash, err := canonicalStrategySpecPayload(spec)
+	if err != nil {
+		return StrategyDetail{}, errb.Wrap(err)
+	}
+	existing, err := s.repo.GetStrategy(ctx, req.Name)
+	if err != nil {
+		if !strings.Contains(err.Error(), "strategy not found") {
+			return StrategyDetail{}, errb.Wrapf(err, "load strategy before upsert")
+		}
+		return s.createFromCanonicalSpec(ctx, spec, specJSON, specHash)
+	}
+	versionID, err := idgen.NewUUIDV7()
+	if err != nil {
+		return StrategyDetail{}, errb.Wrapf(err, "generate strategy version id")
+	}
+	now := s.now()
+	version := strategyVersionFromSpec(versionID, existing.Strategy.ID, existing.ActiveVersion.Version+1, spec, specJSON, specHash, now)
+	return s.repo.AddStrategyVersion(ctx, req.Name, spec.Engine, version, now)
+}
+
+func (s Service) createFromCanonicalSpec(ctx context.Context, spec ScreenStrategySpec, specJSON json.RawMessage, specHash string) (StrategyDetail, error) {
+	errb := oops.In("strategy_service").With("name", spec.Name, "engine", spec.Engine)
+	strategyID, err := idgen.NewUUIDV7()
+	if err != nil {
+		return StrategyDetail{}, errb.Wrapf(err, "generate strategy id")
+	}
+	versionID, err := idgen.NewUUIDV7()
+	if err != nil {
+		return StrategyDetail{}, errb.Wrapf(err, "generate strategy version id")
+	}
+	now := s.now()
+	strategy := Strategy{
+		ID:              strategyID,
+		Name:            spec.Name,
+		Engine:          spec.Engine,
+		ActiveVersionID: versionID,
+		CreatedAt:       now,
+		UpdatedAt:       now,
+	}
+	version := strategyVersionFromSpec(versionID, strategyID, 1, spec, specJSON, specHash, now)
 	return s.repo.CreateStrategyWithVersion(ctx, strategy, version)
 }
 
@@ -229,6 +371,11 @@ func (s Service) Update(ctx context.Context, req UpdateStrategyRequest) (Strateg
 	if err := validateStrategySource(detail.Strategy.Name, detail.Strategy.Engine, detail.ActiveVersion.InputDataset, req.QueryText); err != nil {
 		return StrategyDetail{}, errb.Wrap(err)
 	}
+	spec := JQScreenStrategySpec(detail.Strategy.Name, detail.ActiveVersion.InputDataset, req.QueryText, normalizeJSON(detail.ActiveVersion.ParamsJSON))
+	specJSON, specHash, err := canonicalStrategySpecPayload(spec)
+	if err != nil {
+		return StrategyDetail{}, errb.Wrap(err)
+	}
 	versionID, err := idgen.NewUUIDV7()
 	if err != nil {
 		return StrategyDetail{}, errb.Wrapf(err, "generate strategy version id")
@@ -243,9 +390,11 @@ func (s Service) Update(ctx context.Context, req UpdateStrategyRequest) (Strateg
 		InputDataset:       detail.ActiveVersion.InputDataset,
 		InputSchemaVersion: detail.ActiveVersion.InputSchemaVersion,
 		ParamsJSON:         normalizeJSON(detail.ActiveVersion.ParamsJSON),
+		SpecJSON:           specJSON,
+		SpecHash:           specHash,
 		CreatedAt:          now,
 	}
-	return s.repo.AddStrategyVersion(ctx, req.Name, version, now)
+	return s.repo.AddStrategyVersion(ctx, req.Name, detail.Strategy.Engine, version, now)
 }
 
 func (s Service) Delete(ctx context.Context, name string) error {
@@ -256,8 +405,10 @@ func (s Service) Delete(ctx context.Context, name string) error {
 }
 
 type ScreenStrategyRequest struct {
-	Name  string
-	Alias string
+	Name     string
+	Alias    string
+	Version  string
+	SpecHash string
 }
 
 type ScreenJQRequest struct {
@@ -288,16 +439,47 @@ func (s Service) Screen(ctx context.Context, req ScreenStrategyRequest) (ScreenR
 	if strings.TrimSpace(req.Name) == "" {
 		return ScreenRunDetail{}, errb.New("screen strategy requires name")
 	}
-	detail, err := s.repo.GetStrategy(ctx, req.Name)
+	if strings.TrimSpace(req.Version) != "" && strings.TrimSpace(req.SpecHash) != "" {
+		return ScreenRunDetail{}, errb.New("screen strategy requires either version or spec_hash, not both")
+	}
+	detail, err := s.repo.GetStrategyVersion(ctx, req.Name, StrategyVersionRef{
+		Version:  req.Version,
+		SpecHash: req.SpecHash,
+	})
 	if err != nil {
 		return ScreenRunDetail{}, errb.Wrapf(err, "load strategy")
 	}
 	started := s.now()
-	dataset, rows, err := s.executeJQAgainstDataset(ctx, detail.ActiveVersion.InputDataset, detail.ActiveVersion.QueryText)
-	if err != nil {
-		return s.recordFailedRun(ctx, detail, req.Alias, started, errb.Wrapf(err, "execute jq strategy"))
+	switch detail.Strategy.Engine {
+	case EngineJQ:
+		dataset, rows, err := s.executeJQAgainstDataset(ctx, detail.ActiveVersion.InputDataset, detail.ActiveVersion.QueryText)
+		if err != nil {
+			return s.recordFailedRun(ctx, detail, req.Alias, started, errb.Wrapf(err, "execute jq strategy"))
+		}
+		return s.recordSucceededRun(ctx, detail, req.Alias, started, dataset, rows)
+	case EngineYAMLPipeline:
+		if s.pipelineExecutor == nil {
+			runErr := errb.New("screen pipeline executor is nil")
+			return s.recordFailedRun(ctx, detail, req.Alias, started, runErr)
+		}
+		executor := s.pipelineExecutor.executor
+		if executor == nil {
+			runErr := errb.New("screen pipeline executor is nil")
+			return s.recordFailedRun(ctx, detail, req.Alias, started, runErr)
+		}
+		spec, err := screenStrategySpecFromVersion(detail)
+		if err != nil {
+			return s.recordFailedRun(ctx, detail, req.Alias, started, errb.Wrap(err))
+		}
+		result, err := executor.ExecuteScreenStrategyPipeline(ctx, spec)
+		if err != nil {
+			return s.recordFailedRun(ctx, detail, req.Alias, started, errb.Wrapf(err, "execute yaml pipeline strategy"))
+		}
+		return s.recordSucceededPipelineRun(ctx, detail, req.Alias, started, result)
+	default:
+		runErr := errb.With("engine", detail.Strategy.Engine).Errorf("unsupported strategy engine: %s", detail.Strategy.Engine)
+		return s.recordFailedRun(ctx, detail, req.Alias, started, runErr)
 	}
-	return s.recordSucceededRun(ctx, detail, req.Alias, started, dataset, rows)
 }
 
 func (s Service) History(ctx context.Context, limit int) ([]ScreenRun, error) {
@@ -355,6 +537,53 @@ func (s Service) recordSucceededRun(ctx context.Context, detail StrategyDetail, 
 
 	items := make([]ScreenRunItem, 0, len(rows))
 	for i, row := range rows {
+		itemID, err := idgen.NewUUIDV7()
+		if err != nil {
+			return ScreenRunDetail{}, errb.With("ordinal", i).Wrapf(err, "generate screen run item id")
+		}
+		items = append(items, ScreenRunItem{
+			ID:          itemID,
+			ScreenRunID: run.ID,
+			Ordinal:     i,
+			Symbol:      extractSymbol(row),
+			PayloadJSON: row,
+		})
+	}
+	return s.repo.CreateScreenRun(ctx, run, items)
+}
+
+func (s Service) recordSucceededPipelineRun(ctx context.Context, detail StrategyDetail, alias string, started time.Time, result PipelineExecutionResult) (ScreenRunDetail, error) {
+	errb := oops.In("strategy_service").With("strategy_id", detail.Strategy.ID, "alias", alias)
+	resultJSON, err := json.Marshal(result.Rows)
+	if err != nil {
+		return ScreenRunDetail{}, errb.Wrapf(err, "encode pipeline result rows")
+	}
+	summaryJSON, err := summarizeRows(result.Rows)
+	if err != nil {
+		return ScreenRunDetail{}, err
+	}
+	runID, err := idgen.NewUUIDV7()
+	if err != nil {
+		return ScreenRunDetail{}, errb.Wrapf(err, "generate screen run id")
+	}
+	finished := s.now()
+	schemaVersion := result.InputSchemaVersion
+	if schemaVersion == 0 {
+		schemaVersion = detail.ActiveVersion.InputSchemaVersion
+	}
+	run := screenRunFromStrategy(runID, alias, detail, schemaVersion, started, &finished)
+	run.InputDataset = withDefault(result.InputDataset, detail.ActiveVersion.InputDataset)
+	run.DataFrom = result.DataFrom
+	run.DataTo = result.DataTo
+	run.DataAsOf = result.DataAsOf
+	run.Status = ScreenRunSucceeded
+	run.ResultCount = len(result.Rows)
+	run.ResultHash = hashutil.SHA256(resultJSON)
+	run.ResultSizeBytes = int64(len(resultJSON))
+	run.SummaryJSON = summaryJSON
+
+	items := make([]ScreenRunItem, 0, len(result.Rows))
+	for i, row := range result.Rows {
 		itemID, err := idgen.NewUUIDV7()
 		if err != nil {
 			return ScreenRunDetail{}, errb.With("ordinal", i).Wrapf(err, "generate screen run item id")
@@ -434,6 +663,104 @@ func validateStrategySource(name string, engine Engine, inputDataset string, que
 		return errb.New("strategy jq query is required")
 	}
 	return nil
+}
+
+func validateScreenStrategySpec(spec ScreenStrategySpec) error {
+	errb := oops.In("strategy_service").With("name", spec.Name, "engine", spec.Engine)
+	if strings.TrimSpace(spec.Name) == "" {
+		return errb.New("strategy name is required")
+	}
+	if spec.SchemaVersion != defaultInputSchemaVersion {
+		return errb.With("schema_version", spec.SchemaVersion).New("unsupported screen strategy schema version")
+	}
+	switch spec.Engine {
+	case EngineJQ:
+		if spec.JQ == nil {
+			return errb.New("jq screen strategy requires jq spec")
+		}
+		return validateStrategySource(spec.Name, spec.Engine, spec.JQ.InputDataset, spec.JQ.QueryText)
+	case EngineYAMLPipeline:
+		if spec.Pipeline == nil {
+			return errb.New("yaml pipeline screen strategy requires pipeline spec")
+		}
+		if strings.TrimSpace(spec.Pipeline.Data.Market) == "" {
+			return errb.New("screen strategy data market is required")
+		}
+		if strings.TrimSpace(spec.Pipeline.Data.SecurityType) == "" {
+			return errb.New("screen strategy data security type is required")
+		}
+		if strings.TrimSpace(spec.Pipeline.Data.AsOf) == "" && strings.TrimSpace(spec.Pipeline.Data.To) == "" {
+			return errb.New("screen strategy data as_of is required")
+		}
+		if len(spec.Pipeline.Pipeline) == 0 {
+			return errb.New("screen strategy pipeline requires at least one selector")
+		}
+		return nil
+	default:
+		return errb.Errorf("unsupported strategy engine: %s", spec.Engine)
+	}
+}
+
+func JQScreenStrategySpec(name string, inputDataset string, queryText string, params json.RawMessage) ScreenStrategySpec {
+	return ScreenStrategySpec{
+		Kind:          "ScreenStrategy",
+		SchemaVersion: defaultInputSchemaVersion,
+		Name:          name,
+		Engine:        EngineJQ,
+		JQ: &JQStrategySpec{
+			InputDataset: inputDataset,
+			QueryText:    queryText,
+			Params:       normalizeJSON(params),
+		},
+	}
+}
+
+func strategyVersionFromSpec(id string, strategyID string, versionNumber int, spec ScreenStrategySpec, specJSON json.RawMessage, specHash string, createdAt time.Time) StrategyVersion {
+	version := StrategyVersion{
+		ID:                 id,
+		StrategyID:         strategyID,
+		Version:            versionNumber,
+		QueryHash:          specHash,
+		InputDataset:       "screen_pipeline",
+		InputSchemaVersion: spec.SchemaVersion,
+		ParamsJSON:         json.RawMessage(`{}`),
+		SpecJSON:           specJSON,
+		SpecHash:           specHash,
+		CreatedAt:          createdAt,
+	}
+	if spec.Engine == EngineJQ && spec.JQ != nil {
+		version.QueryText = spec.JQ.QueryText
+		version.QueryHash = hashutil.SHA256([]byte(spec.JQ.QueryText))
+		version.InputDataset = spec.JQ.InputDataset
+		version.ParamsJSON = normalizeJSON(spec.JQ.Params)
+	}
+	return version
+}
+
+func canonicalStrategySpecPayload(spec ScreenStrategySpec) (json.RawMessage, string, error) {
+	data, err := json.Marshal(spec)
+	if err != nil {
+		return nil, "", oops.In("strategy_service").With("name", spec.Name).Wrapf(err, "encode canonical screen strategy spec")
+	}
+	return data, hashutil.SHA256(data), nil
+}
+
+func screenStrategySpecFromVersion(detail StrategyDetail) (ScreenStrategySpec, error) {
+	if len(bytes.TrimSpace(detail.ActiveVersion.SpecJSON)) > 0 && string(bytes.TrimSpace(detail.ActiveVersion.SpecJSON)) != "{}" {
+		var spec ScreenStrategySpec
+		if err := json.Unmarshal(detail.ActiveVersion.SpecJSON, &spec); err != nil {
+			return ScreenStrategySpec{}, oops.In("strategy_service").With("name", detail.Strategy.Name).Wrapf(err, "decode canonical screen strategy spec")
+		}
+		return spec, nil
+	}
+	return JQScreenStrategySpec(detail.Strategy.Name, detail.ActiveVersion.InputDataset, detail.ActiveVersion.QueryText, detail.ActiveVersion.ParamsJSON), nil
+}
+
+func withDefault(value string, fallback string) string {
+	if strings.TrimSpace(value) == "" {
+		return fallback
+	}
+	return value
 }
 
 func normalizeJSON(raw json.RawMessage) json.RawMessage {

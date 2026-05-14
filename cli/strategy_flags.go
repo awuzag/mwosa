@@ -9,12 +9,15 @@ import (
 )
 
 type strategySourceFlags struct {
-	Engine  string
-	Input   string
-	JQ      string
-	JQFile  string
-	Alias   string
-	History int
+	Engine   string
+	Input    string
+	JQ       string
+	JQFile   string
+	File     string
+	Version  string
+	SpecHash string
+	Alias    string
+	History  int
 }
 
 func addStrategySourceFlags(cmd *cobra.Command, flags *strategySourceFlags, includeEngine bool) {

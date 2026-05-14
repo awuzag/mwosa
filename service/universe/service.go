@@ -149,6 +149,37 @@ func (r Runner) InspectScreenPipeline(ctx context.Context, path string) (ScreenP
 	}, nil
 }
 
+func (r Runner) ExecuteScreenStrategyPipeline(ctx context.Context, spec strategyservice.ScreenStrategySpec) (strategyservice.PipelineExecutionResult, error) {
+	if spec.Engine != strategyservice.EngineYAMLPipeline || spec.Pipeline == nil {
+		return strategyservice.PipelineExecutionResult{}, oops.In("universe_service").With("name", spec.Name, "engine", spec.Engine).New("screen strategy must use yaml_pipeline engine")
+	}
+	plan, req, err := compileScreenStrategy(spec)
+	if err != nil {
+		return strategyservice.PipelineExecutionResult{}, err
+	}
+	explain, err := r.Explain(ctx, req, plan)
+	if err != nil {
+		return strategyservice.PipelineExecutionResult{}, err
+	}
+	candidates := []core.Candidate(nil)
+	if len(explain.Snapshots) > 0 {
+		candidates = append([]core.Candidate(nil), explain.Snapshots[len(explain.Snapshots)-1].Candidates...)
+	}
+	rows, err := candidatesToRawMessages(candidates)
+	if err != nil {
+		return strategyservice.PipelineExecutionResult{}, err
+	}
+	data := spec.Pipeline.Data
+	return strategyservice.PipelineExecutionResult{
+		InputDataset:       "screen_pipeline",
+		InputSchemaVersion: spec.SchemaVersion,
+		DataFrom:           data.From,
+		DataTo:             data.To,
+		DataAsOf:           data.AsOf,
+		Rows:               rows,
+	}, nil
+}
+
 func LoadScreenRunFile(ctx context.Context, path string) (ScreenRunSpec, error) {
 	if err := ctx.Err(); err != nil {
 		return ScreenRunSpec{}, oops.In("universe_yaml").With("path", path).Wrap(err)
@@ -203,6 +234,56 @@ func compileScreenRun(spec ScreenRunSpec, path string) (core.Plan, ContextReques
 		Pipeline:      spec.Pipeline,
 		SecurityTypes: []string{spec.Data.SecurityType},
 	}, nil
+}
+
+func compileScreenStrategy(spec strategyservice.ScreenStrategySpec) (core.Plan, ContextRequest, error) {
+	errb := oops.In("screen_strategy").With("name", spec.Name)
+	if spec.SchemaVersion != 1 {
+		return core.Plan{}, ContextRequest{}, errb.With("schema_version", spec.SchemaVersion).New("unsupported screen strategy schema version")
+	}
+	if spec.Pipeline == nil {
+		return core.Plan{}, ContextRequest{}, errb.New("screen strategy pipeline is required")
+	}
+	data := spec.Pipeline.Data
+	if strings.TrimSpace(data.Market) == "" {
+		return core.Plan{}, ContextRequest{}, errb.New("screen strategy data market is required")
+	}
+	if strings.TrimSpace(data.SecurityType) == "" {
+		return core.Plan{}, ContextRequest{}, errb.New("screen strategy data security type is required")
+	}
+	from, to, asOf, err := screenStrategyDates(data)
+	if err != nil {
+		return core.Plan{}, ContextRequest{}, errb.Wrap(err)
+	}
+	pipelineSpec := core.PipelineSpec{
+		Schedule: core.ScheduleSpec{Frequency: core.ScheduleOnce},
+		Pipeline: spec.Pipeline.Pipeline,
+	}
+	plan, err := core.Compile(pipelineSpec, core.DataWindow{
+		Market: data.Market,
+		From:   asOf,
+		To:     asOf,
+	}, core.DefaultSelectorRegistry())
+	if err != nil {
+		return core.Plan{}, ContextRequest{}, errb.Wrap(err)
+	}
+	return plan, ContextRequest{
+		Market:        data.Market,
+		From:          from,
+		To:            to,
+		Pipeline:      spec.Pipeline.Pipeline,
+		SecurityTypes: []string{data.SecurityType},
+	}, nil
+}
+
+func screenStrategyDates(data strategyservice.ScreenPipelineDataSpec) (time.Time, time.Time, time.Time, error) {
+	return screenRunDates(ScreenDataSpec{
+		Market:       data.Market,
+		SecurityType: data.SecurityType,
+		AsOf:         data.AsOf,
+		From:         data.From,
+		To:           data.To,
+	})
 }
 
 func screenRunDates(data ScreenDataSpec) (time.Time, time.Time, time.Time, error) {
@@ -402,15 +483,21 @@ func (r Runner) loadExternalSources(ctx context.Context, yamlPath string, pipeli
 			if name == "" {
 				return oops.In("universe_service").New("source.screen_strategy requires name")
 			}
-			if _, ok := execCtx.ScreenStrategies[name]; !ok {
+			key := screenStrategySourceKey(step.Params)
+			if _, ok := execCtx.ScreenStrategies[key]; !ok {
 				if r.screenRunner == nil {
 					return oops.In("universe_service").With("name", name).New("screen runner is nil")
 				}
-				detail, err := r.screenRunner.Screen(ctx, strategyservice.ScreenStrategyRequest{Name: name, Alias: stringParam(step.Params, "alias", "")})
+				detail, err := r.screenRunner.Screen(ctx, strategyservice.ScreenStrategyRequest{
+					Name:     name,
+					Alias:    stringParam(step.Params, "alias", ""),
+					Version:  stringParam(step.Params, "version", ""),
+					SpecHash: stringParam(step.Params, "spec_hash", ""),
+				})
 				if err != nil {
 					return oops.In("universe_service").With("name", name).Wrapf(err, "run screen strategy")
 				}
-				execCtx.ScreenStrategies[name] = screenRunItemsToCandidates(detail.Items)
+				execCtx.ScreenStrategies[key] = screenRunItemsToCandidates(detail.Items)
 			}
 		case "source.file":
 			path := stringParam(step.Params, "path", "")
@@ -452,6 +539,39 @@ func screenRunItemsToCandidates(items []strategyservice.ScreenRunItem) []core.Ca
 		out = append(out, core.Candidate{Symbol: symbol, Fields: fields})
 	}
 	return out
+}
+
+func screenStrategySourceKey(params map[string]any) string {
+	name := stringParam(params, "name", "")
+	if specHash := stringParam(params, "spec_hash", ""); specHash != "" {
+		return name + "@hash:" + specHash
+	}
+	if version := stringParam(params, "version", ""); version != "" {
+		return name + "@version:" + version
+	}
+	return name
+}
+
+func candidatesToRawMessages(candidates []core.Candidate) ([]json.RawMessage, error) {
+	rows := make([]json.RawMessage, 0, len(candidates))
+	for _, candidate := range candidates {
+		payload := make(map[string]any, len(candidate.Fields)+2)
+		for key, value := range candidate.Fields {
+			payload[key] = value
+		}
+		if candidate.Symbol != "" {
+			payload["symbol"] = candidate.Symbol
+		}
+		if len(candidate.Tags) > 0 {
+			payload["tags"] = append([]string(nil), candidate.Tags...)
+		}
+		data, err := json.Marshal(payload)
+		if err != nil {
+			return nil, oops.In("universe_service").With("symbol", candidate.Symbol).Wrapf(err, "encode screen strategy candidate")
+		}
+		rows = append(rows, data)
+	}
+	return rows, nil
 }
 
 func ReadCandidateFile(path string) ([]core.Candidate, error) {
@@ -630,10 +750,22 @@ func stringParam(params map[string]any, key string, fallback string) string {
 		return fallback
 	}
 	text, ok := value.(string)
-	if !ok {
+	if ok {
+		return text
+	}
+	switch typed := value.(type) {
+	case int:
+		return strconv.Itoa(typed)
+	case int64:
+		return strconv.FormatInt(typed, 10)
+	case float64:
+		if typed == float64(int(typed)) {
+			return strconv.Itoa(int(typed))
+		}
+		return strconv.FormatFloat(typed, 'f', -1, 64)
+	default:
 		return fallback
 	}
-	return text
 }
 
 func stringSliceParam(params map[string]any, key string) []string {

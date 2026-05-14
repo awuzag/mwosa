@@ -18,6 +18,7 @@ type strategySummary struct {
 	InputDataset string `json:"input_dataset" csv:"input_dataset"`
 	Version      int    `json:"version" csv:"version"`
 	QueryHash    string `json:"query_hash" csv:"query_hash"`
+	SpecHash     string `json:"spec_hash" csv:"spec_hash"`
 }
 
 type StrategyDetailOutput struct {
@@ -38,12 +39,13 @@ func (o StrategyDetailOutput) CSVRows() any {
 
 func (o StrategyDetailOutput) TableRows() ([]string, [][]string) {
 	detail := o.Detail
-	return []string{"name", "engine", "input", "version", "query_hash"}, [][]string{{
+	return []string{"name", "engine", "input", "version", "query_hash", "spec_hash"}, [][]string{{
 		detail.Strategy.Name,
 		string(detail.Strategy.Engine),
 		detail.ActiveVersion.InputDataset,
 		fmt.Sprint(detail.ActiveVersion.Version),
 		detail.ActiveVersion.QueryHash,
+		detail.ActiveVersion.SpecHash,
 	}}
 }
 
@@ -74,9 +76,10 @@ func (o StrategyListOutput) TableRows() ([]string, [][]string) {
 			detail.ActiveVersion.InputDataset,
 			fmt.Sprint(detail.ActiveVersion.Version),
 			detail.ActiveVersion.QueryHash,
+			detail.ActiveVersion.SpecHash,
 		})
 	}
-	return []string{"name", "engine", "input", "version", "query_hash"}, rows
+	return []string{"name", "engine", "input", "version", "query_hash", "spec_hash"}, rows
 }
 
 func strategySummaryFromDetail(detail strategyservice.StrategyDetail) strategySummary {
@@ -86,6 +89,7 @@ func strategySummaryFromDetail(detail strategyservice.StrategyDetail) strategySu
 		InputDataset: detail.ActiveVersion.InputDataset,
 		Version:      detail.ActiveVersion.Version,
 		QueryHash:    detail.ActiveVersion.QueryHash,
+		SpecHash:     detail.ActiveVersion.SpecHash,
 	}
 }
 

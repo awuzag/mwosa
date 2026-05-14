@@ -10,6 +10,7 @@ func registerStrategyCommands(roots commandRoots, opts *Options) {
 	roots.Create.AddCommand(newCreateStrategyCommand(opts))
 	roots.List.AddCommand(newListStrategiesCommand(opts))
 	roots.Update.AddCommand(newUpdateStrategyCommand(opts))
+	roots.Update.AddCommand(newUpdateScreenCommand(opts))
 	roots.Delete.AddCommand(newDeleteStrategyCommand(opts))
 	roots.Screen.AddCommand(newScreenETFCommand(opts))
 	roots.Screen.AddCommand(newScreenStrategyCommand(opts))
@@ -93,6 +94,39 @@ func newUpdateStrategyCommand(opts *Options) *cobra.Command {
 	return cmd
 }
 
+func newUpdateScreenCommand(opts *Options) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "screen",
+		Short: "Update saved screen resources",
+	}
+	cmd.AddCommand(newUpdateScreenStrategyCommand(opts))
+	return cmd
+}
+
+func newUpdateScreenStrategyCommand(opts *Options) *cobra.Command {
+	flags := strategySourceFlags{}
+	cmd := &cobra.Command{
+		Use:   "strategy <name>",
+		Short: "Create or update a saved screen strategy from YAML",
+		Args:  cobra.ExactArgs(1),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			runtime, err := newAppRuntime(opts, false)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Strategy.UpsertScreenStrategy(cmd.Context(), handler.UpsertScreenStrategyRequest{
+				Name: args[0],
+				Path: flags.File,
+			})
+		}),
+	}
+	cmd.Flags().StringVar(&flags.File, "file", flags.File, "path to a ScreenStrategy or ScreenRun YAML file")
+	mustMarkFlagFilename(cmd, "file", "yaml", "yml")
+	return cmd
+}
+
 func newDeleteStrategyCommand(opts *Options) *cobra.Command {
 	return &cobra.Command{
 		Use:   "strategy <name>",
@@ -153,12 +187,16 @@ func newScreenStrategyCommand(opts *Options) *cobra.Command {
 			defer closeAppRuntime(runtime, &err)
 
 			return runtime.Handlers.Strategy.Screen(cmd.Context(), handler.ScreenStrategyRequest{
-				Name:  args[0],
-				Alias: flags.Alias,
+				Name:     args[0],
+				Alias:    flags.Alias,
+				Version:  flags.Version,
+				SpecHash: flags.SpecHash,
 			})
 		}),
 	}
 	cmd.Flags().StringVar(&flags.Alias, "alias", flags.Alias, "optional screen run alias")
+	cmd.Flags().StringVar(&flags.Version, "version", flags.Version, "strategy version number or latest")
+	cmd.Flags().StringVar(&flags.SpecHash, "spec-hash", flags.SpecHash, "strategy spec hash to run")
 	return cmd
 }
 

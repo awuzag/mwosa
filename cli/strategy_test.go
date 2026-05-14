@@ -236,6 +236,82 @@ pipeline:
 	}
 }
 
+func TestUpdateScreenStrategyStoresYAMLPipelineAndScreensByName(t *testing.T) {
+	ctx := context.Background()
+	databasePath := filepath.Join(t.TempDir(), "mwosa.db")
+	seedStrategyDailyBars(t, ctx, databasePath)
+
+	yamlPath := filepath.Join(t.TempDir(), "screen-strategy.yaml")
+	if err := os.WriteFile(yamlPath, []byte(`kind: ScreenStrategy
+schema_version: 1
+name: etf-uptrend
+engine: yaml_pipeline
+data:
+  market: krx
+  security_type: etf
+  as_of: "2024-04-16"
+pipeline:
+  - id: source.daily_bars
+  - id: transform.latest_per_symbol
+  - id: filter.include_symbols
+    params:
+      symbols: ["069500"]
+`), 0o644); err != nil {
+		t.Fatalf("write screen strategy yaml: %v", err)
+	}
+
+	var updateOut bytes.Buffer
+	updateCmd := NewRootCommand(BuildInfo{})
+	updateCmd.SetOut(&updateOut)
+	updateCmd.SetErr(&updateOut)
+	if err := executeForTest(t, ctx, updateCmd,
+		"--database", databasePath,
+		"--output", "json",
+		"update", "screen", "strategy", "etf-uptrend",
+		"--file", yamlPath,
+	); err != nil {
+		t.Fatalf("update screen strategy: %v\n%s", err, updateOut.String())
+	}
+	for _, want := range []string{`"engine": "yaml_pipeline"`, `"spec_hash": "sha256:`, `"input_dataset": "screen_pipeline"`} {
+		if !strings.Contains(updateOut.String(), want) {
+			t.Fatalf("update screen strategy output missing %q in:\n%s", want, updateOut.String())
+		}
+	}
+
+	var screenOut bytes.Buffer
+	screenCmd := NewRootCommand(BuildInfo{})
+	screenCmd.SetOut(&screenOut)
+	screenCmd.SetErr(&screenOut)
+	if err := executeForTest(t, ctx, screenCmd,
+		"--database", databasePath,
+		"--output", "json",
+		"screen", "strategy", "etf-uptrend",
+		"--alias", "yaml-uptrend",
+	); err != nil {
+		t.Fatalf("screen yaml strategy: %v\n%s", err, screenOut.String())
+	}
+	for _, want := range []string{`"alias": "yaml-uptrend"`, `"result_count": 1`, `"symbol": "069500"`, `"data_as_of": "2024-04-16"`} {
+		if !strings.Contains(screenOut.String(), want) {
+			t.Fatalf("screen yaml strategy output missing %q in:\n%s", want, screenOut.String())
+		}
+	}
+
+	var inspectOut bytes.Buffer
+	inspectCmd := NewRootCommand(BuildInfo{})
+	inspectCmd.SetOut(&inspectOut)
+	inspectCmd.SetErr(&inspectOut)
+	if err := executeForTest(t, ctx, inspectCmd,
+		"--database", databasePath,
+		"--output", "json",
+		"inspect", "screen", "yaml-uptrend",
+	); err != nil {
+		t.Fatalf("inspect yaml screen: %v\n%s", err, inspectOut.String())
+	}
+	if !strings.Contains(inspectOut.String(), `"payload"`) || !strings.Contains(inspectOut.String(), `"069500"`) {
+		t.Fatalf("inspect yaml screen should include stored row payload:\n%s", inspectOut.String())
+	}
+}
+
 func seedStrategyDailyBars(t *testing.T, ctx context.Context, databasePath string) {
 	t.Helper()
 	database := storage.NewDatabase(databasePath)

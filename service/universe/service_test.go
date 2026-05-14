@@ -11,6 +11,7 @@ import (
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
 	"github.com/ev3rlit/mwosa/service/daily"
+	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )
@@ -48,6 +49,37 @@ pipeline:
 	assert.Equal(t, "source.daily_bars", result.Explain.Steps[0].ID)
 	require.Len(t, result.Candidates, 1)
 	assert.Equal(t, "069500", result.Candidates[0].Symbol)
+}
+
+func TestRunnerExecutesStoredScreenStrategyPipeline(t *testing.T) {
+	ctx := context.Background()
+	runner, err := NewRunner(fakeDailyBarRepository{rows: []dailybar.Bar{
+		screenDailyBar("069500", "2024-04-15", "35120"),
+		screenDailyBar("123456", "2024-04-15", "1000"),
+	}}, nil, nil)
+	require.NoError(t, err)
+
+	result, err := runner.ExecuteScreenStrategyPipeline(ctx, strategyservice.ScreenStrategySpec{
+		Kind:          strategyservice.KindScreenStrategy,
+		SchemaVersion: 1,
+		Name:          "etf-uptrend",
+		Engine:        strategyservice.EngineYAMLPipeline,
+		Pipeline: &strategyservice.ScreenPipelineStrategySpec{
+			Data: strategyservice.ScreenPipelineDataSpec{Market: "krx", SecurityType: "etf", AsOf: "2024-04-16"},
+			Pipeline: []core.StepSpec{
+				{ID: "source.daily_bars"},
+				{ID: "transform.latest_per_symbol"},
+				{ID: "filter.include_symbols", Params: map[string]any{"symbols": []any{"069500"}}},
+			},
+		},
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, "screen_pipeline", result.InputDataset)
+	assert.Equal(t, "2024-04-16", result.DataAsOf)
+	require.Len(t, result.Rows, 1)
+	assert.Contains(t, string(result.Rows[0]), `"symbol":"069500"`)
+	assert.Contains(t, string(result.Rows[0]), `"security_type":"etf"`)
 }
 
 func TestRunnerDailyBarsSourceCanLoadMixedSecurityTypesAndFilter(t *testing.T) {
