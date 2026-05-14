@@ -25,7 +25,17 @@ type RunBacktestRequest struct {
 	Path string
 }
 
+type ValidateEvaluationRequest struct {
+	Path string
+}
+
+type RunEvaluationRequest struct {
+	Path string
+}
+
 type ListBacktestStrategiesRequest struct{}
+
+type ListEvaluationsRequest struct{}
 
 type InspectBacktestStrategyRequest struct {
 	Name string
@@ -33,6 +43,19 @@ type InspectBacktestStrategyRequest struct {
 
 type InspectBacktestUniverseRequest struct {
 	Path string
+}
+
+type InspectEvaluationRequest struct {
+	Ref string
+}
+
+type CompareEvaluationRequest struct {
+	Ref string
+}
+
+type RankEvaluationRequest struct {
+	Ref       string
+	Objective string
 }
 
 type UpdateBacktestStrategyRequest struct {
@@ -60,6 +83,22 @@ func (h Backtest) Run(ctx context.Context, req RunBacktestRequest) (BacktestRunO
 	return BacktestRunOutput{Result: result}, nil
 }
 
+func (h Backtest) ValidateEvaluation(ctx context.Context, req ValidateEvaluationRequest) (EvaluationValidationOutput, error) {
+	result, err := h.service.ValidateEvaluation(ctx, req.Path)
+	if err != nil {
+		return EvaluationValidationOutput{}, err
+	}
+	return EvaluationValidationOutput{Result: result}, nil
+}
+
+func (h Backtest) RunEvaluation(ctx context.Context, req RunEvaluationRequest) (EvaluationRunOutput, error) {
+	result, err := h.service.RunEvaluation(ctx, req.Path)
+	if err != nil {
+		return EvaluationRunOutput{}, err
+	}
+	return EvaluationRunOutput{Result: result}, nil
+}
+
 func (h Backtest) ListStrategies(ctx context.Context, _ ListBacktestStrategiesRequest) (BacktestStrategyListOutput, error) {
 	details, err := h.service.ListStrategies(ctx)
 	if err != nil {
@@ -70,6 +109,14 @@ func (h Backtest) ListStrategies(ctx context.Context, _ ListBacktestStrategiesRe
 		out = append(out, BacktestStrategyOutput{Detail: detail})
 	}
 	return out, nil
+}
+
+func (h Backtest) ListEvaluations(ctx context.Context, _ ListEvaluationsRequest) (EvaluationListOutput, error) {
+	result, err := h.service.ListEvaluations(ctx)
+	if err != nil {
+		return nil, err
+	}
+	return EvaluationListOutput(result), nil
 }
 
 func (h Backtest) InspectStrategy(ctx context.Context, req InspectBacktestStrategyRequest) (BacktestStrategyOutput, error) {
@@ -86,6 +133,30 @@ func (h Backtest) InspectUniverse(ctx context.Context, req InspectBacktestUniver
 		return BacktestUniverseOutput{}, err
 	}
 	return BacktestUniverseOutput{Explain: explain}, nil
+}
+
+func (h Backtest) InspectEvaluation(ctx context.Context, req InspectEvaluationRequest) (EvaluationDetailOutput, error) {
+	detail, err := h.service.InspectEvaluation(ctx, req.Ref)
+	if err != nil {
+		return EvaluationDetailOutput{}, err
+	}
+	return EvaluationDetailOutput{Detail: detail}, nil
+}
+
+func (h Backtest) CompareEvaluation(ctx context.Context, req CompareEvaluationRequest) (EvaluationDetailOutput, error) {
+	detail, err := h.service.CompareEvaluation(ctx, req.Ref)
+	if err != nil {
+		return EvaluationDetailOutput{}, err
+	}
+	return EvaluationDetailOutput{Detail: detail}, nil
+}
+
+func (h Backtest) RankEvaluation(ctx context.Context, req RankEvaluationRequest) (EvaluationRankOutput, error) {
+	cases, err := h.service.RankEvaluation(ctx, req.Ref, req.Objective)
+	if err != nil {
+		return nil, err
+	}
+	return EvaluationRankOutput(cases), nil
 }
 
 func (h Backtest) UpdateStrategy(ctx context.Context, req UpdateBacktestStrategyRequest) (BacktestStrategyOutput, error) {
@@ -105,6 +176,35 @@ func (h Backtest) DeleteStrategy(ctx context.Context, req DeleteBacktestStrategy
 
 type BacktestValidationOutput struct {
 	Result backtestservice.ValidationResult
+}
+
+type EvaluationValidationOutput struct {
+	Result backtestservice.EvaluationValidationResult
+}
+
+func (o EvaluationValidationOutput) JSONValue() any {
+	return o.Result
+}
+
+func (o EvaluationValidationOutput) NDJSONRows() any {
+	return o.Result
+}
+
+func (o EvaluationValidationOutput) CSVRows() any {
+	return []backtestservice.EvaluationValidationResult{o.Result}
+}
+
+func (o EvaluationValidationOutput) TableRows() ([]string, [][]string) {
+	result := o.Result
+	return []string{"valid", "evaluation", "strategy", "base_run", "cases", "walk_forward", "metrics"}, [][]string{{
+		fmt.Sprint(result.Valid),
+		result.Name,
+		result.StrategyName,
+		result.BaseRunName,
+		fmt.Sprint(result.CaseCount),
+		fmt.Sprint(result.WalkForwardSteps),
+		fmt.Sprint(len(result.Metrics)),
+	}}
 }
 
 func (o BacktestValidationOutput) JSONValue() any {
@@ -234,6 +334,174 @@ func (o BacktestRunOutput) TableRows() ([]string, [][]string) {
 	header = append(header, "hash")
 	row = append(row, result.ResultHash)
 	return header, [][]string{row}
+}
+
+type EvaluationRunOutput struct {
+	Result backtestservice.EvaluationRunResult
+}
+
+func (o EvaluationRunOutput) JSONValue() any {
+	return o.Result
+}
+
+func (o EvaluationRunOutput) NDJSONRows() any {
+	return o.Result.Cases
+}
+
+func (o EvaluationRunOutput) CSVRows() any {
+	return evaluationCaseRows(o.Result.Cases)
+}
+
+func (o EvaluationRunOutput) TableRows() ([]string, [][]string) {
+	rows := make([][]string, 0, len(o.Result.Ranking))
+	for _, item := range o.Result.Ranking {
+		rows = append(rows, evaluationCaseTableRow(item))
+	}
+	return evaluationCaseTableHeader(), rows
+}
+
+type EvaluationListOutput []backtestservice.SavedEvaluationSummary
+
+func (o EvaluationListOutput) JSONValue() any {
+	return []backtestservice.SavedEvaluationSummary(o)
+}
+
+func (o EvaluationListOutput) NDJSONRows() any {
+	return o.JSONValue()
+}
+
+func (o EvaluationListOutput) CSVRows() any {
+	return o.JSONValue()
+}
+
+func (o EvaluationListOutput) TableRows() ([]string, [][]string) {
+	rows := make([][]string, 0, len(o))
+	for _, item := range o {
+		best := ""
+		if item.BestCase != nil {
+			best = item.BestCase.CaseID
+		}
+		rows = append(rows, []string{
+			item.Experiment.ID,
+			item.Experiment.Name,
+			item.Experiment.StrategyName,
+			fmt.Sprint(item.CaseCount),
+			best,
+			item.Experiment.CreatedAt.UTC().Format(time.RFC3339),
+		})
+	}
+	return []string{"id", "name", "strategy", "cases", "best_case", "created_at"}, rows
+}
+
+type EvaluationDetailOutput struct {
+	Detail backtestservice.SavedEvaluationDetail
+}
+
+func (o EvaluationDetailOutput) JSONValue() any {
+	return o.Detail
+}
+
+func (o EvaluationDetailOutput) NDJSONRows() any {
+	return o.Detail.Cases
+}
+
+func (o EvaluationDetailOutput) CSVRows() any {
+	return o.Detail.Cases
+}
+
+func (o EvaluationDetailOutput) TableRows() ([]string, [][]string) {
+	rows := make([][]string, 0, len(o.Detail.Cases))
+	for _, item := range o.Detail.Cases {
+		rows = append(rows, []string{
+			item.CaseID,
+			item.PeriodFrom,
+			item.PeriodTo,
+			item.Status,
+			fmt.Sprint(item.Rank),
+			item.Objective,
+			fmt.Sprintf("%.6f", item.ObjectiveValue),
+			item.ResultHash,
+		})
+	}
+	return []string{"case", "from", "to", "status", "rank", "objective", "value", "hash"}, rows
+}
+
+type EvaluationRankOutput []backtestservice.SavedExperimentCase
+
+func (o EvaluationRankOutput) JSONValue() any {
+	return []backtestservice.SavedExperimentCase(o)
+}
+
+func (o EvaluationRankOutput) NDJSONRows() any {
+	return o.JSONValue()
+}
+
+func (o EvaluationRankOutput) CSVRows() any {
+	return o.JSONValue()
+}
+
+func (o EvaluationRankOutput) TableRows() ([]string, [][]string) {
+	rows := make([][]string, 0, len(o))
+	for _, item := range o {
+		rows = append(rows, []string{
+			fmt.Sprint(item.Rank),
+			item.CaseID,
+			item.PeriodFrom,
+			item.PeriodTo,
+			item.Status,
+			item.Objective,
+			fmt.Sprintf("%.6f", item.ObjectiveValue),
+			item.ResultHash,
+		})
+	}
+	return []string{"rank", "case", "from", "to", "status", "objective", "value", "hash"}, rows
+}
+
+type evaluationCaseRow struct {
+	CaseID            string  `json:"case_id" csv:"case_id"`
+	CaseName          string  `json:"case_name" csv:"case_name"`
+	From              string  `json:"from" csv:"from"`
+	To                string  `json:"to" csv:"to"`
+	PassedConstraints bool    `json:"passed_constraints" csv:"passed_constraints"`
+	Rank              int     `json:"rank" csv:"rank"`
+	Objective         string  `json:"objective" csv:"objective"`
+	ObjectiveValue    float64 `json:"objective_value" csv:"objective_value"`
+	ResultHash        string  `json:"result_hash" csv:"result_hash"`
+}
+
+func evaluationCaseRows(cases []core.EvaluationCaseResult) []evaluationCaseRow {
+	rows := make([]evaluationCaseRow, 0, len(cases))
+	for _, item := range cases {
+		rows = append(rows, evaluationCaseRow{
+			CaseID:            item.CaseID,
+			CaseName:          item.CaseName,
+			From:              item.Period.From.Format(time.DateOnly),
+			To:                item.Period.To.Format(time.DateOnly),
+			PassedConstraints: item.PassedConstraints,
+			Rank:              item.Rank,
+			Objective:         item.Objective,
+			ObjectiveValue:    item.ObjectiveValue,
+			ResultHash:        item.Result.ResultHash,
+		})
+	}
+	return rows
+}
+
+func evaluationCaseTableHeader() []string {
+	return []string{"rank", "case", "from", "to", "pass", "objective", "value", "hash"}
+}
+
+func evaluationCaseTableRow(item core.EvaluationCaseResult) []string {
+	return []string{
+		fmt.Sprint(item.Rank),
+		item.CaseID,
+		item.Period.From.Format(time.DateOnly),
+		item.Period.To.Format(time.DateOnly),
+		fmt.Sprint(item.PassedConstraints),
+		item.Objective,
+		fmt.Sprintf("%.6f", item.ObjectiveValue),
+		item.Result.ResultHash,
+	}
 }
 
 type BacktestStrategyOutput struct {

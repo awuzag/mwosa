@@ -11,6 +11,8 @@ type commandRoots struct {
 	Screen   *cobra.Command
 	History  *cobra.Command
 	Run      *cobra.Command
+	Compare  *cobra.Command
+	Rank     *cobra.Command
 	Migrate  *cobra.Command
 	Get      *cobra.Command
 	Ensure   *cobra.Command
@@ -78,6 +80,20 @@ func newRunCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "run",
 		Short: "Run mwosa workflows",
+	}
+}
+
+func newCompareCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "compare",
+		Short: "Compare mwosa resources",
+	}
+}
+
+func newRankCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "rank",
+		Short: "Rank mwosa resources",
 	}
 }
 

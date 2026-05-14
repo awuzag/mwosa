@@ -31,6 +31,10 @@ drawdown 같은 시간 순서 기반 검증은 다루지 않는다. 백테스터
 - 수수료, 슬리피지, 주문 체결 시점 같은 실행 가정
 - 결과 metric 과 실행 재현 정보
 - YAML spec 을 검증 가능한 실행 계획으로 compile 하는 단계
+- 여러 기간과 파라미터 조합을 반복 검증하는 `Evaluation` 실행 단위
+
+반복 검증과 walk-forward 흐름은
+[`evaluation/README.md`](evaluation/README.md) 에서 별도로 관리한다.
 
 ## 후보 라이브러리 구조 분석
 

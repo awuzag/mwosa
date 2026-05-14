@@ -1,0 +1,87 @@
+kind: Strategy
+schema_version: 1
+name: sma-cross-walk-forward
+indicators:
+  trend:
+    id: sma
+    source:
+      price: close
+    params:
+      window: 60
+entry:
+  crosses_above:
+    - price: close
+    - ref: trend
+exit:
+  crosses_below:
+    - price: close
+    - ref: trend
+sizing:
+  type: percent_of_equity
+  value: 40
+risk:
+  max_positions: 5
+  max_symbol_weight_pct: 35
+---
+kind: BacktestRun
+schema_version: 1
+name: sma-cross-wf-krx
+strategy:
+  name: sma-cross-walk-forward
+data:
+  market: krx
+  timeframe: 1d
+  from: 2020-01-02
+  to: 2025-12-31
+universe:
+  pipeline:
+    - id: source.symbols
+      params:
+        symbols: ["069500"]
+        fields:
+          market: krx
+          security_type: etf
+portfolio:
+  initial_cash: 10000000
+  currency: KRW
+execution:
+  fill: next_open
+  commission:
+    type: bps
+    value: 1.5
+---
+kind: Evaluation
+schema_version: 1
+name: sma-cross-walk-forward
+strategy:
+  name: sma-cross-walk-forward
+base_run:
+  ref: sma-cross-wf-krx
+periods:
+  mode: explicit
+  from: 2020-01-02
+  to: 2025-12-31
+parameters:
+  indicators.trend.params.window: [20, 60, 120]
+  risk.max_positions: [5, 10]
+metrics:
+  preset: research
+constraints:
+  max_drawdown_lte: 0.30
+  min_trade_count_gte: 5
+ranking:
+  objective: calmar
+  order: desc
+walk_forward:
+  train:
+    years: 3
+  test:
+    years: 1
+  step:
+    years: 1
+  select:
+    objective: calmar
+    order: desc
+    constraints:
+      max_drawdown_lte: 0.25
+      min_trade_count_gte: 10

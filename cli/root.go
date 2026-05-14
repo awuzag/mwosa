@@ -135,6 +135,8 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	screenCommand := newScreenCommand()
 	historyCommand := newHistoryCommand()
 	runCommand := newRunCommand()
+	compareCommand := newCompareCommand()
+	rankCommand := newRankCommand()
 	migrateCommand := newMigrateCommand()
 	getCommand := newGetCommand()
 	ensureCommand := newEnsureCommand()
@@ -156,6 +158,8 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 		Screen:   screenCommand,
 		History:  historyCommand,
 		Run:      runCommand,
+		Compare:  compareCommand,
+		Rank:     rankCommand,
 		Migrate:  migrateCommand,
 		Get:      getCommand,
 		Ensure:   ensureCommand,
@@ -188,6 +192,8 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	cmd.AddCommand(screenCommand)
 	cmd.AddCommand(historyCommand)
 	cmd.AddCommand(runCommand)
+	cmd.AddCommand(compareCommand)
+	cmd.AddCommand(rankCommand)
 	cmd.AddCommand(migrateCommand)
 	cmd.AddCommand(loginCommand)
 	cmd.AddCommand(logoutCommand)

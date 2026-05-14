@@ -193,6 +193,87 @@ func TestBacktestValidateJSONIncludesUniverseExplain(t *testing.T) {
 	}
 }
 
+func TestEvaluationValidateRunInspectCompareAndRank(t *testing.T) {
+	ctx := context.Background()
+	databasePath := filepath.Join(t.TempDir(), "mwosa.db")
+	seedBacktestDailyBars(t, ctx, databasePath)
+
+	yamlPath := filepath.Join(t.TempDir(), "evaluation.yaml")
+	requireWriteFile(t, yamlPath, sampleEvaluationYAML())
+
+	var validateOut bytes.Buffer
+	validateCmd := NewRootCommand(BuildInfo{})
+	validateCmd.SetOut(&validateOut)
+	validateCmd.SetErr(&validateOut)
+	if err := executeForTest(t, ctx, validateCmd,
+		"--database", databasePath,
+		"--output", "json",
+		"validate", "evaluation", yamlPath,
+	); err != nil {
+		t.Fatalf("evaluation validate: %v\n%s", err, validateOut.String())
+	}
+	if !strings.Contains(validateOut.String(), `"case_count": 2`) {
+		t.Fatalf("validate output should include generated case count:\n%s", validateOut.String())
+	}
+
+	var runOut bytes.Buffer
+	runCmd := NewRootCommand(BuildInfo{})
+	runCmd.SetOut(&runOut)
+	runCmd.SetErr(&runOut)
+	if err := executeForTest(t, ctx, runCmd,
+		"--database", databasePath,
+		"--output", "json",
+		"run", "evaluation", yamlPath,
+	); err != nil {
+		t.Fatalf("evaluation run: %v\n%s", err, runOut.String())
+	}
+	var runResult struct {
+		Experiment struct {
+			Name string `json:"name"`
+			ID   string `json:"id"`
+		} `json:"experiment"`
+		Cases []struct {
+			CaseID            string         `json:"case_id"`
+			PassedConstraints bool           `json:"passed_constraints"`
+			Metrics           map[string]any `json:"metrics"`
+		} `json:"cases"`
+		Ranking []struct {
+			Rank int `json:"rank"`
+		} `json:"ranking"`
+	}
+	if err := json.Unmarshal(runOut.Bytes(), &runResult); err != nil {
+		t.Fatalf("run output should be json: %v\n%s", err, runOut.String())
+	}
+	if runResult.Experiment.Name != "sma-cross-evaluation" || runResult.Experiment.ID == "" {
+		t.Fatalf("unexpected experiment identity: %#v", runResult.Experiment)
+	}
+	if len(runResult.Cases) != 2 || len(runResult.Ranking) == 0 || runResult.Ranking[0].Rank != 1 {
+		t.Fatalf("unexpected evaluation result:\n%s", runOut.String())
+	}
+	if _, ok := runResult.Cases[0].Metrics["calmar"]; !ok {
+		t.Fatalf("research metrics should include calmar:\n%s", runOut.String())
+	}
+
+	for _, command := range [][]string{
+		{"list", "evaluations"},
+		{"inspect", "evaluation", "sma-cross-evaluation"},
+		{"compare", "evaluation", "sma-cross-evaluation"},
+		{"rank", "evaluation", "sma-cross-evaluation", "--objective", "calmar"},
+	} {
+		var out bytes.Buffer
+		cmd := NewRootCommand(BuildInfo{})
+		cmd.SetOut(&out)
+		cmd.SetErr(&out)
+		args := append([]string{"--database", databasePath, "--output", "json"}, command...)
+		if err := executeForTest(t, ctx, cmd, args...); err != nil {
+			t.Fatalf("%v: %v\n%s", command, err, out.String())
+		}
+		if !strings.Contains(out.String(), "sma-cross-evaluation") && command[0] != "rank" {
+			t.Fatalf("%v output should mention evaluation:\n%s", command, out.String())
+		}
+	}
+}
+
 func TestBacktestInspectUniverseNestedCommandSupportsTableOutput(t *testing.T) {
 	ctx := context.Background()
 	databasePath := filepath.Join(t.TempDir(), "mwosa.db")
@@ -334,6 +415,35 @@ func sampleBacktestYAMLWithMetricSelection() string {
       - average_trade_return
     exclude:
       - trade_count`, 1)
+}
+
+func sampleEvaluationYAML() string {
+	return strings.Replace(sampleBacktestYAML(), `report:
+  metrics:
+    - total_return
+    - max_drawdown
+    - trade_count`, `---
+kind: Evaluation
+schema_version: 1
+name: sma-cross-evaluation
+strategy:
+  name: sma-cross
+base_run:
+  ref: sma-cross-run
+periods:
+  mode: explicit
+  from: 2024-01-02
+  to: 2024-01-08
+parameters:
+  indicators.trend.params.window: [2, 3]
+metrics:
+  preset: research
+constraints:
+  max_drawdown_lte: 1
+  min_trade_count_gte: 1
+ranking:
+  objective: calmar
+  order: desc`, 1)
 }
 
 func requireWriteFile(t *testing.T, path string, payload string) {

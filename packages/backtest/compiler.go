@@ -11,6 +11,7 @@ import (
 const (
 	KindStrategy    = "Strategy"
 	KindBacktestRun = "BacktestRun"
+	KindEvaluation  = "Evaluation"
 
 	FillNextOpen = "next_open"
 

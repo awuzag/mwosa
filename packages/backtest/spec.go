@@ -34,6 +34,78 @@ type BacktestRunSpec struct {
 	Report        ReportSpec    `json:"report,omitempty" yaml:"report,omitempty"`
 }
 
+type EvaluationSpec struct {
+	Kind          string                  `json:"kind" yaml:"kind"`
+	SchemaVersion int                     `json:"schema_version" yaml:"schema_version"`
+	Name          string                  `json:"name" yaml:"name"`
+	Strategy      StrategyRef             `json:"strategy" yaml:"strategy"`
+	BaseRun       EvaluationBaseRunRef    `json:"base_run" yaml:"base_run"`
+	Periods       EvaluationPeriodsSpec   `json:"periods" yaml:"periods"`
+	Parameters    map[string][]any        `json:"parameters,omitempty" yaml:"parameters,omitempty"`
+	Metrics       MetricSelectionSpec     `json:"metrics,omitempty" yaml:"metrics,omitempty"`
+	Constraints   EvaluationConstraintSet `json:"constraints,omitempty" yaml:"constraints,omitempty"`
+	Ranking       EvaluationRankingSpec   `json:"ranking,omitempty" yaml:"ranking,omitempty"`
+	Regime        EvaluationRegimeSpec    `json:"regime,omitempty" yaml:"regime,omitempty"`
+	WalkForward   WalkForwardSpec         `json:"walk_forward,omitempty" yaml:"walk_forward,omitempty"`
+}
+
+type EvaluationBaseRunRef struct {
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	Ref  string `json:"ref,omitempty" yaml:"ref,omitempty"`
+}
+
+type EvaluationPeriodsSpec struct {
+	Mode       string                 `json:"mode" yaml:"mode"`
+	From       string                 `json:"from,omitempty" yaml:"from,omitempty"`
+	To         string                 `json:"to,omitempty" yaml:"to,omitempty"`
+	Items      []EvaluationPeriodSpec `json:"items,omitempty" yaml:"items,omitempty"`
+	Window     DurationSpec           `json:"window,omitempty" yaml:"window,omitempty"`
+	Step       DurationSpec           `json:"step,omitempty" yaml:"step,omitempty"`
+	WindowDays int                    `json:"window_days,omitempty" yaml:"window_days,omitempty"`
+	StepDays   int                    `json:"step_days,omitempty" yaml:"step_days,omitempty"`
+}
+
+type EvaluationPeriodSpec struct {
+	Name string `json:"name,omitempty" yaml:"name,omitempty"`
+	From string `json:"from" yaml:"from"`
+	To   string `json:"to" yaml:"to"`
+}
+
+type DurationSpec struct {
+	Years  int `json:"years,omitempty" yaml:"years,omitempty"`
+	Months int `json:"months,omitempty" yaml:"months,omitempty"`
+	Days   int `json:"days,omitempty" yaml:"days,omitempty"`
+}
+
+type EvaluationConstraintSet struct {
+	MaxDrawdownLTE   *float64 `json:"max_drawdown_lte,omitempty" yaml:"max_drawdown_lte,omitempty"`
+	MinCAGRGTE       *float64 `json:"min_cagr_gte,omitempty" yaml:"min_cagr_gte,omitempty"`
+	MaxTurnoverLTE   *float64 `json:"max_turnover_lte,omitempty" yaml:"max_turnover_lte,omitempty"`
+	MinTradeCountGTE *float64 `json:"min_trade_count_gte,omitempty" yaml:"min_trade_count_gte,omitempty"`
+}
+
+type EvaluationRankingSpec struct {
+	Objective string `json:"objective,omitempty" yaml:"objective,omitempty"`
+	Order     string `json:"order,omitempty" yaml:"order,omitempty"`
+}
+
+type EvaluationRegimeSpec struct {
+	Benchmark BenchmarkSpec `json:"benchmark,omitempty" yaml:"benchmark,omitempty"`
+}
+
+type WalkForwardSpec struct {
+	Train  DurationSpec             `json:"train,omitempty" yaml:"train,omitempty"`
+	Test   DurationSpec             `json:"test,omitempty" yaml:"test,omitempty"`
+	Step   DurationSpec             `json:"step,omitempty" yaml:"step,omitempty"`
+	Select WalkForwardSelectionSpec `json:"select,omitempty" yaml:"select,omitempty"`
+}
+
+type WalkForwardSelectionSpec struct {
+	Objective   string                  `json:"objective,omitempty" yaml:"objective,omitempty"`
+	Order       string                  `json:"order,omitempty" yaml:"order,omitempty"`
+	Constraints EvaluationConstraintSet `json:"constraints,omitempty" yaml:"constraints,omitempty"`
+}
+
 type StrategyRef struct {
 	Name string `json:"name,omitempty" yaml:"name,omitempty"`
 	Ref  string `json:"ref,omitempty" yaml:"ref,omitempty"`

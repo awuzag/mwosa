@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"slices"
 	"strconv"
 	"strings"
 	"time"
@@ -30,6 +31,12 @@ type StrategyRepository interface {
 	DeleteStrategy(ctx context.Context, name string, deletedAt time.Time) error
 }
 
+type EvaluationRepository interface {
+	SaveEvaluation(ctx context.Context, experiment SavedExperiment, cases []SavedExperimentCase, steps []SavedWalkForwardStep, now time.Time) (SavedEvaluationDetail, error)
+	ListEvaluations(ctx context.Context) ([]SavedEvaluationSummary, error)
+	GetEvaluation(ctx context.Context, ref string) (SavedEvaluationDetail, error)
+}
+
 type ScreenRepository interface {
 	GetScreenRun(ctx context.Context, ref string) (strategyservice.ScreenRunDetail, error)
 }
@@ -41,6 +48,7 @@ type ScreenRunner interface {
 type Service struct {
 	reader       DailyBarRepository
 	strategies   StrategyRepository
+	evaluations  EvaluationRepository
 	screenRepo   ScreenRepository
 	screenRunner ScreenRunner
 	universe     universeservice.Runner
@@ -72,6 +80,69 @@ type SavedStrategyDetail struct {
 	Spec          core.StrategySpec    `json:"spec"`
 }
 
+type SavedExperiment struct {
+	ID               string          `json:"id" csv:"id"`
+	Name             string          `json:"name" csv:"name"`
+	StrategyName     string          `json:"strategy_name" csv:"strategy_name"`
+	BaseRunName      string          `json:"base_run_name" csv:"base_run_name"`
+	SchemaVersion    int             `json:"schema_version" csv:"schema_version"`
+	SpecJSON         json.RawMessage `json:"spec_json" csv:"-"`
+	SpecHash         string          `json:"spec_hash" csv:"spec_hash"`
+	StrategySpecHash string          `json:"strategy_spec_hash" csv:"strategy_spec_hash"`
+	DataFrom         string          `json:"data_from" csv:"data_from"`
+	DataTo           string          `json:"data_to" csv:"data_to"`
+	CreatedAt        time.Time       `json:"created_at" csv:"created_at"`
+}
+
+type SavedExperimentCase struct {
+	ID                string          `json:"id" csv:"id"`
+	ExperimentID      string          `json:"experiment_id" csv:"experiment_id"`
+	CaseID            string          `json:"case_id" csv:"case_id"`
+	CaseName          string          `json:"case_name" csv:"case_name"`
+	RunName           string          `json:"run_name" csv:"run_name"`
+	PeriodFrom        string          `json:"period_from" csv:"period_from"`
+	PeriodTo          string          `json:"period_to" csv:"period_to"`
+	ParameterJSON     json.RawMessage `json:"parameter_json" csv:"-"`
+	RegimeTagsJSON    json.RawMessage `json:"regime_tags_json" csv:"-"`
+	Status            string          `json:"status" csv:"status"`
+	PassedConstraints bool            `json:"passed_constraints" csv:"passed_constraints"`
+	Rank              int             `json:"rank,omitempty" csv:"rank"`
+	Objective         string          `json:"objective,omitempty" csv:"objective"`
+	ObjectiveValue    float64         `json:"objective_value,omitempty" csv:"objective_value"`
+	ResultJSON        json.RawMessage `json:"result_json" csv:"-"`
+	MetricsJSON       json.RawMessage `json:"metrics_json" csv:"-"`
+	ResultHash        string          `json:"result_hash" csv:"result_hash"`
+	CreatedAt         time.Time       `json:"created_at" csv:"created_at"`
+}
+
+type SavedWalkForwardStep struct {
+	ID                    string          `json:"id" csv:"id"`
+	ExperimentID          string          `json:"experiment_id" csv:"experiment_id"`
+	StepIndex             int             `json:"step_index" csv:"step_index"`
+	TrainFrom             string          `json:"train_from" csv:"train_from"`
+	TrainTo               string          `json:"train_to" csv:"train_to"`
+	TestFrom              string          `json:"test_from" csv:"test_from"`
+	TestTo                string          `json:"test_to" csv:"test_to"`
+	SelectedParameterJSON json.RawMessage `json:"selected_parameter_json" csv:"-"`
+	TrainCaseID           string          `json:"train_case_id" csv:"train_case_id"`
+	TestCaseID            string          `json:"test_case_id" csv:"test_case_id"`
+	TrainObjective        float64         `json:"train_objective" csv:"train_objective"`
+	ResultHash            string          `json:"result_hash" csv:"result_hash"`
+	CreatedAt             time.Time       `json:"created_at" csv:"created_at"`
+}
+
+type SavedEvaluationSummary struct {
+	Experiment SavedExperiment      `json:"experiment"`
+	CaseCount  int                  `json:"case_count"`
+	BestCase   *SavedExperimentCase `json:"best_case,omitempty"`
+}
+
+type SavedEvaluationDetail struct {
+	Experiment  SavedExperiment        `json:"experiment"`
+	Cases       []SavedExperimentCase  `json:"cases"`
+	WalkForward []SavedWalkForwardStep `json:"walk_forward,omitempty"`
+}
+
 type SaveStrategyRequest struct {
 	Name     string
 	YAMLPath string
@@ -91,6 +162,23 @@ type ValidationResult struct {
 	Metrics      []string                  `json:"metrics"`
 	Indicators   map[string]string         `json:"indicators,omitempty"`
 	Universe     core.UniverseExplain      `json:"universe"`
+}
+
+type EvaluationValidationResult struct {
+	Valid            bool     `json:"valid"`
+	Name             string   `json:"name"`
+	StrategyName     string   `json:"strategy_name"`
+	BaseRunName      string   `json:"base_run_name"`
+	CaseCount        int      `json:"case_count"`
+	WalkForwardSteps int      `json:"walk_forward_steps"`
+	Metrics          []string `json:"metrics"`
+}
+
+type EvaluationRunResult struct {
+	Experiment  SavedExperiment              `json:"experiment"`
+	Cases       []core.EvaluationCaseResult  `json:"cases"`
+	Ranking     []core.EvaluationCaseResult  `json:"ranking"`
+	WalkForward []core.WalkForwardStepResult `json:"walk_forward,omitempty"`
 }
 
 type ExecutionSummary struct {
@@ -135,7 +223,13 @@ func newService(reader DailyBarRepository, strategies StrategyRepository, screen
 	if err != nil {
 		return Service{}, oops.In("backtest_service").Wrap(err)
 	}
-	return Service{reader: reader, strategies: strategies, screenRepo: screenRepo, screenRunner: screenRunner, universe: universeRunner, registry: registry}, nil
+	var evaluations EvaluationRepository
+	if strategies != nil {
+		if repository, ok := strategies.(EvaluationRepository); ok {
+			evaluations = repository
+		}
+	}
+	return Service{reader: reader, strategies: strategies, evaluations: evaluations, screenRepo: screenRepo, screenRunner: screenRunner, universe: universeRunner, registry: registry}, nil
 }
 
 func (s Service) Validate(ctx context.Context, path string) (ValidationResult, error) {
@@ -180,6 +274,131 @@ func (s Service) InspectUniverse(ctx context.Context, path string) (core.Univers
 		return core.UniverseExplain{}, err
 	}
 	return plan.UniverseExplain, nil
+}
+
+func (s Service) ValidateEvaluation(ctx context.Context, path string) (EvaluationValidationResult, error) {
+	plan, err := s.compileEvaluationFile(ctx, path)
+	if err != nil {
+		return EvaluationValidationResult{}, err
+	}
+	metrics, err := selectedEvaluationMetrics(plan.Spec)
+	if err != nil {
+		return EvaluationValidationResult{}, err
+	}
+	return EvaluationValidationResult{
+		Valid:            true,
+		Name:             plan.Name,
+		StrategyName:     plan.Strategy.Name,
+		BaseRunName:      plan.BaseRun.Name,
+		CaseCount:        len(plan.Cases),
+		WalkForwardSteps: len(plan.WalkForward),
+		Metrics:          metrics,
+	}, nil
+}
+
+func (s Service) RunEvaluation(ctx context.Context, path string) (EvaluationRunResult, error) {
+	if s.evaluations == nil {
+		return EvaluationRunResult{}, oops.In("backtest_evaluation_service").New("backtest evaluation repository is nil")
+	}
+	plan, err := s.compileEvaluationFile(ctx, path)
+	if err != nil {
+		return EvaluationRunResult{}, err
+	}
+	caseResults := make([]core.EvaluationCaseResult, 0, len(plan.Cases))
+	for _, evalCase := range plan.Cases {
+		result, tags, err := s.runEvaluationCase(ctx, path, evalCase)
+		if err != nil {
+			return EvaluationRunResult{}, err
+		}
+		constraints := core.EvaluateConstraints(result.Metrics, plan.Spec.Constraints)
+		caseResults = append(caseResults, core.EvaluationCaseResult{
+			CaseID:            evalCase.ID,
+			CaseName:          evalCase.Name,
+			Period:            evalCase.Period,
+			Parameters:        evalCase.Parameters,
+			Result:            result,
+			Metrics:           result.Metrics,
+			RegimeTags:        tags,
+			ConstraintResults: constraints,
+			PassedConstraints: core.ConstraintsPassed(constraints),
+		})
+	}
+	ranking, err := core.RankEvaluationResults(caseResults, plan.Spec.Ranking)
+	if err != nil {
+		return EvaluationRunResult{}, err
+	}
+	applyRanks(caseResults, ranking)
+
+	walkForward, err := s.runWalkForward(ctx, path, plan)
+	if err != nil {
+		return EvaluationRunResult{}, err
+	}
+
+	experiment, cases, steps, err := savedEvaluationRows(plan, caseResults, ranking, walkForward)
+	if err != nil {
+		return EvaluationRunResult{}, err
+	}
+	detail, err := s.evaluations.SaveEvaluation(ctx, experiment, cases, steps, time.Now())
+	if err != nil {
+		return EvaluationRunResult{}, err
+	}
+	return EvaluationRunResult{
+		Experiment:  detail.Experiment,
+		Cases:       caseResults,
+		Ranking:     ranking,
+		WalkForward: walkForward,
+	}, nil
+}
+
+func (s Service) ListEvaluations(ctx context.Context) ([]SavedEvaluationSummary, error) {
+	if s.evaluations == nil {
+		return nil, oops.In("backtest_evaluation_service").New("backtest evaluation repository is nil")
+	}
+	return s.evaluations.ListEvaluations(ctx)
+}
+
+func (s Service) InspectEvaluation(ctx context.Context, ref string) (SavedEvaluationDetail, error) {
+	if strings.TrimSpace(ref) == "" {
+		return SavedEvaluationDetail{}, oops.In("backtest_evaluation_service").New("inspect evaluation requires name or id")
+	}
+	if s.evaluations == nil {
+		return SavedEvaluationDetail{}, oops.In("backtest_evaluation_service").With("ref", ref).New("backtest evaluation repository is nil")
+	}
+	return s.evaluations.GetEvaluation(ctx, ref)
+}
+
+func (s Service) CompareEvaluation(ctx context.Context, ref string) (SavedEvaluationDetail, error) {
+	return s.InspectEvaluation(ctx, ref)
+}
+
+func (s Service) RankEvaluation(ctx context.Context, ref string, objective string) ([]SavedExperimentCase, error) {
+	detail, err := s.InspectEvaluation(ctx, ref)
+	if err != nil {
+		return nil, err
+	}
+	out := append([]SavedExperimentCase(nil), detail.Cases...)
+	if strings.TrimSpace(objective) == "" {
+		objective = core.MetricCalmar
+	}
+	for i := range out {
+		metrics := core.Metrics{}
+		if len(out[i].MetricsJSON) > 0 {
+			if err := json.Unmarshal(out[i].MetricsJSON, &metrics); err != nil {
+				return nil, oops.In("backtest_evaluation_service").With("case_id", out[i].CaseID).Wrapf(err, "decode saved metrics")
+			}
+		}
+		value, ok := metrics[objective]
+		if !ok {
+			return nil, oops.In("backtest_evaluation_service").With("objective", objective, "case_id", out[i].CaseID).New("ranking objective metric is missing")
+		}
+		out[i].Objective = objective
+		out[i].ObjectiveValue = value
+	}
+	sortSavedCases(out, "desc")
+	for i := range out {
+		out[i].Rank = i + 1
+	}
+	return out, nil
 }
 
 func (s Service) UpsertStrategy(ctx context.Context, req SaveStrategyRequest) (SavedStrategyDetail, error) {
@@ -278,6 +497,91 @@ func (s Service) compileFile(ctx context.Context, path string) (Bundle, core.Str
 		return Bundle{}, core.StrategyPlan{}, err
 	}
 	return bundle, plan, nil
+}
+
+func (s Service) compileEvaluationFile(ctx context.Context, path string) (core.EvaluationPlan, error) {
+	bundle, err := LoadEvaluationFile(ctx, path)
+	if err != nil {
+		return core.EvaluationPlan{}, err
+	}
+	plan, err := core.CompileEvaluation(bundle.Strategy, bundle.Run, bundle.Evaluation, s.registry)
+	if err != nil {
+		return core.EvaluationPlan{}, err
+	}
+	return plan, nil
+}
+
+func (s Service) runEvaluationCase(ctx context.Context, yamlPath string, evalCase core.EvaluationCasePlan) (core.Result, []string, error) {
+	plan, err := s.resolveUniverse(ctx, yamlPath, evalCase.Plan)
+	if err != nil {
+		return core.Result{}, nil, err
+	}
+	bars, err := s.loadBars(ctx, plan)
+	if err != nil {
+		return core.Result{}, nil, oops.In("backtest_evaluation_service").With("case", evalCase.Name).Wrap(err)
+	}
+	engine, err := core.NewEngine(core.NewMemoryFeed(bars))
+	if err != nil {
+		return core.Result{}, nil, oops.In("backtest_evaluation_service").With("case", evalCase.Name).Wrap(err)
+	}
+	result, err := engine.Run(ctx, plan)
+	if err != nil {
+		return core.Result{}, nil, oops.In("backtest_evaluation_service").With("case", evalCase.Name).Wrap(err)
+	}
+	return result, core.RegimeTags(result, benchmarkBars(result.Benchmark.Symbol, bars)), nil
+}
+
+func (s Service) runWalkForward(ctx context.Context, yamlPath string, plan core.EvaluationPlan) ([]core.WalkForwardStepResult, error) {
+	out := make([]core.WalkForwardStepResult, 0, len(plan.WalkForward))
+	for _, step := range plan.WalkForward {
+		trainResults := make([]core.EvaluationCaseResult, 0, len(step.Cases))
+		for _, evalCase := range step.Cases {
+			result, tags, err := s.runEvaluationCase(ctx, yamlPath, evalCase)
+			if err != nil {
+				return nil, err
+			}
+			constraints := core.EvaluateConstraints(result.Metrics, core.WalkForwardConstraints(plan.Spec))
+			trainResults = append(trainResults, core.EvaluationCaseResult{
+				CaseID:            evalCase.ID,
+				CaseName:          evalCase.Name,
+				Period:            evalCase.Period,
+				Parameters:        evalCase.Parameters,
+				Result:            result,
+				Metrics:           result.Metrics,
+				RegimeTags:        tags,
+				ConstraintResults: constraints,
+				PassedConstraints: core.ConstraintsPassed(constraints),
+			})
+		}
+		ranking, err := core.RankEvaluationResults(trainResults, core.ResolveWalkForwardSelection(plan.Spec))
+		if err != nil {
+			return nil, err
+		}
+		if len(ranking) == 0 {
+			return nil, oops.In("backtest_walk_forward").With("step", step.Index).New("walk-forward train step has no passing parameter set")
+		}
+		selected := ranking[0]
+		testCase, ok := matchingTestCase(step.TestCases, selected.Parameters)
+		if !ok {
+			return nil, oops.In("backtest_walk_forward").With("step", step.Index).New("walk-forward selected parameters did not match a test case")
+		}
+		testResult, _, err := s.runEvaluationCase(ctx, yamlPath, testCase)
+		if err != nil {
+			return nil, err
+		}
+		out = append(out, core.WalkForwardStepResult{
+			Index:              step.Index,
+			Train:              step.Train,
+			Test:               step.Test,
+			SelectedParameters: selected.Parameters,
+			TrainCaseID:        selected.CaseID,
+			TestCaseID:         testCase.ID,
+			TrainObjective:     selected.ObjectiveValue,
+			TestMetrics:        testResult.Metrics,
+			ResultHash:         testResult.ResultHash,
+		})
+	}
+	return out, nil
 }
 
 func (s Service) loadBars(ctx context.Context, plan core.StrategyPlan) ([]core.Bar, error) {
@@ -501,6 +805,179 @@ func validationResultFromPlan(plan core.StrategyPlan) ValidationResult {
 		Indicators: indicators,
 		Universe:   plan.UniverseExplain,
 	}
+}
+
+func selectedEvaluationMetrics(spec core.EvaluationSpec) ([]string, error) {
+	selection := spec.Metrics
+	if selection.Preset == "" && len(selection.Include) == 0 && len(selection.Exclude) == 0 {
+		selection.Preset = "research"
+	}
+	return core.ResolveMetricSelection(selection, strings.TrimSpace(spec.Regime.Benchmark.Symbol) != "")
+}
+
+func savedEvaluationRows(plan core.EvaluationPlan, results []core.EvaluationCaseResult, ranking []core.EvaluationCaseResult, walkForward []core.WalkForwardStepResult) (SavedExperiment, []SavedExperimentCase, []SavedWalkForwardStep, error) {
+	errb := oops.In("backtest_evaluation_service").With("evaluation", plan.Name)
+	experimentID, err := idgen.NewUUIDV7()
+	if err != nil {
+		return SavedExperiment{}, nil, nil, errb.Wrapf(err, "generate evaluation id")
+	}
+	specJSON, err := json.Marshal(plan.Spec)
+	if err != nil {
+		return SavedExperiment{}, nil, nil, errb.Wrapf(err, "encode evaluation spec")
+	}
+	strategyJSON, err := json.Marshal(plan.Strategy)
+	if err != nil {
+		return SavedExperiment{}, nil, nil, errb.Wrapf(err, "encode evaluation strategy")
+	}
+	now := time.Now()
+	experiment := SavedExperiment{
+		ID:               experimentID,
+		Name:             plan.Name,
+		StrategyName:     plan.Strategy.Name,
+		BaseRunName:      plan.BaseRun.Name,
+		SchemaVersion:    plan.Spec.SchemaVersion,
+		SpecJSON:         specJSON,
+		SpecHash:         hashutil.SHA256(specJSON),
+		StrategySpecHash: hashutil.SHA256(strategyJSON),
+		DataFrom:         plan.BaseRun.Data.From,
+		DataTo:           plan.BaseRun.Data.To,
+		CreatedAt:        now,
+	}
+	rankByCase := map[string]core.EvaluationCaseResult{}
+	for _, ranked := range ranking {
+		rankByCase[ranked.CaseID] = ranked
+	}
+	cases := make([]SavedExperimentCase, 0, len(results))
+	for _, result := range results {
+		caseID, err := idgen.NewUUIDV7()
+		if err != nil {
+			return SavedExperiment{}, nil, nil, errb.Wrapf(err, "generate evaluation case id")
+		}
+		resultJSON, err := json.Marshal(result.Result)
+		if err != nil {
+			return SavedExperiment{}, nil, nil, errb.With("case", result.CaseID).Wrapf(err, "encode backtest result")
+		}
+		metricsJSON, err := json.Marshal(result.Metrics)
+		if err != nil {
+			return SavedExperiment{}, nil, nil, errb.With("case", result.CaseID).Wrapf(err, "encode metric summary")
+		}
+		parameterJSON, err := json.Marshal(result.Parameters)
+		if err != nil {
+			return SavedExperiment{}, nil, nil, errb.With("case", result.CaseID).Wrapf(err, "encode parameter set")
+		}
+		regimeJSON, err := json.Marshal(result.RegimeTags)
+		if err != nil {
+			return SavedExperiment{}, nil, nil, errb.With("case", result.CaseID).Wrapf(err, "encode regime tags")
+		}
+		ranked := rankByCase[result.CaseID]
+		status := "failed_constraints"
+		if result.PassedConstraints {
+			status = "passed"
+		}
+		cases = append(cases, SavedExperimentCase{
+			ID:                caseID,
+			ExperimentID:      experimentID,
+			CaseID:            result.CaseID,
+			CaseName:          result.CaseName,
+			RunName:           result.Result.RunName,
+			PeriodFrom:        result.Period.From.Format(time.DateOnly),
+			PeriodTo:          result.Period.To.Format(time.DateOnly),
+			ParameterJSON:     parameterJSON,
+			RegimeTagsJSON:    regimeJSON,
+			Status:            status,
+			PassedConstraints: result.PassedConstraints,
+			Rank:              ranked.Rank,
+			Objective:         ranked.Objective,
+			ObjectiveValue:    ranked.ObjectiveValue,
+			ResultJSON:        resultJSON,
+			MetricsJSON:       metricsJSON,
+			ResultHash:        result.Result.ResultHash,
+			CreatedAt:         now,
+		})
+	}
+	steps := make([]SavedWalkForwardStep, 0, len(walkForward))
+	for _, step := range walkForward {
+		stepID, err := idgen.NewUUIDV7()
+		if err != nil {
+			return SavedExperiment{}, nil, nil, errb.Wrapf(err, "generate walk-forward step id")
+		}
+		paramsJSON, err := json.Marshal(step.SelectedParameters)
+		if err != nil {
+			return SavedExperiment{}, nil, nil, errb.With("step", step.Index).Wrapf(err, "encode selected walk-forward parameters")
+		}
+		steps = append(steps, SavedWalkForwardStep{
+			ID:                    stepID,
+			ExperimentID:          experimentID,
+			StepIndex:             step.Index,
+			TrainFrom:             step.Train.From.Format(time.DateOnly),
+			TrainTo:               step.Train.To.Format(time.DateOnly),
+			TestFrom:              step.Test.From.Format(time.DateOnly),
+			TestTo:                step.Test.To.Format(time.DateOnly),
+			SelectedParameterJSON: paramsJSON,
+			TrainCaseID:           step.TrainCaseID,
+			TestCaseID:            step.TestCaseID,
+			TrainObjective:        step.TrainObjective,
+			ResultHash:            step.ResultHash,
+			CreatedAt:             now,
+		})
+	}
+	return experiment, cases, steps, nil
+}
+
+func applyRanks(results []core.EvaluationCaseResult, ranking []core.EvaluationCaseResult) {
+	ranked := make(map[string]core.EvaluationCaseResult, len(ranking))
+	for _, item := range ranking {
+		ranked[item.CaseID] = item
+	}
+	for i := range results {
+		if item, ok := ranked[results[i].CaseID]; ok {
+			results[i].Rank = item.Rank
+			results[i].Objective = item.Objective
+			results[i].ObjectiveValue = item.ObjectiveValue
+		}
+	}
+}
+
+func benchmarkBars(symbol string, bars []core.Bar) []core.Bar {
+	if strings.TrimSpace(symbol) == "" {
+		return nil
+	}
+	out := make([]core.Bar, 0)
+	for _, bar := range bars {
+		if bar.Symbol == symbol {
+			out = append(out, bar)
+		}
+	}
+	return out
+}
+
+func matchingTestCase(cases []core.EvaluationCasePlan, parameters map[string]any) (core.EvaluationCasePlan, bool) {
+	want, _ := json.Marshal(parameters)
+	for _, evalCase := range cases {
+		got, _ := json.Marshal(evalCase.Parameters)
+		if string(got) == string(want) {
+			return evalCase, true
+		}
+	}
+	return core.EvaluationCasePlan{}, false
+}
+
+func sortSavedCases(cases []SavedExperimentCase, order string) {
+	slices.SortFunc(cases, func(a, b SavedExperimentCase) int {
+		if a.ObjectiveValue == b.ObjectiveValue {
+			return strings.Compare(a.CaseID, b.CaseID)
+		}
+		if order == "asc" {
+			if a.ObjectiveValue < b.ObjectiveValue {
+				return -1
+			}
+			return 1
+		}
+		if a.ObjectiveValue > b.ObjectiveValue {
+			return -1
+		}
+		return 1
+	})
 }
 
 func stringField(fields map[string]any, key string, fallback string) string {

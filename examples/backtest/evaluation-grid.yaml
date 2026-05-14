@@ -1,0 +1,79 @@
+kind: Strategy
+schema_version: 1
+name: sma-cross
+description: SMA cross strategy evaluated across periods and parameter sets.
+indicators:
+  trend:
+    id: sma
+    source:
+      price: close
+    params:
+      window: 20
+entry:
+  crosses_above:
+    - price: close
+    - ref: trend
+exit:
+  crosses_below:
+    - price: close
+    - ref: trend
+sizing:
+  type: percent_of_equity
+  value: 50
+risk:
+  max_positions: 5
+  max_symbol_weight_pct: 40
+---
+kind: BacktestRun
+schema_version: 1
+name: sma-cross-krx
+strategy:
+  name: sma-cross
+data:
+  market: krx
+  timeframe: 1d
+  from: 2020-01-01
+  to: 2025-12-31
+universe:
+  pipeline:
+    - id: source.symbols
+      params:
+        symbols: ["069500"]
+        fields:
+          market: krx
+          security_type: etf
+portfolio:
+  initial_cash: 10000000
+  currency: KRW
+execution:
+  fill: next_open
+  commission:
+    type: bps
+    value: 1.5
+  slippage:
+    type: bps
+    value: 0
+---
+kind: Evaluation
+schema_version: 1
+name: sma-cross-robustness
+strategy:
+  name: sma-cross
+base_run:
+  ref: sma-cross-krx
+periods:
+  mode: yearly
+  from: 2020-01-01
+  to: 2025-12-31
+parameters:
+  indicators.trend.params.window: [20, 60, 120]
+  risk.max_positions: [5, 10]
+metrics:
+  preset: research
+constraints:
+  max_drawdown_lte: 0.25
+  min_cagr_gte: 0.08
+  max_turnover_lte: 12
+ranking:
+  objective: calmar
+  order: desc

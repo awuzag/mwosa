@@ -13,8 +13,9 @@ import (
 )
 
 type Bundle struct {
-	Strategy core.StrategySpec
-	Run      core.BacktestRunSpec
+	Strategy   core.StrategySpec
+	Run        core.BacktestRunSpec
+	Evaluation core.EvaluationSpec
 }
 
 func LoadFile(ctx context.Context, path string) (Bundle, error) {
@@ -31,6 +32,17 @@ func LoadStrategyFile(ctx context.Context, path string) (core.StrategySpec, erro
 		return core.StrategySpec{}, err
 	}
 	return bundle.Strategy, nil
+}
+
+func LoadEvaluationFile(ctx context.Context, path string) (Bundle, error) {
+	bundle, err := loadFile(ctx, path, true)
+	if err != nil {
+		return Bundle{}, err
+	}
+	if bundle.Evaluation.Kind == "" {
+		return Bundle{}, oops.In("backtest_yaml").New("YAML stream requires Evaluation document")
+	}
+	return bundle, nil
 }
 
 func loadFile(ctx context.Context, path string, requireRun bool) (Bundle, error) {
@@ -94,6 +106,12 @@ func decode(ctx context.Context, reader io.Reader, requireRun bool) (Bundle, err
 				return Bundle{}, err
 			}
 			bundle.Run = run
+		case core.KindEvaluation:
+			evaluation, err := decodeEvaluation(&node)
+			if err != nil {
+				return Bundle{}, err
+			}
+			bundle.Evaluation = evaluation
 		default:
 			return Bundle{}, oops.In("backtest_yaml").With("kind", kind).New("unsupported YAML document kind")
 		}
@@ -138,6 +156,21 @@ type runDocument struct {
 	Portfolio     core.PortfolioSpec `yaml:"portfolio"`
 	Execution     core.ExecutionSpec `yaml:"execution"`
 	Report        reportDocument     `yaml:"report"`
+}
+
+type evaluationDocument struct {
+	Kind          string                       `yaml:"kind"`
+	SchemaVersion int                          `yaml:"schema_version"`
+	Name          string                       `yaml:"name"`
+	Strategy      core.StrategyRef             `yaml:"strategy"`
+	BaseRun       core.EvaluationBaseRunRef    `yaml:"base_run"`
+	Periods       core.EvaluationPeriodsSpec   `yaml:"periods"`
+	Parameters    map[string][]any             `yaml:"parameters"`
+	Metrics       yaml.Node                    `yaml:"metrics"`
+	Constraints   core.EvaluationConstraintSet `yaml:"constraints"`
+	Ranking       core.EvaluationRankingSpec   `yaml:"ranking"`
+	Regime        core.EvaluationRegimeSpec    `yaml:"regime"`
+	WalkForward   core.WalkForwardSpec         `yaml:"walk_forward"`
 }
 
 type reportDocument struct {
@@ -204,6 +237,31 @@ func decodeRun(node *yaml.Node) (core.BacktestRunSpec, error) {
 		Portfolio:     document.Portfolio,
 		Execution:     document.Execution,
 		Report:        core.ReportSpec{Metrics: metrics},
+	}, nil
+}
+
+func decodeEvaluation(node *yaml.Node) (core.EvaluationSpec, error) {
+	var document evaluationDocument
+	if err := node.Decode(&document); err != nil {
+		return core.EvaluationSpec{}, oops.In("backtest_yaml").Wrapf(err, "decode Evaluation document")
+	}
+	metrics, err := decodeMetricSelection(&document.Metrics)
+	if err != nil {
+		return core.EvaluationSpec{}, oops.In("backtest_yaml").Wrapf(err, "decode evaluation metrics")
+	}
+	return core.EvaluationSpec{
+		Kind:          document.Kind,
+		SchemaVersion: document.SchemaVersion,
+		Name:          document.Name,
+		Strategy:      document.Strategy,
+		BaseRun:       document.BaseRun,
+		Periods:       document.Periods,
+		Parameters:    document.Parameters,
+		Metrics:       metrics,
+		Constraints:   document.Constraints,
+		Ranking:       document.Ranking,
+		Regime:        document.Regime,
+		WalkForward:   document.WalkForward,
 	}, nil
 }
 

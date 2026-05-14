@@ -5,9 +5,12 @@ import (
 	"database/sql"
 	"encoding/json"
 	"errors"
+	"slices"
+	"strings"
 	"time"
 
 	core "github.com/ev3rlit/mwosa/packages/backtest"
+	"github.com/ev3rlit/mwosa/packages/idgen"
 	backtestservice "github.com/ev3rlit/mwosa/service/backtest"
 	"github.com/ev3rlit/mwosa/storage"
 	"github.com/samber/oops"
@@ -19,6 +22,7 @@ type repository struct {
 }
 
 var _ backtestservice.StrategyRepository = (*repository)(nil)
+var _ backtestservice.EvaluationRepository = (*repository)(nil)
 
 func NewRepository(database *storage.Database) (backtestservice.StrategyRepository, error) {
 	if database == nil {
@@ -265,6 +269,201 @@ func (r *repository) DeleteStrategy(ctx context.Context, name string, deletedAt 
 	return nil
 }
 
+func (r *repository) SaveEvaluation(ctx context.Context, experiment backtestservice.SavedExperiment, cases []backtestservice.SavedExperimentCase, steps []backtestservice.SavedWalkForwardStep, now time.Time) (backtestservice.SavedEvaluationDetail, error) {
+	errb := oops.In("backtest_evaluation_repository").With("name", experiment.Name, "experiment_id", experiment.ID)
+	client, err := r.database.Client(ctx)
+	if err != nil {
+		return backtestservice.SavedEvaluationDetail{}, errb.Wrap(err)
+	}
+	tx, err := client.BeginTx(ctx, nil)
+	if err != nil {
+		return backtestservice.SavedEvaluationDetail{}, errb.Wrapf(err, "begin backtest evaluation transaction")
+	}
+	committed := false
+	defer func() {
+		if !committed {
+			_ = tx.Rollback()
+		}
+	}()
+
+	if experiment.CreatedAt.IsZero() {
+		experiment.CreatedAt = now
+	}
+	experimentRow := experimentToRow(experiment)
+	if _, err := tx.NewInsert().Model(&experimentRow).Exec(ctx); err != nil {
+		return backtestservice.SavedEvaluationDetail{}, errb.Wrapf(err, "create backtest experiment row")
+	}
+	for _, item := range cases {
+		if item.CreatedAt.IsZero() {
+			item.CreatedAt = now
+		}
+		caseRow := experimentCaseToRow(item)
+		if _, err := tx.NewInsert().Model(&caseRow).Exec(ctx); err != nil {
+			return backtestservice.SavedEvaluationDetail{}, errb.With("case_id", item.CaseID).Wrapf(err, "create backtest experiment case row")
+		}
+		resultID, err := idgen.NewUUIDV7()
+		if err != nil {
+			return backtestservice.SavedEvaluationDetail{}, errb.With("case_id", item.CaseID).Wrapf(err, "generate backtest result id")
+		}
+		resultRow := storage.BacktestResultRow{
+			ID:               resultID,
+			ExperimentCaseID: item.ID,
+			ResultJSON:       string(item.ResultJSON),
+			ResultHash:       item.ResultHash,
+			CreatedAt:        item.CreatedAt,
+		}
+		if _, err := tx.NewInsert().Model(&resultRow).Exec(ctx); err != nil {
+			return backtestservice.SavedEvaluationDetail{}, errb.With("case_id", item.CaseID).Wrapf(err, "create backtest result row")
+		}
+		var metrics core.Metrics
+		if err := json.Unmarshal(item.MetricsJSON, &metrics); err != nil {
+			return backtestservice.SavedEvaluationDetail{}, errb.With("case_id", item.CaseID).Wrapf(err, "decode metric summary json")
+		}
+		metricIDs := make([]string, 0, len(metrics))
+		for metric := range metrics {
+			metricIDs = append(metricIDs, metric)
+		}
+		slices.Sort(metricIDs)
+		for _, metric := range metricIDs {
+			metricID, err := idgen.NewUUIDV7()
+			if err != nil {
+				return backtestservice.SavedEvaluationDetail{}, errb.With("case_id", item.CaseID, "metric", metric).Wrapf(err, "generate metric summary id")
+			}
+			metricRow := storage.BacktestMetricSummaryRow{
+				ID:               metricID,
+				ExperimentCaseID: item.ID,
+				Metric:           metric,
+				Value:            metrics[metric],
+				CreatedAt:        item.CreatedAt,
+			}
+			if _, err := tx.NewInsert().Model(&metricRow).Exec(ctx); err != nil {
+				return backtestservice.SavedEvaluationDetail{}, errb.With("case_id", item.CaseID, "metric", metric).Wrapf(err, "create metric summary row")
+			}
+		}
+	}
+	for _, item := range steps {
+		if item.CreatedAt.IsZero() {
+			item.CreatedAt = now
+		}
+		row := walkForwardStepToRow(item)
+		if _, err := tx.NewInsert().Model(&row).Exec(ctx); err != nil {
+			return backtestservice.SavedEvaluationDetail{}, errb.With("step", item.StepIndex).Wrapf(err, "create walk-forward step row")
+		}
+	}
+	if err := tx.Commit(); err != nil {
+		return backtestservice.SavedEvaluationDetail{}, errb.Wrapf(err, "commit backtest evaluation transaction")
+	}
+	committed = true
+	return backtestservice.SavedEvaluationDetail{Experiment: experiment, Cases: cases, WalkForward: steps}, nil
+}
+
+func (r *repository) ListEvaluations(ctx context.Context) ([]backtestservice.SavedEvaluationSummary, error) {
+	errb := oops.In("backtest_evaluation_repository")
+	client, err := r.database.Client(ctx)
+	if err != nil {
+		return nil, errb.Wrap(err)
+	}
+	var rows []storage.BacktestExperimentRow
+	if err := client.NewSelect().Model(&rows).Order("created_at DESC").Scan(ctx); err != nil {
+		return nil, errb.Wrapf(err, "list backtest experiment rows")
+	}
+	out := make([]backtestservice.SavedEvaluationSummary, 0, len(rows))
+	for _, row := range rows {
+		detail, err := r.evaluationDetailByID(ctx, row.ID)
+		if err != nil {
+			return nil, errb.With("experiment_id", row.ID).Wrap(err)
+		}
+		var best *backtestservice.SavedExperimentCase
+		for i := range detail.Cases {
+			if detail.Cases[i].Rank == 1 {
+				item := detail.Cases[i]
+				best = &item
+				break
+			}
+		}
+		out = append(out, backtestservice.SavedEvaluationSummary{
+			Experiment: detail.Experiment,
+			CaseCount:  len(detail.Cases),
+			BestCase:   best,
+		})
+	}
+	return out, nil
+}
+
+func (r *repository) GetEvaluation(ctx context.Context, ref string) (backtestservice.SavedEvaluationDetail, error) {
+	errb := oops.In("backtest_evaluation_repository").With("ref", ref)
+	client, err := r.database.Client(ctx)
+	if err != nil {
+		return backtestservice.SavedEvaluationDetail{}, errb.Wrap(err)
+	}
+	var row storage.BacktestExperimentRow
+	query := client.NewSelect().Model(&row).Order("created_at DESC").Limit(1)
+	if looksLikeID(ref) {
+		query = query.Where("id = ?", ref)
+	} else {
+		query = query.Where("name = ?", ref)
+	}
+	if err := query.Scan(ctx); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return backtestservice.SavedEvaluationDetail{}, errb.Errorf("backtest evaluation not found: %s", ref)
+		}
+		return backtestservice.SavedEvaluationDetail{}, errb.Wrapf(err, "get backtest evaluation row")
+	}
+	return r.evaluationDetailByID(ctx, row.ID)
+}
+
+func (r *repository) evaluationDetailByID(ctx context.Context, id string) (backtestservice.SavedEvaluationDetail, error) {
+	errb := oops.In("backtest_evaluation_repository").With("experiment_id", id)
+	client, err := r.database.Client(ctx)
+	if err != nil {
+		return backtestservice.SavedEvaluationDetail{}, errb.Wrap(err)
+	}
+	var experimentRow storage.BacktestExperimentRow
+	if err := client.NewSelect().Model(&experimentRow).Where("id = ?", id).Scan(ctx); err != nil {
+		return backtestservice.SavedEvaluationDetail{}, errb.Wrapf(err, "get backtest experiment row")
+	}
+	var caseRows []storage.BacktestExperimentCaseRow
+	if err := client.NewSelect().Model(&caseRows).Where("experiment_id = ?", id).Order("rank ASC").Order("case_id ASC").Scan(ctx); err != nil {
+		return backtestservice.SavedEvaluationDetail{}, errb.Wrapf(err, "list backtest experiment case rows")
+	}
+	cases := make([]backtestservice.SavedExperimentCase, 0, len(caseRows))
+	for _, row := range caseRows {
+		item := experimentCaseFromRow(&row)
+		var resultRow storage.BacktestResultRow
+		if err := client.NewSelect().Model(&resultRow).Where("experiment_case_id = ?", row.ID).Scan(ctx); err != nil {
+			return backtestservice.SavedEvaluationDetail{}, errb.With("case_id", row.CaseID).Wrapf(err, "get backtest result row")
+		}
+		item.ResultJSON = json.RawMessage(resultRow.ResultJSON)
+		metrics := core.Metrics{}
+		var metricRows []storage.BacktestMetricSummaryRow
+		if err := client.NewSelect().Model(&metricRows).Where("experiment_case_id = ?", row.ID).Order("metric ASC").Scan(ctx); err != nil {
+			return backtestservice.SavedEvaluationDetail{}, errb.With("case_id", row.CaseID).Wrapf(err, "list metric summary rows")
+		}
+		for _, metricRow := range metricRows {
+			metrics[metricRow.Metric] = metricRow.Value
+		}
+		metricsJSON, err := json.Marshal(metrics)
+		if err != nil {
+			return backtestservice.SavedEvaluationDetail{}, errb.With("case_id", row.CaseID).Wrapf(err, "encode metric summary json")
+		}
+		item.MetricsJSON = metricsJSON
+		cases = append(cases, item)
+	}
+	var stepRows []storage.BacktestWalkForwardStepRow
+	if err := client.NewSelect().Model(&stepRows).Where("experiment_id = ?", id).Order("step_index ASC").Scan(ctx); err != nil {
+		return backtestservice.SavedEvaluationDetail{}, errb.Wrapf(err, "list walk-forward step rows")
+	}
+	steps := make([]backtestservice.SavedWalkForwardStep, 0, len(stepRows))
+	for _, row := range stepRows {
+		steps = append(steps, walkForwardStepFromRow(&row))
+	}
+	return backtestservice.SavedEvaluationDetail{
+		Experiment:  experimentFromRow(&experimentRow),
+		Cases:       cases,
+		WalkForward: steps,
+	}, nil
+}
+
 func (r *repository) getVersionByID(ctx context.Context, id string) (storage.BacktestStrategyVersionRow, error) {
 	client, err := r.database.Client(ctx)
 	if err != nil {
@@ -329,6 +528,134 @@ func versionFromRow(row *storage.BacktestStrategyVersionRow) backtestservice.Sav
 		SpecHash:      row.SpecHash,
 		CreatedAt:     row.CreatedAt,
 	}
+}
+
+func experimentToRow(in backtestservice.SavedExperiment) storage.BacktestExperimentRow {
+	return storage.BacktestExperimentRow{
+		ID:               in.ID,
+		Name:             in.Name,
+		StrategyName:     in.StrategyName,
+		BaseRunName:      in.BaseRunName,
+		SchemaVersion:    in.SchemaVersion,
+		SpecJSON:         string(in.SpecJSON),
+		SpecHash:         in.SpecHash,
+		StrategySpecHash: in.StrategySpecHash,
+		DataFrom:         in.DataFrom,
+		DataTo:           in.DataTo,
+		CreatedAt:        in.CreatedAt,
+	}
+}
+
+func experimentFromRow(row *storage.BacktestExperimentRow) backtestservice.SavedExperiment {
+	return backtestservice.SavedExperiment{
+		ID:               row.ID,
+		Name:             row.Name,
+		StrategyName:     row.StrategyName,
+		BaseRunName:      row.BaseRunName,
+		SchemaVersion:    row.SchemaVersion,
+		SpecJSON:         json.RawMessage(row.SpecJSON),
+		SpecHash:         row.SpecHash,
+		StrategySpecHash: row.StrategySpecHash,
+		DataFrom:         row.DataFrom,
+		DataTo:           row.DataTo,
+		CreatedAt:        row.CreatedAt,
+	}
+}
+
+func experimentCaseToRow(in backtestservice.SavedExperimentCase) storage.BacktestExperimentCaseRow {
+	return storage.BacktestExperimentCaseRow{
+		ID:                in.ID,
+		ExperimentID:      in.ExperimentID,
+		CaseID:            in.CaseID,
+		CaseName:          in.CaseName,
+		RunName:           in.RunName,
+		PeriodFrom:        in.PeriodFrom,
+		PeriodTo:          in.PeriodTo,
+		ParameterJSON:     string(in.ParameterJSON),
+		RegimeTagsJSON:    string(in.RegimeTagsJSON),
+		Status:            in.Status,
+		PassedConstraints: in.PassedConstraints,
+		Rank:              in.Rank,
+		Objective:         in.Objective,
+		ObjectiveValue:    in.ObjectiveValue,
+		ResultHash:        in.ResultHash,
+		CreatedAt:         in.CreatedAt,
+	}
+}
+
+func experimentCaseFromRow(row *storage.BacktestExperimentCaseRow) backtestservice.SavedExperimentCase {
+	return backtestservice.SavedExperimentCase{
+		ID:                row.ID,
+		ExperimentID:      row.ExperimentID,
+		CaseID:            row.CaseID,
+		CaseName:          row.CaseName,
+		RunName:           row.RunName,
+		PeriodFrom:        row.PeriodFrom,
+		PeriodTo:          row.PeriodTo,
+		ParameterJSON:     json.RawMessage(row.ParameterJSON),
+		RegimeTagsJSON:    json.RawMessage(row.RegimeTagsJSON),
+		Status:            row.Status,
+		PassedConstraints: row.PassedConstraints,
+		Rank:              row.Rank,
+		Objective:         row.Objective,
+		ObjectiveValue:    row.ObjectiveValue,
+		ResultHash:        row.ResultHash,
+		CreatedAt:         row.CreatedAt,
+	}
+}
+
+func walkForwardStepToRow(in backtestservice.SavedWalkForwardStep) storage.BacktestWalkForwardStepRow {
+	return storage.BacktestWalkForwardStepRow{
+		ID:                    in.ID,
+		ExperimentID:          in.ExperimentID,
+		StepIndex:             in.StepIndex,
+		TrainFrom:             in.TrainFrom,
+		TrainTo:               in.TrainTo,
+		TestFrom:              in.TestFrom,
+		TestTo:                in.TestTo,
+		SelectedParameterJSON: string(in.SelectedParameterJSON),
+		TrainCaseID:           in.TrainCaseID,
+		TestCaseID:            in.TestCaseID,
+		TrainObjective:        in.TrainObjective,
+		ResultHash:            in.ResultHash,
+		CreatedAt:             in.CreatedAt,
+	}
+}
+
+func walkForwardStepFromRow(row *storage.BacktestWalkForwardStepRow) backtestservice.SavedWalkForwardStep {
+	return backtestservice.SavedWalkForwardStep{
+		ID:                    row.ID,
+		ExperimentID:          row.ExperimentID,
+		StepIndex:             row.StepIndex,
+		TrainFrom:             row.TrainFrom,
+		TrainTo:               row.TrainTo,
+		TestFrom:              row.TestFrom,
+		TestTo:                row.TestTo,
+		SelectedParameterJSON: json.RawMessage(row.SelectedParameterJSON),
+		TrainCaseID:           row.TrainCaseID,
+		TestCaseID:            row.TestCaseID,
+		TrainObjective:        row.TrainObjective,
+		ResultHash:            row.ResultHash,
+		CreatedAt:             row.CreatedAt,
+	}
+}
+
+func looksLikeID(value string) bool {
+	parts := strings.Split(value, "-")
+	if len(parts) != 5 {
+		return false
+	}
+	for _, part := range parts {
+		if part == "" {
+			return false
+		}
+		for _, ch := range part {
+			if (ch < '0' || ch > '9') && (ch < 'a' || ch > 'f') && (ch < 'A' || ch > 'F') {
+				return false
+			}
+		}
+	}
+	return true
 }
 
 func detailFromRows(strategy *storage.BacktestStrategyRow, version *storage.BacktestStrategyVersionRow) (backtestservice.SavedStrategyDetail, error) {

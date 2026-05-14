@@ -119,6 +119,11 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 		{name: "screen_run_items", model: (*ScreenRunItemRow)(nil)},
 		{name: "backtest_strategies", model: (*BacktestStrategyRow)(nil)},
 		{name: "backtest_strategy_versions", model: (*BacktestStrategyVersionRow)(nil)},
+		{name: "backtest_experiments", model: (*BacktestExperimentRow)(nil)},
+		{name: "backtest_experiment_cases", model: (*BacktestExperimentCaseRow)(nil)},
+		{name: "backtest_results", model: (*BacktestResultRow)(nil)},
+		{name: "backtest_metric_summaries", model: (*BacktestMetricSummaryRow)(nil)},
+		{name: "backtest_walk_forward_steps", model: (*BacktestWalkForwardStepRow)(nil)},
 	}
 	for _, table := range tables {
 		if _, err := db.NewCreateTable().
@@ -247,6 +252,39 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 			name:    "idx_backtest_strategy_versions_spec_hash",
 			model:   (*BacktestStrategyVersionRow)(nil),
 			columns: []string{"spec_hash"},
+		},
+		{
+			name:    "idx_backtest_experiments_name_created",
+			model:   (*BacktestExperimentRow)(nil),
+			columns: []string{"name", "created_at"},
+		},
+		{
+			name:    "idx_backtest_experiments_spec_hash",
+			model:   (*BacktestExperimentRow)(nil),
+			columns: []string{"spec_hash"},
+		},
+		{
+			name:    "idx_backtest_experiment_cases_experiment",
+			model:   (*BacktestExperimentCaseRow)(nil),
+			columns: []string{"experiment_id", "rank"},
+		},
+		{
+			name:    "idx_backtest_results_case",
+			model:   (*BacktestResultRow)(nil),
+			columns: []string{"experiment_case_id"},
+			unique:  true,
+		},
+		{
+			name:    "idx_backtest_metric_summaries_case_metric",
+			model:   (*BacktestMetricSummaryRow)(nil),
+			columns: []string{"experiment_case_id", "metric"},
+			unique:  true,
+		},
+		{
+			name:    "idx_backtest_walk_forward_steps_experiment",
+			model:   (*BacktestWalkForwardStepRow)(nil),
+			columns: []string{"experiment_id", "step_index"},
+			unique:  true,
 		},
 	}
 	for _, index := range indexes {
