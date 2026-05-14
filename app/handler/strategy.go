@@ -55,6 +55,12 @@ type ScreenStrategyRequest struct {
 	SpecHash string
 }
 
+type CompareScreenStrategiesRequest struct {
+	Names []string
+	AsOf  string
+	TopN  int
+}
+
 type ScreenPipelineRequest struct {
 	Path string
 }
@@ -73,6 +79,16 @@ type InspectScreenRequest struct {
 
 type InspectScreenPipelineRequest struct {
 	Path string
+}
+
+type InspectMarketRegimeRequest struct {
+	Path string
+	AsOf string
+}
+
+type InspectStrategySetRequest struct {
+	Path string
+	AsOf string
 }
 
 func (h Strategy) Create(ctx context.Context, req CreateStrategyRequest) (StrategyDetailOutput, error) {
@@ -153,6 +169,18 @@ func (h Strategy) Screen(ctx context.Context, req ScreenStrategyRequest) (Screen
 	return ScreenRunDetailOutput{Detail: detail}, nil
 }
 
+func (h Strategy) CompareScreenStrategies(ctx context.Context, req CompareScreenStrategiesRequest) (ScreenStrategyComparisonOutput, error) {
+	result, err := h.service.CompareScreenStrategies(ctx, strategyservice.CompareScreenStrategiesRequest{
+		Names: req.Names,
+		AsOf:  req.AsOf,
+		TopN:  req.TopN,
+	})
+	if err != nil {
+		return ScreenStrategyComparisonOutput{}, err
+	}
+	return ScreenStrategyComparisonOutput{Result: result}, nil
+}
+
 func (h Strategy) ScreenPipeline(ctx context.Context, req ScreenPipelineRequest) (ScreenPipelineOutput, error) {
 	result, err := h.universe.InspectScreenPipeline(ctx, req.Path)
 	if err != nil {
@@ -191,4 +219,20 @@ func (h Strategy) InspectScreenPipeline(ctx context.Context, req InspectScreenPi
 		return ScreenPipelineOutput{}, err
 	}
 	return ScreenPipelineOutput{Result: result}, nil
+}
+
+func (h Strategy) InspectMarketRegime(ctx context.Context, req InspectMarketRegimeRequest) (MarketRegimeOutput, error) {
+	result, err := h.universe.InspectMarketRegime(ctx, req.Path, req.AsOf)
+	if err != nil {
+		return MarketRegimeOutput{}, err
+	}
+	return MarketRegimeOutput{Result: result}, nil
+}
+
+func (h Strategy) InspectStrategySet(ctx context.Context, req InspectStrategySetRequest) (StrategySetOutput, error) {
+	result, err := h.universe.InspectStrategySet(ctx, req.Path, req.AsOf)
+	if err != nil {
+		return StrategySetOutput{}, err
+	}
+	return StrategySetOutput{Result: result}, nil
 }

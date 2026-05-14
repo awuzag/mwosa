@@ -278,6 +278,36 @@ func TestRankSelectorOrderIsPreservedInSnapshot(t *testing.T) {
 	assert.Equal(t, []string{"C", "B", "A"}, snapshot.Symbols)
 }
 
+func TestRankScoreUsesPercentileWeightedScoreAndStableTieBreak(t *testing.T) {
+	spec := PipelineSpec{Pipeline: []StepSpec{
+		{ID: "source.inline", Params: map[string]any{"rows": []any{
+			map[string]any{"symbol": "A", "return_20d": 0.10, "max_dd_20d": -0.20, "traded_amount": 1000.0},
+			map[string]any{"symbol": "B", "return_20d": 0.05, "max_dd_20d": -0.05, "traded_amount": 3000.0},
+			map[string]any{"symbol": "C", "return_20d": 0.10, "max_dd_20d": -0.20, "traded_amount": 1000.0},
+		}}},
+		{ID: "rank.score", Params: map[string]any{
+			"output":    "swing_score",
+			"normalize": "percentile",
+			"metrics": []any{
+				map[string]any{"field": "return_20d", "weight": 0.6, "direction": "desc"},
+				map[string]any{"field": "max_dd_20d", "weight": 0.3, "direction": "desc"},
+				map[string]any{"field": "traded_amount", "weight": 0.1, "direction": "desc"},
+			},
+		}},
+	}}
+	plan, err := Compile(spec, testDataWindow(), DefaultSelectorRegistry())
+	require.NoError(t, err)
+
+	snapshot, err := ExecutePipeline(context.Background(), plan, ExecutionContext{})
+	require.NoError(t, err)
+
+	assert.Equal(t, []string{"A", "C", "B"}, snapshot.Symbols)
+	require.Len(t, snapshot.Candidates, 3)
+	assert.Contains(t, snapshot.Candidates[0].Fields, "swing_score")
+	assert.Contains(t, snapshot.Candidates[0].Fields, "swing_score_components")
+	assert.Equal(t, snapshot.Candidates[0].Fields["swing_score"], snapshot.Candidates[1].Fields["swing_score"])
+}
+
 func TestBuildSnapshotsUsesClosedDataOnly(t *testing.T) {
 	spec := PipelineSpec{
 		Schedule: ScheduleSpec{Frequency: ScheduleDaily},

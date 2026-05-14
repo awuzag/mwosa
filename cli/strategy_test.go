@@ -310,6 +310,42 @@ pipeline:
 	if !strings.Contains(inspectOut.String(), `"payload"`) || !strings.Contains(inspectOut.String(), `"069500"`) {
 		t.Fatalf("inspect yaml screen should include stored row payload:\n%s", inspectOut.String())
 	}
+
+	yamlSecondPath := filepath.Join(t.TempDir(), "screen-strategy-second.yaml")
+	if err := os.WriteFile(yamlSecondPath, []byte(strings.ReplaceAll(string(mustReadFile(t, yamlPath)), "name: etf-uptrend", "name: etf-mdd")), 0o644); err != nil {
+		t.Fatalf("write second screen strategy yaml: %v", err)
+	}
+
+	var updateSecondOut bytes.Buffer
+	updateSecondCmd := NewRootCommand(BuildInfo{})
+	updateSecondCmd.SetOut(&updateSecondOut)
+	updateSecondCmd.SetErr(&updateSecondOut)
+	if err := executeForTest(t, ctx, updateSecondCmd,
+		"--database", databasePath,
+		"--output", "json",
+		"update", "screen", "strategy", "etf-mdd",
+		"--file", yamlSecondPath,
+	); err != nil {
+		t.Fatalf("update second screen strategy: %v\n%s", err, updateSecondOut.String())
+	}
+
+	var compareOut bytes.Buffer
+	compareCmd := NewRootCommand(BuildInfo{})
+	compareCmd.SetOut(&compareOut)
+	compareCmd.SetErr(&compareOut)
+	if err := executeForTest(t, ctx, compareCmd,
+		"--database", databasePath,
+		"--output", "json",
+		"compare", "screen", "strategies", "etf-uptrend", "etf-mdd",
+		"--as-of", "2024-04-16",
+	); err != nil {
+		t.Fatalf("compare screen strategies: %v\n%s", err, compareOut.String())
+	}
+	for _, want := range []string{`"strategies": [`, `"strategy_name": "etf-uptrend"`, `"overlaps": [`} {
+		if !strings.Contains(compareOut.String(), want) {
+			t.Fatalf("compare screen strategies output missing %q in:\n%s", want, compareOut.String())
+		}
+	}
 }
 
 func seedStrategyDailyBars(t *testing.T, ctx context.Context, databasePath string) {
@@ -354,4 +390,13 @@ func seedStrategyDailyBars(t *testing.T, ctx context.Context, databasePath strin
 	if err := database.Close(); err != nil {
 		t.Fatalf("close seeded database: %v", err)
 	}
+}
+
+func mustReadFile(t *testing.T, path string) []byte {
+	t.Helper()
+	data, err := os.ReadFile(path)
+	if err != nil {
+		t.Fatalf("read file %s: %v", path, err)
+	}
+	return data
 }

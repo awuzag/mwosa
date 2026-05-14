@@ -82,6 +82,41 @@ func TestServiceJQStrategyStillScreensDataset(t *testing.T) {
 	assert.NotEmpty(t, detail.StrategyVersion.SpecHash)
 }
 
+func TestServiceComparesScreenStrategiesWithoutRecordingRuns(t *testing.T) {
+	ctx := context.Background()
+	repo := newMemoryStrategyRepository()
+	service, err := NewService(repo, fakeDatasetReader{})
+	require.NoError(t, err)
+	service.SetPipelineExecutor(fakePipelineExecutor{})
+
+	_, err = service.Upsert(ctx, UpsertStrategyRequest{
+		Name: "return-rank",
+		Spec: yamlPipelineSpec("return-rank", "069500"),
+	})
+	require.NoError(t, err)
+	_, err = service.Upsert(ctx, UpsertStrategyRequest{
+		Name: "mdd-rank",
+		Spec: yamlPipelineSpec("mdd-rank", "102110"),
+	})
+	require.NoError(t, err)
+
+	result, err := service.CompareScreenStrategies(ctx, CompareScreenStrategiesRequest{
+		Names: []string{"return-rank", "mdd-rank"},
+		AsOf:  "2026-05-06",
+		TopN:  5,
+	})
+	require.NoError(t, err)
+
+	assert.Equal(t, "2026-05-06", result.AsOf)
+	require.Len(t, result.Strategies, 2)
+	assert.Equal(t, "2026-05-06", result.Strategies[0].DataAsOf)
+	assert.Equal(t, []string{"069500"}, result.Strategies[0].TopSymbols)
+	assert.NotNil(t, result.Strategies[0].Metrics.AverageReturn20D)
+	require.Len(t, result.Overlaps, 1)
+	assert.Equal(t, 0, result.Overlaps[0].Count)
+	assert.Empty(t, repo.runs)
+}
+
 type memoryStrategyRepository struct {
 	strategies map[string]Strategy
 	versions   []StrategyVersion
@@ -240,7 +275,7 @@ func (fakePipelineExecutor) ExecuteScreenStrategyPipeline(_ context.Context, spe
 		InputDataset:       "screen_pipeline",
 		InputSchemaVersion: spec.SchemaVersion,
 		DataAsOf:           spec.Pipeline.Data.AsOf,
-		Rows:               []json.RawMessage{json.RawMessage(`{"symbol":"` + symbol + `"}`)},
+		Rows:               []json.RawMessage{json.RawMessage(`{"symbol":"` + symbol + `","return_20d":0.12,"max_dd_20d":-0.04,"traded_amount":1000000}`)},
 	}, nil
 }
 

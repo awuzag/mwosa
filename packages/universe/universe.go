@@ -449,6 +449,8 @@ func defaultUniverseSelectors() []SelectorDefinition {
 		filterSelector("filter.market", filterMarket),
 		filterSelector("filter.tags", filterTags),
 		rankSelector("rank.by_field", rankByField),
+		rankSelector("rank.by_metric", rankByField),
+		rankSelector("rank.score", rankScore),
 		rankSelector("rank.weighted", rankWeighted),
 		rankSelector("rank.percentile", rankPercentile),
 		rankSelector("rank.group_top_n", rankGroupTopN),
@@ -491,12 +493,16 @@ func validateUniverseStepParams(step StepSpec) error {
 		if _, ok := stringSliceParam(step.Params, "symbols"); !ok {
 			return oops.In("universe").New("source.symbols requires symbols")
 		}
-	case "rank.by_field":
-		if _, ok := stringParam(step.Params, "field"); !ok {
-			return oops.In("universe").New("rank.by_field requires field")
+	case "rank.by_field", "rank.by_metric":
+		if _, ok := stringParam(step.Params, firstPresentParam(step.Params, "field", "metric")); !ok {
+			return oops.In("universe").With("selector", step.ID).New("rank selector requires field or metric")
 		}
-		if order := stringParamDefault(step.Params, "order", "desc"); order != "asc" && order != "desc" {
+		if order := directionParam(step.Params, "order", "direction", "desc"); order != "asc" && order != "desc" {
 			return oops.In("universe").With("order", order).New("rank order must be asc or desc")
+		}
+	case "rank.score":
+		if err := validateRankScoreParams(step.Params); err != nil {
+			return err
 		}
 	case "filter.field":
 		if _, ok := stringParam(step.Params, "field"); !ok {
@@ -887,14 +893,163 @@ func filterTags(_ context.Context, step StepSpec, input []Candidate, execCtx Exe
 }
 
 func rankByField(_ context.Context, step StepSpec, input []Candidate, execCtx ExecutionContext, _ SelectorRegistry) ([]Candidate, StepSummary, []Decision, error) {
-	field := stringParamDefault(step.Params, "field", "")
-	order := stringParamDefault(step.Params, "order", "desc")
+	field := stringParamDefault(step.Params, "field", stringParamDefault(step.Params, "metric", ""))
+	order := directionParam(step.Params, "order", "direction", "desc")
 	out := cloneCandidates(input)
 	sortCandidatesByField(out, field, order)
 	if limit := intParamDefault(step.Params, "limit", 0); limit > 0 && limit < len(out) {
 		out = out[:limit]
 	}
 	return out, StepSummary{Reason: "rank by " + field, Fields: map[string]any{"field": field, "order": order}}, includeDecisions(execCtx.SelectionTime, step.ID, out, "ranked"), nil
+}
+
+type rankScoreMetric struct {
+	Field     string
+	Weight    float64
+	Direction string
+}
+
+type metricValue struct {
+	Index int
+	Key   string
+	Value float64
+}
+
+func rankScore(_ context.Context, step StepSpec, input []Candidate, execCtx ExecutionContext, _ SelectorRegistry) ([]Candidate, StepSummary, []Decision, error) {
+	metrics, err := rankScoreMetrics(step.Params)
+	if err != nil {
+		return nil, StepSummary{}, nil, err
+	}
+	normalize := stringParamDefault(step.Params, "normalize", "percentile")
+	if normalize != "percentile" {
+		return nil, StepSummary{}, nil, oops.In("universe").With("normalize", normalize).New("rank.score normalize must be percentile")
+	}
+	output := stringParamDefault(step.Params, "output", "score")
+	out := cloneCandidates(input)
+	components := make([]map[string]float64, len(out))
+	for i := range components {
+		components[i] = map[string]float64{}
+	}
+	for _, metric := range metrics {
+		values := make([]metricValue, 0, len(out))
+		for i, candidate := range out {
+			value, ok := numeric(candidate.Fields[metric.Field])
+			if !ok {
+				return nil, StepSummary{}, nil, oops.In("universe").With("field", metric.Field, "symbol", candidate.Symbol).New("rank.score metric field must be numeric")
+			}
+			values = append(values, metricValue{Index: i, Key: candidateKey(candidate), Value: value})
+		}
+		normalized := percentileScores(values, metric.Direction)
+		for i, score := range normalized {
+			components[i][metric.Field] = score
+		}
+	}
+	for i := range out {
+		var score float64
+		for _, metric := range metrics {
+			score += components[i][metric.Field] * metric.Weight
+		}
+		ensureFields(&out[i])
+		out[i].Fields[output] = score
+		out[i].Fields[output+"_components"] = components[i]
+	}
+	sortCandidatesByFieldStableKey(out, output, "desc")
+	if limit := intParamDefault(step.Params, "limit", 0); limit > 0 && limit < len(out) {
+		out = out[:limit]
+	}
+	return out, StepSummary{
+		Reason: "score rank",
+		Fields: map[string]any{
+			"output":    output,
+			"normalize": normalize,
+			"metrics":   rankScoreMetricFields(metrics),
+		},
+	}, includeDecisions(execCtx.SelectionTime, step.ID, out, "score_rank"), nil
+}
+
+func validateRankScoreParams(params map[string]any) error {
+	if output := stringParamDefault(params, "output", "score"); strings.TrimSpace(output) == "" {
+		return oops.In("universe").New("rank.score output is required")
+	}
+	normalize := stringParamDefault(params, "normalize", "percentile")
+	if normalize != "percentile" {
+		return oops.In("universe").With("normalize", normalize).New("rank.score normalize must be percentile")
+	}
+	_, err := rankScoreMetrics(params)
+	return err
+}
+
+func rankScoreMetrics(params map[string]any) ([]rankScoreMetric, error) {
+	raw, ok := params["metrics"].([]any)
+	if !ok || len(raw) == 0 {
+		return nil, oops.In("universe").New("rank.score requires metrics")
+	}
+	out := make([]rankScoreMetric, 0, len(raw))
+	for index, item := range raw {
+		object, ok := item.(map[string]any)
+		if !ok {
+			return nil, oops.In("universe").With("index", index).New("rank.score metric must be an object")
+		}
+		field := stringParamDefault(object, "field", "")
+		if field == "" {
+			return nil, oops.In("universe").With("index", index).New("rank.score metric field is required")
+		}
+		weight, ok := numeric(object["weight"])
+		if !ok {
+			return nil, oops.In("universe").With("field", field).New("rank.score metric weight must be numeric")
+		}
+		direction := directionParam(object, "direction", "order", "desc")
+		if direction != "asc" && direction != "desc" {
+			return nil, oops.In("universe").With("field", field, "direction", direction).New("rank.score metric direction must be asc or desc")
+		}
+		out = append(out, rankScoreMetric{Field: field, Weight: weight, Direction: direction})
+	}
+	return out, nil
+}
+
+func percentileScores(values []metricValue, direction string) map[int]float64 {
+	out := make(map[int]float64, len(values))
+	if len(values) == 0 {
+		return out
+	}
+	if len(values) == 1 {
+		out[values[0].Index] = 1
+		return out
+	}
+	slices.SortFunc(values, func(a, b metricValue) int {
+		switch {
+		case a.Value < b.Value:
+			return -1
+		case a.Value > b.Value:
+			return 1
+		default:
+			return strings.Compare(a.Key, b.Key)
+		}
+	})
+	for start := 0; start < len(values); {
+		end := start + 1
+		for end < len(values) && values[end].Value == values[start].Value {
+			end++
+		}
+		rank := (float64(start) + float64(end-1)) / 2
+		score := rank / float64(len(values)-1)
+		if direction == "asc" {
+			score = 1 - score
+		}
+		for i := start; i < end; i++ {
+			out[values[i].Index] = score
+		}
+		start = end
+	}
+	return out
+}
+
+func rankScoreMetricFields(metrics []rankScoreMetric) []string {
+	out := make([]string, 0, len(metrics))
+	for _, metric := range metrics {
+		out = append(out, metric.Field)
+	}
+	return out
 }
 
 func rankWeighted(_ context.Context, step StepSpec, input []Candidate, execCtx ExecutionContext, _ SelectorRegistry) ([]Candidate, StepSummary, []Decision, error) {
@@ -1470,6 +1625,19 @@ func sortCandidatesByField(candidates []Candidate, field string, order string) {
 	})
 }
 
+func sortCandidatesByFieldStableKey(candidates []Candidate, field string, order string) {
+	slices.SortFunc(candidates, func(a, b Candidate) int {
+		cmp := compareValues(a.Fields[field], b.Fields[field])
+		if order == "desc" {
+			cmp = -cmp
+		}
+		if cmp != 0 {
+			return cmp
+		}
+		return strings.Compare(candidateKey(a), candidateKey(b))
+	})
+}
+
 func compareField(a, b Candidate, field string) int {
 	return compareValues(a.Fields[field], b.Fields[field])
 }
@@ -1624,6 +1792,22 @@ func stringParamDefault(params map[string]any, key string, fallback string) stri
 		return fallback
 	}
 	return value
+}
+
+func firstPresentParam(params map[string]any, keys ...string) string {
+	for _, key := range keys {
+		if _, ok := stringParam(params, key); ok {
+			return key
+		}
+	}
+	if len(keys) == 0 {
+		return ""
+	}
+	return keys[0]
+}
+
+func directionParam(params map[string]any, primary string, secondary string, fallback string) string {
+	return stringParamDefault(params, primary, stringParamDefault(params, secondary, fallback))
 }
 
 func stringSliceParam(params map[string]any, key string) ([]string, bool) {

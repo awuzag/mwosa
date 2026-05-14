@@ -4,6 +4,8 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"sort"
+	"strconv"
 	"strings"
 	"time"
 
@@ -100,6 +102,46 @@ type ScreenResult struct {
 	InputSchemaVersion int                `json:"input_schema_version" csv:"input_schema_version"`
 	ResultCount        int                `json:"result_count" csv:"result_count"`
 	Items              []ScreenResultItem `json:"items" csv:"-"`
+}
+
+type CompareScreenStrategiesRequest struct {
+	Names []string
+	AsOf  string
+	TopN  int
+}
+
+type ScreenStrategyComparison struct {
+	AsOf       string                         `json:"as_of,omitempty"`
+	TopN       int                            `json:"top_n"`
+	Strategies []ScreenStrategyComparisonItem `json:"strategies"`
+	Overlaps   []ScreenStrategyOverlap        `json:"overlaps"`
+}
+
+type ScreenStrategyComparisonItem struct {
+	StrategyName string                       `json:"strategy_name" csv:"strategy_name"`
+	Engine       Engine                       `json:"engine" csv:"engine"`
+	Version      int                          `json:"version" csv:"version"`
+	SpecHash     string                       `json:"spec_hash" csv:"spec_hash"`
+	DataAsOf     string                       `json:"data_as_of,omitempty" csv:"data_as_of"`
+	ResultCount  int                          `json:"result_count" csv:"result_count"`
+	TopSymbols   []string                     `json:"top_symbols" csv:"-"`
+	Metrics      ScreenStrategyCompareMetrics `json:"metrics" csv:"-"`
+}
+
+type ScreenStrategyCompareMetrics struct {
+	AverageReturn20D    *float64 `json:"average_return_20d,omitempty"`
+	MedianReturn20D     *float64 `json:"median_return_20d,omitempty"`
+	AverageMaxDD20D     *float64 `json:"average_max_dd_20d,omitempty"`
+	MedianMaxDD20D      *float64 `json:"median_max_dd_20d,omitempty"`
+	AverageTradedAmount *float64 `json:"average_traded_amount,omitempty"`
+}
+
+type ScreenStrategyOverlap struct {
+	LeftStrategy  string   `json:"left_strategy"`
+	RightStrategy string   `json:"right_strategy"`
+	TopN          int      `json:"top_n"`
+	Count         int      `json:"count"`
+	Symbols       []string `json:"symbols"`
 }
 
 type StrategyDetail struct {
@@ -411,6 +453,13 @@ type ScreenStrategyRequest struct {
 	SpecHash string
 }
 
+type screenExecutionResult struct {
+	Dataset    Dataset
+	Pipeline   PipelineExecutionResult
+	Rows       []json.RawMessage
+	IsPipeline bool
+}
+
 type ScreenJQRequest struct {
 	InputDataset string
 	QueryText    string
@@ -450,35 +499,94 @@ func (s Service) Screen(ctx context.Context, req ScreenStrategyRequest) (ScreenR
 		return ScreenRunDetail{}, errb.Wrapf(err, "load strategy")
 	}
 	started := s.now()
+	result, err := s.executeStrategyVersion(ctx, detail, "")
+	if err != nil {
+		return s.recordFailedRun(ctx, detail, req.Alias, started, err)
+	}
+	if result.IsPipeline {
+		return s.recordSucceededPipelineRun(ctx, detail, req.Alias, started, result.Pipeline)
+	}
+	return s.recordSucceededRun(ctx, detail, req.Alias, started, result.Dataset, result.Rows)
+}
+
+func (s Service) CompareScreenStrategies(ctx context.Context, req CompareScreenStrategiesRequest) (ScreenStrategyComparison, error) {
+	errb := oops.In("strategy_compare_service").With("as_of", req.AsOf)
+	if len(req.Names) < 2 {
+		return ScreenStrategyComparison{}, errb.New("compare screen strategies requires at least two strategies")
+	}
+	if strings.TrimSpace(req.AsOf) != "" {
+		if _, err := time.Parse(time.DateOnly, req.AsOf); err != nil {
+			return ScreenStrategyComparison{}, errb.Wrapf(err, "parse compare screen strategies as_of")
+		}
+	}
+	topN := req.TopN
+	if topN <= 0 {
+		topN = 10
+	}
+	items := make([]ScreenStrategyComparisonItem, 0, len(req.Names))
+	for _, name := range req.Names {
+		name = strings.TrimSpace(name)
+		if name == "" {
+			return ScreenStrategyComparison{}, errb.New("compare screen strategies contains empty strategy name")
+		}
+		detail, err := s.repo.GetStrategyVersion(ctx, name, StrategyVersionRef{Version: "latest"})
+		if err != nil {
+			return ScreenStrategyComparison{}, errb.With("name", name).Wrapf(err, "load strategy")
+		}
+		result, err := s.executeStrategyVersion(ctx, detail, req.AsOf)
+		if err != nil {
+			return ScreenStrategyComparison{}, errb.With("name", name).Wrap(err)
+		}
+		dataAsOf := req.AsOf
+		if result.IsPipeline && result.Pipeline.DataAsOf != "" {
+			dataAsOf = result.Pipeline.DataAsOf
+		}
+		items = append(items, ScreenStrategyComparisonItem{
+			StrategyName: detail.Strategy.Name,
+			Engine:       detail.Strategy.Engine,
+			Version:      detail.ActiveVersion.Version,
+			SpecHash:     detail.ActiveVersion.SpecHash,
+			DataAsOf:     dataAsOf,
+			ResultCount:  len(result.Rows),
+			TopSymbols:   topSymbols(result.Rows, topN),
+			Metrics:      compareMetrics(result.Rows),
+		})
+	}
+	return ScreenStrategyComparison{
+		AsOf:       strings.TrimSpace(req.AsOf),
+		TopN:       topN,
+		Strategies: items,
+		Overlaps:   compareOverlaps(items, topN),
+	}, nil
+}
+
+func (s Service) executeStrategyVersion(ctx context.Context, detail StrategyDetail, asOfOverride string) (screenExecutionResult, error) {
+	errb := oops.In("strategy_service").With("name", detail.Strategy.Name, "engine", detail.Strategy.Engine)
 	switch detail.Strategy.Engine {
 	case EngineJQ:
 		dataset, rows, err := s.executeJQAgainstDataset(ctx, detail.ActiveVersion.InputDataset, detail.ActiveVersion.QueryText)
 		if err != nil {
-			return s.recordFailedRun(ctx, detail, req.Alias, started, errb.Wrapf(err, "execute jq strategy"))
+			return screenExecutionResult{}, errb.Wrapf(err, "execute jq strategy")
 		}
-		return s.recordSucceededRun(ctx, detail, req.Alias, started, dataset, rows)
+		return screenExecutionResult{Dataset: dataset, Rows: rows}, nil
 	case EngineYAMLPipeline:
-		if s.pipelineExecutor == nil {
-			runErr := errb.New("screen pipeline executor is nil")
-			return s.recordFailedRun(ctx, detail, req.Alias, started, runErr)
-		}
-		executor := s.pipelineExecutor.executor
-		if executor == nil {
-			runErr := errb.New("screen pipeline executor is nil")
-			return s.recordFailedRun(ctx, detail, req.Alias, started, runErr)
+		if s.pipelineExecutor == nil || s.pipelineExecutor.executor == nil {
+			return screenExecutionResult{}, errb.New("screen pipeline executor is nil")
 		}
 		spec, err := screenStrategySpecFromVersion(detail)
 		if err != nil {
-			return s.recordFailedRun(ctx, detail, req.Alias, started, errb.Wrap(err))
+			return screenExecutionResult{}, errb.Wrap(err)
 		}
-		result, err := executor.ExecuteScreenStrategyPipeline(ctx, spec)
+		if strings.TrimSpace(asOfOverride) != "" {
+			spec = withScreenStrategyAsOf(spec, asOfOverride)
+		}
+		result, err := s.pipelineExecutor.executor.ExecuteScreenStrategyPipeline(ctx, spec)
 		if err != nil {
-			return s.recordFailedRun(ctx, detail, req.Alias, started, errb.Wrapf(err, "execute yaml pipeline strategy"))
+			return screenExecutionResult{}, errb.Wrapf(err, "execute yaml pipeline strategy")
 		}
-		return s.recordSucceededPipelineRun(ctx, detail, req.Alias, started, result)
+		return screenExecutionResult{Pipeline: result, Rows: result.Rows, IsPipeline: true}, nil
 	default:
-		runErr := errb.With("engine", detail.Strategy.Engine).Errorf("unsupported strategy engine: %s", detail.Strategy.Engine)
-		return s.recordFailedRun(ctx, detail, req.Alias, started, runErr)
+		return screenExecutionResult{}, errb.Errorf("unsupported strategy engine: %s", detail.Strategy.Engine)
 	}
 }
 
@@ -615,6 +723,134 @@ func screenResultFromRows(queryText string, dataset Dataset, rows []json.RawMess
 		ResultCount:        len(rows),
 		Items:              items,
 	}
+}
+
+func withScreenStrategyAsOf(spec ScreenStrategySpec, asOf string) ScreenStrategySpec {
+	if spec.Pipeline == nil {
+		return spec
+	}
+	next := spec
+	pipeline := *spec.Pipeline
+	pipeline.Data.AsOf = asOf
+	pipeline.Data.To = asOf
+	next.Pipeline = &pipeline
+	return next
+}
+
+func topSymbols(rows []json.RawMessage, topN int) []string {
+	if topN > len(rows) {
+		topN = len(rows)
+	}
+	out := make([]string, 0, topN)
+	for _, row := range rows[:topN] {
+		symbol := extractSymbol(row)
+		if symbol == "" {
+			continue
+		}
+		out = append(out, symbol)
+	}
+	return out
+}
+
+func compareMetrics(rows []json.RawMessage) ScreenStrategyCompareMetrics {
+	return ScreenStrategyCompareMetrics{
+		AverageReturn20D:    averageMetric(rows, "return_20d"),
+		MedianReturn20D:     medianMetric(rows, "return_20d"),
+		AverageMaxDD20D:     averageMetric(rows, "max_dd_20d"),
+		MedianMaxDD20D:      medianMetric(rows, "max_dd_20d"),
+		AverageTradedAmount: averageMetric(rows, "traded_amount"),
+	}
+}
+
+func averageMetric(rows []json.RawMessage, field string) *float64 {
+	values := metricValues(rows, field)
+	if len(values) == 0 {
+		return nil
+	}
+	var sum float64
+	for _, value := range values {
+		sum += value
+	}
+	avg := sum / float64(len(values))
+	return &avg
+}
+
+func medianMetric(rows []json.RawMessage, field string) *float64 {
+	values := metricValues(rows, field)
+	if len(values) == 0 {
+		return nil
+	}
+	sort.Float64s(values)
+	mid := len(values) / 2
+	if len(values)%2 == 1 {
+		value := values[mid]
+		return &value
+	}
+	value := (values[mid-1] + values[mid]) / 2
+	return &value
+}
+
+func metricValues(rows []json.RawMessage, field string) []float64 {
+	out := make([]float64, 0, len(rows))
+	for _, row := range rows {
+		var object map[string]any
+		if err := json.Unmarshal(row, &object); err != nil {
+			continue
+		}
+		if value, ok := numericAny(object[field]); ok {
+			out = append(out, value)
+		}
+	}
+	return out
+}
+
+func numericAny(value any) (float64, bool) {
+	switch typed := value.(type) {
+	case float64:
+		return typed, true
+	case int:
+		return float64(typed), true
+	case json.Number:
+		parsed, err := typed.Float64()
+		return parsed, err == nil
+	case string:
+		parsed, err := strconv.ParseFloat(strings.ReplaceAll(strings.TrimSpace(typed), ",", ""), 64)
+		return parsed, err == nil
+	default:
+		return 0, false
+	}
+}
+
+func compareOverlaps(items []ScreenStrategyComparisonItem, topN int) []ScreenStrategyOverlap {
+	out := make([]ScreenStrategyOverlap, 0)
+	for i := 0; i < len(items); i++ {
+		left := setStrings(items[i].TopSymbols)
+		for j := i + 1; j < len(items); j++ {
+			symbols := make([]string, 0)
+			for _, symbol := range items[j].TopSymbols {
+				if _, ok := left[symbol]; ok {
+					symbols = append(symbols, symbol)
+				}
+			}
+			sort.Strings(symbols)
+			out = append(out, ScreenStrategyOverlap{
+				LeftStrategy:  items[i].StrategyName,
+				RightStrategy: items[j].StrategyName,
+				TopN:          topN,
+				Count:         len(symbols),
+				Symbols:       symbols,
+			})
+		}
+	}
+	return out
+}
+
+func setStrings(values []string) map[string]struct{} {
+	out := make(map[string]struct{}, len(values))
+	for _, value := range values {
+		out[value] = struct{}{}
+	}
+	return out
 }
 
 func (s Service) recordFailedRun(ctx context.Context, detail StrategyDetail, alias string, started time.Time, runErr error) (ScreenRunDetail, error) {

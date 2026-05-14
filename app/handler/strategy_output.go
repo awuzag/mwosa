@@ -2,7 +2,9 @@ package handler
 
 import (
 	"fmt"
+	"strings"
 
+	universecore "github.com/ev3rlit/mwosa/packages/universe"
 	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
 	universeservice "github.com/ev3rlit/mwosa/service/universe"
 )
@@ -166,6 +168,18 @@ type ScreenPipelineOutput struct {
 	Result universeservice.ScreenPipelineResult
 }
 
+type ScreenStrategyComparisonOutput struct {
+	Result strategyservice.ScreenStrategyComparison
+}
+
+type MarketRegimeOutput struct {
+	Result universecore.MarketRegimeResult
+}
+
+type StrategySetOutput struct {
+	Result universeservice.StrategySetSelectionResult
+}
+
 func (o ScreenResultOutput) JSONValue() any {
 	return o.Result
 }
@@ -211,6 +225,108 @@ func (o ScreenPipelineOutput) TableRows() ([]string, [][]string) {
 		result.AsOf,
 		fmt.Sprint(result.ResultCount),
 		fmt.Sprint(len(result.Explain.Steps)),
+	}}
+}
+
+func (o ScreenStrategyComparisonOutput) JSONValue() any {
+	return o.Result
+}
+
+func (o ScreenStrategyComparisonOutput) NDJSONRows() any {
+	return o.Result.Strategies
+}
+
+func (o ScreenStrategyComparisonOutput) CSVRows() any {
+	return o.Result.Strategies
+}
+
+func (o ScreenStrategyComparisonOutput) TableRows() ([]string, [][]string) {
+	rows := make([][]string, 0, len(o.Result.Strategies))
+	for _, item := range o.Result.Strategies {
+		rows = append(rows, []string{
+			item.StrategyName,
+			fmt.Sprint(item.Version),
+			item.SpecHash,
+			item.DataAsOf,
+			fmt.Sprint(item.ResultCount),
+			strings.Join(item.TopSymbols, ","),
+			formatFloatPtr(item.Metrics.AverageReturn20D),
+			formatFloatPtr(item.Metrics.MedianReturn20D),
+			formatFloatPtr(item.Metrics.AverageMaxDD20D),
+			formatFloatPtr(item.Metrics.MedianMaxDD20D),
+			formatFloatPtr(item.Metrics.AverageTradedAmount),
+			overlapSummary(o.Result.Overlaps, item.StrategyName),
+		})
+	}
+	return []string{"strategy", "version", "spec_hash", "as_of", "count", "top_symbols", "avg_return_20d", "median_return_20d", "avg_max_dd_20d", "median_max_dd_20d", "avg_traded_amount", "top_overlap"}, rows
+}
+
+func formatFloatPtr(value *float64) string {
+	if value == nil {
+		return ""
+	}
+	return fmt.Sprintf("%.6g", *value)
+}
+
+func overlapSummary(overlaps []strategyservice.ScreenStrategyOverlap, strategyName string) string {
+	parts := make([]string, 0)
+	for _, overlap := range overlaps {
+		switch strategyName {
+		case overlap.LeftStrategy:
+			parts = append(parts, fmt.Sprintf("%s:%d", overlap.RightStrategy, overlap.Count))
+		case overlap.RightStrategy:
+			parts = append(parts, fmt.Sprintf("%s:%d", overlap.LeftStrategy, overlap.Count))
+		}
+	}
+	return strings.Join(parts, ",")
+}
+
+func (o MarketRegimeOutput) JSONValue() any {
+	return o.Result
+}
+
+func (o MarketRegimeOutput) NDJSONRows() any {
+	return o.Result
+}
+
+func (o MarketRegimeOutput) CSVRows() any {
+	return []universecore.MarketRegimeResult{o.Result}
+}
+
+func (o MarketRegimeOutput) TableRows() ([]string, [][]string) {
+	result := o.Result
+	return []string{"name", "as_of", "benchmark", "regime", "return_20d", "ma20", "ma60"}, [][]string{{
+		result.Name,
+		result.AsOf,
+		result.Benchmark.Symbol,
+		result.Regime,
+		fmt.Sprintf("%.6g", result.Metrics.Return20D),
+		fmt.Sprintf("%.6g", result.Metrics.MA20),
+		fmt.Sprintf("%.6g", result.Metrics.MA60),
+	}}
+}
+
+func (o StrategySetOutput) JSONValue() any {
+	return o.Result
+}
+
+func (o StrategySetOutput) NDJSONRows() any {
+	return o.Result
+}
+
+func (o StrategySetOutput) CSVRows() any {
+	return []universeservice.StrategySetSelectionResult{o.Result}
+}
+
+func (o StrategySetOutput) TableRows() ([]string, [][]string) {
+	result := o.Result
+	return []string{"name", "as_of", "regime", "strategy", "version", "spec_hash"}, [][]string{{
+		result.Name,
+		result.AsOf,
+		result.Regime.Regime,
+		result.SelectedRoute.Strategy,
+		result.SelectedRoute.Version,
+		result.SelectedRoute.SpecHash,
 	}}
 }
 

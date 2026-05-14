@@ -4,6 +4,7 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strconv"
 	"testing"
 	"time"
 
@@ -135,6 +136,58 @@ pipeline:
 	assert.Contains(t, err.Error(), "filter.mystery")
 }
 
+func TestRunnerInspectMarketRegimeAndStrategySet(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	regimePath := filepath.Join(dir, "regime.yaml")
+	require.NoError(t, os.WriteFile(regimePath, []byte(`kind: MarketRegime
+schema_version: 1
+name: us-growth-regime
+spec:
+  benchmark:
+    symbol: "379810"
+    market: krx
+    security_type: etf
+  rules:
+    - regime: uptrend
+      when:
+        return_20d_gte: 0.03
+        close_above_ma20: true
+        ma20_above_ma60: true
+    - regime: sideways
+      when:
+        return_20d_between: [-0.03, 0.03]
+`), 0o644))
+	strategySetPath := filepath.Join(dir, "strategy-set.yaml")
+	require.NoError(t, os.WriteFile(strategySetPath, []byte(`kind: StrategySet
+schema_version: 1
+name: etf-swing-by-regime
+spec:
+  regime: us-growth-regime
+  regime_file: regime.yaml
+  routes:
+    uptrend:
+      strategy: nasdaq-uptrend-swing
+      version: latest
+    sideways:
+      strategy: defensive-income-low-vol
+      spec_hash: sha256:fixed
+`), 0o644))
+
+	runner, err := NewRunner(fakeDailyBarRepository{rows: marketRegimeDailyBars("379810", "2024-01-01", 70)}, nil, nil)
+	require.NoError(t, err)
+
+	regime, err := runner.InspectMarketRegime(ctx, regimePath, "2024-03-10")
+	require.NoError(t, err)
+	assert.Equal(t, "uptrend", regime.Regime)
+
+	selection, err := runner.InspectStrategySet(ctx, strategySetPath, "2024-03-10")
+	require.NoError(t, err)
+	assert.Equal(t, "nasdaq-uptrend-swing", selection.SelectedRoute.Strategy)
+	assert.Equal(t, "latest", selection.SelectedRoute.Version)
+	assert.NotEmpty(t, selection.Hints)
+}
+
 type fakeDailyBarRepository struct {
 	rows []dailybar.Bar
 }
@@ -171,6 +224,28 @@ func screenDailyBarWithType(symbol string, securityType provider.SecurityType, t
 		TradingDate:  tradingDate,
 		Close:        closePrice,
 	}
+}
+
+func marketRegimeDailyBars(symbol string, start string, count int) []dailybar.Bar {
+	startDate := mustDate(start)
+	out := make([]dailybar.Bar, 0, count)
+	for i := 0; i < count; i++ {
+		closePrice := strconv.Itoa(100 + i)
+		out = append(out, dailybar.Bar{
+			Provider:     provider.ProviderDataGo,
+			Group:        provider.GroupSecuritiesProductPrice,
+			Operation:    provider.OperationGetETFPriceInfo,
+			Market:       provider.MarketKRX,
+			SecurityType: provider.SecurityTypeETF,
+			Symbol:       symbol,
+			TradingDate:  startDate.AddDate(0, 0, i).Format(time.DateOnly),
+			Open:         closePrice,
+			High:         closePrice,
+			Low:          closePrice,
+			Close:        closePrice,
+		})
+	}
+	return out
 }
 
 func mustDate(value string) time.Time {

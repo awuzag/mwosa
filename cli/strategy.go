@@ -15,10 +15,13 @@ func registerStrategyCommands(roots commandRoots, opts *Options) {
 	roots.Screen.AddCommand(newScreenETFCommand(opts))
 	roots.Screen.AddCommand(newScreenStrategyCommand(opts))
 	roots.Screen.AddCommand(newScreenPipelineCommand(opts))
+	roots.Compare.AddCommand(newCompareScreenCommand(opts))
 	roots.History.AddCommand(newHistoryScreenCommand(opts))
 	roots.Inspect.AddCommand(newInspectStrategyCommand(opts))
 	roots.Inspect.AddCommand(newInspectScreenCommand(opts))
 	roots.Inspect.AddCommand(newInspectScreenPipelineCommand(opts))
+	roots.Inspect.AddCommand(newInspectMarketRegimeCommand(opts))
+	roots.Inspect.AddCommand(newInspectStrategySetCommand(opts))
 }
 
 func newCreateStrategyCommand(opts *Options) *cobra.Command {
@@ -219,6 +222,41 @@ func newScreenPipelineCommand(opts *Options) *cobra.Command {
 	return cmd
 }
 
+func newCompareScreenCommand(opts *Options) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "screen",
+		Short: "Compare saved screen resources",
+	}
+	cmd.AddCommand(newCompareScreenStrategiesCommand(opts))
+	return cmd
+}
+
+func newCompareScreenStrategiesCommand(opts *Options) *cobra.Command {
+	var asOf string
+	var topN int
+	cmd := &cobra.Command{
+		Use:   "strategies <name> <name> [name...]",
+		Short: "Compare saved screen strategies without recording screen history",
+		Args:  cobra.MinimumNArgs(2),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			runtime, err := newAppRuntime(opts, false)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Strategy.CompareScreenStrategies(cmd.Context(), handler.CompareScreenStrategiesRequest{
+				Names: args,
+				AsOf:  asOf,
+				TopN:  topN,
+			})
+		}),
+	}
+	cmd.Flags().StringVar(&asOf, "as-of", asOf, "override YAML pipeline strategy as_of date in YYYY-MM-DD")
+	cmd.Flags().IntVar(&topN, "top", 10, "top symbol count used for overlap")
+	return cmd
+}
+
 func newHistoryScreenCommand(opts *Options) *cobra.Command {
 	flags := strategySourceFlags{History: 50}
 	cmd := &cobra.Command{
@@ -288,6 +326,48 @@ func newInspectScreenPipelineCommand(opts *Options) *cobra.Command {
 			return runtime.Handlers.Strategy.InspectScreenPipeline(cmd.Context(), handler.InspectScreenPipelineRequest{Path: args[0]})
 		}),
 	}
+	mustMarkScreenPipelineYAML(cmd)
+	return cmd
+}
+
+func newInspectMarketRegimeCommand(opts *Options) *cobra.Command {
+	var asOf string
+	cmd := &cobra.Command{
+		Use:   "market-regime <yaml>",
+		Short: "Inspect a YAML market regime model",
+		Args:  cobra.ExactArgs(1),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			runtime, err := newAppRuntime(opts, false)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Strategy.InspectMarketRegime(cmd.Context(), handler.InspectMarketRegimeRequest{Path: args[0], AsOf: asOf})
+		}),
+	}
+	cmd.Flags().StringVar(&asOf, "as-of", asOf, "regime calculation date in YYYY-MM-DD")
+	mustMarkScreenPipelineYAML(cmd)
+	return cmd
+}
+
+func newInspectStrategySetCommand(opts *Options) *cobra.Command {
+	var asOf string
+	cmd := &cobra.Command{
+		Use:   "strategy-set <yaml>",
+		Short: "Inspect a YAML strategy set route by market regime",
+		Args:  cobra.ExactArgs(1),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			runtime, err := newAppRuntime(opts, false)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Strategy.InspectStrategySet(cmd.Context(), handler.InspectStrategySetRequest{Path: args[0], AsOf: asOf})
+		}),
+	}
+	cmd.Flags().StringVar(&asOf, "as-of", asOf, "strategy set routing date in YYYY-MM-DD")
 	mustMarkScreenPipelineYAML(cmd)
 	return cmd
 }
