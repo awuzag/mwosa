@@ -19,10 +19,10 @@ MWOSA_HELP_REPO_ROOT=/path/to/mwosa skills/mwosa/references/generate-cli-command
 ## Captured Help
 
 ```text
-mwosa v0.1.1-0.20260510134931-7dd452b0c514
+mwosa v0.1.1-0.20260514082607-3568460081be
 schema dev
-commit 7dd452b0c514cc5bbf03dcd4d063cb02287a1692
-built 2026-05-10T13:49:31Z
+commit 3568460081befe0bc54415f9c242dfcf7dfa354b
+built 2026-05-14T08:26:07Z
 go go1.25.6
 Investment research CLI for provider-backed market data
 
@@ -49,6 +49,7 @@ Available Commands:
   migrate     Manage local data migrations
   prefer      Set resource preference
   screen      Run screening workflows
+  search      Search local and provider-backed resources
   sync        Refresh provider-backed data batches
   update      Update mwosa resources
   validate    Validate local configuration and resources
@@ -100,7 +101,7 @@ Flags:
   -h, --help                   help for daily
       --security-type string   security type: stock, etf, etn, elw (default "etf")
       --to string              end trading date, YYYYMMDD or YYYY-MM-DD
-      --workers int            number of page fetch workers for range-capable providers (default 1)
+      --workers int            number of workers for page-based daily providers (default 1)
 
 Global Flags:
       --config string            config file path
@@ -433,7 +434,9 @@ Usage:
 Available Commands:
   daily       Read stored daily bars for a symbol
   financials  Fetch provider-backed financial statements by company name or KRX code
+  index       Fetch or read canonical index bars
   intraday    Fetch provider intraday bars for a symbol
+  krx         Fetch a provider-native KRX OPEN API response
   orderbook   Fetch a provider orderbook snapshot for a symbol
   quote       Fetch a provider quote snapshot for a symbol
 
@@ -496,6 +499,27 @@ Global Flags:
       --provider string          force a provider by id
 
 
+### mwosa get index --help
+Fetch or read canonical index bars
+
+Usage:
+  mwosa get index <index-code> [flags]
+
+Flags:
+      --as-of string   single trading date, YYYYMMDD or YYYY-MM-DD
+      --from string    start trading date, YYYYMMDD or YYYY-MM-DD
+  -h, --help           help for index
+      --to string      end trading date, YYYYMMDD or YYYY-MM-DD
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
 ### mwosa get intraday --help
 Fetch provider intraday bars for a symbol
 
@@ -507,6 +531,25 @@ Flags:
   -h, --help                   help for intraday
       --limit int              maximum number of intraday bars to return
       --security-type string   security type: stock, etf, etn (default "stock")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa get krx --help
+Fetch a provider-native KRX OPEN API response
+
+Usage:
+  mwosa get krx <api-id> [flags]
+
+Flags:
+      --as-of string   base date to query, YYYYMMDD or YYYY-MM-DD
+  -h, --help           help for krx
 
 Global Flags:
       --config string            config file path
@@ -741,7 +784,8 @@ Usage:
   mwosa list [command]
 
 Available Commands:
-  instruments Search provider instruments
+  instruments Search stored instruments, falling back to provider search
+  krx-apis    List KRX OPEN API services known to mwosa
   providers   List configured and available providers
   strategies  List saved screening strategies
   trades      List recent market trade prints for a symbol
@@ -761,7 +805,7 @@ Use "mwosa list [command] --help" for more information about a command.
 
 
 ### mwosa list instruments --help
-Search provider instruments
+Search stored instruments, falling back to provider search
 
 Usage:
   mwosa list instruments <query> [flags]
@@ -770,6 +814,24 @@ Flags:
   -h, --help                   help for instruments
       --limit int              maximum number of instruments to return (default 25)
       --security-type string   security type: stock, etf, etn, elw (default "stock")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa list krx-apis --help
+List KRX OPEN API services known to mwosa
+
+Usage:
+  mwosa list krx-apis [flags]
+
+Flags:
+  -h, --help   help for krx-apis
 
 Global Flags:
       --config string            config file path
@@ -870,6 +932,7 @@ Available Commands:
   datago         Register datago provider credentials
   datago-corpfin Register datago-corpfin provider credentials
   kis            Register kis provider credentials
+  krx            Register krx provider credentials
 
 Flags:
   -h, --help   help for provider
@@ -947,6 +1010,28 @@ Flags:
   -h, --help                      help for kis
       --virtual string            use KIS virtual investment domain
       --virtual-base-url string   override KIS virtual API base URL
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa login provider krx --help
+Register krx provider credentials
+
+Usage:
+  mwosa login provider krx [flags]
+
+Flags:
+      --auth-key string          KRX OPEN API AUTH_KEY
+      --base-url string          override KRX OPEN API production base URL
+  -h, --help                     help for krx
+      --sample-base-url string   override KRX OPEN API sample base URL
+      --use-sample string        use the KRX OPEN API sample endpoint
 
 Global Flags:
       --config string            config file path
@@ -1166,6 +1251,49 @@ Global Flags:
       --provider string          force a provider by id
 
 
+### mwosa search --help
+Search local and provider-backed resources
+
+Usage:
+  mwosa search [command]
+
+Available Commands:
+  instruments Search stored instruments
+
+Flags:
+  -h, --help   help for search
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+Use "mwosa search [command] --help" for more information about a command.
+
+
+### mwosa search instruments --help
+Search stored instruments
+
+Usage:
+  mwosa search instruments <query> [flags]
+
+Flags:
+  -h, --help                   help for instruments
+      --limit int              maximum number of instruments to return (default 25)
+      --security-type string   security type: stock, etf, etn, elw (default "stock")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
 ### mwosa sync --help
 Refresh provider-backed data batches
 
@@ -1174,6 +1302,9 @@ Usage:
 
 Available Commands:
   daily       Collect one provider daily batch for a date
+  index       Fetch and store canonical index bars for a date
+  instruments Fetch provider instrument master and store it locally
+  krx         Fetch and store a provider-native KRX OPEN API snapshot
 
 Flags:
   -h, --help   help for sync
@@ -1199,6 +1330,64 @@ Flags:
       --as-of string           trading date to collect, YYYYMMDD or YYYY-MM-DD
   -h, --help                   help for daily
       --security-type string   security type: stock, etf, etn, elw (default "etf")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa sync index --help
+Fetch and store canonical index bars for a date
+
+Usage:
+  mwosa sync index [index-code] [flags]
+
+Flags:
+      --as-of string   trading date to collect, YYYYMMDD or YYYY-MM-DD
+  -h, --help           help for index
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa sync instruments --help
+Fetch provider instrument master and store it locally
+
+Usage:
+  mwosa sync instruments [flags]
+
+Flags:
+      --as-of string           base date to collect, YYYYMMDD or YYYY-MM-DD
+  -h, --help                   help for instruments
+      --security-type string   security type: stock (default "stock")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa sync krx --help
+Fetch and store a provider-native KRX OPEN API snapshot
+
+Usage:
+  mwosa sync krx <api-id> [flags]
+
+Flags:
+      --as-of string   base date to fetch and store, YYYYMMDD or YYYY-MM-DD
+  -h, --help           help for krx
 
 Global Flags:
       --config string            config file path
