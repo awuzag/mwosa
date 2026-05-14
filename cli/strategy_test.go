@@ -5,8 +5,10 @@ import (
 	"context"
 	"os"
 	"path/filepath"
+	"strconv"
 	"strings"
 	"testing"
+	"time"
 
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
@@ -348,6 +350,107 @@ pipeline:
 	}
 }
 
+func TestInspectMarketRegimeAndStrategySetExposeStabilityJSON(t *testing.T) {
+	ctx := context.Background()
+	databasePath := filepath.Join(t.TempDir(), "mwosa.db")
+	seedMarketRegimeDailyBars(t, ctx, databasePath)
+
+	dir := t.TempDir()
+	regimePath := filepath.Join(dir, "regime.yaml")
+	if err := os.WriteFile(regimePath, []byte(`kind: MarketRegime
+schema_version: 1
+name: us-growth-regime
+spec:
+  benchmark:
+    symbol: "379810"
+    market: krx
+    security_type: etf
+  evaluation:
+    lookback_days: 10
+    confirm_days: 7
+  rules:
+    - regime: uptrend
+      when:
+        return_20d_gte: 0.03
+        close_above_ma20: true
+        ma20_above_ma60: true
+    - regime: sideways
+      when:
+        return_20d_between: [-0.03, 0.03]
+`), 0o644); err != nil {
+		t.Fatalf("write regime yaml: %v", err)
+	}
+	strategySetPath := filepath.Join(dir, "strategy-set.yaml")
+	if err := os.WriteFile(strategySetPath, []byte(`kind: StrategySet
+schema_version: 1
+name: etf-swing-by-regime
+spec:
+  regime: us-growth-regime
+  regime_file: regime.yaml
+  routes:
+    uptrend:
+      strategy: nasdaq-uptrend-swing
+      version: latest
+      min_confidence: 0.7
+`), 0o644); err != nil {
+		t.Fatalf("write strategy set yaml: %v", err)
+	}
+
+	var regimeOut bytes.Buffer
+	regimeCmd := NewRootCommand(BuildInfo{})
+	regimeCmd.SetOut(&regimeOut)
+	regimeCmd.SetErr(&regimeOut)
+	if err := executeForTest(t, ctx, regimeCmd,
+		"--database", databasePath,
+		"--output", "json",
+		"inspect", "market-regime", regimePath,
+		"--as-of", "2024-03-10",
+	); err != nil {
+		t.Fatalf("inspect market regime json: %v\n%s", err, regimeOut.String())
+	}
+	for _, want := range []string{`"confidence": 1`, `"stable_days": 10`, `"transitions": 0`, `"recent_regimes": [`, `"evidence": [`, `"code": "return_20d_gte"`} {
+		if !strings.Contains(regimeOut.String(), want) {
+			t.Fatalf("market regime output missing %q in:\n%s", want, regimeOut.String())
+		}
+	}
+
+	var tableOut bytes.Buffer
+	tableCmd := NewRootCommand(BuildInfo{})
+	tableCmd.SetOut(&tableOut)
+	tableCmd.SetErr(&tableOut)
+	if err := executeForTest(t, ctx, tableCmd,
+		"--database", databasePath,
+		"--output", "table",
+		"inspect", "market-regime", regimePath,
+		"--as-of", "2024-03-10",
+	); err != nil {
+		t.Fatalf("inspect market regime table: %v\n%s", err, tableOut.String())
+	}
+	for _, want := range []string{"confidence", "stable_days", "transitions", "uptrend"} {
+		if !strings.Contains(tableOut.String(), want) {
+			t.Fatalf("market regime table missing %q in:\n%s", want, tableOut.String())
+		}
+	}
+
+	var strategySetOut bytes.Buffer
+	strategySetCmd := NewRootCommand(BuildInfo{})
+	strategySetCmd.SetOut(&strategySetOut)
+	strategySetCmd.SetErr(&strategySetOut)
+	if err := executeForTest(t, ctx, strategySetCmd,
+		"--database", databasePath,
+		"--output", "json",
+		"inspect", "strategy-set", strategySetPath,
+		"--as-of", "2024-03-10",
+	); err != nil {
+		t.Fatalf("inspect strategy set json: %v\n%s", err, strategySetOut.String())
+	}
+	for _, want := range []string{`"selected_route": {`, `"min_confidence": 0.7`, `"confidence": 1`, `"evidence": [`} {
+		if !strings.Contains(strategySetOut.String(), want) {
+			t.Fatalf("strategy set output missing %q in:\n%s", want, strategySetOut.String())
+		}
+	}
+}
+
 func seedStrategyDailyBars(t *testing.T, ctx context.Context, databasePath string) {
 	t.Helper()
 	database := storage.NewDatabase(databasePath)
@@ -390,6 +493,54 @@ func seedStrategyDailyBars(t *testing.T, ctx context.Context, databasePath strin
 	if err := database.Close(); err != nil {
 		t.Fatalf("close seeded database: %v", err)
 	}
+}
+
+func seedMarketRegimeDailyBars(t *testing.T, ctx context.Context, databasePath string) {
+	t.Helper()
+	database := storage.NewDatabase(databasePath)
+	t.Cleanup(func() {
+		if err := database.Close(); err != nil {
+			t.Fatalf("close market regime seed database: %v", err)
+		}
+	})
+	_, writer, err := dailybarstorage.NewRepositories(database)
+	if err != nil {
+		t.Fatalf("new daily bar repositories: %v", err)
+	}
+	startDate := mustParseDateForTest(t, "2024-01-01")
+	bars := make([]dailybar.Bar, 0, 70)
+	for i := 0; i < 70; i++ {
+		closePrice := strconv.Itoa(100 + i)
+		bars = append(bars, dailybar.Bar{
+			Provider:     provider.ProviderDataGo,
+			Group:        provider.GroupSecuritiesProductPrice,
+			Operation:    provider.OperationGetETFPriceInfo,
+			Market:       provider.MarketKRX,
+			SecurityType: provider.SecurityTypeETF,
+			Symbol:       "379810",
+			Name:         "KODEX US NASDAQ 100 TR",
+			TradingDate:  startDate.AddDate(0, 0, i).Format(time.DateOnly),
+			Open:         closePrice,
+			High:         closePrice,
+			Low:          closePrice,
+			Close:        closePrice,
+		})
+	}
+	if _, err := writer.UpsertDailyBars(ctx, bars); err != nil {
+		t.Fatalf("seed market regime daily bars: %v", err)
+	}
+	if err := database.Close(); err != nil {
+		t.Fatalf("close seeded market regime database: %v", err)
+	}
+}
+
+func mustParseDateForTest(t *testing.T, value string) time.Time {
+	t.Helper()
+	parsed, err := time.Parse(time.DateOnly, value)
+	if err != nil {
+		t.Fatalf("parse date %s: %v", value, err)
+	}
+	return parsed
 }
 
 func mustReadFile(t *testing.T, path string) []byte {

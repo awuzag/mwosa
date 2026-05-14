@@ -148,6 +148,9 @@ spec:
     symbol: "379810"
     market: krx
     security_type: etf
+  evaluation:
+    lookback_days: 10
+    confirm_days: 7
   rules:
     - regime: uptrend
       when:
@@ -169,6 +172,7 @@ spec:
     uptrend:
       strategy: nasdaq-uptrend-swing
       version: latest
+      min_confidence: 0.7
     sideways:
       strategy: defensive-income-low-vol
       spec_hash: sha256:fixed
@@ -180,11 +184,16 @@ spec:
 	regime, err := runner.InspectMarketRegime(ctx, regimePath, "2024-03-10")
 	require.NoError(t, err)
 	assert.Equal(t, "uptrend", regime.Regime)
+	assert.Equal(t, 1.0, regime.Confidence)
+	assert.Equal(t, 10, regime.StableDays)
+	assert.Len(t, regime.RecentRegimes, 10)
+	assert.NotEmpty(t, regime.Evidence)
 
 	selection, err := runner.InspectStrategySet(ctx, strategySetPath, "2024-03-10")
 	require.NoError(t, err)
 	assert.Equal(t, "nasdaq-uptrend-swing", selection.SelectedRoute.Strategy)
 	assert.Equal(t, "latest", selection.SelectedRoute.Version)
+	assert.Equal(t, 1.0, selection.Regime.Confidence)
 	assert.NotEmpty(t, selection.Hints)
 }
 

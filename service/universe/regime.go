@@ -29,9 +29,10 @@ type StrategySetBodySpec struct {
 }
 
 type StrategyRouteSpec struct {
-	Strategy string `json:"strategy" yaml:"strategy"`
-	Version  string `json:"version,omitempty" yaml:"version,omitempty"`
-	SpecHash string `json:"spec_hash,omitempty" yaml:"spec_hash,omitempty"`
+	Strategy      string   `json:"strategy" yaml:"strategy"`
+	Version       string   `json:"version,omitempty" yaml:"version,omitempty"`
+	SpecHash      string   `json:"spec_hash,omitempty" yaml:"spec_hash,omitempty"`
+	MinConfidence *float64 `json:"min_confidence,omitempty" yaml:"min_confidence,omitempty"`
 }
 
 type StrategySetSelectionResult struct {
@@ -117,6 +118,11 @@ func (r Runner) InspectStrategySet(ctx context.Context, path string, asOfOverrid
 	if !ok {
 		return StrategySetSelectionResult{}, oops.In("strategy_set").With("name", spec.Name, "regime", regime.Regime).New("strategy set route not found for regime")
 	}
+	if route.MinConfidence != nil && regime.Confidence < *route.MinConfidence {
+		return StrategySetSelectionResult{}, oops.In("strategy_set").
+			With("name", spec.Name, "regime", regime.Regime, "confidence", regime.Confidence, "min_confidence", *route.MinConfidence).
+			New("strategy set route confidence is below minimum")
+	}
 	hints := []string(nil)
 	if strings.TrimSpace(route.Version) == "" || route.Version == "latest" {
 		hints = append(hints, "latest version is convenient for screening, but pin version or spec_hash for reproducible backtests")
@@ -149,11 +155,17 @@ func (r Runner) loadMarketRegimeBars(ctx context.Context, spec core.MarketRegime
 	if market == "" {
 		market = provider.MarketKRX
 	}
+	evaluation, err := core.NormalizeMarketRegimeEvaluationSpec(spec.Spec.Evaluation)
+	if err != nil {
+		return nil, err
+	}
+	requiredBars := core.MarketRegimeRequiredBarCount(evaluation)
+	calendarLookbackDays := requiredBars*2 + 30
 	rows, err := r.reader.QueryDailyBars(ctx, daily.Query{
 		Market:       market,
 		SecurityType: provider.SecurityType(benchmark.SecurityType),
 		Symbol:       benchmark.Symbol,
-		From:         asOf.AddDate(0, 0, -120).Format(time.DateOnly),
+		From:         asOf.AddDate(0, 0, -calendarLookbackDays).Format(time.DateOnly),
 		To:           asOf.Format(time.DateOnly),
 	})
 	if err != nil {
@@ -196,6 +208,9 @@ func validateStrategySetSpec(spec StrategySetSpec) error {
 		}
 		if strings.TrimSpace(route.Version) != "" && strings.TrimSpace(route.SpecHash) != "" {
 			return errb.With("regime", regime).New("strategy set route requires either version or spec_hash, not both")
+		}
+		if route.MinConfidence != nil && (*route.MinConfidence < 0 || *route.MinConfidence > 1) {
+			return errb.With("regime", regime, "min_confidence", *route.MinConfidence).New("strategy set route min_confidence must be between 0 and 1")
 		}
 	}
 	return nil

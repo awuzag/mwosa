@@ -180,6 +180,31 @@ type StrategySetOutput struct {
 	Result universeservice.StrategySetSelectionResult
 }
 
+type marketRegimeSummary struct {
+	Name        string  `json:"name" csv:"name"`
+	AsOf        string  `json:"as_of" csv:"as_of"`
+	Benchmark   string  `json:"benchmark" csv:"benchmark"`
+	Regime      string  `json:"regime" csv:"regime"`
+	Confidence  float64 `json:"confidence" csv:"confidence"`
+	StableDays  int     `json:"stable_days" csv:"stable_days"`
+	Transitions int     `json:"transitions" csv:"transitions"`
+	Return20D   float64 `json:"return_20d" csv:"return_20d"`
+	MA20        float64 `json:"ma20" csv:"ma20"`
+	MA60        float64 `json:"ma60" csv:"ma60"`
+}
+
+type strategySetSummary struct {
+	Name        string  `json:"name" csv:"name"`
+	AsOf        string  `json:"as_of" csv:"as_of"`
+	Regime      string  `json:"regime" csv:"regime"`
+	Confidence  float64 `json:"confidence" csv:"confidence"`
+	StableDays  int     `json:"stable_days" csv:"stable_days"`
+	Transitions int     `json:"transitions" csv:"transitions"`
+	Strategy    string  `json:"strategy" csv:"strategy"`
+	Version     string  `json:"version" csv:"version"`
+	SpecHash    string  `json:"spec_hash" csv:"spec_hash"`
+}
+
 func (o ScreenResultOutput) JSONValue() any {
 	return o.Result
 }
@@ -290,20 +315,38 @@ func (o MarketRegimeOutput) NDJSONRows() any {
 }
 
 func (o MarketRegimeOutput) CSVRows() any {
-	return []universecore.MarketRegimeResult{o.Result}
+	return []marketRegimeSummary{marketRegimeSummaryFromResult(o.Result)}
 }
 
 func (o MarketRegimeOutput) TableRows() ([]string, [][]string) {
-	result := o.Result
-	return []string{"name", "as_of", "benchmark", "regime", "return_20d", "ma20", "ma60"}, [][]string{{
+	result := marketRegimeSummaryFromResult(o.Result)
+	return []string{"name", "as_of", "benchmark", "regime", "confidence", "stable_days", "transitions", "return_20d", "ma20", "ma60"}, [][]string{{
 		result.Name,
 		result.AsOf,
-		result.Benchmark.Symbol,
+		result.Benchmark,
 		result.Regime,
-		fmt.Sprintf("%.6g", result.Metrics.Return20D),
-		fmt.Sprintf("%.6g", result.Metrics.MA20),
-		fmt.Sprintf("%.6g", result.Metrics.MA60),
+		fmt.Sprintf("%.6g", result.Confidence),
+		fmt.Sprint(result.StableDays),
+		fmt.Sprint(result.Transitions),
+		fmt.Sprintf("%.6g", result.Return20D),
+		fmt.Sprintf("%.6g", result.MA20),
+		fmt.Sprintf("%.6g", result.MA60),
 	}}
+}
+
+func marketRegimeSummaryFromResult(result universecore.MarketRegimeResult) marketRegimeSummary {
+	return marketRegimeSummary{
+		Name:        result.Name,
+		AsOf:        result.AsOf,
+		Benchmark:   result.Benchmark.Symbol,
+		Regime:      result.Regime,
+		Confidence:  result.Confidence,
+		StableDays:  result.StableDays,
+		Transitions: result.Transitions,
+		Return20D:   result.Metrics.Return20D,
+		MA20:        result.Metrics.MA20,
+		MA60:        result.Metrics.MA60,
+	}
 }
 
 func (o StrategySetOutput) JSONValue() any {
@@ -315,19 +358,36 @@ func (o StrategySetOutput) NDJSONRows() any {
 }
 
 func (o StrategySetOutput) CSVRows() any {
-	return []universeservice.StrategySetSelectionResult{o.Result}
+	return []strategySetSummary{strategySetSummaryFromResult(o.Result)}
 }
 
 func (o StrategySetOutput) TableRows() ([]string, [][]string) {
-	result := o.Result
-	return []string{"name", "as_of", "regime", "strategy", "version", "spec_hash"}, [][]string{{
+	result := strategySetSummaryFromResult(o.Result)
+	return []string{"name", "as_of", "regime", "confidence", "stable_days", "transitions", "strategy", "version", "spec_hash"}, [][]string{{
 		result.Name,
 		result.AsOf,
-		result.Regime.Regime,
-		result.SelectedRoute.Strategy,
-		result.SelectedRoute.Version,
-		result.SelectedRoute.SpecHash,
+		result.Regime,
+		fmt.Sprintf("%.6g", result.Confidence),
+		fmt.Sprint(result.StableDays),
+		fmt.Sprint(result.Transitions),
+		result.Strategy,
+		result.Version,
+		result.SpecHash,
 	}}
+}
+
+func strategySetSummaryFromResult(result universeservice.StrategySetSelectionResult) strategySetSummary {
+	return strategySetSummary{
+		Name:        result.Name,
+		AsOf:        result.AsOf,
+		Regime:      result.Regime.Regime,
+		Confidence:  result.Regime.Confidence,
+		StableDays:  result.Regime.StableDays,
+		Transitions: result.Regime.Transitions,
+		Strategy:    result.SelectedRoute.Strategy,
+		Version:     result.SelectedRoute.Version,
+		SpecHash:    result.SelectedRoute.SpecHash,
+	}
 }
 
 const timeLayout = "2006-01-02T15:04:05Z07:00"
