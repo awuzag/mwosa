@@ -43,7 +43,7 @@ func (r *readRepository) QueryDailyBars(ctx context.Context, query daily.Query) 
 		"to", query.To,
 	)
 
-	client, err := r.database.Client(ctx)
+	client, err := r.database.Reader(ctx)
 	if err != nil {
 		return nil, errb.Wrap(err)
 	}
@@ -91,7 +91,7 @@ func (r *readRepository) StreamDailyBars(ctx context.Context, query daily.Query)
 		"to", query.To,
 	)
 
-	client, err := r.database.Client(ctx)
+	client, err := r.database.Reader(ctx)
 	if err != nil {
 		return nil, errb.Wrap(err)
 	}

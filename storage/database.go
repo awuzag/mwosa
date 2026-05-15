@@ -129,6 +129,7 @@ func (db *Database) Close() error {
 func setupReadDatabase(ctx context.Context, db *stdsql.DB) error {
 	errb := oops.In("storage_database")
 	for _, statement := range []string{
+		`PRAGMA busy_timeout = 5000`,
 		`PRAGMA foreign_keys = ON`,
 	} {
 		if _, err := db.ExecContext(ctx, statement); err != nil {
@@ -149,6 +150,7 @@ func sqliteReadOnlyDSN(path string) string {
 func setupDatabase(ctx context.Context, db *stdsql.DB) error {
 	errb := oops.In("storage_database")
 	for _, statement := range []string{
+		`PRAGMA busy_timeout = 5000`,
 		`PRAGMA journal_mode = WAL`,
 		`PRAGMA foreign_keys = ON`,
 	} {

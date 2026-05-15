@@ -81,6 +81,75 @@ func TestDatabaseReaderOpensReadOnlyClient(t *testing.T) {
 	}
 }
 
+func TestDatabaseConfiguresBusyTimeout(t *testing.T) {
+	database := NewDatabase(filepath.Join(t.TempDir(), "mwosa.db"))
+	t.Cleanup(func() {
+		if err := database.Close(); err != nil {
+			t.Fatalf("close database: %v", err)
+		}
+	})
+
+	writer, err := database.Client(context.Background())
+	if err != nil {
+		t.Fatalf("writer client: %v", err)
+	}
+	reader, err := database.Reader(context.Background())
+	if err != nil {
+		t.Fatalf("reader client: %v", err)
+	}
+
+	if got := sqlitePragmaInt(t, writer, "busy_timeout"); got != 5000 {
+		t.Fatalf("writer busy_timeout = %d, want 5000", got)
+	}
+	if got := sqlitePragmaInt(t, reader, "busy_timeout"); got != 5000 {
+		t.Fatalf("reader busy_timeout = %d, want 5000", got)
+	}
+}
+
+func TestDatabaseReaderReadsDuringWritableTransaction(t *testing.T) {
+	ctx := context.Background()
+	database := NewDatabase(filepath.Join(t.TempDir(), "mwosa.db"))
+	t.Cleanup(func() {
+		if err := database.Close(); err != nil {
+			t.Fatalf("close database: %v", err)
+		}
+	})
+
+	writer, err := database.Client(ctx)
+	if err != nil {
+		t.Fatalf("writer client: %v", err)
+	}
+	if _, err := writer.ExecContext(ctx, "CREATE TABLE read_probe (id INTEGER PRIMARY KEY, value TEXT NOT NULL)"); err != nil {
+		t.Fatalf("create read probe table: %v", err)
+	}
+	if _, err := writer.ExecContext(ctx, "INSERT INTO read_probe (id, value) VALUES (1, 'committed')"); err != nil {
+		t.Fatalf("insert read probe row: %v", err)
+	}
+	reader, err := database.Reader(ctx)
+	if err != nil {
+		t.Fatalf("reader client: %v", err)
+	}
+
+	tx, err := writer.BeginTx(ctx, nil)
+	if err != nil {
+		t.Fatalf("begin writer transaction: %v", err)
+	}
+	defer func() {
+		_ = tx.Rollback()
+	}()
+	if _, err := tx.ExecContext(ctx, "UPDATE read_probe SET value = 'pending' WHERE id = 1"); err != nil {
+		t.Fatalf("update read probe row in transaction: %v", err)
+	}
+
+	var got string
+	if err := reader.QueryRowContext(ctx, "SELECT value FROM read_probe WHERE id = 1").Scan(&got); err != nil {
+		t.Fatalf("reader query during writer transaction: %v", err)
+	}
+	if got != "committed" {
+		t.Fatalf("reader value during writer transaction = %q, want committed snapshot", got)
+	}
+}
+
 func TestDatabaseCreatesDailyBarIndexes(t *testing.T) {
 	database := NewDatabase(filepath.Join(t.TempDir(), "mwosa.db"))
 	t.Cleanup(func() {
@@ -126,6 +195,20 @@ func TestDatabaseCreatesDailyBarIndexes(t *testing.T) {
 
 type queryer interface {
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
+}
+
+type queryRower interface {
+	QueryRowContext(ctx context.Context, query string, args ...any) *sql.Row
+}
+
+func sqlitePragmaInt(t *testing.T, client queryRower, pragma string) int {
+	t.Helper()
+
+	var got int
+	if err := client.QueryRowContext(context.Background(), "PRAGMA "+pragma).Scan(&got); err != nil {
+		t.Fatalf("query sqlite pragma %s: %v", pragma, err)
+	}
+	return got
 }
 
 func sqliteIndexes(t *testing.T, client queryer, table string) map[string]bool {
