@@ -410,9 +410,11 @@ type ExecutionModel interface {
 초기 execution model:
 
 - `next_open`
+- `market`, `limit`, `stop`, `stop_limit`, `trailing_stop`, `rebalance`
+  order type
 - fixed bps commission
 - no slippage 또는 fixed bps slippage
-- partial fill 없음
+- volume/traded amount 기반 partial fill
 - short selling 없음
 
 `next_open` 은 close 기준 신호와 다음 거래일 open 체결을 분리하기 위한 기본
@@ -438,7 +440,12 @@ type Result struct {
 ```
 
 `SpecHash`, `DataHash`, `ResultHash` 는 재현성을 위해 필요하다. 같은 spec,
-같은 market data, 같은 engine version 이면 같은 결과가 나와야 한다.
+같은 market data, 같은 engine version, 같은 registry version 이면 같은 결과가
+나와야 한다. 현재 `Result.runtime` 은 `engine_version`,
+`indicator_registry_version`, `metric_registry_version` 을 남기며, 이 값들은
+`result_hash` 계산 payload 에 포함된다. 저장소는 saved run, evaluation case,
+walk-forward step, raw result row 에도 같은 runtime metadata 를 독립 컬럼으로
+남긴다.
 
 ## 시간 규칙
 
@@ -516,12 +523,14 @@ type Result struct {
 - decimal type 을 도입할지, 첫 구현은 `float64` 로 제한할지 여부
 - `packages/backtest` 가 `packages/indicators` 를 직접 import 할지, indicator 값도 compile 단계에서 주입할지 여부
 - tag catalog 를 코드 상수로만 둘지, YAML schema 와 함께 문서화할지 여부
-- result hash 에 engine version 을 포함할지 여부
+- result hash 에 포함되는 runtime metadata 를 schema/storage view 에서 어디까지
+  독립 컬럼으로 노출할지 여부
 - backtest run 저장소를 첫 spike 에 포함할지 여부
 - eolmasa 문서의 `PaperExecutor`, `LiveExecutor` 개념을 `mwosa` 범위에서 언제까지 보류할지 여부
 
 ## 관련 문서
 
+- `docs/architectures/packages/backtest/final-implementation-goal.md`
 - `docs/architectures/packages/backtest/trading-engine-layers.md`
 - `docs/architectures/packages/backtest/strategy-spec/README.md`
 - `docs/architectures/packages/backtest/execution-spec/README.md`

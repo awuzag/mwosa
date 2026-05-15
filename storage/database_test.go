@@ -193,6 +193,49 @@ func TestDatabaseCreatesDailyBarIndexes(t *testing.T) {
 	}
 }
 
+func TestDatabaseMigratesBacktestRuntimeMetadataColumns(t *testing.T) {
+	ctx := context.Background()
+	dbPath := filepath.Join(t.TempDir(), "mwosa.db")
+	raw, err := sql.Open("sqlite", dbPath)
+	if err != nil {
+		t.Fatalf("open sqlite fixture: %v", err)
+	}
+	for _, statement := range []string{
+		`CREATE TABLE backtest_runs (id TEXT PRIMARY KEY, run_name TEXT NOT NULL, created_at TIMESTAMP NOT NULL, result_hash TEXT NOT NULL)`,
+		`CREATE TABLE backtest_experiment_cases (id TEXT PRIMARY KEY, experiment_id TEXT NOT NULL, rank INTEGER NOT NULL)`,
+		`CREATE TABLE backtest_results (id TEXT PRIMARY KEY, experiment_case_id TEXT NOT NULL)`,
+		`CREATE TABLE backtest_walk_forward_steps (id TEXT PRIMARY KEY, experiment_id TEXT NOT NULL, step_index INTEGER NOT NULL)`,
+	} {
+		if _, err := raw.ExecContext(ctx, statement); err != nil {
+			_ = raw.Close()
+			t.Fatalf("create legacy table: %v", err)
+		}
+	}
+	if err := raw.Close(); err != nil {
+		t.Fatalf("close sqlite fixture: %v", err)
+	}
+
+	database := NewDatabase(dbPath)
+	t.Cleanup(func() {
+		if err := database.Close(); err != nil {
+			t.Fatalf("close database: %v", err)
+		}
+	})
+	client, err := database.Client(ctx)
+	if err != nil {
+		t.Fatalf("client: %v", err)
+	}
+
+	for _, table := range []string{"backtest_runs", "backtest_experiment_cases", "backtest_results", "backtest_walk_forward_steps"} {
+		columns := sqliteColumns(t, client, table)
+		for _, column := range []string{"engine_version", "indicator_registry_version", "metric_registry_version"} {
+			if !columns[column] {
+				t.Fatalf("%s.%s was not migrated", table, column)
+			}
+		}
+	}
+}
+
 type queryer interface {
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 }
@@ -236,4 +279,32 @@ func sqliteIndexes(t *testing.T, client queryer, table string) map[string]bool {
 		t.Fatalf("iterate index rows: %v", err)
 	}
 	return indexes
+}
+
+func sqliteColumns(t *testing.T, client queryer, table string) map[string]bool {
+	t.Helper()
+
+	rows, err := client.QueryContext(context.Background(), `PRAGMA table_info('`+table+`')`)
+	if err != nil {
+		t.Fatalf("table info: %v", err)
+	}
+	defer rows.Close()
+
+	columns := make(map[string]bool)
+	for rows.Next() {
+		var cid int
+		var name string
+		var columnType string
+		var notNull bool
+		var defaultValue any
+		var pk bool
+		if err := rows.Scan(&cid, &name, &columnType, &notNull, &defaultValue, &pk); err != nil {
+			t.Fatalf("scan table info row: %v", err)
+		}
+		columns[name] = true
+	}
+	if err := rows.Err(); err != nil {
+		t.Fatalf("iterate table info rows: %v", err)
+	}
+	return columns
 }

@@ -38,6 +38,9 @@ func TestServiceValidatesAndRunsYAMLAgainstDailyBarRepository(t *testing.T) {
 	assert.Equal(t, "sma-cross-run", validation.RunName)
 	assert.Equal(t, "next_open", validation.Execution.Fill)
 	assert.Equal(t, "sma", validation.Indicators["trend"])
+	assert.Equal(t, core.Timeframe1Day, validation.Timeframes.Requested)
+	assert.Equal(t, core.Timeframe1Day, validation.Timeframes.Source)
+	assert.Equal(t, 2, validation.Timeframes.Warmup.Bars)
 	assert.Equal(t, []string{"total_return", "final_equity", "max_drawdown", "win_rate", "average_trade_return"}, validation.Metrics)
 
 	result, err := service.Run(context.Background(), path)
@@ -54,6 +57,9 @@ func TestServiceValidatesAndRunsYAMLAgainstDailyBarRepository(t *testing.T) {
 	assert.Equal(t, []core.InstrumentIdentity{{Symbol: "069500", Market: "krx", SecurityType: "etf"}}, result.Instruments)
 	assert.Equal(t, "krx", result.Market)
 	assert.Equal(t, "1d", result.Timeframe)
+	assert.Equal(t, core.Timeframe1Day, result.Timeframes.Requested)
+	assert.Equal(t, core.Timeframe1Day, result.Timeframes.Source)
+	assert.False(t, result.Timeframes.Resample.Enabled)
 	assert.Equal(t, "next_open", result.Execution.Fill)
 	require.Len(t, result.Trades, 2)
 	assert.NotEmpty(t, result.EquityCurve)
@@ -62,6 +68,77 @@ func TestServiceValidatesAndRunsYAMLAgainstDailyBarRepository(t *testing.T) {
 	assert.NotEmpty(t, result.ResultHash)
 	assert.Equal(t, "once", result.Universe.Schedule)
 	assert.Equal(t, []string{"069500"}, result.Universe.SelectedSymbols)
+}
+
+func TestServiceRunAndSavePersistsSingleBacktestRun(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "sma-cross.yaml")
+	require.NoError(t, os.WriteFile(path, []byte(sampleYAML()), 0o644))
+
+	repo := &recordingDailyBarRepository{bars: map[string][]dailybar.Bar{
+		"069500": sampleCanonicalDailyBars(),
+	}}
+	runRepo := newMemoryBacktestStrategyRepository()
+	service, err := NewServiceWithRepository(repo, runRepo)
+	require.NoError(t, err)
+
+	detail, err := service.RunAndSave(context.Background(), path)
+	require.NoError(t, err)
+
+	assert.NotEmpty(t, detail.Run.ID)
+	assert.Equal(t, "sma-cross-run", detail.Run.RunName)
+	assert.Equal(t, detail.Result.ResultHash, detail.Run.ResultHash)
+	assert.Equal(t, detail.Result.DataFingerprint, detail.Run.DataFingerprint)
+	assert.NotEmpty(t, detail.Run.StrategyHash)
+	assert.NotEmpty(t, detail.Run.RunHash)
+	assert.NotEmpty(t, detail.Run.ResultJSON)
+	assert.NotEmpty(t, detail.Run.MetricsJSON)
+
+	inspected, err := service.InspectRun(context.Background(), detail.Run.ID)
+	require.NoError(t, err)
+	assert.Equal(t, detail.Result.ResultHash, inspected.Result.ResultHash)
+
+	listed, err := service.ListRuns(context.Background())
+	require.NoError(t, err)
+	require.Len(t, listed, 1)
+	assert.Empty(t, listed[0].ResultJSON)
+}
+
+func TestServiceComparesSavedBacktestRuns(t *testing.T) {
+	dir := t.TempDir()
+	leftPath := filepath.Join(dir, "left.yaml")
+	rightPath := filepath.Join(dir, "right.yaml")
+	require.NoError(t, os.WriteFile(leftPath, []byte(sampleYAML()), 0o644))
+	require.NoError(t, os.WriteFile(rightPath, []byte(strings.Replace(sampleYAML(), "value: 50", "value: 25", 1)), 0o644))
+
+	repo := &recordingDailyBarRepository{bars: map[string][]dailybar.Bar{
+		"069500": sampleCanonicalDailyBars(),
+	}}
+	runRepo := newMemoryBacktestStrategyRepository()
+	service, err := NewServiceWithRepository(repo, runRepo)
+	require.NoError(t, err)
+
+	left, err := service.RunAndSave(context.Background(), leftPath)
+	require.NoError(t, err)
+	right, err := service.RunAndSave(context.Background(), rightPath)
+	require.NoError(t, err)
+
+	comparison, err := service.CompareRuns(context.Background(), left.Run.ID, right.Run.ID)
+	require.NoError(t, err)
+
+	assert.False(t, comparison.SameStrategyHash)
+	assert.True(t, comparison.SameRunHash)
+	assert.True(t, comparison.SameDataFingerprint)
+	assert.False(t, comparison.SameResultHash)
+	assert.NotEmpty(t, comparison.Metrics)
+	var sawTotalReturn bool
+	for _, metric := range comparison.Metrics {
+		if metric.Metric == core.MetricTotalReturn {
+			sawTotalReturn = true
+			assert.True(t, metric.LeftPresent)
+			assert.True(t, metric.RightPresent)
+		}
+	}
+	assert.True(t, sawTotalReturn)
 }
 
 func TestServiceValidatesDailyBarsUniversePipelineWithExplain(t *testing.T) {
@@ -265,6 +342,34 @@ func TestServiceMapperAndLookbackErrorPaths(t *testing.T) {
 	assert.Equal(t, 63, lookback)
 }
 
+func TestCanonicalDailyBarMapperCarriesAmountMarketCapAndNAV(t *testing.T) {
+	bar, err := canonicalDailyBarToBacktestBar(dailybar.Bar{
+		TradingDate: "2024-01-02",
+		Symbol:      "069500",
+		Open:        "10",
+		High:        "12",
+		Low:         "9",
+		Close:       "11",
+		Volume:      "1000",
+		TradedValue: "11000",
+		MarketCap:   "1000000000",
+		Extensions:  map[string]string{"nav": "10.5", "adjusted_close": "10.8"},
+	})
+	require.NoError(t, err)
+
+	assert.InDelta(t, 10.8, bar.AdjustedClose, 0.0001)
+	assert.InDelta(t, 11000.0, bar.TradedAmount, 0.0001)
+	assert.InDelta(t, 1000000000.0, bar.MarketCap, 0.0001)
+	assert.InDelta(t, 10.5, bar.NAV, 0.0001)
+	assert.Equal(t, core.Timeframe1Day, bar.Timeframe)
+	assert.Equal(t, core.BarSessionRegular, bar.Session)
+	assert.Equal(t, core.BarStatusOK, bar.Status)
+
+	bar, err = canonicalDailyBarToBacktestBar(canonicalDailyBarForSymbol("069500", "2024-01-03", "10", "12", "9", "11"))
+	require.NoError(t, err)
+	assert.Zero(t, bar.AdjustedClose)
+}
+
 func TestServiceUpsertStrategyInputErrors(t *testing.T) {
 	service, err := NewServiceWithRepository(&recordingDailyBarRepository{}, newMemoryBacktestStrategyRepository())
 	require.NoError(t, err)
@@ -299,6 +404,8 @@ func TestServiceLoadsBenchmarkBarsForBenchmarkMetrics(t *testing.T) {
 	assert.Empty(t, repo.queries[0].Symbol)
 	assert.Contains(t, result.Metrics, "benchmark_total_return")
 	assert.Contains(t, result.Metrics, "excess_return")
+	assert.Contains(t, result.Metrics, "benchmark_alpha")
+	assert.Contains(t, result.Metrics, "benchmark_beta")
 }
 
 func TestDailyBarFeedUsesSingleMarketCursorForMultiSymbolFrames(t *testing.T) {
@@ -350,6 +457,51 @@ func TestDailyBarFeedUsesSingleMarketCursorForMultiSymbolFrames(t *testing.T) {
 	assert.False(t, ok)
 }
 
+func TestDailyBarFeedResamplesCanonicalDailyBarsToMonthlyFrames(t *testing.T) {
+	repo := &recordingDailyBarRepository{bars: map[string][]dailybar.Bar{
+		"AAA": {
+			canonicalDailyBarForSymbol("AAA", "2024-01-30", "10", "12", "9", "11"),
+			canonicalDailyBarForSymbol("AAA", "2024-01-31", "11", "13", "10", "12"),
+			canonicalDailyBarForSymbol("AAA", "2024-02-01", "20", "21", "19", "20"),
+		},
+	}}
+	from, err := time.Parse(time.DateOnly, "2024-01-30")
+	require.NoError(t, err)
+	to, err := time.Parse(time.DateOnly, "2024-02-01")
+	require.NoError(t, err)
+
+	stream, err := newDailyBarFeed(repo).Open(context.Background(), core.DataRequest{
+		From:      from,
+		To:        to,
+		Timeframe: core.Timeframe1Month,
+		Instruments: []core.InstrumentIdentity{
+			{Symbol: "AAA", Market: "krx", SecurityType: "etf"},
+		},
+	})
+	require.NoError(t, err)
+	defer stream.Close()
+
+	first, ok, err := stream.Next(context.Background())
+	require.NoError(t, err)
+	require.True(t, ok)
+	assert.Equal(t, "2024-01-31", first.Time.Format(time.DateOnly))
+	assert.Equal(t, core.Timeframe1Month, first.Bars["AAA"].Timeframe)
+	assert.Equal(t, core.BarSessionRegular, first.Bars["AAA"].Session)
+	assert.Equal(t, core.BarStatusOK, first.Bars["AAA"].Status)
+	assert.InDelta(t, 10.0, first.Bars["AAA"].Open, 0.0001)
+	assert.InDelta(t, 13.0, first.Bars["AAA"].High, 0.0001)
+	assert.InDelta(t, 9.0, first.Bars["AAA"].Low, 0.0001)
+	assert.InDelta(t, 12.0, first.Bars["AAA"].Close, 0.0001)
+
+	second, ok, err := stream.Next(context.Background())
+	require.NoError(t, err)
+	require.True(t, ok)
+	assert.Equal(t, "2024-02-01", second.Time.Format(time.DateOnly))
+	assert.Equal(t, core.Timeframe1Month, second.Bars["AAA"].Timeframe)
+	assert.InDelta(t, 20.0, second.Bars["AAA"].Open, 0.0001)
+	assert.InDelta(t, 20.0, second.Bars["AAA"].Close, 0.0001)
+}
+
 func TestServiceEvaluationParallelismIsDeterministic(t *testing.T) {
 	path := filepath.Join(t.TempDir(), "evaluation.yaml")
 	require.NoError(t, os.WriteFile(path, []byte(sampleDeterministicEvaluationYAML()), 0o644))
@@ -358,6 +510,109 @@ func TestServiceEvaluationParallelismIsDeterministic(t *testing.T) {
 	parallel := runEvaluationForParallelism(t, path, 4)
 
 	assertEvaluationRunDeterministic(t, sequential, parallel)
+}
+
+func TestServiceEvaluationStoresCaseHashesAndDataFingerprint(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "evaluation.yaml")
+	require.NoError(t, os.WriteFile(path, []byte(sampleDeterministicEvaluationYAML()), 0o644))
+
+	repo := &recordingDailyBarRepository{bars: map[string][]dailybar.Bar{
+		"069500": sampleCanonicalDailyBars(),
+	}}
+	backtestRepo := newMemoryBacktestStrategyRepository()
+	service, err := NewServiceWithRepository(repo, backtestRepo)
+	require.NoError(t, err)
+
+	_, err = service.RunEvaluation(context.Background(), path, RunEvaluationOptions{Parallelism: 2})
+	require.NoError(t, err)
+
+	detail, err := service.InspectEvaluation(context.Background(), "deterministic-evaluation")
+	require.NoError(t, err)
+	require.NotEmpty(t, detail.Cases)
+	for _, item := range detail.Cases {
+		assert.NotEmpty(t, item.StrategyHash)
+		assert.NotEmpty(t, item.RunHash)
+		assert.NotEmpty(t, item.EngineVersion)
+		assert.NotEmpty(t, item.IndicatorRegistry)
+		assert.NotEmpty(t, item.MetricRegistry)
+		assert.NotEmpty(t, item.DataFingerprint)
+		assert.NotEmpty(t, item.ResultHash)
+	}
+}
+
+func TestServiceEvaluationRegimeBenchmarkDrivesTagsAndBenchmarkMetrics(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "evaluation-regime.yaml")
+	require.NoError(t, os.WriteFile(path, []byte(sampleRegimeBenchmarkEvaluationYAML()), 0o644))
+
+	repo := &recordingDailyBarRepository{bars: map[string][]dailybar.Bar{
+		"069500": sampleCanonicalDailyBars(),
+		"102110": sampleBenchmarkCanonicalDailyBars(),
+	}}
+	backtestRepo := newMemoryBacktestStrategyRepository()
+	service, err := NewServiceWithRepository(repo, backtestRepo)
+	require.NoError(t, err)
+
+	result, err := service.RunEvaluation(context.Background(), path, RunEvaluationOptions{Parallelism: 1})
+	require.NoError(t, err)
+
+	require.NotEmpty(t, result.Cases)
+	assert.Equal(t, "102110", result.Cases[0].Result.Benchmark.Symbol)
+	assert.Contains(t, result.Cases[0].Metrics, core.MetricBenchmarkTotalReturn)
+	assert.Contains(t, result.Cases[0].RegimeTags, "bull")
+
+	detail, err := service.InspectEvaluation(context.Background(), "regime-benchmark-evaluation")
+	require.NoError(t, err)
+	require.NotEmpty(t, detail.Cases)
+	assert.Contains(t, string(detail.Cases[0].RegimeTagsJSON), "bull")
+}
+
+func TestServiceEvaluationRegimeThresholdsDriveTags(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "evaluation-regime-threshold.yaml")
+	require.NoError(t, os.WriteFile(path, []byte(sampleRegimeThresholdEvaluationYAML()), 0o644))
+
+	repo := &recordingDailyBarRepository{bars: map[string][]dailybar.Bar{
+		"069500": sampleCanonicalDailyBars(),
+	}}
+	backtestRepo := newMemoryBacktestStrategyRepository()
+	service, err := NewServiceWithRepository(repo, backtestRepo)
+	require.NoError(t, err)
+
+	result, err := service.RunEvaluation(context.Background(), path, RunEvaluationOptions{Parallelism: 1})
+	require.NoError(t, err)
+
+	require.NotEmpty(t, result.Cases)
+	assert.Contains(t, result.Cases[0].RegimeTags, "bear")
+	assert.Contains(t, result.Cases[0].RegimeTags, "high_vol")
+}
+
+func TestServiceWalkForwardStoresStepHashesAndDataFingerprint(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "evaluation.yaml")
+	require.NoError(t, os.WriteFile(path, []byte(sampleWalkForwardEvaluationYAML()), 0o644))
+
+	repo := &recordingDailyBarRepository{bars: map[string][]dailybar.Bar{
+		"069500": sampleCanonicalDailyBars(),
+	}}
+	backtestRepo := newMemoryBacktestStrategyRepository()
+	service, err := NewServiceWithRepository(repo, backtestRepo)
+	require.NoError(t, err)
+
+	result, err := service.RunEvaluation(context.Background(), path, RunEvaluationOptions{Parallelism: 2})
+	require.NoError(t, err)
+	require.NotEmpty(t, result.WalkForward)
+	assert.NotEmpty(t, result.WalkForward[0].DataFingerprint)
+
+	detail, err := service.InspectEvaluation(context.Background(), "deterministic-walk-forward")
+	require.NoError(t, err)
+	require.NotEmpty(t, detail.WalkForward)
+	for _, step := range detail.WalkForward {
+		assert.NotEmpty(t, step.StrategyHash)
+		assert.NotEmpty(t, step.RunHash)
+		assert.NotEmpty(t, step.EngineVersion)
+		assert.NotEmpty(t, step.IndicatorRegistry)
+		assert.NotEmpty(t, step.MetricRegistry)
+		assert.NotEmpty(t, step.DataFingerprint)
+		assert.NotEmpty(t, step.ResultHash)
+	}
 }
 
 func TestServiceErrorsWhenDailyBarsAreMissing(t *testing.T) {
@@ -574,7 +829,9 @@ report:
     preset: core
     include:
       - benchmark_total_return
-      - excess_return`, 1)
+      - excess_return
+      - benchmark_alpha
+      - benchmark_beta`, 1)
 }
 
 func samplePipelineYAML() string {
@@ -761,6 +1018,70 @@ metrics:
 ranking:
   objective: calmar
   order: desc`, 1)
+}
+
+func sampleRegimeBenchmarkEvaluationYAML() string {
+	payload := strings.Replace(sampleDeterministicEvaluationYAML(), "name: deterministic-evaluation", "name: regime-benchmark-evaluation", 1)
+	return strings.Replace(payload, `ranking:
+  objective: calmar
+  order: desc`, `ranking:
+  objective: calmar
+  order: desc
+regime:
+  benchmark:
+    symbol: "102110"
+    name: benchmark`, 1)
+}
+
+func sampleRegimeThresholdEvaluationYAML() string {
+	payload := strings.Replace(sampleDeterministicEvaluationYAML(), "name: deterministic-evaluation", "name: regime-threshold-evaluation", 1)
+	return strings.Replace(payload, `ranking:
+  objective: calmar
+  order: desc`, `ranking:
+  objective: calmar
+  order: desc
+regime:
+  return_threshold: 0.01
+  volatility_threshold: 0.01`, 1)
+}
+
+func sampleWalkForwardEvaluationYAML() string {
+	return strings.Replace(sampleYAML(), `report:
+  metrics:
+    preset: core
+    include:
+      - average_trade_return
+    exclude:
+      - trade_count`, `---
+kind: Evaluation
+schema_version: 1
+name: deterministic-walk-forward
+strategy:
+  name: sma-cross
+base_run:
+  ref: sma-cross-run
+periods:
+  mode: explicit
+  from: 2024-01-02
+  to: 2024-01-05
+parameters:
+  indicators.trend.params.window: [2, 3]
+  sizing.value: [25, 50]
+metrics:
+  preset: research
+ranking:
+  objective: calmar
+  order: desc
+walk_forward:
+  train:
+    days: 2
+  test:
+    days: 1
+  step:
+    days: 1
+  select:
+    objective: calmar
+    order: desc`, 1)
 }
 
 func runEvaluationForParallelism(t *testing.T, path string, parallelism int) EvaluationRunResult {

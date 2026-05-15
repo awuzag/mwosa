@@ -180,6 +180,7 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 		{name: "screen_run_items", model: (*ScreenRunItemRow)(nil)},
 		{name: "backtest_strategies", model: (*BacktestStrategyRow)(nil)},
 		{name: "backtest_strategy_versions", model: (*BacktestStrategyVersionRow)(nil)},
+		{name: "backtest_runs", model: (*BacktestRunRow)(nil)},
 		{name: "backtest_experiments", model: (*BacktestExperimentRow)(nil)},
 		{name: "backtest_experiment_cases", model: (*BacktestExperimentCaseRow)(nil)},
 		{name: "backtest_results", model: (*BacktestResultRow)(nil)},
@@ -195,6 +196,18 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 		}
 	}
 	if err := ensureStrategyVersionColumns(ctx, db); err != nil {
+		return errb.Wrap(err)
+	}
+	if err := ensureBacktestRunColumns(ctx, db); err != nil {
+		return errb.Wrap(err)
+	}
+	if err := ensureBacktestExperimentCaseColumns(ctx, db); err != nil {
+		return errb.Wrap(err)
+	}
+	if err := ensureBacktestResultColumns(ctx, db); err != nil {
+		return errb.Wrap(err)
+	}
+	if err := ensureBacktestWalkForwardStepColumns(ctx, db); err != nil {
 		return errb.Wrap(err)
 	}
 
@@ -323,6 +336,16 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 			columns: []string{"spec_hash"},
 		},
 		{
+			name:    "idx_backtest_runs_name_created",
+			model:   (*BacktestRunRow)(nil),
+			columns: []string{"run_name", "created_at"},
+		},
+		{
+			name:    "idx_backtest_runs_result_hash",
+			model:   (*BacktestRunRow)(nil),
+			columns: []string{"result_hash"},
+		},
+		{
 			name:    "idx_backtest_experiments_name_created",
 			model:   (*BacktestExperimentRow)(nil),
 			columns: []string{"name", "created_at"},
@@ -386,6 +409,93 @@ func ensureStrategyVersionColumns(ctx context.Context, db *bun.DB) error {
 				continue
 			}
 			return errb.With("table", "strategy_versions", "column", column.name).Wrapf(err, "ensure strategy version sqlite column")
+		}
+	}
+	return nil
+}
+
+func ensureBacktestExperimentCaseColumns(ctx context.Context, db *bun.DB) error {
+	errb := oops.In("storage_database")
+	for _, column := range []struct {
+		name       string
+		definition string
+	}{
+		{name: "strategy_hash", definition: "TEXT NOT NULL DEFAULT ''"},
+		{name: "run_hash", definition: "TEXT NOT NULL DEFAULT ''"},
+		{name: "engine_version", definition: "TEXT NOT NULL DEFAULT ''"},
+		{name: "indicator_registry_version", definition: "TEXT NOT NULL DEFAULT ''"},
+		{name: "metric_registry_version", definition: "TEXT NOT NULL DEFAULT ''"},
+		{name: "data_fingerprint", definition: "TEXT NOT NULL DEFAULT ''"},
+	} {
+		if _, err := db.ExecContext(ctx, "ALTER TABLE backtest_experiment_cases ADD COLUMN "+column.name+" "+column.definition); err != nil {
+			if strings.Contains(err.Error(), "duplicate column name") {
+				continue
+			}
+			return errb.With("table", "backtest_experiment_cases", "column", column.name).Wrapf(err, "ensure backtest experiment case sqlite column")
+		}
+	}
+	return nil
+}
+
+func ensureBacktestRunColumns(ctx context.Context, db *bun.DB) error {
+	errb := oops.In("storage_database")
+	for _, column := range []struct {
+		name       string
+		definition string
+	}{
+		{name: "engine_version", definition: "TEXT NOT NULL DEFAULT ''"},
+		{name: "indicator_registry_version", definition: "TEXT NOT NULL DEFAULT ''"},
+		{name: "metric_registry_version", definition: "TEXT NOT NULL DEFAULT ''"},
+	} {
+		if _, err := db.ExecContext(ctx, "ALTER TABLE backtest_runs ADD COLUMN "+column.name+" "+column.definition); err != nil {
+			if strings.Contains(err.Error(), "duplicate column name") {
+				continue
+			}
+			return errb.With("table", "backtest_runs", "column", column.name).Wrapf(err, "ensure backtest run sqlite column")
+		}
+	}
+	return nil
+}
+
+func ensureBacktestResultColumns(ctx context.Context, db *bun.DB) error {
+	errb := oops.In("storage_database")
+	for _, column := range []struct {
+		name       string
+		definition string
+	}{
+		{name: "engine_version", definition: "TEXT NOT NULL DEFAULT ''"},
+		{name: "indicator_registry_version", definition: "TEXT NOT NULL DEFAULT ''"},
+		{name: "metric_registry_version", definition: "TEXT NOT NULL DEFAULT ''"},
+	} {
+		if _, err := db.ExecContext(ctx, "ALTER TABLE backtest_results ADD COLUMN "+column.name+" "+column.definition); err != nil {
+			if strings.Contains(err.Error(), "duplicate column name") {
+				continue
+			}
+			return errb.With("table", "backtest_results", "column", column.name).Wrapf(err, "ensure backtest result sqlite column")
+		}
+	}
+	return nil
+}
+
+func ensureBacktestWalkForwardStepColumns(ctx context.Context, db *bun.DB) error {
+	errb := oops.In("storage_database")
+	for _, column := range []struct {
+		name       string
+		definition string
+	}{
+		{name: "strategy_hash", definition: "TEXT NOT NULL DEFAULT ''"},
+		{name: "run_hash", definition: "TEXT NOT NULL DEFAULT ''"},
+		{name: "engine_version", definition: "TEXT NOT NULL DEFAULT ''"},
+		{name: "indicator_registry_version", definition: "TEXT NOT NULL DEFAULT ''"},
+		{name: "metric_registry_version", definition: "TEXT NOT NULL DEFAULT ''"},
+		{name: "data_fingerprint", definition: "TEXT NOT NULL DEFAULT ''"},
+		{name: "test_metrics_json", definition: "TEXT NOT NULL DEFAULT '{}'"},
+	} {
+		if _, err := db.ExecContext(ctx, "ALTER TABLE backtest_walk_forward_steps ADD COLUMN "+column.name+" "+column.definition); err != nil {
+			if strings.Contains(err.Error(), "duplicate column name") {
+				continue
+			}
+			return errb.With("table", "backtest_walk_forward_steps", "column", column.name).Wrapf(err, "ensure backtest walk-forward step sqlite column")
 		}
 	}
 	return nil

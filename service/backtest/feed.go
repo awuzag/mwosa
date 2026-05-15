@@ -23,6 +23,13 @@ func (f dailyBarFeed) Open(ctx context.Context, request core.DataRequest) (core.
 		"from", request.From.Format(time.DateOnly),
 		"to", request.To.Format(time.DateOnly),
 	)
+	timeframe, err := core.ParseTimeframe(defaultTimeframe(request.Timeframe))
+	if err != nil {
+		return nil, errb.Wrap(err)
+	}
+	if !timeframe.IsDailyCompatible() {
+		return nil, errb.With("timeframe", timeframe.ID).New("canonical daily bar feed supports only 1d, 1w, and 1mo timeframes")
+	}
 	instruments, err := dataInstrumentsFromRequest(request)
 	if err != nil {
 		return nil, errb.Wrap(err)
@@ -39,7 +46,7 @@ func (f dailyBarFeed) Open(ctx context.Context, request core.DataRequest) (core.
 	if err != nil {
 		return nil, errb.With("market", market).Wrapf(err, "open canonical daily bar stream")
 	}
-	return newDailyBarCursorFrameStream(stream, instruments), nil
+	return core.NewTimeframeStream(newDailyBarCursorFrameStream(stream, instruments), timeframe)
 }
 
 type dailyBarCursorFrameStream struct {
@@ -177,4 +184,11 @@ func singleMarket(instruments []core.InstrumentIdentity) (string, error) {
 
 func instrumentKey(market string, securityType string, symbol string) string {
 	return market + "\x00" + securityType + "\x00" + symbol
+}
+
+func defaultTimeframe(value string) string {
+	if value == "" {
+		return core.Timeframe1Day
+	}
+	return value
 }

@@ -38,12 +38,14 @@ portfolio:
 
 execution:
   fill: next_open
+  lot_size: 1
+  tick_size: 5
   commission:
     type: bps
     value: 1.5
   slippage:
-    type: bps
-    value: 0
+    type: spread_proxy
+    value: 0.5
 
 report:
   metrics:
@@ -89,7 +91,31 @@ report:
 | `data.to` | 종료일 |
 | `universe` | 실행할 종목 집합 또는 selector |
 | `portfolio.initial_cash` | 초기 현금 |
-| `execution.fill` | 체결 가격 가정 |
+| `execution.fill` | 체결 가격 가정. `next_open`, `same_close`, `next_close`, `intrabar_ohlc` 를 지원한다. |
+| `execution.order_type` | 주문 실행 방식. `market`, `limit`, `stop`, `stop_limit`, `trailing_stop`, `rebalance` 를 지원한다. |
+| `execution.time_in_force` | pending order 생명주기. 기본 `day` 는 한 번의 실행 시도 뒤 만료되고, `gtc` 는 미체결 주문을 다음 bar 로 유지하며, `ioc` 는 partial fill 이후 남은 수량을 즉시 취소 이벤트로 남기고, `cancel_on_rebalance` 는 다음 rebalance intent 가 생기면 기존 pending order 를 취소 이벤트와 함께 교체한다. |
+| `execution.trailing_stop_pct` | `trailing_stop` 주문의 peak 대비 하락 허용 폭이다. 값은 percent point 로 해석한다. |
+| `execution.lot_size` | 체결 수량 단위. 지정하면 실제 fill quantity 를 lot 단위로 내림한다. 기본은 기존 whole-share 동작과 같다. |
+| `execution.tick_size` | 체결 가격 단위. 지정하면 매수 가격은 tick 단위로 올림, 매도 가격은 tick 단위로 내림해 보수적으로 정렬한다. |
+
+`slippage.type: participation` 은 실제 fill quantity 가 해당 bar 의 volume 에서
+차지하는 비중만큼 `value` bps 를 비례 적용한다. 예를 들어 `value: 1000` 이고
+bar volume 의 5% 를 체결하면 50bps slippage 로 계산한다.
+
+`slippage.type: spread_proxy` 는 bar 의 `high - low` 범위를 spread 근사치로
+보고 `value` 를 곱한 금액을 불리한 방향으로 적용한다. 예를 들어
+`value: 0.5` 는 half-spread 를 매수 가격에 더하고 매도 가격에서 뺀다.
+
+`slippage.type: atr` 은 주문 의도가 만들어진 시점에 준비된 ATR 값을 스냅샷으로
+고정하고, 체결 시 `value` 배율만큼 불리한 가격 충격을 적용한다. `window` 는
+필수이며, ATR 이 아직 준비되지 않았으면 `slippage_atr_not_ready` unfilled event
+를 남긴다. `next_open` 체결에서 체결일 high/low 를 읽지 않으므로 future leakage
+를 만들지 않는다.
+
+`slippage.type: volatility` 는 bar 의 `high - low` 범위를 현재 체결 기준
+가격 대비 변동성으로 환산한 뒤 `value` 배율만큼 bps 충격을 적용한다. 예를
+들어 high-low 가 가격의 4% 이고 `value: 0.25` 이면 100bps slippage 로
+계산한다.
 
 `data.security_type` 은 실행 전체를 잠그는 필수 필드가 아니다. 기존 YAML 호환을
 위해 읽을 수는 있지만, 새 스펙에서는 `source.*` 후보 field 와

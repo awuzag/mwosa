@@ -2,6 +2,7 @@ package backtest
 
 import (
 	"math"
+	"sort"
 	"strings"
 	"time"
 
@@ -9,6 +10,9 @@ import (
 )
 
 const (
+	DefaultMetricRegistryVersion = "default-metrics/v1"
+	CustomMetricRegistryVersion  = "custom-metrics"
+
 	MetricTotalReturn               = "total_return"
 	MetricFinalEquity               = "final_equity"
 	MetricMaxDrawdown               = "max_drawdown"
@@ -30,6 +34,8 @@ const (
 	MetricBenchmarkMaxDrawdown      = "benchmark_max_drawdown"
 	MetricRelativeDrawdown          = "relative_drawdown"
 	MetricMonthlyWinRateVsBenchmark = "monthly_win_rate_vs_benchmark"
+	MetricBenchmarkAlpha            = "benchmark_alpha"
+	MetricBenchmarkBeta             = "benchmark_beta"
 )
 
 var coreMetricIDs = []string{
@@ -56,10 +62,21 @@ var researchMetricIDs = []string{
 	MetricDataIssueCount,
 }
 
+var researchBenchmarkMetricIDs = []string{
+	MetricBenchmarkTotalReturn,
+	MetricExcessReturn,
+	MetricBenchmarkMaxDrawdown,
+	MetricRelativeDrawdown,
+	MetricMonthlyWinRateVsBenchmark,
+	MetricBenchmarkAlpha,
+	MetricBenchmarkBeta,
+}
+
 type Metrics map[string]float64
 
 type MetricRegistry struct {
-	defs map[string]MetricDefinition
+	version string
+	defs    map[string]MetricDefinition
 }
 
 type MetricDefinition struct {
@@ -74,7 +91,10 @@ type MetricContext struct {
 }
 
 func NewMetricRegistry(definitions ...MetricDefinition) (MetricRegistry, error) {
-	registry := MetricRegistry{defs: make(map[string]MetricDefinition, len(definitions))}
+	registry := MetricRegistry{
+		version: CustomMetricRegistryVersion,
+		defs:    make(map[string]MetricDefinition, len(definitions)),
+	}
 	for _, definition := range definitions {
 		if strings.TrimSpace(definition.ID) == "" {
 			return MetricRegistry{}, oops.In("backtest_metric_registry").New("metric id is empty")
@@ -91,7 +111,7 @@ func NewMetricRegistry(definitions ...MetricDefinition) (MetricRegistry, error) 
 }
 
 func DefaultMetricRegistry() (MetricRegistry, error) {
-	return NewMetricRegistry(
+	registry, err := NewMetricRegistry(
 		fieldMetric(MetricTotalReturn, func(result Result) float64 { return result.TotalReturn }),
 		fieldMetric(MetricFinalEquity, func(result Result) float64 { return result.FinalEquity }),
 		fieldMetric(MetricMaxDrawdown, func(result Result) float64 { return result.MaxDrawdown }),
@@ -125,12 +145,26 @@ func DefaultMetricRegistry() (MetricRegistry, error) {
 			return ctx.Result.MaxDrawdown - benchmarkDD, nil
 		}),
 		benchmarkMetric(MetricMonthlyWinRateVsBenchmark, monthlyWinRateVsBenchmark),
+		benchmarkMetric(MetricBenchmarkBeta, benchmarkBeta),
+		benchmarkMetric(MetricBenchmarkAlpha, benchmarkAlpha),
 	)
+	if err != nil {
+		return MetricRegistry{}, err
+	}
+	registry.version = DefaultMetricRegistryVersion
+	return registry, nil
 }
 
 func (r MetricRegistry) Definition(id string) (MetricDefinition, bool) {
 	definition, ok := r.defs[id]
 	return definition, ok
+}
+
+func (r MetricRegistry) Version() string {
+	if r.version == "" {
+		return CustomMetricRegistryVersion
+	}
+	return r.version
 }
 
 func fieldMetric(id string, value func(Result) float64) MetricDefinition {
@@ -161,10 +195,15 @@ func resolveMetricSelection(report ReportSpec, hasBenchmark bool, registry Metri
 	if selection.Preset == "research" {
 		preset = researchMetricIDs
 	}
-	selected := make([]string, 0, len(preset)+len(selection.Include))
+	selected := make([]string, 0, len(preset)+len(researchBenchmarkMetricIDs)+len(selection.Include))
 	seen := make(map[string]struct{})
 	for _, id := range preset {
 		selected = appendMetric(selected, seen, id)
+	}
+	if selection.Preset == "research" && hasBenchmark {
+		for _, id := range researchBenchmarkMetricIDs {
+			selected = appendMetric(selected, seen, id)
+		}
 	}
 	for _, id := range selection.Include {
 		definition, err := requireMetric(registry, id)
@@ -330,6 +369,9 @@ func exposure(result Result) float64 {
 }
 
 func dataIssueCount(result Result) float64 {
+	if len(result.DataEvents) > 0 {
+		return float64(len(result.DataEvents))
+	}
 	var count int
 	for _, event := range result.ExecutionEvents {
 		switch event.Type {
@@ -437,6 +479,108 @@ func monthlyWinRateVsBenchmark(ctx MetricContext) (float64, error) {
 		return 0, nil
 	}
 	return float64(wins) / float64(compared), nil
+}
+
+func benchmarkBeta(ctx MetricContext) (float64, error) {
+	pairs, err := alignedBenchmarkReturnPairs(ctx)
+	if err != nil {
+		return 0, err
+	}
+	if len(pairs) < 2 {
+		return 0, nil
+	}
+	strategyMean, benchmarkMean := averageReturnPair(pairs)
+	var covariance float64
+	var benchmarkVariance float64
+	for _, pair := range pairs {
+		strategyDelta := pair.strategy - strategyMean
+		benchmarkDelta := pair.benchmark - benchmarkMean
+		covariance += strategyDelta * benchmarkDelta
+		benchmarkVariance += benchmarkDelta * benchmarkDelta
+	}
+	if benchmarkVariance == 0 {
+		return 0, nil
+	}
+	return covariance / benchmarkVariance, nil
+}
+
+func benchmarkAlpha(ctx MetricContext) (float64, error) {
+	pairs, err := alignedBenchmarkReturnPairs(ctx)
+	if err != nil {
+		return 0, err
+	}
+	if len(pairs) == 0 {
+		return 0, nil
+	}
+	beta, err := benchmarkBeta(ctx)
+	if err != nil {
+		return 0, err
+	}
+	var residual float64
+	for _, pair := range pairs {
+		residual += pair.strategy - beta*pair.benchmark
+	}
+	return residual / float64(len(pairs)) * 252, nil
+}
+
+type benchmarkReturnPair struct {
+	strategy  float64
+	benchmark float64
+}
+
+func alignedBenchmarkReturnPairs(ctx MetricContext) ([]benchmarkReturnPair, error) {
+	bars, err := benchmarkBarsForMetrics(ctx)
+	if err != nil {
+		return nil, err
+	}
+	equityByDay := make(map[string]float64, len(ctx.Result.EquityCurve))
+	for _, point := range ctx.Result.EquityCurve {
+		if point.Equity > 0 {
+			equityByDay[point.Time.Format(time.DateOnly)] = point.Equity
+		}
+	}
+	benchmarkByDay := make(map[string]float64, len(bars))
+	for _, bar := range bars {
+		if bar.Close > 0 {
+			benchmarkByDay[bar.Time.Format(time.DateOnly)] = bar.Close
+		}
+	}
+	days := make([]string, 0, len(equityByDay))
+	for day := range equityByDay {
+		if _, ok := benchmarkByDay[day]; ok {
+			days = append(days, day)
+		}
+	}
+	sort.Strings(days)
+	if len(days) < 2 {
+		return nil, oops.In("backtest_metrics").With("symbol", ctx.Result.Benchmark.Symbol).New("benchmark alpha/beta requires at least two aligned dates")
+	}
+	out := make([]benchmarkReturnPair, 0, len(days)-1)
+	for index := 1; index < len(days); index++ {
+		prevDay := days[index-1]
+		day := days[index]
+		prevStrategy := equityByDay[prevDay]
+		prevBenchmark := benchmarkByDay[prevDay]
+		if prevStrategy <= 0 || prevBenchmark <= 0 {
+			continue
+		}
+		out = append(out, benchmarkReturnPair{
+			strategy:  equityByDay[day]/prevStrategy - 1,
+			benchmark: benchmarkByDay[day]/prevBenchmark - 1,
+		})
+	}
+	return out, nil
+}
+
+func averageReturnPair(pairs []benchmarkReturnPair) (strategy float64, benchmark float64) {
+	if len(pairs) == 0 {
+		return 0, 0
+	}
+	for _, pair := range pairs {
+		strategy += pair.strategy
+		benchmark += pair.benchmark
+	}
+	return strategy / float64(len(pairs)), benchmark / float64(len(pairs))
 }
 
 func benchmarkBarsForMetrics(ctx MetricContext) ([]Bar, error) {

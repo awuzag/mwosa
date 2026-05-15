@@ -98,6 +98,7 @@ type memoryBacktestStrategyRepository struct {
 	strategies  map[string]SavedStrategy
 	versions    []SavedStrategyVersion
 	evaluations []SavedEvaluationDetail
+	runs        []SavedBacktestRunDetail
 }
 
 func newMemoryBacktestStrategyRepository() *memoryBacktestStrategyRepository {
@@ -217,6 +218,40 @@ func (r *memoryBacktestStrategyRepository) GetEvaluation(_ context.Context, ref 
 		}
 	}
 	return SavedEvaluationDetail{}, assert.AnError
+}
+
+func (r *memoryBacktestStrategyRepository) SaveRun(_ context.Context, run SavedBacktestRun, now time.Time) (SavedBacktestRunDetail, error) {
+	if run.CreatedAt.IsZero() {
+		run.CreatedAt = now
+	}
+	var result core.Result
+	if err := json.Unmarshal(run.ResultJSON, &result); err != nil {
+		return SavedBacktestRunDetail{}, err
+	}
+	detail := SavedBacktestRunDetail{Run: run, Result: result}
+	r.runs = append(r.runs, detail)
+	return detail, nil
+}
+
+func (r *memoryBacktestStrategyRepository) ListRuns(context.Context) ([]SavedBacktestRun, error) {
+	out := make([]SavedBacktestRun, 0, len(r.runs))
+	for _, detail := range r.runs {
+		run := detail.Run
+		run.ResultJSON = nil
+		run.MetricsJSON = nil
+		out = append(out, run)
+	}
+	return out, nil
+}
+
+func (r *memoryBacktestStrategyRepository) GetRun(_ context.Context, ref string) (SavedBacktestRunDetail, error) {
+	for index := len(r.runs) - 1; index >= 0; index-- {
+		detail := r.runs[index]
+		if detail.Run.ID == ref || detail.Run.RunName == ref || detail.Run.ResultHash == ref {
+			return detail, nil
+		}
+	}
+	return SavedBacktestRunDetail{}, assert.AnError
 }
 
 func (r *memoryBacktestStrategyRepository) versionByID(id string) SavedStrategyVersion {

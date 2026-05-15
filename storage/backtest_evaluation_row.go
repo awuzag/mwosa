@@ -25,32 +25,41 @@ type BacktestExperimentRow struct {
 type BacktestExperimentCaseRow struct {
 	bun.BaseModel `bun:"table:backtest_experiment_cases,alias:backtest_experiment_case"`
 
-	ID                string    `bun:"id,pk"`
-	ExperimentID      string    `bun:"experiment_id,notnull"`
-	CaseID            string    `bun:"case_id,notnull"`
-	CaseName          string    `bun:"case_name,notnull"`
-	RunName           string    `bun:"run_name,notnull"`
-	PeriodFrom        string    `bun:"period_from,notnull"`
-	PeriodTo          string    `bun:"period_to,notnull"`
-	ParameterJSON     string    `bun:"parameter_json,notnull"`
-	RegimeTagsJSON    string    `bun:"regime_tags_json,notnull"`
-	Status            string    `bun:"status,notnull"`
-	PassedConstraints bool      `bun:"passed_constraints,notnull"`
-	Rank              int       `bun:"rank,notnull"`
-	Objective         string    `bun:"objective,nullzero"`
-	ObjectiveValue    float64   `bun:"objective_value,nullzero"`
-	ResultHash        string    `bun:"result_hash,notnull"`
-	CreatedAt         time.Time `bun:"created_at,notnull,default:CURRENT_TIMESTAMP"`
+	ID                       string    `bun:"id,pk"`
+	ExperimentID             string    `bun:"experiment_id,notnull"`
+	CaseID                   string    `bun:"case_id,notnull"`
+	CaseName                 string    `bun:"case_name,notnull"`
+	RunName                  string    `bun:"run_name,notnull"`
+	PeriodFrom               string    `bun:"period_from,notnull"`
+	PeriodTo                 string    `bun:"period_to,notnull"`
+	ParameterJSON            string    `bun:"parameter_json,notnull"`
+	RegimeTagsJSON           string    `bun:"regime_tags_json,notnull"`
+	Status                   string    `bun:"status,notnull"`
+	PassedConstraints        bool      `bun:"passed_constraints,notnull"`
+	Rank                     int       `bun:"rank,notnull"`
+	Objective                string    `bun:"objective,nullzero"`
+	ObjectiveValue           float64   `bun:"objective_value,nullzero"`
+	StrategyHash             string    `bun:"strategy_hash,notnull,default:''"`
+	RunHash                  string    `bun:"run_hash,notnull,default:''"`
+	EngineVersion            string    `bun:"engine_version,notnull,default:''"`
+	IndicatorRegistryVersion string    `bun:"indicator_registry_version,notnull,default:''"`
+	MetricRegistryVersion    string    `bun:"metric_registry_version,notnull,default:''"`
+	DataFingerprint          string    `bun:"data_fingerprint,notnull,default:''"`
+	ResultHash               string    `bun:"result_hash,notnull"`
+	CreatedAt                time.Time `bun:"created_at,notnull,default:CURRENT_TIMESTAMP"`
 }
 
 type BacktestResultRow struct {
 	bun.BaseModel `bun:"table:backtest_results,alias:backtest_result"`
 
-	ID               string    `bun:"id,pk"`
-	ExperimentCaseID string    `bun:"experiment_case_id,notnull"`
-	ResultJSON       string    `bun:"result_json,notnull"`
-	ResultHash       string    `bun:"result_hash,notnull"`
-	CreatedAt        time.Time `bun:"created_at,notnull,default:CURRENT_TIMESTAMP"`
+	ID                       string    `bun:"id,pk"`
+	ExperimentCaseID         string    `bun:"experiment_case_id,notnull"`
+	ResultJSON               string    `bun:"result_json,notnull"`
+	EngineVersion            string    `bun:"engine_version,notnull,default:''"`
+	IndicatorRegistryVersion string    `bun:"indicator_registry_version,notnull,default:''"`
+	MetricRegistryVersion    string    `bun:"metric_registry_version,notnull,default:''"`
+	ResultHash               string    `bun:"result_hash,notnull"`
+	CreatedAt                time.Time `bun:"created_at,notnull,default:CURRENT_TIMESTAMP"`
 }
 
 type BacktestMetricSummaryRow struct {
@@ -66,17 +75,24 @@ type BacktestMetricSummaryRow struct {
 type BacktestWalkForwardStepRow struct {
 	bun.BaseModel `bun:"table:backtest_walk_forward_steps,alias:backtest_walk_forward_step"`
 
-	ID                    string    `bun:"id,pk"`
-	ExperimentID          string    `bun:"experiment_id,notnull"`
-	StepIndex             int       `bun:"step_index,notnull"`
-	TrainFrom             string    `bun:"train_from,notnull"`
-	TrainTo               string    `bun:"train_to,notnull"`
-	TestFrom              string    `bun:"test_from,notnull"`
-	TestTo                string    `bun:"test_to,notnull"`
-	SelectedParameterJSON string    `bun:"selected_parameter_json,notnull"`
-	TrainCaseID           string    `bun:"train_case_id,notnull"`
-	TestCaseID            string    `bun:"test_case_id,notnull"`
-	TrainObjective        float64   `bun:"train_objective,notnull"`
-	ResultHash            string    `bun:"result_hash,notnull"`
-	CreatedAt             time.Time `bun:"created_at,notnull,default:CURRENT_TIMESTAMP"`
+	ID                       string    `bun:"id,pk"`
+	ExperimentID             string    `bun:"experiment_id,notnull"`
+	StepIndex                int       `bun:"step_index,notnull"`
+	TrainFrom                string    `bun:"train_from,notnull"`
+	TrainTo                  string    `bun:"train_to,notnull"`
+	TestFrom                 string    `bun:"test_from,notnull"`
+	TestTo                   string    `bun:"test_to,notnull"`
+	SelectedParameterJSON    string    `bun:"selected_parameter_json,notnull"`
+	TrainCaseID              string    `bun:"train_case_id,notnull"`
+	TestCaseID               string    `bun:"test_case_id,notnull"`
+	TrainObjective           float64   `bun:"train_objective,notnull"`
+	TestMetricsJSON          string    `bun:"test_metrics_json,notnull,default:'{}'"`
+	StrategyHash             string    `bun:"strategy_hash,notnull,default:''"`
+	RunHash                  string    `bun:"run_hash,notnull,default:''"`
+	EngineVersion            string    `bun:"engine_version,notnull,default:''"`
+	IndicatorRegistryVersion string    `bun:"indicator_registry_version,notnull,default:''"`
+	MetricRegistryVersion    string    `bun:"metric_registry_version,notnull,default:''"`
+	DataFingerprint          string    `bun:"data_fingerprint,notnull,default:''"`
+	ResultHash               string    `bun:"result_hash,notnull"`
+	CreatedAt                time.Time `bun:"created_at,notnull,default:CURRENT_TIMESTAMP"`
 }

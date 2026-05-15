@@ -23,6 +23,7 @@ type repository struct {
 
 var _ backtestservice.StrategyRepository = (*repository)(nil)
 var _ backtestservice.EvaluationRepository = (*repository)(nil)
+var _ backtestservice.BacktestRunRepository = (*repository)(nil)
 
 func NewRepository(database *storage.Database) (backtestservice.StrategyRepository, error) {
 	if database == nil {
@@ -269,6 +270,67 @@ func (r *repository) DeleteStrategy(ctx context.Context, name string, deletedAt 
 	return nil
 }
 
+func (r *repository) SaveRun(ctx context.Context, run backtestservice.SavedBacktestRun, now time.Time) (backtestservice.SavedBacktestRunDetail, error) {
+	errb := oops.In("backtest_run_repository").With("run_id", run.ID, "run", run.RunName)
+	client, err := r.database.Client(ctx)
+	if err != nil {
+		return backtestservice.SavedBacktestRunDetail{}, errb.Wrap(err)
+	}
+	if run.CreatedAt.IsZero() {
+		run.CreatedAt = now
+	}
+	row := backtestRunToRow(run)
+	if _, err := client.NewInsert().Model(&row).Exec(ctx); err != nil {
+		return backtestservice.SavedBacktestRunDetail{}, errb.Wrapf(err, "create backtest run row")
+	}
+	return backtestRunDetailFromRow(&row)
+}
+
+func (r *repository) ListRuns(ctx context.Context) ([]backtestservice.SavedBacktestRun, error) {
+	errb := oops.In("backtest_run_repository")
+	client, err := r.database.Client(ctx)
+	if err != nil {
+		return nil, errb.Wrap(err)
+	}
+	var rows []storage.BacktestRunRow
+	if err := client.NewSelect().Model(&rows).Order("created_at DESC").Scan(ctx); err != nil {
+		return nil, errb.Wrapf(err, "list backtest run rows")
+	}
+	out := make([]backtestservice.SavedBacktestRun, 0, len(rows))
+	for _, row := range rows {
+		run := backtestRunFromRow(&row)
+		run.ResultJSON = nil
+		run.MetricsJSON = nil
+		out = append(out, run)
+	}
+	return out, nil
+}
+
+func (r *repository) GetRun(ctx context.Context, ref string) (backtestservice.SavedBacktestRunDetail, error) {
+	errb := oops.In("backtest_run_repository").With("ref", ref)
+	client, err := r.database.Client(ctx)
+	if err != nil {
+		return backtestservice.SavedBacktestRunDetail{}, errb.Wrap(err)
+	}
+	var row storage.BacktestRunRow
+	query := client.NewSelect().Model(&row).Order("created_at DESC").Limit(1)
+	switch {
+	case looksLikeID(ref):
+		query = query.Where("id = ?", ref)
+	case strings.HasPrefix(ref, "sha256:"):
+		query = query.Where("result_hash = ?", ref)
+	default:
+		query = query.Where("run_name = ?", ref)
+	}
+	if err := query.Scan(ctx); err != nil {
+		if errors.Is(err, sql.ErrNoRows) {
+			return backtestservice.SavedBacktestRunDetail{}, errb.Errorf("backtest run not found: %s", ref)
+		}
+		return backtestservice.SavedBacktestRunDetail{}, errb.Wrapf(err, "get backtest run row")
+	}
+	return backtestRunDetailFromRow(&row)
+}
+
 func (r *repository) SaveEvaluation(ctx context.Context, experiment backtestservice.SavedExperiment, cases []backtestservice.SavedExperimentCase, steps []backtestservice.SavedWalkForwardStep, now time.Time) (backtestservice.SavedEvaluationDetail, error) {
 	errb := oops.In("backtest_evaluation_repository").With("name", experiment.Name, "experiment_id", experiment.ID)
 	client, err := r.database.Client(ctx)
@@ -306,11 +368,14 @@ func (r *repository) SaveEvaluation(ctx context.Context, experiment backtestserv
 			return backtestservice.SavedEvaluationDetail{}, errb.With("case_id", item.CaseID).Wrapf(err, "generate backtest result id")
 		}
 		resultRow := storage.BacktestResultRow{
-			ID:               resultID,
-			ExperimentCaseID: item.ID,
-			ResultJSON:       string(item.ResultJSON),
-			ResultHash:       item.ResultHash,
-			CreatedAt:        item.CreatedAt,
+			ID:                       resultID,
+			ExperimentCaseID:         item.ID,
+			ResultJSON:               string(item.ResultJSON),
+			EngineVersion:            item.EngineVersion,
+			IndicatorRegistryVersion: item.IndicatorRegistry,
+			MetricRegistryVersion:    item.MetricRegistry,
+			ResultHash:               item.ResultHash,
+			CreatedAt:                item.CreatedAt,
 		}
 		if _, err := tx.NewInsert().Model(&resultRow).Exec(ctx); err != nil {
 			return backtestservice.SavedEvaluationDetail{}, errb.With("case_id", item.CaseID).Wrapf(err, "create backtest result row")
@@ -530,6 +595,59 @@ func versionFromRow(row *storage.BacktestStrategyVersionRow) backtestservice.Sav
 	}
 }
 
+func backtestRunToRow(in backtestservice.SavedBacktestRun) storage.BacktestRunRow {
+	return storage.BacktestRunRow{
+		ID:                       in.ID,
+		RunName:                  in.RunName,
+		StrategyName:             in.StrategyName,
+		Market:                   in.Market,
+		Timeframe:                in.Timeframe,
+		PeriodFrom:               in.PeriodFrom,
+		PeriodTo:                 in.PeriodTo,
+		StrategyHash:             in.StrategyHash,
+		RunHash:                  in.RunHash,
+		EngineVersion:            in.EngineVersion,
+		IndicatorRegistryVersion: in.IndicatorRegistry,
+		MetricRegistryVersion:    in.MetricRegistry,
+		DataFingerprint:          in.DataFingerprint,
+		ResultHash:               in.ResultHash,
+		ResultJSON:               string(in.ResultJSON),
+		MetricsJSON:              string(in.MetricsJSON),
+		CreatedAt:                in.CreatedAt,
+	}
+}
+
+func backtestRunFromRow(row *storage.BacktestRunRow) backtestservice.SavedBacktestRun {
+	return backtestservice.SavedBacktestRun{
+		ID:                row.ID,
+		RunName:           row.RunName,
+		StrategyName:      row.StrategyName,
+		Market:            row.Market,
+		Timeframe:         row.Timeframe,
+		PeriodFrom:        row.PeriodFrom,
+		PeriodTo:          row.PeriodTo,
+		StrategyHash:      row.StrategyHash,
+		RunHash:           row.RunHash,
+		EngineVersion:     row.EngineVersion,
+		IndicatorRegistry: row.IndicatorRegistryVersion,
+		MetricRegistry:    row.MetricRegistryVersion,
+		DataFingerprint:   row.DataFingerprint,
+		ResultHash:        row.ResultHash,
+		ResultJSON:        json.RawMessage(row.ResultJSON),
+		MetricsJSON:       json.RawMessage(row.MetricsJSON),
+		CreatedAt:         row.CreatedAt,
+	}
+}
+
+func backtestRunDetailFromRow(row *storage.BacktestRunRow) (backtestservice.SavedBacktestRunDetail, error) {
+	run := backtestRunFromRow(row)
+	var result core.Result
+	if err := json.Unmarshal(run.ResultJSON, &result); err != nil {
+		return backtestservice.SavedBacktestRunDetail{}, oops.In("backtest_run_repository").With("run_id", row.ID).Wrapf(err, "decode backtest result json")
+	}
+	return backtestservice.SavedBacktestRunDetail{Run: run, Result: result}, nil
+}
+
 func experimentToRow(in backtestservice.SavedExperiment) storage.BacktestExperimentRow {
 	return storage.BacktestExperimentRow{
 		ID:               in.ID,
@@ -564,22 +682,28 @@ func experimentFromRow(row *storage.BacktestExperimentRow) backtestservice.Saved
 
 func experimentCaseToRow(in backtestservice.SavedExperimentCase) storage.BacktestExperimentCaseRow {
 	return storage.BacktestExperimentCaseRow{
-		ID:                in.ID,
-		ExperimentID:      in.ExperimentID,
-		CaseID:            in.CaseID,
-		CaseName:          in.CaseName,
-		RunName:           in.RunName,
-		PeriodFrom:        in.PeriodFrom,
-		PeriodTo:          in.PeriodTo,
-		ParameterJSON:     string(in.ParameterJSON),
-		RegimeTagsJSON:    string(in.RegimeTagsJSON),
-		Status:            in.Status,
-		PassedConstraints: in.PassedConstraints,
-		Rank:              in.Rank,
-		Objective:         in.Objective,
-		ObjectiveValue:    in.ObjectiveValue,
-		ResultHash:        in.ResultHash,
-		CreatedAt:         in.CreatedAt,
+		ID:                       in.ID,
+		ExperimentID:             in.ExperimentID,
+		CaseID:                   in.CaseID,
+		CaseName:                 in.CaseName,
+		RunName:                  in.RunName,
+		PeriodFrom:               in.PeriodFrom,
+		PeriodTo:                 in.PeriodTo,
+		ParameterJSON:            string(in.ParameterJSON),
+		RegimeTagsJSON:           string(in.RegimeTagsJSON),
+		Status:                   in.Status,
+		PassedConstraints:        in.PassedConstraints,
+		Rank:                     in.Rank,
+		Objective:                in.Objective,
+		ObjectiveValue:           in.ObjectiveValue,
+		StrategyHash:             in.StrategyHash,
+		RunHash:                  in.RunHash,
+		EngineVersion:            in.EngineVersion,
+		IndicatorRegistryVersion: in.IndicatorRegistry,
+		MetricRegistryVersion:    in.MetricRegistry,
+		DataFingerprint:          in.DataFingerprint,
+		ResultHash:               in.ResultHash,
+		CreatedAt:                in.CreatedAt,
 	}
 }
 
@@ -599,6 +723,12 @@ func experimentCaseFromRow(row *storage.BacktestExperimentCaseRow) backtestservi
 		Rank:              row.Rank,
 		Objective:         row.Objective,
 		ObjectiveValue:    row.ObjectiveValue,
+		StrategyHash:      row.StrategyHash,
+		RunHash:           row.RunHash,
+		EngineVersion:     row.EngineVersion,
+		IndicatorRegistry: row.IndicatorRegistryVersion,
+		MetricRegistry:    row.MetricRegistryVersion,
+		DataFingerprint:   row.DataFingerprint,
 		ResultHash:        row.ResultHash,
 		CreatedAt:         row.CreatedAt,
 	}
@@ -606,19 +736,26 @@ func experimentCaseFromRow(row *storage.BacktestExperimentCaseRow) backtestservi
 
 func walkForwardStepToRow(in backtestservice.SavedWalkForwardStep) storage.BacktestWalkForwardStepRow {
 	return storage.BacktestWalkForwardStepRow{
-		ID:                    in.ID,
-		ExperimentID:          in.ExperimentID,
-		StepIndex:             in.StepIndex,
-		TrainFrom:             in.TrainFrom,
-		TrainTo:               in.TrainTo,
-		TestFrom:              in.TestFrom,
-		TestTo:                in.TestTo,
-		SelectedParameterJSON: string(in.SelectedParameterJSON),
-		TrainCaseID:           in.TrainCaseID,
-		TestCaseID:            in.TestCaseID,
-		TrainObjective:        in.TrainObjective,
-		ResultHash:            in.ResultHash,
-		CreatedAt:             in.CreatedAt,
+		ID:                       in.ID,
+		ExperimentID:             in.ExperimentID,
+		StepIndex:                in.StepIndex,
+		TrainFrom:                in.TrainFrom,
+		TrainTo:                  in.TrainTo,
+		TestFrom:                 in.TestFrom,
+		TestTo:                   in.TestTo,
+		SelectedParameterJSON:    string(in.SelectedParameterJSON),
+		TrainCaseID:              in.TrainCaseID,
+		TestCaseID:               in.TestCaseID,
+		TrainObjective:           in.TrainObjective,
+		TestMetricsJSON:          string(in.TestMetricsJSON),
+		StrategyHash:             in.StrategyHash,
+		RunHash:                  in.RunHash,
+		EngineVersion:            in.EngineVersion,
+		IndicatorRegistryVersion: in.IndicatorRegistry,
+		MetricRegistryVersion:    in.MetricRegistry,
+		DataFingerprint:          in.DataFingerprint,
+		ResultHash:               in.ResultHash,
+		CreatedAt:                in.CreatedAt,
 	}
 }
 
@@ -635,6 +772,13 @@ func walkForwardStepFromRow(row *storage.BacktestWalkForwardStepRow) backtestser
 		TrainCaseID:           row.TrainCaseID,
 		TestCaseID:            row.TestCaseID,
 		TrainObjective:        row.TrainObjective,
+		TestMetricsJSON:       json.RawMessage(row.TestMetricsJSON),
+		StrategyHash:          row.StrategyHash,
+		RunHash:               row.RunHash,
+		EngineVersion:         row.EngineVersion,
+		IndicatorRegistry:     row.IndicatorRegistryVersion,
+		MetricRegistry:        row.MetricRegistryVersion,
+		DataFingerprint:       row.DataFingerprint,
 		ResultHash:            row.ResultHash,
 		CreatedAt:             row.CreatedAt,
 	}

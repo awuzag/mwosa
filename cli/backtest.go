@@ -11,6 +11,7 @@ func registerBacktestCommands(roots commandRoots, opts *Options) {
 	roots.List.AddCommand(newListEvaluationsCommand(opts))
 	roots.Inspect.AddCommand(newInspectBacktestCommand(opts))
 	roots.Inspect.AddCommand(newInspectBacktestUniverseCommand(opts))
+	roots.Inspect.AddCommand(newInspectBacktestRunCommand(opts))
 	roots.Inspect.AddCommand(newInspectEvaluationCommand(opts))
 	roots.Update.AddCommand(newUpdateBacktestCommand(opts))
 	roots.Delete.AddCommand(newDeleteBacktestCommand(opts))
@@ -18,6 +19,7 @@ func registerBacktestCommands(roots commandRoots, opts *Options) {
 	roots.Validate.AddCommand(newValidateEvaluationCommand(opts))
 	roots.Run.AddCommand(newRunBacktestCommand(opts))
 	roots.Run.AddCommand(newRunEvaluationCommand(opts))
+	roots.Compare.AddCommand(newCompareBacktestRunsCommand(opts))
 	roots.Compare.AddCommand(newCompareEvaluationCommand(opts))
 	roots.Rank.AddCommand(newRankEvaluationCommand(opts))
 }
@@ -28,6 +30,7 @@ func newListBacktestCommand(opts *Options) *cobra.Command {
 		Short: "List backtest resources",
 	}
 	cmd.AddCommand(newListBacktestStrategiesCommand(opts))
+	cmd.AddCommand(newListBacktestRunsCommand(opts))
 	return cmd
 }
 
@@ -65,6 +68,23 @@ func newListBacktestStrategiesCommand(opts *Options) *cobra.Command {
 	}
 }
 
+func newListBacktestRunsCommand(opts *Options) *cobra.Command {
+	return &cobra.Command{
+		Use:   "runs",
+		Short: "List saved backtest runs",
+		Args:  cobra.NoArgs,
+		RunE: runResult(opts, func(cmd *cobra.Command, _ []string) (result any, err error) {
+			runtime, err := newAppRuntime(opts, false)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Backtest.ListRuns(cmd.Context(), handler.ListBacktestRunsRequest{})
+		}),
+	}
+}
+
 func newInspectBacktestCommand(opts *Options) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "backtest",
@@ -72,11 +92,19 @@ func newInspectBacktestCommand(opts *Options) *cobra.Command {
 	}
 	cmd.AddCommand(newInspectBacktestStrategyCommand(opts))
 	cmd.AddCommand(newInspectBacktestUniverseNestedCommand(opts))
+	cmd.AddCommand(newInspectBacktestRunNestedCommand(opts))
+	return cmd
+}
+
+func newInspectBacktestRunCommand(opts *Options) *cobra.Command {
+	cmd := newInspectBacktestRunNestedCommand(opts)
+	cmd.Use = "backtest-run <id|name|result_hash>"
 	return cmd
 }
 
 func newInspectEvaluationCommand(opts *Options) *cobra.Command {
-	return &cobra.Command{
+	var view string
+	cmd := &cobra.Command{
 		Use:   "evaluation <name|id>",
 		Short: "Inspect a saved backtest evaluation",
 		Args:  cobra.ExactArgs(1),
@@ -87,9 +115,11 @@ func newInspectEvaluationCommand(opts *Options) *cobra.Command {
 			}
 			defer closeAppRuntime(runtime, &err)
 
-			return runtime.Handlers.Backtest.InspectEvaluation(cmd.Context(), handler.InspectEvaluationRequest{Ref: args[0]})
+			return runtime.Handlers.Backtest.InspectEvaluation(cmd.Context(), handler.InspectEvaluationRequest{Ref: args[0], View: view})
 		}),
 	}
+	cmd.Flags().StringVar(&view, "view", "raw", "evaluation view: raw, summary, cases, regime, robustness, walk_forward")
+	return cmd
 }
 
 func newInspectBacktestStrategyCommand(opts *Options) *cobra.Command {
@@ -109,7 +139,28 @@ func newInspectBacktestStrategyCommand(opts *Options) *cobra.Command {
 	}
 }
 
+func newInspectBacktestRunNestedCommand(opts *Options) *cobra.Command {
+	var view string
+	cmd := &cobra.Command{
+		Use:   "run <id|name|result_hash>",
+		Short: "Inspect a saved backtest run",
+		Args:  cobra.ExactArgs(1),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			runtime, err := newAppRuntime(opts, false)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Backtest.InspectRun(cmd.Context(), handler.InspectBacktestRunRequest{Ref: args[0], View: view})
+		}),
+	}
+	cmd.Flags().StringVar(&view, "view", "summary", "backtest result view: raw, summary, metrics, orders, fills, trades, positions, equity, universe, events")
+	return cmd
+}
+
 func newInspectBacktestUniverseNestedCommand(opts *Options) *cobra.Command {
+	var view string
 	cmd := &cobra.Command{
 		Use:   "universe <yaml>",
 		Short: "Inspect a YAML backtest universe pipeline",
@@ -121,9 +172,10 @@ func newInspectBacktestUniverseNestedCommand(opts *Options) *cobra.Command {
 			}
 			defer closeAppRuntime(runtime, &err)
 
-			return runtime.Handlers.Backtest.InspectUniverse(cmd.Context(), handler.InspectBacktestUniverseRequest{Path: args[0]})
+			return runtime.Handlers.Backtest.InspectUniverse(cmd.Context(), handler.InspectBacktestUniverseRequest{Path: args[0], View: view})
 		}),
 	}
+	cmd.Flags().StringVar(&view, "view", "summary", "universe explain view: summary, raw")
 	mustMarkBacktestYAML(cmd)
 	return cmd
 }
@@ -196,6 +248,7 @@ func newDeleteBacktestStrategyCommand(opts *Options) *cobra.Command {
 }
 
 func newValidateBacktestCommand(opts *Options) *cobra.Command {
+	var view string
 	cmd := &cobra.Command{
 		Use:   "backtest <yaml>",
 		Short: "Validate a YAML backtest strategy and run spec",
@@ -207,9 +260,10 @@ func newValidateBacktestCommand(opts *Options) *cobra.Command {
 			}
 			defer closeAppRuntime(runtime, &err)
 
-			return runtime.Handlers.Backtest.Validate(cmd.Context(), handler.ValidateBacktestRequest{Path: args[0]})
+			return runtime.Handlers.Backtest.Validate(cmd.Context(), handler.ValidateBacktestRequest{Path: args[0], View: view})
 		}),
 	}
+	cmd.Flags().StringVar(&view, "view", "summary", "validation view: summary, raw")
 	mustMarkBacktestYAML(cmd)
 	return cmd
 }
@@ -234,6 +288,7 @@ func newValidateEvaluationCommand(opts *Options) *cobra.Command {
 }
 
 func newRunBacktestCommand(opts *Options) *cobra.Command {
+	var view string
 	cmd := &cobra.Command{
 		Use:   "backtest <yaml>",
 		Short: "Run a YAML backtest against stored canonical daily bars",
@@ -245,9 +300,10 @@ func newRunBacktestCommand(opts *Options) *cobra.Command {
 			}
 			defer closeAppRuntime(runtime, &err)
 
-			return runtime.Handlers.Backtest.Run(cmd.Context(), handler.RunBacktestRequest{Path: args[0]})
+			return runtime.Handlers.Backtest.Run(cmd.Context(), handler.RunBacktestRequest{Path: args[0], View: view})
 		}),
 	}
+	cmd.Flags().StringVar(&view, "view", "raw", "backtest result view: raw, summary, metrics, orders, fills, trades, positions, equity, universe, events")
 	mustMarkBacktestYAML(cmd)
 	return cmd
 }
@@ -274,7 +330,8 @@ func newRunEvaluationCommand(opts *Options) *cobra.Command {
 }
 
 func newCompareEvaluationCommand(opts *Options) *cobra.Command {
-	return &cobra.Command{
+	var view string
+	cmd := &cobra.Command{
 		Use:   "evaluation <name|id>",
 		Short: "Compare saved backtest evaluation cases",
 		Args:  cobra.ExactArgs(1),
@@ -285,7 +342,26 @@ func newCompareEvaluationCommand(opts *Options) *cobra.Command {
 			}
 			defer closeAppRuntime(runtime, &err)
 
-			return runtime.Handlers.Backtest.CompareEvaluation(cmd.Context(), handler.CompareEvaluationRequest{Ref: args[0]})
+			return runtime.Handlers.Backtest.CompareEvaluation(cmd.Context(), handler.CompareEvaluationRequest{Ref: args[0], View: view})
+		}),
+	}
+	cmd.Flags().StringVar(&view, "view", "raw", "evaluation view: raw, summary, cases, regime, robustness, walk_forward")
+	return cmd
+}
+
+func newCompareBacktestRunsCommand(opts *Options) *cobra.Command {
+	return &cobra.Command{
+		Use:   "backtest-runs <left-id|name|result_hash> <right-id|name|result_hash>",
+		Short: "Compare two saved backtest runs",
+		Args:  cobra.ExactArgs(2),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			runtime, err := newAppRuntime(opts, false)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Backtest.CompareRuns(cmd.Context(), handler.CompareBacktestRunsRequest{LeftRef: args[0], RightRef: args[1]})
 		}),
 	}
 }

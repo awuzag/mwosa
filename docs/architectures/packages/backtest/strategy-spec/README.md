@@ -35,20 +35,28 @@ indicators:
     params:
       window: 14
 
-entry:
-  all:
-    - gt:
-        - price: close
-        - ref: trend
-    - lt:
-        - ref: rsi14
-        - value: 35
+entries:
+  - all:
+      - gt:
+          - price: close
+          - ref: trend
+      - lt:
+          - ref: rsi14
+          - value: 35
 
-exit:
-  any:
-    - crosses_below:
-        - price: close
-        - ref: trend
+exits:
+  - crosses_below:
+      - price: close
+      - ref: trend
+
+stops:
+  - stop_loss:
+      - value: 0.08
+
+rebalance:
+  - monthly: {}
+  - target_weight_changed:
+      - value: 5
 
 sizing:
   type: percent_of_equity
@@ -84,8 +92,7 @@ risk:
 | `kind` | 항상 `Strategy` |
 | `schema_version` | strategy schema version |
 | `name` | strategy 식별 이름 |
-| `entry` | 신규 진입 rule tree |
-| `exit` | 청산 rule tree |
+| `entries` 또는 `entry` | 신규 진입 rule tree 목록 또는 legacy 단일 rule |
 | `sizing` | 주문 후보 크기 계산 방식 |
 
 ## 선택 필드
@@ -94,8 +101,25 @@ risk:
 | --- | --- |
 | `description` | 사람을 위한 설명 |
 | `indicators` | rule 에서 재사용할 지표 alias |
+| `exits` 또는 `exit` | 일반 청산 rule tree 목록 또는 legacy 단일 rule |
+| `stops` | stop-loss, take-profit, trailing/time/volatility stop rule 목록 |
+| `rebalance` | 보유 포지션의 목표 비중 변경 또는 calendar rebalance rule 목록 |
 | `risk` | strategy-local risk limit |
 | `tags` | 검색, 리포트, 실행 기록용 tag |
+
+## 역할별 Rule
+
+현재 구현은 `entries`, `exits`, `stops`, `rebalance` 를 역할별 rule list 로
+받는다. 기존 `entry` / `exit` 단일 rule 은 호환을 위해 계속 허용하며, compile
+단계에서 각각 `entries` / `exits` 의 단일 항목으로 정규화한다. 역할별 list 가
+여러 항목이면 같은 역할 안에서는 `any` 의미로 평가한다.
+
+| 역할 | 의미 |
+| --- | --- |
+| `entries` | 미보유 종목에 신규 buy intent 를 만든다. |
+| `exits` | 보유 종목에 일반 sell intent 를 만든다. |
+| `stops` | 보유 종목에 stop 성격의 sell intent 를 만들고, event reason 에 stop rule id 를 남긴다. |
+| `rebalance` | `order_type: rebalance` 실행에서 보유 종목의 buy rebalance intent 를 판단한다. 비어 있으면 호환을 위해 `entries` 를 재사용한다. |
 
 ## Rule tree
 
@@ -105,23 +129,23 @@ rule 은 작은 조건을 `all`, `any`, `not` 으로 조합한다. 비교 조건
 `args` 로 정규화할 수 있어야 한다.
 
 ```yaml
-entry:
-  all:
-    - gt:
-        - price: close
-        - ref: trend
-    - any:
-        - lt:
-            - ref: rsi14
-            - value: 35
-        - crosses_above:
-            - price: close
-            - indicator:
-                id: sma
-                source:
-                  price: close
-                params:
-                  window: 5
+entries:
+  - all:
+      - gt:
+          - price: close
+          - ref: trend
+      - any:
+          - lt:
+              - ref: rsi14
+              - value: 35
+          - crosses_above:
+              - price: close
+              - indicator:
+                  id: sma
+                  source:
+                    price: close
+                  params:
+                    window: 5
 ```
 
 ## 표현식 모델
@@ -139,7 +163,9 @@ Expr =
   price(field)
   value(number)
   ref(alias)
+  timeframe(id, Expr)
   indicator(id, source Expr, params)
+  arithmetic(operator, []Expr)
 ```
 
 지원 함수는 닫힌 목록으로 고정하지 않는다. Go 구현에서는 registry 에 등록된
@@ -151,8 +177,43 @@ function metadata 를 기준으로 YAML 을 검증하고 compile 한다.
 | 비교 | `gt`, `gte`, `lt`, `lte`, `eq`, `between` |
 | 교차 | `crosses_above`, `crosses_below` |
 | 값 | `price`, `value`, `ref`, `indicator` |
+| 타임프레임 | `timeframe` wrapper |
 | 산술 | `add`, `sub`, `mul`, `div`, `abs`, `min`, `max` |
 | 변환 | `lag`, `change`, `pct_change`, `rolling` |
+
+현재 구현된 산술 값 표현식은 YAML 에서 함수형 sequence 로 작성한다. 예를 들어
+`div: [sub(close, sma), sma]` 는 다음처럼 표현하며, 모든 인자는 현재 bar 기준으로
+평가된다. `div` 의 분모가 0 이거나 하위 표현식이 아직 warmup 상태이면 해당 rule 은
+매칭되지 않는다.
+
+```yaml
+gt:
+  - div:
+      - sub:
+          - price: close
+          - ref: trend
+      - ref: trend
+  - value: 0.05
+```
+
+값 표현식은 필요한 경우 timeframe wrapper 로 감쌀 수 있다. evaluator 는 현재
+simulation clock 에서 이미 닫힌 같은 symbol 의 target timeframe bar 중 가장
+최근 값만 읽는다. 예를 들어 아래 표현식은 현재 일봉 clock 에서 아직 닫히지 않은
+주봉을 보지 않고, 마지막으로 닫힌 `1w` close 만 비교에 사용한다.
+
+```yaml
+gt:
+  - timeframe:
+      id: 1w
+      value:
+        price: close
+  - ref: trend
+```
+
+timeframe wrapper 는 market data 또는 indicator 값 표현식에 붙이는 용도다.
+현재 포지션/포트폴리오 상태 값과 횡단면 값 표현식에는 직접 붙이지 않는다. 해당
+상태 값들은 현재 engine frame 의 portfolio state 와 active universe snapshot 을
+읽기 때문이다.
 
 이 구조를 쓰면 `close > sma(20)`, `rsi(14) < 35`,
 `sma(5) > sma(20)`, `volume > sma(volume, 20)` 같은 조건을 같은 비교
@@ -184,6 +245,68 @@ indicator 는 스펙 레벨에서 넓게 열어둔다. 특정 라이브러리에
 
 따라서 `indicator.id` 는 strategy schema 의 하드코딩된 enum 이 아니다. schema 는
 표현식의 형태를 검증하고, 실제 `id` 와 `params` 의 유효성은 registry 가 판단한다.
+
+현재 price source 는 `open`, `high`, `low`, `close`, `adjusted_close`, `volume`,
+`amount`/`traded_amount`, `market_cap`, `nav` 를 받는다. canonical daily row 에
+별도 `adjusted_close` 확장이 없으면 `close` 를 사용해 기존 데이터와 호환한다.
+
+현재 구현된 횡단면 value expression 은 `rank`, `universe_rank`, `percentile`,
+`relative_strength`, `spread`, `ratio` 이다. `rank` 와 `universe_rank` 는 현재
+bar 에 존재하는 active universe 안에서 인자 표현식 값을 내림차순 정렬하고
+1부터 시작하는 순위를 반환한다. 동률은 symbol 오름차순으로 결정해 같은 입력이면
+항상 같은 결과가 나오게 한다. `percentile` 은 상위 100, 하위 0 기준으로 변환한다.
+`relative_strength` 는 현재 symbol 값이 active universe 평균 대비 얼마나 큰지
+`value / average - 1` 로 계산한다. `spread` 는 두 값의 차이, `ratio` 는 두 값의
+비율을 반환한다. 횡단면 표현식은 현재 frame 의 active universe 만 사용하며,
+다른 횡단면 표현식을 중첩하지 않는다.
+
+현재 구현된 이동평균/평활화 계열은 `sma`, `ema`, `wma`, `hma`, `kama` 이다.
+`hma` 는 `window` 를 받아 `WMA(2*WMA(n/2)-WMA(n), sqrt(n))` 형태로 streaming
+계산한다. `kama` 는 `window` 와 선택값 `fast_window`, `slow_window` 를 받으며
+기본값은 각각 `2`, `30` 이다.
+
+현재 구현된 `macd` 는 `fast_window`, `slow_window`, `signal_window` 를 받으며
+`output` 으로 `line`, `signal`, `histogram` 을 선택할 수 있다. 기본 output 은
+`line` 이다.
+
+현재 구현된 `stochastic` 은 `k_window`, `d_window` 를 받으며 `output` 으로
+`k`, `d`, `signal` 을 선택할 수 있다. 기본 output 은 `k` 이고, `window` 는
+`k_window` 의 호환 alias 로 사용할 수 있다.
+
+현재 구현된 추세/강도 계열은 `adx`, `di_plus`, `di_minus` 이다. 모두
+`window` 를 받으며 Wilder 방식의 directional movement 값을 streaming 으로
+계산한다. `adx` 는 `output` 으로 `adx`, `di_plus`, `di_minus` 를 선택할 수
+있고 기본 output 은 `adx` 이다.
+
+현재 구현된 통계 계열은 `zscore`, `correlation`, `beta` 이다. `zscore` 는
+`window` 기간의 평균과 population standard deviation 으로 현재 값의 z-score 를
+streaming 계산하며, 표준편차가 0 이면 `0` 을 반환한다. `correlation` 과 `beta` 는
+`source` 와 `compare` price expression 의 1-bar return 을 `window` 길이로 모아
+계산한다. `correlation` 은 두 return series 의 상관계수이고, `beta` 는
+`cov(source_return, compare_return) / var(compare_return)` 이다.
+
+```yaml
+indicators:
+  close_nav_beta:
+    id: beta
+    source:
+      price: close
+    compare:
+      price: nav
+    params:
+      window: 20
+```
+
+현재 구현된 `keltner` 는 `keltner_middle`, `keltner_upper`, `keltner_lower`
+ID로 제공한다. `window` 는 EMA 중심선 기간, `atr_window` 는 ATR 폭 기간이며
+생략하면 `window` 를 따른다. `multiplier` 기본값은 `2` 이다.
+
+현재 구현된 stop rule 은 `stop_loss`, `take_profit`, `time_stop`,
+`trailing_stop`, `volatility_stop` 이다. `volatility_stop` 은
+`volatility_stop: [volatility_expr, multiplier]` 형태이며, 보유 포지션의 평균
+진입가에서 `volatility_expr * multiplier` 만큼 내려간 가격 이하로 현재 가격이
+떨어지면 청산 신호를 낸다. `volatility_expr` 는 `atr` 같은 indicator expression
+또는 다른 값 표현식을 사용할 수 있다.
 
 ## Compile 결과
 

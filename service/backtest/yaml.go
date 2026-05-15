@@ -134,15 +134,25 @@ type strategyDocument struct {
 	Indicators    map[string]indicatorDocument `yaml:"indicators"`
 	Entry         yaml.Node                    `yaml:"entry"`
 	Exit          yaml.Node                    `yaml:"exit"`
+	Entries       yaml.Node                    `yaml:"entries"`
+	Exits         yaml.Node                    `yaml:"exits"`
+	Rebalance     yaml.Node                    `yaml:"rebalance"`
+	Stops         yaml.Node                    `yaml:"stops"`
 	Sizing        core.SizingSpec              `yaml:"sizing"`
 	Risk          core.RiskSpec                `yaml:"risk"`
 }
 
 type indicatorDocument struct {
-	ID     string             `yaml:"id"`
-	Source yaml.Node          `yaml:"source"`
-	Params map[string]float64 `yaml:"params"`
-	Output string             `yaml:"output"`
+	ID      string             `yaml:"id"`
+	Source  yaml.Node          `yaml:"source"`
+	Compare yaml.Node          `yaml:"compare"`
+	Params  map[string]float64 `yaml:"params"`
+	Output  string             `yaml:"output"`
+}
+
+type timeframeValueDocument struct {
+	ID    string    `yaml:"id"`
+	Value yaml.Node `yaml:"value"`
 }
 
 type runDocument struct {
@@ -166,6 +176,7 @@ type evaluationDocument struct {
 	BaseRun       core.EvaluationBaseRunRef    `yaml:"base_run"`
 	Periods       core.EvaluationPeriodsSpec   `yaml:"periods"`
 	Parameters    map[string][]any             `yaml:"parameters"`
+	Search        core.EvaluationSearchSpec    `yaml:"search"`
 	Metrics       yaml.Node                    `yaml:"metrics"`
 	Constraints   core.EvaluationConstraintSet `yaml:"constraints"`
 	Ranking       core.EvaluationRankingSpec   `yaml:"ranking"`
@@ -189,22 +200,46 @@ func decodeStrategy(node *yaml.Node) (core.StrategySpec, error) {
 		if err != nil {
 			return core.StrategySpec{}, oops.In("backtest_yaml").With("indicator_alias", alias).Wrap(err)
 		}
+		var compare core.ValueExpr
+		if !emptyYAMLNode(&raw.Compare) {
+			compare, err = decodeValue(&raw.Compare)
+			if err != nil {
+				return core.StrategySpec{}, oops.In("backtest_yaml").With("indicator_alias", alias).Wrap(err)
+			}
+		}
 		indicators[alias] = core.IndicatorSpec{
-			ID:     raw.ID,
-			Source: source,
-			Params: raw.Params,
-			Output: raw.Output,
+			ID:      raw.ID,
+			Source:  source,
+			Compare: compare,
+			Params:  raw.Params,
+			Output:  raw.Output,
 		}
 	}
-	entry, err := decodeRule(&document.Entry)
+	entry, err := decodeOptionalRule("entry", &document.Entry)
 	if err != nil {
 		return core.StrategySpec{}, oops.In("backtest_yaml").Wrapf(err, "decode entry rule")
 	}
-	exit, err := decodeRule(&document.Exit)
+	exit, err := decodeOptionalRule("exit", &document.Exit)
 	if err != nil {
 		return core.StrategySpec{}, oops.In("backtest_yaml").Wrapf(err, "decode exit rule")
 	}
-	return core.StrategySpec{
+	entries, err := decodeRuleList("entries", &document.Entries)
+	if err != nil {
+		return core.StrategySpec{}, err
+	}
+	exits, err := decodeRuleList("exits", &document.Exits)
+	if err != nil {
+		return core.StrategySpec{}, err
+	}
+	rebalance, err := decodeRuleList("rebalance", &document.Rebalance)
+	if err != nil {
+		return core.StrategySpec{}, err
+	}
+	stops, err := decodeRuleList("stops", &document.Stops)
+	if err != nil {
+		return core.StrategySpec{}, err
+	}
+	return core.NormalizeStrategySpec(core.StrategySpec{
 		Kind:          document.Kind,
 		SchemaVersion: document.SchemaVersion,
 		Name:          document.Name,
@@ -213,9 +248,13 @@ func decodeStrategy(node *yaml.Node) (core.StrategySpec, error) {
 		Indicators:    indicators,
 		Entry:         entry,
 		Exit:          exit,
+		Entries:       entries,
+		Exits:         exits,
+		Rebalance:     rebalance,
+		Stops:         stops,
 		Sizing:        document.Sizing,
 		Risk:          document.Risk,
-	}, nil
+	}), nil
 }
 
 func decodeRun(node *yaml.Node) (core.BacktestRunSpec, error) {
@@ -258,6 +297,7 @@ func decodeEvaluation(node *yaml.Node) (core.EvaluationSpec, error) {
 		BaseRun:       document.BaseRun,
 		Periods:       document.Periods,
 		Parameters:    document.Parameters,
+		Search:        document.Search,
 		Metrics:       metrics,
 		Constraints:   document.Constraints,
 		Ranking:       document.Ranking,
@@ -265,6 +305,38 @@ func decodeEvaluation(node *yaml.Node) (core.EvaluationSpec, error) {
 		Execution:     document.Execution,
 		WalkForward:   document.WalkForward,
 	}, nil
+}
+
+func decodeOptionalRule(name string, node *yaml.Node) (core.RuleExpr, error) {
+	if emptyYAMLNode(node) {
+		return core.RuleExpr{}, nil
+	}
+	rule, err := decodeRule(node)
+	if err != nil {
+		return core.RuleExpr{}, oops.In("backtest_yaml").With("field", name).Wrap(err)
+	}
+	return rule, nil
+}
+
+func decodeRuleList(name string, node *yaml.Node) ([]core.RuleExpr, error) {
+	if emptyYAMLNode(node) {
+		return nil, nil
+	}
+	if node.Kind == yaml.DocumentNode && len(node.Content) == 1 {
+		node = node.Content[0]
+	}
+	if node.Kind != yaml.SequenceNode {
+		return nil, oops.In("backtest_yaml").With("field", name).New("rule list requires sequence")
+	}
+	rules := make([]core.RuleExpr, 0, len(node.Content))
+	for index, child := range node.Content {
+		rule, err := decodeRule(child)
+		if err != nil {
+			return nil, oops.In("backtest_yaml").With("field", name, "index", index).Wrap(err)
+		}
+		rules = append(rules, rule)
+	}
+	return rules, nil
 }
 
 func decodeMetricSelection(node *yaml.Node) (core.MetricSelectionSpec, error) {
@@ -321,6 +393,10 @@ func decodeRule(node *yaml.Node) (core.RuleExpr, error) {
 			return core.RuleExpr{}, err
 		}
 		return core.RuleExpr{Operator: key, Rule: &rule}, nil
+	case "for_n_bars", "bars_since", "cooldown":
+		return decodeTemporalRuleWithBars(key, value)
+	case "weekly", "monthly", "first_trading_day", "position_exists":
+		return decodeNoArgRule(key, value)
 	default:
 		if value.Kind != yaml.SequenceNode {
 			return core.RuleExpr{}, oops.In("backtest_yaml").With("operator", key).New("comparison rule requires sequence args")
@@ -335,6 +411,54 @@ func decodeRule(node *yaml.Node) (core.RuleExpr, error) {
 		}
 		return core.RuleExpr{Operator: key, Args: args}, nil
 	}
+}
+
+func decodeNoArgRule(operator string, node *yaml.Node) (core.RuleExpr, error) {
+	if node.Kind == yaml.MappingNode && len(node.Content) == 0 {
+		return core.RuleExpr{Operator: operator}, nil
+	}
+	if node.Kind == yaml.SequenceNode && len(node.Content) == 0 {
+		return core.RuleExpr{Operator: operator}, nil
+	}
+	if node.Kind == yaml.ScalarNode && (node.Tag == "!!null" || node.Value == "") {
+		return core.RuleExpr{Operator: operator}, nil
+	}
+	return core.RuleExpr{}, oops.In("backtest_yaml").With("operator", operator).New("no-arg rule requires empty mapping, empty sequence, or null")
+}
+
+func decodeTemporalRuleWithBars(operator string, node *yaml.Node) (core.RuleExpr, error) {
+	if node.Kind != yaml.MappingNode {
+		return core.RuleExpr{}, oops.In("backtest_yaml").With("operator", operator).New("temporal rule requires mapping")
+	}
+	var bars *yaml.Node
+	var child *yaml.Node
+	for i := 0; i < len(node.Content); i += 2 {
+		switch node.Content[i].Value {
+		case "bars":
+			bars = node.Content[i+1]
+		case "rule":
+			child = node.Content[i+1]
+		}
+	}
+	if bars == nil {
+		return core.RuleExpr{}, oops.In("backtest_yaml").With("operator", operator).New("temporal rule requires bars")
+	}
+	if child == nil {
+		return core.RuleExpr{}, oops.In("backtest_yaml").With("operator", operator).New("temporal rule requires child rule")
+	}
+	barsValue, err := strconv.ParseFloat(bars.Value, 64)
+	if err != nil {
+		return core.RuleExpr{}, oops.In("backtest_yaml").With("operator", operator, "bars", bars.Value).Wrapf(err, "parse temporal rule count")
+	}
+	rule, err := decodeRule(child)
+	if err != nil {
+		return core.RuleExpr{}, err
+	}
+	return core.RuleExpr{
+		Operator: operator,
+		Rule:     &rule,
+		Args:     []core.ValueExpr{{Kind: "value", Value: barsValue}},
+	}, nil
 }
 
 func decodeValue(node *yaml.Node) (core.ValueExpr, error) {
@@ -353,6 +477,27 @@ func decodeValue(node *yaml.Node) (core.ValueExpr, error) {
 		return core.ValueExpr{Kind: "value", Value: number}, nil
 	case "ref":
 		return core.ValueExpr{Kind: "ref", Ref: value.Value}, nil
+	case "timeframe":
+		var raw timeframeValueDocument
+		if err := value.Decode(&raw); err != nil {
+			return core.ValueExpr{}, oops.In("backtest_yaml").Wrapf(err, "decode timeframe value expression")
+		}
+		if raw.ID == "" {
+			return core.ValueExpr{}, oops.In("backtest_yaml").New("timeframe value expression requires id")
+		}
+		if emptyYAMLNode(&raw.Value) {
+			return core.ValueExpr{}, oops.In("backtest_yaml").New("timeframe value expression requires value")
+		}
+		child, err := decodeValue(&raw.Value)
+		if err != nil {
+			return core.ValueExpr{}, err
+		}
+		child.Timeframe = raw.ID
+		return child, nil
+	case "position":
+		return core.ValueExpr{Kind: "position", Position: value.Value}, nil
+	case "portfolio":
+		return core.ValueExpr{Kind: "portfolio", Portfolio: value.Value}, nil
 	case "indicator":
 		var raw indicatorDocument
 		if err := value.Decode(&raw); err != nil {
@@ -368,10 +513,38 @@ func decodeValue(node *yaml.Node) (core.ValueExpr, error) {
 			Params: raw.Params,
 			Output: raw.Output,
 		}
+		if !emptyYAMLNode(&raw.Compare) {
+			compare, err := decodeValue(&raw.Compare)
+			if err != nil {
+				return core.ValueExpr{}, err
+			}
+			indicator.Compare = compare
+		}
 		return core.ValueExpr{Kind: "indicator", Indicator: &indicator}, nil
+	case "add", "sub", "mul", "div", "min", "max", "abs", "rank", "percentile", "relative_strength", "spread", "ratio", "universe_rank":
+		args, err := decodeValueArgs(key, value)
+		if err != nil {
+			return core.ValueExpr{}, err
+		}
+		return core.ValueExpr{Kind: key, Args: args}, nil
 	default:
 		return core.ValueExpr{}, oops.In("backtest_yaml").With("kind", key).New("unsupported value expression")
 	}
+}
+
+func decodeValueArgs(operator string, node *yaml.Node) ([]core.ValueExpr, error) {
+	if node.Kind != yaml.SequenceNode {
+		return nil, oops.In("backtest_yaml").With("operator", operator).New("value expression requires sequence args")
+	}
+	args := make([]core.ValueExpr, 0, len(node.Content))
+	for _, child := range node.Content {
+		arg, err := decodeValue(child)
+		if err != nil {
+			return nil, err
+		}
+		args = append(args, arg)
+	}
+	return args, nil
 }
 
 func documentKind(node *yaml.Node) (string, error) {
@@ -410,4 +583,14 @@ func emptyDocument(node yaml.Node) bool {
 		return true
 	}
 	return false
+}
+
+func emptyYAMLNode(node *yaml.Node) bool {
+	if node == nil || node.Kind == 0 {
+		return true
+	}
+	if node.Kind == yaml.DocumentNode && len(node.Content) == 0 {
+		return true
+	}
+	return node.Kind == yaml.ScalarNode && (node.Tag == "!!null" || node.Value == "")
 }

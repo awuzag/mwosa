@@ -58,7 +58,7 @@ strategy:
 base_run:
   ref: sma-cross-wf-krx
 periods:
-  mode: explicit
+  mode: walk_forward
   from: 2020-01-02
   to: 2025-12-31
 parameters:
@@ -83,5 +83,5 @@ walk_forward:
     objective: calmar
     order: desc
     constraints:
-      max_drawdown_lte: 0.25
-      min_trade_count_gte: 10
+      max_drawdown_lte: 1.0
+      min_trade_count_gte: 0
