@@ -37,6 +37,8 @@ drawdown 같은 시간 순서 기반 검증은 다루지 않는다. 백테스터
 
 반복 검증과 walk-forward 흐름은
 [`evaluation/README.md`](evaluation/README.md) 에서 별도로 관리한다.
+최종 목표 중 아직 남은 구현 backlog 는
+[`remaining-work/README.md`](remaining-work/README.md) 에서 추적한다.
 
 ## 후보 라이브러리 구조 분석
 
