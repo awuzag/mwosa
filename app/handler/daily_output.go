@@ -33,6 +33,66 @@ func (o DailyBarsOutput) TableRows() ([]string, [][]string) {
 	return []string{"date", "symbol", "name", "open", "high", "low", "close", "change"}, rows
 }
 
+type DailyStorageSummaryOutput struct {
+	Result daily.StorageSummaryResult
+}
+
+func (o DailyStorageSummaryOutput) JSONValue() any {
+	return o.Result
+}
+
+func (o DailyStorageSummaryOutput) NDJSONRows() any {
+	return o.Result
+}
+
+func (o DailyStorageSummaryOutput) CSVRows() any {
+	return []daily.StorageSummaryResult{o.Result}
+}
+
+func (o DailyStorageSummaryOutput) TableRows() ([]string, [][]string) {
+	result := o.Result
+	return []string{"record_type", "market", "security_type", "symbols", "bars", "from", "to", "dates"}, [][]string{{
+		result.RecordType,
+		string(result.Market),
+		string(result.SecurityType),
+		fmt.Sprint(result.Symbols),
+		fmt.Sprint(result.Bars),
+		result.From,
+		result.To,
+		fmt.Sprint(result.Dates),
+	}}
+}
+
+type DailyCoverageOutput struct {
+	Result daily.CoverageResult
+}
+
+func (o DailyCoverageOutput) JSONValue() any {
+	return o.Result
+}
+
+func (o DailyCoverageOutput) NDJSONRows() any {
+	return o.Result
+}
+
+func (o DailyCoverageOutput) CSVRows() any {
+	return []daily.CoverageResult{o.Result}
+}
+
+func (o DailyCoverageOutput) TableRows() ([]string, [][]string) {
+	result := o.Result
+	return []string{"market", "security_type", "symbol", "name", "from", "to", "bars", "dates"}, [][]string{{
+		string(result.Market),
+		string(result.SecurityType),
+		result.Symbol,
+		result.Name,
+		result.From,
+		result.To,
+		fmt.Sprint(result.Bars),
+		fmt.Sprint(result.Dates),
+	}}
+}
+
 type dailyBarOutputRow struct {
 	Date   string `json:"date" csv:"date"`
 	Symbol string `json:"symbol" csv:"symbol"`

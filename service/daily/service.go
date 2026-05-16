@@ -21,6 +21,8 @@ const (
 
 type ReadRepository interface {
 	QueryDailyBars(ctx context.Context, query Query) ([]dailybar.Bar, error)
+	SummarizeDailyBarStorage(ctx context.Context, query Query) (StorageSummaryResult, error)
+	QueryDailyBarCoverage(ctx context.Context, query Query) (CoverageResult, error)
 }
 
 type BarStream interface {
@@ -101,6 +103,39 @@ type BarsResult struct {
 	Bars []dailybar.Bar
 }
 
+type StorageSummaryRequest struct {
+	Market       provider.Market
+	SecurityType provider.SecurityType
+}
+
+type StorageSummaryResult struct {
+	RecordType   string                `json:"record_type" csv:"record_type"`
+	Market       provider.Market       `json:"market" csv:"market"`
+	SecurityType provider.SecurityType `json:"security_type" csv:"security_type"`
+	Symbols      int                   `json:"symbols" csv:"symbols"`
+	Bars         int                   `json:"bars" csv:"bars"`
+	From         string                `json:"from" csv:"from"`
+	To           string                `json:"to" csv:"to"`
+	Dates        int                   `json:"dates" csv:"dates"`
+}
+
+type CoverageRequest struct {
+	Market       provider.Market
+	SecurityType provider.SecurityType
+	Symbol       string
+}
+
+type CoverageResult struct {
+	Market       provider.Market       `json:"market" csv:"market"`
+	SecurityType provider.SecurityType `json:"security_type" csv:"security_type"`
+	Symbol       string                `json:"symbol" csv:"symbol"`
+	Name         string                `json:"name" csv:"name"`
+	From         string                `json:"from" csv:"from"`
+	To           string                `json:"to" csv:"to"`
+	Bars         int                   `json:"bars" csv:"bars"`
+	Dates        int                   `json:"dates" csv:"dates"`
+}
+
 type DateList []string
 
 func (d DateList) MarshalCSV() ([]byte, error) {
@@ -143,6 +178,62 @@ func (s ReadService) Get(ctx context.Context, req Request) (BarsResult, error) {
 
 func (s Service) Get(ctx context.Context, req Request) (BarsResult, error) {
 	return ReadService{reader: s.reader}.Get(ctx, req)
+}
+
+func (s ReadService) StorageSummary(ctx context.Context, req StorageSummaryRequest) (StorageSummaryResult, error) {
+	errb := oops.In("daily_service").With("market", req.Market, "security_type", req.SecurityType)
+	if s.reader == nil {
+		return StorageSummaryResult{}, errb.New("daily service read repository is nil")
+	}
+	if req.SecurityType == "" {
+		return StorageSummaryResult{}, errb.New("inspect storage requires --security-type")
+	}
+	query := Query{
+		Market:       withDefaultMarket(req.Market),
+		SecurityType: req.SecurityType,
+	}
+	result, err := s.reader.SummarizeDailyBarStorage(ctx, query)
+	if err != nil {
+		return StorageSummaryResult{}, errb.With("market", query.Market).Wrapf(err, "summarize daily bar storage")
+	}
+	if result.Bars == 0 {
+		return StorageSummaryResult{}, errb.With("market", query.Market).New("daily bar storage coverage not found")
+	}
+	return result, nil
+}
+
+func (s Service) StorageSummary(ctx context.Context, req StorageSummaryRequest) (StorageSummaryResult, error) {
+	return ReadService{reader: s.reader}.StorageSummary(ctx, req)
+}
+
+func (s ReadService) Coverage(ctx context.Context, req CoverageRequest) (CoverageResult, error) {
+	errb := oops.In("daily_service").With("market", req.Market, "security_type", req.SecurityType, "symbol", req.Symbol)
+	if s.reader == nil {
+		return CoverageResult{}, errb.New("daily service read repository is nil")
+	}
+	if req.Symbol == "" {
+		return CoverageResult{}, errb.New("inspect coverage requires symbol")
+	}
+	if req.SecurityType == "" {
+		return CoverageResult{}, errb.New("inspect coverage requires --security-type")
+	}
+	query := Query{
+		Market:       withDefaultMarket(req.Market),
+		SecurityType: req.SecurityType,
+		Symbol:       req.Symbol,
+	}
+	result, err := s.reader.QueryDailyBarCoverage(ctx, query)
+	if err != nil {
+		return CoverageResult{}, errb.With("market", query.Market).Wrapf(err, "query daily bar coverage")
+	}
+	if result.Bars == 0 {
+		return CoverageResult{}, errb.With("market", query.Market).New("daily bar coverage not found")
+	}
+	return result, nil
+}
+
+func (s Service) Coverage(ctx context.Context, req CoverageRequest) (CoverageResult, error) {
+	return ReadService{reader: s.reader}.Coverage(ctx, req)
 }
 
 func (s Service) Ensure(ctx context.Context, req Request) (BarsResult, error) {
@@ -257,19 +348,23 @@ func (s Service) collectRange(ctx context.Context, req Request, from time.Time, 
 	}
 
 	startedAt := time.Now()
-	fetcher, err := s.router.RouteDailyBars(ctx, dailybar.RouteInput{
-		ProviderID:     req.ProviderID,
-		PreferProvider: req.PreferProvider,
-		Market:         market,
-		SecurityType:   req.SecurityType,
-		Symbol:         req.Symbol,
-	})
+	fetcher, err := s.routeFetcher(ctx, req, market)
 	if err != nil {
 		return CollectResult{}, errb.With("provider", req.ProviderID, "prefer_provider", req.PreferProvider, "symbol", req.Symbol).Wrapf(err, "route daily bars")
 	}
+
+	if batchFetcher, ok := fetcher.(dailybar.BatchFetcher); ok {
+		result, err := s.fetchBatchRange(ctx, req, batchFetcher, fromText, toText)
+		if err != nil {
+			return CollectResult{}, errb.With("provider", req.ProviderID).Wrapf(err, "fetch daily bars batch")
+		}
+		progressBackfill(req.Progress, 1, 1, len(result.bars), len(result.bars), startedAt)
+		return s.storeCollection(ctx, result)
+	}
+
 	pageFetcher, ok := fetcher.(dailybar.PageFetcher)
 	if !ok {
-		return CollectResult{}, errb.With("provider", req.ProviderID, "prefer_provider", req.PreferProvider, "symbol", req.Symbol).New("routed dailybar fetcher does not support page fetch")
+		return CollectResult{}, errb.With("provider", req.ProviderID, "prefer_provider", req.PreferProvider, "symbol", req.Symbol).New("routed dailybar fetcher supports neither batch nor page fetch")
 	}
 
 	first, err := pageFetcher.FetchDailyBarsPage(ctx, dailybar.PageFetchInput{
@@ -399,15 +494,12 @@ func (s Service) fetchRange(ctx context.Context, req Request, from time.Time, to
 		return CollectResult{}, errb.New("daily collection requires --security-type")
 	}
 
-	fetcher, err := s.router.RouteDailyBars(ctx, dailybar.RouteInput{
-		ProviderID:     req.ProviderID,
-		PreferProvider: req.PreferProvider,
-		Market:         market,
-		SecurityType:   req.SecurityType,
-		Symbol:         req.Symbol,
-	})
+	fetcher, err := s.routeFetcher(ctx, req, market)
 	if err != nil {
 		return CollectResult{}, errb.With("provider", req.ProviderID, "prefer_provider", req.PreferProvider, "symbol", req.Symbol).Wrapf(err, "route daily bars")
+	}
+	if batchFetcher, ok := fetcher.(dailybar.BatchFetcher); ok {
+		return s.fetchBatchRange(ctx, req, batchFetcher, fromText, toText)
 	}
 
 	result, err := fetcher.FetchDailyBars(ctx, dailybar.FetchInput{
@@ -424,6 +516,38 @@ func (s Service) fetchRange(ctx context.Context, req Request, from time.Time, to
 
 	return CollectResult{
 		Market:       market,
+		SecurityType: req.SecurityType,
+		ProviderID:   result.Provider.ID,
+		Group:        result.Group,
+		Dates:        collectDatesFromBars(result.Bars),
+		BarsFetched:  len(result.Bars),
+		bars:         result.Bars,
+	}, nil
+}
+
+func (s Service) routeFetcher(ctx context.Context, req Request, market provider.Market) (dailybar.Fetcher, error) {
+	return s.router.RouteDailyBars(ctx, dailybar.RouteInput{
+		ProviderID:     req.ProviderID,
+		PreferProvider: req.PreferProvider,
+		Market:         market,
+		SecurityType:   req.SecurityType,
+		Symbol:         req.Symbol,
+	})
+}
+
+func (s Service) fetchBatchRange(ctx context.Context, req Request, fetcher dailybar.BatchFetcher, fromText string, toText string) (CollectResult, error) {
+	result, err := fetcher.FetchDailyBatch(ctx, dailybar.BatchFetchInput{
+		Market:       withDefaultMarket(req.Market),
+		SecurityType: req.SecurityType,
+		Symbol:       req.Symbol,
+		From:         fromText,
+		To:           toText,
+	})
+	if err != nil {
+		return CollectResult{}, err
+	}
+	return CollectResult{
+		Market:       withDefaultMarket(req.Market),
 		SecurityType: req.SecurityType,
 		ProviderID:   result.Provider.ID,
 		Group:        result.Group,

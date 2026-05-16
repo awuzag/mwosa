@@ -51,21 +51,6 @@ type MarketV2Row struct {
 	UpdatedAtMS        int64  `bun:"updated_at_ms,notnull"`
 }
 
-type InstrumentV2Row struct {
-	bun.BaseModel `bun:"table:instrument_v2,alias:instrument_v2"`
-
-	ID           int64  `bun:"id,pk,autoincrement"`
-	MarketID     int64  `bun:"market_id,notnull"`
-	SecurityType string `bun:"security_type,notnull"`
-	Symbol       string `bun:"symbol,notnull"`
-	ISIN         string `bun:"isin,notnull,default:''"`
-	Name         string `bun:"name,notnull,default:''"`
-	CurrencyCode string `bun:"currency_code,notnull,default:'KRW'"`
-	PriceScale   int    `bun:"price_scale,notnull"`
-	CreatedAtMS  int64  `bun:"created_at_ms,notnull"`
-	UpdatedAtMS  int64  `bun:"updated_at_ms,notnull"`
-}
-
 type ProviderSourceV2Row struct {
 	bun.BaseModel `bun:"table:provider_source_v2,alias:provider_source_v2"`
 

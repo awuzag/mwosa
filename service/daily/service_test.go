@@ -71,6 +71,71 @@ func TestNewServiceAcceptsInjectedRouter(t *testing.T) {
 	}
 }
 
+func TestReadServiceStorageSummaryUsesRepositoryResult(t *testing.T) {
+	reader := &recordingCoverageRepository{
+		storageSummary: StorageSummaryResult{
+			RecordType:   "daily_bar",
+			Market:       provider.MarketKRX,
+			SecurityType: provider.SecurityTypeETF,
+			Symbols:      2,
+			Bars:         3,
+			From:         "2024-04-15",
+			To:           "2024-04-16",
+			Dates:        2,
+		},
+	}
+	service, err := NewReadService(reader)
+	if err != nil {
+		t.Fatalf("NewReadService error = %v", err)
+	}
+
+	result, err := service.StorageSummary(context.Background(), StorageSummaryRequest{
+		SecurityType: provider.SecurityTypeETF,
+	})
+	if err != nil {
+		t.Fatalf("StorageSummary error = %v", err)
+	}
+	if reader.storageQuery.Market != provider.MarketKRX || reader.storageQuery.SecurityType != provider.SecurityTypeETF {
+		t.Fatalf("storage query = %+v, want default krx etf", reader.storageQuery)
+	}
+	if result.Symbols != 2 || result.Bars != 3 || result.From != "2024-04-15" || result.To != "2024-04-16" {
+		t.Fatalf("result = %+v, want repository summary shape", result)
+	}
+}
+
+func TestReadServiceCoverageUsesRepositoryResult(t *testing.T) {
+	reader := &recordingCoverageRepository{
+		coverage: CoverageResult{
+			Market:       provider.MarketKRX,
+			SecurityType: provider.SecurityTypeETF,
+			Symbol:       "069500",
+			Name:         "KODEX 200",
+			From:         "2024-04-15",
+			To:           "2024-04-16",
+			Bars:         2,
+			Dates:        2,
+		},
+	}
+	service, err := NewReadService(reader)
+	if err != nil {
+		t.Fatalf("NewReadService error = %v", err)
+	}
+
+	result, err := service.Coverage(context.Background(), CoverageRequest{
+		SecurityType: provider.SecurityTypeETF,
+		Symbol:       "069500",
+	})
+	if err != nil {
+		t.Fatalf("Coverage error = %v", err)
+	}
+	if reader.coverageQuery.Market != provider.MarketKRX || reader.coverageQuery.SecurityType != provider.SecurityTypeETF || reader.coverageQuery.Symbol != "069500" {
+		t.Fatalf("coverage query = %+v, want default krx etf 069500", reader.coverageQuery)
+	}
+	if result.Name != "KODEX 200" || result.Bars != 2 || result.Dates != 2 {
+		t.Fatalf("result = %+v, want repository coverage shape", result)
+	}
+}
+
 func TestEnsurePassesSymbolToProviderFetch(t *testing.T) {
 	reader := &sequenceReadRepository{
 		results: [][]dailybar.Bar{
@@ -172,6 +237,96 @@ func TestBackfillFetchesProviderPagesWithWorkers(t *testing.T) {
 	}
 	if writer.barsWritten != 2 {
 		t.Fatalf("writer bars = %d, want 2", writer.barsWritten)
+	}
+}
+
+func TestBackfillUsesBatchFetcherWhenAvailable(t *testing.T) {
+	batchCalls := 0
+	fetchCalls := 0
+	fetcher := dailybar.NewBatchFetch(dailybar.Profile{
+		Markets:       []provider.Market{provider.MarketKRX},
+		SecurityTypes: []provider.SecurityType{provider.SecurityTypeStock},
+		Compatibility: provider.Compatibility{DataLatency: provider.DataLatencyPreviousBusinessDay},
+	}, func(_ context.Context, input dailybar.FetchInput) (dailybar.FetchResult, error) {
+		fetchCalls++
+		return dailybar.FetchResult{}, nil
+	}, func(_ context.Context, input dailybar.BatchFetchInput) (dailybar.BatchFetchResult, error) {
+		batchCalls++
+		if input.From != "20240415" || input.To != "20240415" {
+			t.Fatalf("batch range = %s..%s, want 20240415..20240415", input.From, input.To)
+		}
+		return dailybar.BatchFetchResult{
+			Bars: []dailybar.Bar{
+				{Symbol: "005930", TradingDate: "2024-04-15"},
+				{Symbol: "000660", TradingDate: "2024-04-15"},
+				{Symbol: "950210", TradingDate: "2024-04-15"},
+			},
+			Provider: provider.Identity{ID: provider.ProviderID("fake")},
+			Group:    provider.GroupID("fakeGroup"),
+		}, nil
+	})
+	writer := &recordingWriteRepository{}
+	service, err := NewService(fakeReadRepository{}, writer, fakeDailyBarRouter{fetcher: fetcher})
+	if err != nil {
+		t.Fatalf("NewService error = %v", err)
+	}
+
+	result, err := service.Backfill(context.Background(), Request{
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeStock,
+		From:         "20240415",
+		To:           "20240415",
+		Workers:      4,
+	})
+	if err != nil {
+		t.Fatalf("Backfill error = %v", err)
+	}
+	if batchCalls != 1 {
+		t.Fatalf("batch calls = %d, want 1", batchCalls)
+	}
+	if fetchCalls != 0 {
+		t.Fatalf("legacy fetch calls = %d, want 0", fetchCalls)
+	}
+	if result.BarsFetched != 3 || result.BarsStored != 3 || writer.barsWritten != 3 {
+		t.Fatalf("result = %+v writer=%d, want fetched/stored 3", result, writer.barsWritten)
+	}
+}
+
+func TestSyncUsesBatchFetcherWhenAvailable(t *testing.T) {
+	batchCalls := 0
+	fetcher := dailybar.NewBatchFetch(dailybar.Profile{
+		Markets:       []provider.Market{provider.MarketKRX},
+		SecurityTypes: []provider.SecurityType{provider.SecurityTypeETF},
+		Compatibility: provider.Compatibility{DataLatency: provider.DataLatencyPreviousBusinessDay},
+	}, func(context.Context, dailybar.FetchInput) (dailybar.FetchResult, error) {
+		return dailybar.FetchResult{}, nil
+	}, func(_ context.Context, input dailybar.BatchFetchInput) (dailybar.BatchFetchResult, error) {
+		batchCalls++
+		return dailybar.BatchFetchResult{
+			Bars:     []dailybar.Bar{{Symbol: "069500", TradingDate: "2024-04-15"}},
+			Provider: provider.Identity{ID: provider.ProviderID("fake")},
+			Group:    provider.GroupID("fakeGroup"),
+		}, nil
+	})
+	writer := &recordingWriteRepository{}
+	service, err := NewService(fakeReadRepository{}, writer, fakeDailyBarRouter{fetcher: fetcher})
+	if err != nil {
+		t.Fatalf("NewService error = %v", err)
+	}
+
+	result, err := service.Sync(context.Background(), Request{
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeETF,
+		AsOf:         "20240415",
+	})
+	if err != nil {
+		t.Fatalf("Sync error = %v", err)
+	}
+	if batchCalls != 1 {
+		t.Fatalf("batch calls = %d, want 1", batchCalls)
+	}
+	if result.BarsFetched != 1 || result.BarsStored != 1 || writer.barsWritten != 1 {
+		t.Fatalf("result = %+v writer=%d, want fetched/stored 1", result, writer.barsWritten)
 	}
 }
 
@@ -277,6 +432,14 @@ func (fakeReadRepository) QueryDailyBars(context.Context, Query) ([]dailybar.Bar
 	return nil, nil
 }
 
+func (fakeReadRepository) SummarizeDailyBarStorage(context.Context, Query) (StorageSummaryResult, error) {
+	return StorageSummaryResult{}, nil
+}
+
+func (fakeReadRepository) QueryDailyBarCoverage(context.Context, Query) (CoverageResult, error) {
+	return CoverageResult{}, nil
+}
+
 type fakeWriteRepository struct{}
 
 func (fakeWriteRepository) UpsertDailyBars(context.Context, []dailybar.Bar) (WriteResult, error) {
@@ -340,4 +503,33 @@ func (r *sequenceReadRepository) QueryDailyBars(context.Context, Query) ([]daily
 	result := r.results[r.calls]
 	r.calls++
 	return result, nil
+}
+
+func (r *sequenceReadRepository) SummarizeDailyBarStorage(context.Context, Query) (StorageSummaryResult, error) {
+	return StorageSummaryResult{}, nil
+}
+
+func (r *sequenceReadRepository) QueryDailyBarCoverage(context.Context, Query) (CoverageResult, error) {
+	return CoverageResult{}, nil
+}
+
+type recordingCoverageRepository struct {
+	storageSummary StorageSummaryResult
+	coverage       CoverageResult
+	storageQuery   Query
+	coverageQuery  Query
+}
+
+func (r *recordingCoverageRepository) QueryDailyBars(context.Context, Query) ([]dailybar.Bar, error) {
+	return nil, nil
+}
+
+func (r *recordingCoverageRepository) SummarizeDailyBarStorage(_ context.Context, query Query) (StorageSummaryResult, error) {
+	r.storageQuery = query
+	return r.storageSummary, nil
+}
+
+func (r *recordingCoverageRepository) QueryDailyBarCoverage(_ context.Context, query Query) (CoverageResult, error) {
+	r.coverageQuery = query
+	return r.coverage, nil
 }

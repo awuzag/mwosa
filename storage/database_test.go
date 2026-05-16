@@ -191,6 +191,13 @@ func TestDatabaseCreatesDailyBarIndexes(t *testing.T) {
 			t.Fatalf("%s index was not created", name)
 		}
 	}
+
+	rawIndexes := sqliteIndexes(t, client, "provider_raw_snapshots")
+	for _, name := range []string{"provider_raw_snapshots_natural_key", "idx_provider_raw_snapshots_operation_date"} {
+		if _, ok := rawIndexes[name]; !ok {
+			t.Fatalf("%s index was not created", name)
+		}
+	}
 }
 
 func TestDatabaseMigratesBacktestRuntimeMetadataColumns(t *testing.T) {

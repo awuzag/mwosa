@@ -86,6 +86,47 @@ func TestRenderCollectResultCSVUsesServiceCSVContract(t *testing.T) {
 	}
 }
 
+func TestRenderDailyCoverageOutputsUseFlatRows(t *testing.T) {
+	var tableOut bytes.Buffer
+	err := Render(&tableOut, OutputModeTable, handler.DailyStorageSummaryOutput{Result: daily.StorageSummaryResult{
+		RecordType:   "daily_bar",
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeETF,
+		Symbols:      924,
+		Bars:         451220,
+		From:         "2024-05-02",
+		To:           "2026-05-15",
+		Dates:        497,
+	}})
+	if err != nil {
+		t.Fatalf("render storage summary table: %v", err)
+	}
+	for _, want := range []string{"record_type", "security_type", "symbols", "daily_bar", "etf", "451220", "2024-05-02", "2026-05-15"} {
+		if !strings.Contains(tableOut.String(), want) {
+			t.Fatalf("storage table missing %q in:\n%s", want, tableOut.String())
+		}
+	}
+
+	var csvOut bytes.Buffer
+	err = Render(&csvOut, OutputModeCSV, handler.DailyCoverageOutput{Result: daily.CoverageResult{
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeETF,
+		Symbol:       "069500",
+		Name:         "KODEX 200",
+		From:         "2024-04-15",
+		To:           "2024-04-16",
+		Bars:         2,
+		Dates:        2,
+	}})
+	if err != nil {
+		t.Fatalf("render coverage csv: %v", err)
+	}
+	wantCSV := "market,security_type,symbol,name,from,to,bars,dates\nkrx,etf,069500,KODEX 200,2024-04-15,2024-04-16,2,2\n"
+	if got := csvOut.String(); got != wantCSV {
+		t.Fatalf("coverage csv = %q, want %q", got, wantCSV)
+	}
+}
+
 func TestRenderFinancialStatementsTableFlattensStatementLines(t *testing.T) {
 	var out bytes.Buffer
 

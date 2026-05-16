@@ -18,6 +18,19 @@
   반환하고, 가능한 경우 provider, group, operation, market,
   security type, symbol, date 맥락을 포함합니다.
 
+## 함수 설계
+
+- 함수 이름은 미니멀하게 둡니다. 패키지명, 타입명, 수신자에서 이미
+  드러나는 문맥을 함수 이름에 반복하지 않습니다.
+- I/O, remote call, storage, 오래 걸리는 작업처럼 취소와 timeout이 필요한
+  함수는 `context.Context`를 첫 인자로 받습니다. 순수 계산이나 단순 값
+  변환 함수에는 억지로 context를 넣지 않습니다.
+- 함수 인자는 필수 값과 자주 바뀌는 값을 먼저 드러냅니다. 선택적 설정,
+  확장 가능한 설정, 호출자별 조정값은 일반 인자로 계속 늘리지 않습니다.
+- 인자가 복잡해지거나 선택값이 늘어나면 `With...` 형태의 함수형 옵션
+  패턴을 우선 사용합니다. option은 명시적으로 검증하고, 잘못된 option을
+  조용히 무시하지 않습니다.
+
 ## 에러 처리
 
 - 직접 작성하는 Go 코드는 error 생성, wrapping, joining에
@@ -85,6 +98,28 @@ if err != nil {
   provider-native parsing, remote error context를 소유합니다.
 - 외부 API 테스트는 fake HTTP transport 또는 `httptest`를 사용합니다.
   단위 테스트는 실제 public API 호출에 의존하지 않습니다.
+
+## Testing
+
+- 단위 테스트에서는 `github.com/stretchr/testify`를 적극적으로 사용합니다.
+  실패 시 이후 검증이 의미 없으면 `require`를 우선하고, 같은 상태에서 여러
+  값을 함께 확인할 때는 `assert`를 사용할 수 있습니다.
+- 테스트 helper는 실패를 숨기지 않습니다. helper 안에서 테스트를 중단해야
+  한다면 `t.Helper()`와 `require`로 실패 위치를 호출자 기준으로 드러냅니다.
+- 기본 `go test ./...`는 빠르고 재현 가능한 단위 테스트와 가벼운 통합
+  테스트를 대상으로 합니다. 실제 외부 API 호출이나 사용자의 로컬 환경에
+  강하게 묶인 테스트는 기본 경로에 넣지 않습니다.
+- 단위 테스트는 함수, 메서드, 작은 패키지 단위를 검증합니다. 외부 의존성은
+  interface fake, stub, fake HTTP transport, `httptest`로 대체합니다.
+- 통합 테스트는 repository와 SQLite, service와 provider adapter,
+  provider client와 `httptest.Server`처럼 여러 컴포넌트의 연결을
+  검증합니다. 재현 가능하고 빠른 통합 테스트는 기본 테스트에 포함할 수
+  있습니다.
+- 빌드된 CLI 실행, 외부 프로세스, 실제 DB 서버, 실제 provider API처럼
+  느리거나 환경 의존성이 큰 검증은 `integration` 또는 `e2e` build tag로
+  분리합니다.
+- e2e 테스트는 사용자가 만나는 경계에서 검증합니다. CLI는 `os/exec`로
+  바이너리를 실행해 exit code, stdout, stderr, output shape를 확인합니다.
 
 ## CLI
 

@@ -11,11 +11,12 @@ import (
 )
 
 type configInspectResult struct {
-	ConfigFile   configFileInspect     `json:"config_file"`
-	DatabaseFile databaseFileInspect   `json:"database_file"`
-	DataDir      dataDirectoryInspect  `json:"data_directory"`
-	App          appConfigInspect      `json:"app"`
-	Providers    []providerInspectItem `json:"providers"`
+	ConfigFile           configFileInspect     `json:"config_file"`
+	DatabaseFile         databaseFileInspect   `json:"database_file"`
+	ProviderAuthDatabase providerAuthInspect   `json:"provider_auth_database"`
+	DataDir              dataDirectoryInspect  `json:"data_directory"`
+	App                  appConfigInspect      `json:"app"`
+	Providers            []providerInspectItem `json:"providers"`
 }
 
 type configFileInspect struct {
@@ -28,6 +29,10 @@ type configFileInspect struct {
 type databaseFileInspect struct {
 	Path   string `json:"path"`
 	Source string `json:"source"`
+}
+
+type providerAuthInspect struct {
+	Path string `json:"path"`
 }
 
 type dataDirectoryInspect struct {
@@ -88,6 +93,7 @@ func newConfigSetCommand(opts *Options) *cobra.Command {
 			}
 			opts.Config = resolved.ConfigPath
 			opts.Database = resolved.DatabasePath
+			opts.ProviderAuthDatabase = resolved.ProviderAuthDatabasePath
 			opts.ProviderConfig = resolved.ProviderConfig
 			opts.ConfigState = resolved
 			opts.configLoaded = true
@@ -125,6 +131,9 @@ func configInspectFromResolved(resolved appconfig.Resolved) configInspectResult 
 		DatabaseFile: databaseFileInspect{
 			Path:   resolved.DatabasePath,
 			Source: string(resolved.DatabasePathSource),
+		},
+		ProviderAuthDatabase: providerAuthInspect{
+			Path: resolved.ProviderAuthDatabasePath,
 		},
 		DataDir: dataDirectoryInspect{
 			Path:   resolved.DataDirectory,
@@ -182,5 +191,5 @@ func maskedConfigSetValue(path string, value string) string {
 }
 
 func isSecretConfigPath(path string) bool {
-	return strings.HasPrefix(path, "providers.") && strings.HasSuffix(path, ".service_key")
+	return strings.HasPrefix(path, "providers.") && strings.Contains(path, ".auth.")
 }

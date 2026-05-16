@@ -153,6 +153,7 @@ func setupDatabase(ctx context.Context, db *stdsql.DB) error {
 		`PRAGMA busy_timeout = 5000`,
 		`PRAGMA journal_mode = WAL`,
 		`PRAGMA foreign_keys = ON`,
+		`PRAGMA busy_timeout = 5000`,
 	} {
 		if _, err := db.ExecContext(ctx, statement); err != nil {
 			return errb.With("statement", statement).Wrapf(err, "configure sqlite database")
@@ -170,9 +171,15 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 		{name: "daily_bar", model: (*DailyBarV1Row)(nil)},
 		{name: "market_v2", model: (*MarketV2Row)(nil)},
 		{name: "instrument_v2", model: (*InstrumentV2Row)(nil)},
+		{name: "instrument_source_v1", model: (*InstrumentSourceV1Row)(nil)},
+		{name: "instrument_extension_v1", model: (*InstrumentExtensionV1Row)(nil)},
 		{name: "provider_source_v2", model: (*ProviderSourceV2Row)(nil)},
 		{name: "daily_bar_v2", model: (*DailyBarV2Row)(nil)},
 		{name: "daily_bar_extension_v2", model: (*DailyBarExtensionV2Row)(nil)},
+		{name: "index_v1", model: (*IndexV1Row)(nil)},
+		{name: "index_source_v1", model: (*IndexSourceV1Row)(nil)},
+		{name: "index_bar_v1", model: (*IndexBarV1Row)(nil)},
+		{name: "index_bar_extension_v1", model: (*IndexBarExtensionV1Row)(nil)},
 		{name: "migration_runs", model: (*MigrationRunRow)(nil)},
 		{name: "strategies", model: (*StrategyRow)(nil)},
 		{name: "strategy_versions", model: (*StrategyVersionRow)(nil)},
@@ -186,6 +193,7 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 		{name: "backtest_results", model: (*BacktestResultRow)(nil)},
 		{name: "backtest_metric_summaries", model: (*BacktestMetricSummaryRow)(nil)},
 		{name: "backtest_walk_forward_steps", model: (*BacktestWalkForwardStepRow)(nil)},
+		{name: "provider_raw_snapshots", model: (*ProviderRawSnapshotRow)(nil)},
 	}
 	for _, table := range tables {
 		if _, err := db.NewCreateTable().
@@ -246,6 +254,22 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 			unique:  true,
 		},
 		{
+			name:    "instrument_source_v1_natural_key",
+			model:   (*InstrumentSourceV1Row)(nil),
+			columns: []string{"provider", "provider_group", "operation", "provider_symbol"},
+			unique:  true,
+		},
+		{
+			name:    "idx_instrument_source_v1_instrument",
+			model:   (*InstrumentSourceV1Row)(nil),
+			columns: []string{"instrument_id"},
+		},
+		{
+			name:    "idx_instrument_extension_v1_key_value",
+			model:   (*InstrumentExtensionV1Row)(nil),
+			columns: []string{"key", "value"},
+		},
+		{
 			name:    "provider_source_v2_natural_key",
 			model:   (*ProviderSourceV2Row)(nil),
 			columns: []string{"provider", "provider_group", "operation"},
@@ -260,6 +284,28 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 			name:    "idx_daily_bar_v2_instrument_date",
 			model:   (*DailyBarV2Row)(nil),
 			columns: []string{"instrument_id", "trading_date"},
+		},
+		{
+			name:    "index_v1_natural_key",
+			model:   (*IndexV1Row)(nil),
+			columns: []string{"market", "index_code"},
+			unique:  true,
+		},
+		{
+			name:    "index_source_v1_natural_key",
+			model:   (*IndexSourceV1Row)(nil),
+			columns: []string{"provider", "provider_group", "operation", "provider_symbol"},
+			unique:  true,
+		},
+		{
+			name:    "idx_index_bar_v1_date",
+			model:   (*IndexBarV1Row)(nil),
+			columns: []string{"trading_date"},
+		},
+		{
+			name:    "idx_index_bar_v1_index_date",
+			model:   (*IndexBarV1Row)(nil),
+			columns: []string{"index_id", "trading_date"},
 		},
 		{
 			name:    "idx_migration_runs_resource",
@@ -377,6 +423,17 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 			model:   (*BacktestWalkForwardStepRow)(nil),
 			columns: []string{"experiment_id", "step_index"},
 			unique:  true,
+		},
+		{
+			name:    "provider_raw_snapshots_natural_key",
+			model:   (*ProviderRawSnapshotRow)(nil),
+			columns: []string{"provider", "provider_group", "operation", "base_date"},
+			unique:  true,
+		},
+		{
+			name:    "idx_provider_raw_snapshots_operation_date",
+			model:   (*ProviderRawSnapshotRow)(nil),
+			columns: []string{"provider", "operation", "base_date"},
 		},
 	}
 	for _, index := range indexes {

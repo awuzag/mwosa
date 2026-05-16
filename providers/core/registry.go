@@ -19,6 +19,7 @@ type RoleProfile struct {
 	RequiresAuth  bool
 	Priority      int
 	Limitations   []string
+	FetchMode     string
 }
 
 type RoleRegistration struct {

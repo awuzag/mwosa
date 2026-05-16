@@ -8,6 +8,7 @@ import (
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
 	"github.com/ev3rlit/mwosa/providers/core/financials"
+	"github.com/ev3rlit/mwosa/providers/core/indexbar"
 	"github.com/ev3rlit/mwosa/providers/core/instrument"
 )
 
@@ -71,6 +72,36 @@ func TestPreviousBusinessDayDailyBarBuildsExecutableRole(t *testing.T) {
 	result, err := role.FetchDailyBars(context.Background(), dailybar.FetchInput{})
 	if err != nil {
 		t.Fatalf("fetch daily bars: %v", err)
+	}
+	if result.TotalCount != 1 {
+		t.Fatalf("total count = %d, want 1", result.TotalCount)
+	}
+}
+
+func TestPreviousBusinessDayIndexBarBuildsExecutableRoleWithoutSecurityType(t *testing.T) {
+	role, err := PreviousBusinessDayIndexBar(func(context.Context, indexbar.FetchInput) (indexbar.FetchResult, error) {
+		return indexbar.FetchResult{TotalCount: 1}, nil
+	}).
+		Markets(provider.MarketKRX).
+		Group(provider.GroupKRXIndexDailyTrade).
+		Operations(provider.OperationKOSPIDDTrd).
+		RequiresAuth(provider.CredentialScopeKRX).
+		RangeQuery(indexbar.RangeQuerySupported).
+		Build()
+	if err != nil {
+		t.Fatalf("build role: %v", err)
+	}
+
+	profile := role.IndexBarProfile()
+	if profile.RoleProfile().Role != provider.RoleIndexBar {
+		t.Fatalf("role = %s, want %s", profile.RoleProfile().Role, provider.RoleIndexBar)
+	}
+	if len(profile.RoleProfile().SecurityTypes) != 0 {
+		t.Fatalf("security types = %v, want empty", profile.RoleProfile().SecurityTypes)
+	}
+	result, err := role.FetchIndexBars(context.Background(), indexbar.FetchInput{})
+	if err != nil {
+		t.Fatalf("fetch index bars: %v", err)
 	}
 	if result.TotalCount != 1 {
 		t.Fatalf("total count = %d, want 1", result.TotalCount)

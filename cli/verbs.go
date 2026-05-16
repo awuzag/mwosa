@@ -5,6 +5,7 @@ import "github.com/spf13/cobra"
 type commandRoots struct {
 	Inspect  *cobra.Command
 	List     *cobra.Command
+	Search   *cobra.Command
 	Create   *cobra.Command
 	Update   *cobra.Command
 	Delete   *cobra.Command
@@ -38,6 +39,13 @@ func newListCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "list",
 		Short: "List mwosa resources",
+	}
+}
+
+func newSearchCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "search",
+		Short: "Search local and provider-backed resources",
 	}
 }
 

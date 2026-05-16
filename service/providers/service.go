@@ -60,6 +60,7 @@ type RoleSummary struct {
 	RequiresAuth  bool                     `json:"requires_auth"`
 	Priority      int                      `json:"priority,omitempty"`
 	Limitations   []string                 `json:"limitations,omitempty"`
+	FetchMode     string                   `json:"fetch_mode,omitempty"`
 }
 
 func (s Service) List(ctx context.Context, req ListRequest) (ListResult, error) {
@@ -151,6 +152,7 @@ func roleSummary(profile provider.RoleProfile) RoleSummary {
 		RequiresAuth:  profile.RequiresAuth,
 		Priority:      profile.Priority,
 		Limitations:   append([]string(nil), profile.Limitations...),
+		FetchMode:     profile.FetchMode,
 	}
 }
 

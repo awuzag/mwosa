@@ -8,10 +8,15 @@ import (
 )
 
 type RangeQuerySupport string
+type FetchMode string
 
 const (
 	RangeQueryUnsupported RangeQuerySupport = "unsupported"
 	RangeQuerySupported   RangeQuerySupport = "supported"
+
+	FetchModeDirect FetchMode = "direct"
+	FetchModePage   FetchMode = "page"
+	FetchModeBatch  FetchMode = "batch"
 )
 
 type Profile struct {
@@ -26,6 +31,7 @@ type Profile struct {
 	RequiresAuth  bool
 	Priority      int
 	Limitations   []string
+	FetchMode     FetchMode
 }
 
 func (p Profile) RoleProfile() provider.RoleProfile {
@@ -41,6 +47,7 @@ func (p Profile) RoleProfile() provider.RoleProfile {
 		RequiresAuth:  p.RequiresAuth,
 		Priority:      p.Priority,
 		Limitations:   p.Limitations,
+		FetchMode:     string(p.FetchMode),
 	}
 }
 
@@ -62,6 +69,14 @@ type PageFetchInput struct {
 	To           string
 	PageNo       int
 	PageSize     int
+}
+
+type BatchFetchInput struct {
+	Market       provider.Market
+	SecurityType provider.SecurityType
+	Symbol       string
+	From         string
+	To           string
 }
 
 type Bar struct {
@@ -108,6 +123,14 @@ type PageFetchResult struct {
 	TotalCount int
 }
 
+type BatchFetchResult struct {
+	Bars       []Bar
+	Provider   provider.Identity
+	Group      provider.GroupID
+	Operation  provider.OperationID
+	TotalCount int
+}
+
 type Fetcher interface {
 	provider.RoleProvider
 	FetchDailyBars(ctx context.Context, input FetchInput) (FetchResult, error)
@@ -118,8 +141,13 @@ type PageFetcher interface {
 	FetchDailyBarsPage(ctx context.Context, input PageFetchInput) (PageFetchResult, error)
 }
 
+type BatchFetcher interface {
+	FetchDailyBatch(ctx context.Context, input BatchFetchInput) (BatchFetchResult, error)
+}
+
 type FetchFunc func(context.Context, FetchInput) (FetchResult, error)
 type PageFetchFunc func(context.Context, PageFetchInput) (PageFetchResult, error)
+type BatchFetchFunc func(context.Context, BatchFetchInput) (BatchFetchResult, error)
 
 type Fetch struct {
 	profile   Profile
@@ -128,10 +156,14 @@ type Fetch struct {
 }
 
 func NewFetch(profile Profile, fetch FetchFunc) Fetch {
+	if profile.FetchMode == "" {
+		profile.FetchMode = FetchModeDirect
+	}
 	return Fetch{profile: profile, fetch: fetch}
 }
 
 func NewPagedFetch(profile Profile, fetch FetchFunc, pageFetch PageFetchFunc) Fetch {
+	profile.FetchMode = FetchModePage
 	return Fetch{profile: profile, fetch: fetch, pageFetch: pageFetch}
 }
 
@@ -154,6 +186,42 @@ func (f Fetch) DailyBarProfile() Profile {
 }
 
 func (f Fetch) RoleRegistration() provider.RoleRegistration {
+	return provider.RoleRegistration{
+		Profile: f.profile.RoleProfile(),
+		Impl:    f,
+	}
+}
+
+type BatchFetch struct {
+	profile    Profile
+	fetch      FetchFunc
+	batchFetch BatchFetchFunc
+}
+
+func NewBatchFetch(profile Profile, fetch FetchFunc, batchFetch BatchFetchFunc) BatchFetch {
+	profile.FetchMode = FetchModeBatch
+	return BatchFetch{profile: profile, fetch: fetch, batchFetch: batchFetch}
+}
+
+func (f BatchFetch) FetchDailyBars(ctx context.Context, input FetchInput) (FetchResult, error) {
+	if f.fetch == nil {
+		return FetchResult{}, oops.In("provider_role").With("role", provider.RoleDailyBar).New("dailybar fetch role is not configured")
+	}
+	return f.fetch(ctx, input)
+}
+
+func (f BatchFetch) FetchDailyBatch(ctx context.Context, input BatchFetchInput) (BatchFetchResult, error) {
+	if f.batchFetch == nil {
+		return BatchFetchResult{}, oops.In("provider_role").With("role", provider.RoleDailyBar).New("dailybar batch fetch role is not configured")
+	}
+	return f.batchFetch(ctx, input)
+}
+
+func (f BatchFetch) DailyBarProfile() Profile {
+	return f.profile
+}
+
+func (f BatchFetch) RoleRegistration() provider.RoleRegistration {
 	return provider.RoleRegistration{
 		Profile: f.profile.RoleProfile(),
 		Impl:    f,

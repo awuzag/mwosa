@@ -44,10 +44,11 @@ type Options struct {
 	// 필수. 로컬 SQLite database 경로다.
 	Database string
 
-	ProviderConfig provider.Config
-	ConfigState    appconfig.Resolved
-	configLoaded   bool
-	Development    bool
+	ProviderAuthDatabase string
+	ProviderConfig       provider.Config
+	ConfigState          appconfig.Resolved
+	configLoaded         bool
+	Development          bool
 }
 
 func (opts Options) Validate() error {
@@ -129,6 +130,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 
 	inspectCommand := newInspectCommand()
 	listCommand := newListCommand()
+	searchCommand := newSearchCommand()
 	createCommand := newCreateCommand()
 	updateCommand := newUpdateCommand()
 	deleteCommand := newDeleteCommand()
@@ -152,6 +154,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	roots := commandRoots{
 		Inspect:  inspectCommand,
 		List:     listCommand,
+		Search:   searchCommand,
 		Create:   createCommand,
 		Update:   updateCommand,
 		Delete:   deleteCommand,
@@ -175,11 +178,16 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	}
 	registerConfigCommands(roots, &opts)
 	registerDailyCommands(roots, &opts)
+	registerIndexCommands(roots, &opts)
 	registerFinancialsCommands(roots, &opts)
+	registerInstrumentCommands(roots, &opts)
+	registerMarketDataCommands(roots, &opts)
+	registerQuoteCommands(roots, &opts)
 	registerStrategyCommands(roots, &opts)
 	registerBacktestCommands(roots, &opts)
 	registerProviderCommands(roots, &opts)
 	registerMigrationCommands(roots, &opts)
+	registerKRXCommands(roots, &opts)
 
 	cmd.AddCommand(newCompletionCommand())
 	cmd.AddCommand(newVersionCommand(build))
@@ -187,6 +195,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	cmd.AddCommand(newConfigCommand(&opts))
 	cmd.AddCommand(createCommand)
 	cmd.AddCommand(listCommand)
+	cmd.AddCommand(searchCommand)
 	cmd.AddCommand(updateCommand)
 	cmd.AddCommand(deleteCommand)
 	cmd.AddCommand(screenCommand)
@@ -229,6 +238,7 @@ func loadConfig(opts *Options) error {
 	}
 	opts.Config = resolved.ConfigPath
 	opts.Database = resolved.DatabasePath
+	opts.ProviderAuthDatabase = resolved.ProviderAuthDatabasePath
 	if opts.PreferProvider == "" {
 		opts.PreferProvider = resolved.File.App.PreferredProvider
 	}

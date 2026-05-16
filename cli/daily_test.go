@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -11,6 +12,10 @@ import (
 	"sync"
 	"testing"
 
+	provider "github.com/ev3rlit/mwosa/providers/core"
+	"github.com/ev3rlit/mwosa/providers/core/indexbar"
+	"github.com/ev3rlit/mwosa/storage"
+	indexbarstorage "github.com/ev3rlit/mwosa/storage/indexbar"
 	"github.com/spf13/cobra"
 )
 
@@ -42,6 +47,8 @@ func TestEnsureDailyFetchesBatchAndGetReadsStoredData(t *testing.T) {
 	}))
 	defer server.Close()
 
+	t.Setenv("MWOSA_KRX_AUTH_KEY", "test-key")
+	t.Setenv("MWOSA_KRX_BASE_URL", server.URL)
 	databasePath := filepath.Join(t.TempDir(), "mwosa.db")
 	setDataGoEnv(t, server.URL)
 
@@ -78,6 +85,118 @@ func TestEnsureDailyFetchesBatchAndGetReadsStoredData(t *testing.T) {
 	}
 	if !strings.Contains(getOut.String(), `"closing_price": "35120"`) {
 		t.Fatalf("get output should include stored close:\n%s", getOut.String())
+	}
+}
+
+func TestInspectStorageAndCoverageReadStoredDailyBars(t *testing.T) {
+	ctx := context.Background()
+	databasePath := filepath.Join(t.TempDir(), "mwosa.db")
+	seedStrategyDailyBars(t, ctx, databasePath)
+
+	var storageOut bytes.Buffer
+	var storageErr bytes.Buffer
+	storageCmd := NewRootCommand(BuildInfo{})
+	storageCmd.SetOut(&storageOut)
+	storageCmd.SetErr(&storageErr)
+	if err := executeForTest(t, ctx, storageCmd,
+		"--database", databasePath,
+		"-o", "json",
+		"inspect", "storage",
+		"--security-type", "etf",
+	); err != nil {
+		t.Fatalf("inspect storage: %v\nstdout=%s\nstderr=%s", err, storageOut.String(), storageErr.String())
+	}
+	var summary struct {
+		RecordType   string `json:"record_type"`
+		Market       string `json:"market"`
+		SecurityType string `json:"security_type"`
+		Symbols      int    `json:"symbols"`
+		Bars         int    `json:"bars"`
+		From         string `json:"from"`
+		To           string `json:"to"`
+		Dates        int    `json:"dates"`
+	}
+	if err := json.Unmarshal(storageOut.Bytes(), &summary); err != nil {
+		t.Fatalf("inspect storage json should decode: %v\n%s", err, storageOut.String())
+	}
+	if summary.RecordType != "daily_bar" || summary.Market != "krx" || summary.SecurityType != "etf" || summary.Symbols != 2 || summary.Bars != 2 || summary.From != "2024-04-15" || summary.To != "2024-04-15" || summary.Dates != 1 {
+		t.Fatalf("inspect storage summary = %+v, want seeded daily bar coverage", summary)
+	}
+
+	var coverageOut bytes.Buffer
+	var coverageErr bytes.Buffer
+	coverageCmd := NewRootCommand(BuildInfo{})
+	coverageCmd.SetOut(&coverageOut)
+	coverageCmd.SetErr(&coverageErr)
+	if err := executeForTest(t, ctx, coverageCmd,
+		"--database", databasePath,
+		"-o", "json",
+		"inspect", "coverage", "069500",
+		"--security-type", "etf",
+	); err != nil {
+		t.Fatalf("inspect coverage: %v\nstdout=%s\nstderr=%s", err, coverageOut.String(), coverageErr.String())
+	}
+	var coverage struct {
+		Market       string `json:"market"`
+		SecurityType string `json:"security_type"`
+		Symbol       string `json:"symbol"`
+		Name         string `json:"name"`
+		From         string `json:"from"`
+		To           string `json:"to"`
+		Bars         int    `json:"bars"`
+		Dates        int    `json:"dates"`
+	}
+	if err := json.Unmarshal(coverageOut.Bytes(), &coverage); err != nil {
+		t.Fatalf("inspect coverage json should decode: %v\n%s", err, coverageOut.String())
+	}
+	if coverage.Market != "krx" || coverage.SecurityType != "etf" || coverage.Symbol != "069500" || coverage.Name != "KODEX 200" || coverage.Bars != 1 || coverage.Dates != 1 {
+		t.Fatalf("inspect coverage result = %+v, want seeded symbol coverage", coverage)
+	}
+}
+
+func TestGetIndexReadsStoredData(t *testing.T) {
+	databasePath := filepath.Join(t.TempDir(), "mwosa.db")
+	database := storage.NewDatabase(databasePath)
+	t.Cleanup(func() {
+		if err := database.Close(); err != nil {
+			t.Fatalf("close database: %v", err)
+		}
+	})
+	_, writer, err := indexbarstorage.NewRepository(database)
+	if err != nil {
+		t.Fatalf("new index repository: %v", err)
+	}
+	if _, err := writer.UpsertIndexBars(context.Background(), []indexbar.Bar{{
+		Provider:    provider.ProviderKRX,
+		Group:       provider.GroupKRXIndexDailyTrade,
+		Operation:   provider.OperationKOSPIDDTrd,
+		Market:      provider.MarketKRX,
+		IndexCode:   "KOSPI",
+		Name:        "KOSPI",
+		Family:      "KOSPI",
+		TradingDate: "2024-04-15",
+		Currency:    "KRW",
+		Close:       "2670.43",
+	}}); err != nil {
+		t.Fatalf("seed index bar: %v", err)
+	}
+
+	var getOut bytes.Buffer
+	getCmd := NewRootCommand(BuildInfo{})
+	getCmd.SetOut(&getOut)
+	getCmd.SetErr(&getOut)
+	if err := executeForTest(t, context.Background(), getCmd,
+		"--database", databasePath,
+		"--output", "json",
+		"get", "index", "KOSPI",
+		"--as-of", "2024-04-15",
+	); err != nil {
+		t.Fatalf("get index: %v\n%s", err, getOut.String())
+	}
+	for _, want := range []string{`"index_code": "KOSPI"`, `"close_value": "2670.43"`, `"operation": "kospi_dd_trd"`} {
+		if !strings.Contains(getOut.String(), want) {
+			t.Fatalf("get output missing %q in:\n%s", want, getOut.String())
+		}
 	}
 }
 

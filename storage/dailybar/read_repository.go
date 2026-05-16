@@ -138,11 +138,75 @@ func (s *dailyBarStream) Close() error {
 	return nil
 }
 
-func dailyBarV2SelectSQL(query daily.Query, extension bool) (string, []any, error) {
-	market := query.Market
-	if market == "" {
-		market = provider.MarketKRX
+func (r *readRepository) SummarizeDailyBarStorage(ctx context.Context, query daily.Query) (daily.StorageSummaryResult, error) {
+	errb := oops.In("dailybar_repository").With(
+		"market", query.Market,
+		"security_type", query.SecurityType,
+	)
+
+	client, err := r.database.Reader(ctx)
+	if err != nil {
+		return daily.StorageSummaryResult{}, errb.Wrap(err)
 	}
+
+	sqlQuery, args := dailyBarV2CoverageSummarySQL(query)
+	var symbols int
+	var bars int
+	var from sql.NullInt64
+	var to sql.NullInt64
+	var dates int
+	if err := client.QueryRowContext(ctx, sqlQuery, args...).Scan(&symbols, &bars, &from, &to, &dates); err != nil {
+		return daily.StorageSummaryResult{}, errb.Wrapf(err, "summarize daily bar coverage sqlite")
+	}
+
+	return daily.StorageSummaryResult{
+		RecordType:   "daily_bar",
+		Market:       marketWithDefault(query.Market),
+		SecurityType: query.SecurityType,
+		Symbols:      symbols,
+		Bars:         bars,
+		From:         formatNullableTradingDate(from),
+		To:           formatNullableTradingDate(to),
+		Dates:        dates,
+	}, nil
+}
+
+func (r *readRepository) QueryDailyBarCoverage(ctx context.Context, query daily.Query) (daily.CoverageResult, error) {
+	errb := oops.In("dailybar_repository").With(
+		"market", query.Market,
+		"security_type", query.SecurityType,
+		"symbol", query.Symbol,
+	)
+
+	client, err := r.database.Reader(ctx)
+	if err != nil {
+		return daily.CoverageResult{}, errb.Wrap(err)
+	}
+
+	sqlQuery, args := dailyBarV2SymbolCoverageSQL(query)
+	var name string
+	var bars int
+	var from sql.NullInt64
+	var to sql.NullInt64
+	var dates int
+	if err := client.QueryRowContext(ctx, sqlQuery, args...).Scan(&name, &bars, &from, &to, &dates); err != nil {
+		return daily.CoverageResult{}, errb.Wrapf(err, "query daily bar symbol coverage sqlite")
+	}
+
+	return daily.CoverageResult{
+		Market:       marketWithDefault(query.Market),
+		SecurityType: query.SecurityType,
+		Symbol:       query.Symbol,
+		Name:         name,
+		From:         formatNullableTradingDate(from),
+		To:           formatNullableTradingDate(to),
+		Bars:         bars,
+		Dates:        dates,
+	}, nil
+}
+
+func dailyBarV2SelectSQL(query daily.Query, extension bool) (string, []any, error) {
+	market := marketWithDefault(query.Market)
 
 	var builder strings.Builder
 	if extension {
@@ -217,6 +281,70 @@ JOIN provider_source_v2 AS s ON s.id = b.source_id`)
 		builder.WriteString(" ORDER BY b.trading_date ASC, i.symbol ASC, s.provider ASC, s.provider_group ASC")
 	}
 	return builder.String(), args, nil
+}
+
+func dailyBarV2CoverageSummarySQL(query daily.Query) (string, []any) {
+	builder, args := dailyBarV2CoverageBaseSQL(query)
+	builder.WriteString(`SELECT
+	COUNT(DISTINCT i.symbol) AS symbols,
+	COUNT(*) AS bars,
+	MIN(b.trading_date) AS from_date,
+	MAX(b.trading_date) AS to_date,
+	COUNT(DISTINCT b.trading_date) AS dates`)
+	builder.WriteString(dailyBarV2CoverageFromSQL())
+	dailyBarV2CoverageWhereSQL(&builder, &args, query, false)
+	return builder.String(), args
+}
+
+func dailyBarV2SymbolCoverageSQL(query daily.Query) (string, []any) {
+	builder, args := dailyBarV2CoverageBaseSQL(query)
+	builder.WriteString(`SELECT
+	COALESCE(MAX(i.name), '') AS name,
+	COUNT(*) AS bars,
+	MIN(b.trading_date) AS from_date,
+	MAX(b.trading_date) AS to_date,
+	COUNT(DISTINCT b.trading_date) AS dates`)
+	builder.WriteString(dailyBarV2CoverageFromSQL())
+	dailyBarV2CoverageWhereSQL(&builder, &args, query, true)
+	return builder.String(), args
+}
+
+func dailyBarV2CoverageBaseSQL(query daily.Query) (strings.Builder, []any) {
+	market := marketWithDefault(query.Market)
+	return strings.Builder{}, []any{string(market)}
+}
+
+func dailyBarV2CoverageFromSQL() string {
+	return `
+FROM daily_bar_v2 AS b
+JOIN instrument_v2 AS i ON i.id = b.instrument_id
+JOIN market_v2 AS m ON m.id = i.market_id`
+}
+
+func dailyBarV2CoverageWhereSQL(builder *strings.Builder, args *[]any, query daily.Query, includeSymbol bool) {
+	builder.WriteString(" WHERE m.code = ?")
+	if query.SecurityType != "" {
+		builder.WriteString(" AND i.security_type = ?")
+		*args = append(*args, string(query.SecurityType))
+	}
+	if includeSymbol {
+		builder.WriteString(" AND i.symbol = ?")
+		*args = append(*args, query.Symbol)
+	}
+}
+
+func marketWithDefault(market provider.Market) provider.Market {
+	if market == "" {
+		return provider.MarketKRX
+	}
+	return market
+}
+
+func formatNullableTradingDate(value sql.NullInt64) string {
+	if !value.Valid {
+		return ""
+	}
+	return formatTradingDate(int(value.Int64))
 }
 
 func scanDailyBarV2Record(rows *sql.Rows) (dailyBarV2Record, error) {

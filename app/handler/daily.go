@@ -59,6 +59,17 @@ type BackfillDailyRequest struct {
 	Progress       io.Writer
 }
 
+type DailyStorageSummaryRequest struct {
+	Market       provider.Market
+	SecurityType provider.SecurityType
+}
+
+type DailyCoverageRequest struct {
+	Market       provider.Market
+	SecurityType provider.SecurityType
+	Symbol       string
+}
+
 func (h Daily) Get(ctx context.Context, req GetDailyRequest) (DailyBarsOutput, error) {
 	result, err := h.reader.Get(ctx, daily.Request{
 		Market:       req.Market,
@@ -72,6 +83,29 @@ func (h Daily) Get(ctx context.Context, req GetDailyRequest) (DailyBarsOutput, e
 		return nil, err
 	}
 	return DailyBarsOutput(result.Bars), nil
+}
+
+func (h Daily) StorageSummary(ctx context.Context, req DailyStorageSummaryRequest) (DailyStorageSummaryOutput, error) {
+	result, err := h.reader.StorageSummary(ctx, daily.StorageSummaryRequest{
+		Market:       req.Market,
+		SecurityType: req.SecurityType,
+	})
+	if err != nil {
+		return DailyStorageSummaryOutput{}, err
+	}
+	return DailyStorageSummaryOutput{Result: result}, nil
+}
+
+func (h Daily) Coverage(ctx context.Context, req DailyCoverageRequest) (DailyCoverageOutput, error) {
+	result, err := h.reader.Coverage(ctx, daily.CoverageRequest{
+		Market:       req.Market,
+		SecurityType: req.SecurityType,
+		Symbol:       req.Symbol,
+	})
+	if err != nil {
+		return DailyCoverageOutput{}, err
+	}
+	return DailyCoverageOutput{Result: result}, nil
 }
 
 func (h Daily) Ensure(ctx context.Context, req EnsureDailyRequest) (DailyBarsOutput, error) {

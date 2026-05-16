@@ -6,4 +6,6 @@ use (
 	./clients/datago-etp
 	./clients/datago-krxlisted
 	./clients/datago-stock-price
+	./clients/kis
+	./clients/krx
 )

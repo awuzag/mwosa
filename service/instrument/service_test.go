@@ -65,6 +65,43 @@ func TestSearchRoutesAndCallsInstrumentSearcher(t *testing.T) {
 	}
 }
 
+func TestSearchUsesLocalRepositoryBeforeProvider(t *testing.T) {
+	repository := &fakeInstrumentRepository{
+		searchResult: instrumentrole.SearchResult{
+			Instruments: []instrumentrole.Instrument{{
+				Provider:     provider.ProviderKRX,
+				Market:       provider.MarketKRX,
+				SecurityType: provider.SecurityTypeStock,
+				SecurityCode: "005930",
+				Name:         "삼성전자",
+			}},
+			Provider: provider.Identity{ID: provider.ProviderKRX},
+			Group:    provider.GroupKRXStockInstrument,
+		},
+	}
+	service, err := NewService(&fakeInstrumentRouter{}, WithRepository(repository))
+	if err != nil {
+		t.Fatalf("NewService error = %v", err)
+	}
+
+	result, err := service.Search(context.Background(), SearchRequest{
+		ProviderID:   provider.ProviderKRX,
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeStock,
+		Query:        "삼성",
+		Limit:        5,
+	})
+	if err != nil {
+		t.Fatalf("Search error = %v", err)
+	}
+	if len(result.Instruments) != 1 || result.Instruments[0].SecurityCode != "005930" {
+		t.Fatalf("result = %+v, want local instrument", result)
+	}
+	if repository.searchQuery.Query != "삼성" || repository.searchQuery.Limit != 5 {
+		t.Fatalf("local query = %+v", repository.searchQuery)
+	}
+}
+
 func TestSearchRequiresQuery(t *testing.T) {
 	service, err := NewService(&fakeInstrumentRouter{})
 	if err != nil {
@@ -132,6 +169,77 @@ func TestInspectMatchesISIN(t *testing.T) {
 	}
 }
 
+func TestInspectUsesLocalRepositoryBeforeProvider(t *testing.T) {
+	repository := &fakeInstrumentRepository{
+		inspectResult: instrumentrole.Instrument{
+			Provider:     provider.ProviderKRX,
+			Group:        provider.GroupKRXStockInstrument,
+			Operation:    provider.OperationStockIssueBaseInfo,
+			Market:       provider.MarketKRX,
+			SecurityType: provider.SecurityTypeStock,
+			SecurityCode: "005930",
+			Name:         "삼성전자",
+		},
+	}
+	service, err := NewService(&fakeInstrumentRouter{}, WithRepository(repository))
+	if err != nil {
+		t.Fatalf("NewService error = %v", err)
+	}
+
+	result, err := service.Inspect(context.Background(), InspectRequest{
+		ProviderID:   provider.ProviderKRX,
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeStock,
+		Symbol:       "005930",
+	})
+	if err != nil {
+		t.Fatalf("Inspect error = %v", err)
+	}
+	if result.Instrument.SecurityCode != "005930" || result.Group != provider.GroupKRXStockInstrument {
+		t.Fatalf("result = %+v, want local inspect result", result)
+	}
+}
+
+func TestSyncFetchesAndStoresInstrumentMaster(t *testing.T) {
+	searcher := instrumentrole.NewSearch(instrumentrole.Profile{}, func(_ context.Context, input instrumentrole.SearchInput) (instrumentrole.SearchResult, error) {
+		if input.Query != "" || input.AsOf != "2026-05-13" {
+			t.Fatalf("search input = %+v, want full master sync with as-of", input)
+		}
+		return instrumentrole.SearchResult{
+			Instruments: []instrumentrole.Instrument{{
+				Provider:     provider.ProviderKRX,
+				Group:        provider.GroupKRXStockInstrument,
+				Operation:    provider.OperationStockIssueBaseInfo,
+				Market:       provider.MarketKRX,
+				SecurityType: provider.SecurityTypeStock,
+				SecurityCode: "005930",
+				Name:         "삼성전자",
+			}},
+			Provider:   provider.Identity{ID: provider.ProviderKRX},
+			Group:      provider.GroupKRXStockInstrument,
+			Operations: []provider.OperationID{provider.OperationStockIssueBaseInfo},
+		}, nil
+	})
+	repository := &fakeInstrumentRepository{}
+	service, err := NewService(&fakeInstrumentRouter{searcher: searcher}, WithRepository(repository))
+	if err != nil {
+		t.Fatalf("NewService error = %v", err)
+	}
+
+	result, err := service.Sync(context.Background(), SyncRequest{
+		ProviderID:   provider.ProviderKRX,
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeStock,
+		AsOf:         "2026-05-13",
+	})
+	if err != nil {
+		t.Fatalf("Sync error = %v", err)
+	}
+	if result.InstrumentsFetched != 1 || result.InstrumentsStored != 1 || len(repository.upserted) != 1 {
+		t.Fatalf("result = %+v upserted=%d, want one stored", result, len(repository.upserted))
+	}
+}
+
 func TestInspectReportsNotFoundForOnlyFuzzyResults(t *testing.T) {
 	searcher := instrumentrole.NewSearch(instrumentrole.Profile{}, func(context.Context, instrumentrole.SearchInput) (instrumentrole.SearchResult, error) {
 		return instrumentrole.SearchResult{
@@ -180,4 +288,32 @@ type fakeInstrumentRouter struct {
 func (r *fakeInstrumentRouter) RouteInstrumentSearch(_ context.Context, input instrumentrole.RouteInput) (instrumentrole.Searcher, error) {
 	r.gotRoute = input
 	return r.searcher, nil
+}
+
+type fakeInstrumentRepository struct {
+	searchResult  instrumentrole.SearchResult
+	searchErr     error
+	searchQuery   Query
+	inspectResult instrumentrole.Instrument
+	inspectErr    error
+	inspectQuery  Query
+	upserted      []instrumentrole.Instrument
+}
+
+func (r *fakeInstrumentRepository) UpsertInstruments(_ context.Context, instruments []instrumentrole.Instrument) (WriteResult, error) {
+	r.upserted = instruments
+	return WriteResult{InstrumentsWritten: len(instruments), RowsAffected: len(instruments)}, nil
+}
+
+func (r *fakeInstrumentRepository) SearchInstruments(_ context.Context, query Query) (instrumentrole.SearchResult, error) {
+	r.searchQuery = query
+	return r.searchResult, r.searchErr
+}
+
+func (r *fakeInstrumentRepository) InspectInstrument(_ context.Context, query Query) (instrumentrole.Instrument, error) {
+	r.inspectQuery = query
+	if r.inspectErr != nil {
+		return instrumentrole.Instrument{}, r.inspectErr
+	}
+	return r.inspectResult, nil
 }
