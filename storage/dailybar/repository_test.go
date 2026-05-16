@@ -121,6 +121,91 @@ func TestDailyBarStoreUpsertPreservesCreatedAtAndRefreshesUpdatedAt(t *testing.T
 	}
 }
 
+func TestDailyBarCoverageSummariesUseStoredV2Rows(t *testing.T) {
+	database := storage.NewDatabase(filepath.Join(t.TempDir(), "mwosa.db"))
+	t.Cleanup(func() {
+		if err := database.Close(); err != nil {
+			t.Fatalf("close database: %v", err)
+		}
+	})
+	reader, writer, err := NewRepositories(database)
+	if err != nil {
+		t.Fatalf("new repositories: %v", err)
+	}
+	bars := []dailybar.Bar{
+		{
+			Provider:     provider.ProviderDataGo,
+			Group:        provider.GroupSecuritiesProductPrice,
+			Operation:    provider.OperationGetETFPriceInfo,
+			Market:       provider.MarketKRX,
+			SecurityType: provider.SecurityTypeETF,
+			Symbol:       "069500",
+			Name:         "KODEX 200",
+			TradingDate:  "2024-04-15",
+			Close:        "35120",
+		},
+		{
+			Provider:     provider.ProviderDataGo,
+			Group:        provider.GroupSecuritiesProductPrice,
+			Operation:    provider.OperationGetETFPriceInfo,
+			Market:       provider.MarketKRX,
+			SecurityType: provider.SecurityTypeETF,
+			Symbol:       "069500",
+			Name:         "KODEX 200",
+			TradingDate:  "2024-04-16",
+			Close:        "35200",
+		},
+		{
+			Provider:     provider.ProviderDataGo,
+			Group:        provider.GroupSecuritiesProductPrice,
+			Operation:    provider.OperationGetETFPriceInfo,
+			Market:       provider.MarketKRX,
+			SecurityType: provider.SecurityTypeETF,
+			Symbol:       "123456",
+			Name:         "OTHER ETF",
+			TradingDate:  "2024-04-16",
+			Close:        "1000",
+		},
+		{
+			Provider:     provider.ProviderDataGo,
+			Group:        provider.GroupSecuritiesProductPrice,
+			Operation:    provider.OperationID("getStockPriceInfo"),
+			Market:       provider.MarketKRX,
+			SecurityType: provider.SecurityTypeStock,
+			Symbol:       "005930",
+			Name:         "Samsung Electronics",
+			TradingDate:  "2024-04-16",
+			Close:        "80000",
+		},
+	}
+	if _, err := writer.UpsertDailyBars(context.Background(), bars); err != nil {
+		t.Fatalf("seed daily bars: %v", err)
+	}
+
+	summary, err := reader.SummarizeDailyBarStorage(context.Background(), daily.Query{
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeETF,
+	})
+	if err != nil {
+		t.Fatalf("summarize storage: %v", err)
+	}
+	if summary.RecordType != "daily_bar" || summary.Symbols != 2 || summary.Bars != 3 || summary.Dates != 2 || summary.From != "2024-04-15" || summary.To != "2024-04-16" {
+		t.Fatalf("summary = %+v, want etf aggregate counts and range", summary)
+	}
+
+	coverage, err := reader.QueryDailyBarCoverage(context.Background(), daily.Query{
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeETF,
+		Symbol:       "069500",
+	})
+	if err != nil {
+		t.Fatalf("query coverage: %v", err)
+	}
+	if coverage.Symbol != "069500" || coverage.Name != "KODEX 200" || coverage.Bars != 2 || coverage.Dates != 2 || coverage.From != "2024-04-15" || coverage.To != "2024-04-16" {
+		t.Fatalf("coverage = %+v, want 069500 range", coverage)
+	}
+}
+
 func TestNewRepositoriesRequiresDatabase(t *testing.T) {
 	if _, _, err := NewRepositories(nil); err == nil {
 		t.Fatal("NewRepositories nil database error is nil")

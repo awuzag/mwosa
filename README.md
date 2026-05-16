@@ -186,8 +186,8 @@ mwosa inspect tool <name>
 | `mwosa inspect alert <alert-id>`       | 알림 조건, 상태, 마지막 평가 결과를 출력한다.                                     |
 | `mwosa inspect tool <name>`            | agent tool 의 입력 schema, 출력 schema, 예시를 출력한다.                          |
 | `mwosa inspect schema <resource>`      | 특정 리소스의 JSON schema 와 필드 의미를 출력한다.                                |
-| `mwosa inspect coverage <symbol>`      | 로컬에 저장된 데이터 범위와 누락 구간을 출력한다.                                 |
-| `mwosa inspect storage`                | 로컬 데이터 저장소의 크기, record type, 기간 범위를 요약한다.                     |
+| `mwosa inspect coverage <symbol>`      | 로컬에 저장된 심볼별 일별 데이터 범위를 출력한다. 예: `mwosa inspect coverage 069500 --security-type etf` |
+| `mwosa inspect storage`                | 로컬 일별 데이터의 record type, 심볼 수, row 수, 기간 범위를 요약한다. 예: `mwosa inspect storage --security-type etf` |
 | `mwosa inspect config`                 | 현재 적용된 설정과 설정 파일 경로를 출력한다.                                     |
 | `mwosa inspect auth`                   | provider 별 인증 상태를 요약한다.                                                 |
 

@@ -367,6 +367,14 @@ func (fakeDailyReader) QueryDailyBars(context.Context, dailyservice.Query) ([]da
 	return nil, nil
 }
 
+func (fakeDailyReader) SummarizeDailyBarStorage(context.Context, dailyservice.Query) (dailyservice.StorageSummaryResult, error) {
+	return dailyservice.StorageSummaryResult{}, nil
+}
+
+func (fakeDailyReader) QueryDailyBarCoverage(context.Context, dailyservice.Query) (dailyservice.CoverageResult, error) {
+	return dailyservice.CoverageResult{}, nil
+}
+
 type fakeDailyWriter struct {
 	bars int
 }

@@ -3,6 +3,7 @@ package cli
 import (
 	"bytes"
 	"context"
+	"encoding/json"
 	"fmt"
 	"net/http"
 	"net/http/httptest"
@@ -84,6 +85,72 @@ func TestEnsureDailyFetchesBatchAndGetReadsStoredData(t *testing.T) {
 	}
 	if !strings.Contains(getOut.String(), `"closing_price": "35120"`) {
 		t.Fatalf("get output should include stored close:\n%s", getOut.String())
+	}
+}
+
+func TestInspectStorageAndCoverageReadStoredDailyBars(t *testing.T) {
+	ctx := context.Background()
+	databasePath := filepath.Join(t.TempDir(), "mwosa.db")
+	seedStrategyDailyBars(t, ctx, databasePath)
+
+	var storageOut bytes.Buffer
+	var storageErr bytes.Buffer
+	storageCmd := NewRootCommand(BuildInfo{})
+	storageCmd.SetOut(&storageOut)
+	storageCmd.SetErr(&storageErr)
+	if err := executeForTest(t, ctx, storageCmd,
+		"--database", databasePath,
+		"-o", "json",
+		"inspect", "storage",
+		"--security-type", "etf",
+	); err != nil {
+		t.Fatalf("inspect storage: %v\nstdout=%s\nstderr=%s", err, storageOut.String(), storageErr.String())
+	}
+	var summary struct {
+		RecordType   string `json:"record_type"`
+		Market       string `json:"market"`
+		SecurityType string `json:"security_type"`
+		Symbols      int    `json:"symbols"`
+		Bars         int    `json:"bars"`
+		From         string `json:"from"`
+		To           string `json:"to"`
+		Dates        int    `json:"dates"`
+	}
+	if err := json.Unmarshal(storageOut.Bytes(), &summary); err != nil {
+		t.Fatalf("inspect storage json should decode: %v\n%s", err, storageOut.String())
+	}
+	if summary.RecordType != "daily_bar" || summary.Market != "krx" || summary.SecurityType != "etf" || summary.Symbols != 2 || summary.Bars != 2 || summary.From != "2024-04-15" || summary.To != "2024-04-15" || summary.Dates != 1 {
+		t.Fatalf("inspect storage summary = %+v, want seeded daily bar coverage", summary)
+	}
+
+	var coverageOut bytes.Buffer
+	var coverageErr bytes.Buffer
+	coverageCmd := NewRootCommand(BuildInfo{})
+	coverageCmd.SetOut(&coverageOut)
+	coverageCmd.SetErr(&coverageErr)
+	if err := executeForTest(t, ctx, coverageCmd,
+		"--database", databasePath,
+		"-o", "json",
+		"inspect", "coverage", "069500",
+		"--security-type", "etf",
+	); err != nil {
+		t.Fatalf("inspect coverage: %v\nstdout=%s\nstderr=%s", err, coverageOut.String(), coverageErr.String())
+	}
+	var coverage struct {
+		Market       string `json:"market"`
+		SecurityType string `json:"security_type"`
+		Symbol       string `json:"symbol"`
+		Name         string `json:"name"`
+		From         string `json:"from"`
+		To           string `json:"to"`
+		Bars         int    `json:"bars"`
+		Dates        int    `json:"dates"`
+	}
+	if err := json.Unmarshal(coverageOut.Bytes(), &coverage); err != nil {
+		t.Fatalf("inspect coverage json should decode: %v\n%s", err, coverageOut.String())
+	}
+	if coverage.Market != "krx" || coverage.SecurityType != "etf" || coverage.Symbol != "069500" || coverage.Name != "KODEX 200" || coverage.Bars != 1 || coverage.Dates != 1 {
+		t.Fatalf("inspect coverage result = %+v, want seeded symbol coverage", coverage)
 	}
 }
 

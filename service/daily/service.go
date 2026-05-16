@@ -21,6 +21,8 @@ const (
 
 type ReadRepository interface {
 	QueryDailyBars(ctx context.Context, query Query) ([]dailybar.Bar, error)
+	SummarizeDailyBarStorage(ctx context.Context, query Query) (StorageSummaryResult, error)
+	QueryDailyBarCoverage(ctx context.Context, query Query) (CoverageResult, error)
 }
 
 type WriteRepository interface {
@@ -92,6 +94,39 @@ type BarsResult struct {
 	Bars []dailybar.Bar
 }
 
+type StorageSummaryRequest struct {
+	Market       provider.Market
+	SecurityType provider.SecurityType
+}
+
+type StorageSummaryResult struct {
+	RecordType   string                `json:"record_type" csv:"record_type"`
+	Market       provider.Market       `json:"market" csv:"market"`
+	SecurityType provider.SecurityType `json:"security_type" csv:"security_type"`
+	Symbols      int                   `json:"symbols" csv:"symbols"`
+	Bars         int                   `json:"bars" csv:"bars"`
+	From         string                `json:"from" csv:"from"`
+	To           string                `json:"to" csv:"to"`
+	Dates        int                   `json:"dates" csv:"dates"`
+}
+
+type CoverageRequest struct {
+	Market       provider.Market
+	SecurityType provider.SecurityType
+	Symbol       string
+}
+
+type CoverageResult struct {
+	Market       provider.Market       `json:"market" csv:"market"`
+	SecurityType provider.SecurityType `json:"security_type" csv:"security_type"`
+	Symbol       string                `json:"symbol" csv:"symbol"`
+	Name         string                `json:"name" csv:"name"`
+	From         string                `json:"from" csv:"from"`
+	To           string                `json:"to" csv:"to"`
+	Bars         int                   `json:"bars" csv:"bars"`
+	Dates        int                   `json:"dates" csv:"dates"`
+}
+
 type DateList []string
 
 func (d DateList) MarshalCSV() ([]byte, error) {
@@ -134,6 +169,62 @@ func (s ReadService) Get(ctx context.Context, req Request) (BarsResult, error) {
 
 func (s Service) Get(ctx context.Context, req Request) (BarsResult, error) {
 	return ReadService{reader: s.reader}.Get(ctx, req)
+}
+
+func (s ReadService) StorageSummary(ctx context.Context, req StorageSummaryRequest) (StorageSummaryResult, error) {
+	errb := oops.In("daily_service").With("market", req.Market, "security_type", req.SecurityType)
+	if s.reader == nil {
+		return StorageSummaryResult{}, errb.New("daily service read repository is nil")
+	}
+	if req.SecurityType == "" {
+		return StorageSummaryResult{}, errb.New("inspect storage requires --security-type")
+	}
+	query := Query{
+		Market:       withDefaultMarket(req.Market),
+		SecurityType: req.SecurityType,
+	}
+	result, err := s.reader.SummarizeDailyBarStorage(ctx, query)
+	if err != nil {
+		return StorageSummaryResult{}, errb.With("market", query.Market).Wrapf(err, "summarize daily bar storage")
+	}
+	if result.Bars == 0 {
+		return StorageSummaryResult{}, errb.With("market", query.Market).New("daily bar storage coverage not found")
+	}
+	return result, nil
+}
+
+func (s Service) StorageSummary(ctx context.Context, req StorageSummaryRequest) (StorageSummaryResult, error) {
+	return ReadService{reader: s.reader}.StorageSummary(ctx, req)
+}
+
+func (s ReadService) Coverage(ctx context.Context, req CoverageRequest) (CoverageResult, error) {
+	errb := oops.In("daily_service").With("market", req.Market, "security_type", req.SecurityType, "symbol", req.Symbol)
+	if s.reader == nil {
+		return CoverageResult{}, errb.New("daily service read repository is nil")
+	}
+	if req.Symbol == "" {
+		return CoverageResult{}, errb.New("inspect coverage requires symbol")
+	}
+	if req.SecurityType == "" {
+		return CoverageResult{}, errb.New("inspect coverage requires --security-type")
+	}
+	query := Query{
+		Market:       withDefaultMarket(req.Market),
+		SecurityType: req.SecurityType,
+		Symbol:       req.Symbol,
+	}
+	result, err := s.reader.QueryDailyBarCoverage(ctx, query)
+	if err != nil {
+		return CoverageResult{}, errb.With("market", query.Market).Wrapf(err, "query daily bar coverage")
+	}
+	if result.Bars == 0 {
+		return CoverageResult{}, errb.With("market", query.Market).New("daily bar coverage not found")
+	}
+	return result, nil
+}
+
+func (s Service) Coverage(ctx context.Context, req CoverageRequest) (CoverageResult, error) {
+	return ReadService{reader: s.reader}.Coverage(ctx, req)
 }
 
 func (s Service) Ensure(ctx context.Context, req Request) (BarsResult, error) {

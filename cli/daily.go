@@ -17,10 +17,59 @@ type dailyFlags struct {
 }
 
 func registerDailyCommands(roots commandRoots, opts *Options) {
+	roots.Inspect.AddCommand(newInspectStorageCommand(opts))
+	roots.Inspect.AddCommand(newInspectCoverageCommand(opts))
 	roots.Get.AddCommand(newGetDailyCommand(opts))
 	roots.Ensure.AddCommand(newEnsureDailyCommand(opts))
 	roots.Sync.AddCommand(newSyncDailyCommand(opts))
 	roots.Backfill.AddCommand(newBackfillDailyCommand(opts))
+}
+
+func newInspectStorageCommand(opts *Options) *cobra.Command {
+	flags := dailyFlags{SecurityType: string(provider.SecurityTypeETF)}
+	cmd := &cobra.Command{
+		Use:   "storage",
+		Short: "Summarize local daily bar storage coverage",
+		Args:  cobra.NoArgs,
+		RunE: runResult(opts, func(cmd *cobra.Command, _ []string) (result any, err error) {
+			runtime, err := newAppRuntime(opts, false)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Daily.StorageSummary(cmd.Context(), handler.DailyStorageSummaryRequest{
+				Market:       provider.Market(opts.Market),
+				SecurityType: provider.SecurityType(flags.SecurityType),
+			})
+		}),
+	}
+	addSecurityTypeFlag(cmd, &flags)
+	return cmd
+}
+
+func newInspectCoverageCommand(opts *Options) *cobra.Command {
+	flags := dailyFlags{SecurityType: string(provider.SecurityTypeETF)}
+	cmd := &cobra.Command{
+		Use:   "coverage <symbol>",
+		Short: "Inspect local daily bar coverage for a symbol",
+		Args:  cobra.ExactArgs(1),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			runtime, err := newAppRuntime(opts, false)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Daily.Coverage(cmd.Context(), handler.DailyCoverageRequest{
+				Market:       provider.Market(opts.Market),
+				SecurityType: provider.SecurityType(flags.SecurityType),
+				Symbol:       args[0],
+			})
+		}),
+	}
+	addSecurityTypeFlag(cmd, &flags)
+	return cmd
 }
 
 func newGetDailyCommand(opts *Options) *cobra.Command {
