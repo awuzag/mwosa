@@ -1,6 +1,7 @@
 package handler
 
 import (
+	"encoding/json"
 	"fmt"
 	"strings"
 
@@ -145,6 +146,9 @@ func (o ScreenRunDetailOutput) NDJSONRows() any {
 }
 
 func (o ScreenRunDetailOutput) CSVRows() any {
+	if rows, ok := screenRunItemPayloadRows(o.Detail.Items); ok {
+		return rows
+	}
 	return o.Detail.Items
 }
 
@@ -214,6 +218,9 @@ func (o ScreenResultOutput) NDJSONRows() any {
 }
 
 func (o ScreenResultOutput) CSVRows() any {
+	if rows, ok := screenResultItemPayloadRows(o.Result.Items); ok {
+		return rows
+	}
 	return o.Result.Items
 }
 
@@ -238,7 +245,7 @@ func (o ScreenPipelineOutput) NDJSONRows() any {
 }
 
 func (o ScreenPipelineOutput) CSVRows() any {
-	return o.Result.Candidates
+	return candidateCSVRows(o.Result.Candidates)
 }
 
 func (o ScreenPipelineOutput) TableRows() ([]string, [][]string) {
@@ -251,6 +258,76 @@ func (o ScreenPipelineOutput) TableRows() ([]string, [][]string) {
 		fmt.Sprint(result.ResultCount),
 		fmt.Sprint(len(result.Explain.Steps)),
 	}}
+}
+
+func screenRunItemPayloadRows(items []strategyservice.ScreenRunItem) ([]map[string]any, bool) {
+	if len(items) == 0 {
+		return nil, false
+	}
+	rows := make([]map[string]any, 0, len(items))
+	for _, item := range items {
+		if len(item.PayloadJSON) == 0 {
+			return nil, false
+		}
+		var row map[string]any
+		if err := json.Unmarshal(item.PayloadJSON, &row); err != nil {
+			return nil, false
+		}
+		if _, ok := row["ordinal"]; !ok {
+			row["ordinal"] = item.Ordinal
+		}
+		if item.Symbol != "" {
+			if _, ok := row["symbol"]; !ok {
+				row["symbol"] = item.Symbol
+			}
+		}
+		rows = append(rows, row)
+	}
+	return rows, true
+}
+
+func screenResultItemPayloadRows(items []strategyservice.ScreenResultItem) ([]map[string]any, bool) {
+	if len(items) == 0 {
+		return nil, false
+	}
+	rows := make([]map[string]any, 0, len(items))
+	for _, item := range items {
+		if len(item.PayloadJSON) == 0 {
+			return nil, false
+		}
+		var row map[string]any
+		if err := json.Unmarshal(item.PayloadJSON, &row); err != nil {
+			return nil, false
+		}
+		if _, ok := row["ordinal"]; !ok {
+			row["ordinal"] = item.Ordinal
+		}
+		if item.Symbol != "" {
+			if _, ok := row["symbol"]; !ok {
+				row["symbol"] = item.Symbol
+			}
+		}
+		rows = append(rows, row)
+	}
+	return rows, true
+}
+
+func candidateCSVRows(candidates []universecore.Candidate) []map[string]any {
+	rows := make([]map[string]any, 0, len(candidates))
+	for _, candidate := range candidates {
+		row := make(map[string]any, len(candidate.Fields)+2)
+		for key, value := range candidate.Fields {
+			row[key] = value
+		}
+		if candidate.Symbol != "" {
+			row["symbol"] = candidate.Symbol
+		}
+		if len(candidate.Tags) > 0 {
+			row["tags"] = candidate.Tags
+		}
+		rows = append(rows, row)
+	}
+	return rows
 }
 
 func (o ScreenStrategyComparisonOutput) JSONValue() any {

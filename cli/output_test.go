@@ -222,6 +222,50 @@ func TestRenderScreenResultCSVUsesItems(t *testing.T) {
 	}
 }
 
+func TestRenderScreenResultCSVFlattensPayloadRows(t *testing.T) {
+	var out bytes.Buffer
+
+	err := Render(&out, OutputModeCSV, handler.ScreenResultOutput{Result: strategyservice.ScreenResult{
+		QueryHash:          "query-hash",
+		InputDataset:       "etf_daily_metrics",
+		InputSchemaVersion: 1,
+		ResultCount:        1,
+		Items: []strategyservice.ScreenResultItem{{
+			Ordinal:     0,
+			Symbol:      "069500",
+			PayloadJSON: json.RawMessage(`{"symbol":"069500","name":"KODEX 200","latest_close":35120,"return_from_first_open_pct":12.5}`),
+		}},
+	}})
+	if err != nil {
+		t.Fatalf("render screen result flat csv: %v", err)
+	}
+
+	want := "ordinal,symbol,name,latest_close,return_from_first_open_pct\n0,069500,KODEX 200,35120,12.5\n"
+	if got := out.String(); got != want {
+		t.Fatalf("screen result flat csv = %q, want %q", got, want)
+	}
+}
+
+func TestRenderScreenRunCSVFlattensPayloadRows(t *testing.T) {
+	var out bytes.Buffer
+
+	err := Render(&out, OutputModeCSV, handler.ScreenRunDetailOutput{Detail: strategyservice.ScreenRunDetail{
+		Items: []strategyservice.ScreenRunItem{{
+			Ordinal:     0,
+			Symbol:      "069500",
+			PayloadJSON: json.RawMessage(`{"symbol":"069500","first_date":"2025-01-02","latest_date":"2026-05-14","avg_traded_amount_20d":1000}`),
+		}},
+	}})
+	if err != nil {
+		t.Fatalf("render screen run flat csv: %v", err)
+	}
+
+	want := "ordinal,symbol,first_date,latest_date,avg_traded_amount_20d\n0,069500,2025-01-02,2026-05-14,1000\n"
+	if got := out.String(); got != want {
+		t.Fatalf("screen run flat csv = %q, want %q", got, want)
+	}
+}
+
 func TestRenderScreenRunHistoryTableUsesSummaryColumns(t *testing.T) {
 	var out bytes.Buffer
 

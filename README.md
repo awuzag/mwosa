@@ -94,11 +94,21 @@ mwosa get daily 069500 --security-type etf --from 2024-05-02 --to 2024-05-10 -o 
 mwosa screen etf --jq '.[:10]' -o json
 mwosa create strategy latest-liquidity-leaders --engine jq --input etf_daily_metrics --jq '.[:10]' -o json
 mwosa screen strategy latest-liquidity-leaders --alias 2024-05-10-liquidity-leaders -o json
+mwosa update screen strategy etf-uptrend --file examples/screen/my-screen-strategy.yaml -o json
+mwosa screen pipeline examples/screen/my-screen-run.yaml -o table
+mwosa inspect screen-pipeline examples/screen/my-screen-run.yaml -o json
 mwosa history screen -o table
 mwosa inspect screen 2024-05-10-liquidity-leaders -o json
 ```
 
 현재 `strategy` 명령은 스크리닝 전략 저장과 실행을 다룬다. 주문 실행 전략이나 실계좌 운용 전략을 뜻하지 않는다.
+
+스크리닝 spec 은 두 실행 방식을 함께 지원한다. `jq` 기반 strategy 는
+`etf_daily_metrics` 같은 JSON dataset 을 자유롭게 그룹핑하고 계산하는 탐색형
+screen 에 강하다. YAML pipeline 기반 strategy 는 `source.daily_bars`,
+`transform.window_metrics`, `filter.field`, `rank.by_field` 같은 selector 를
+검증 가능한 단계로 조합해 반복 실행하는 데 강하다. 둘은 같은 screening 범주에
+속하지만 서로를 대체하지 않는다.
 
 ## 장기 명령 지도
 

@@ -3,8 +3,11 @@ package cli
 import (
 	"encoding/csv"
 	"encoding/json"
+	"fmt"
 	"io"
 	"reflect"
+	"sort"
+	"strconv"
 	"strings"
 
 	"github.com/jszwec/csvutil"
@@ -245,6 +248,9 @@ func newOutputTable(w io.Writer) *tablewriter.Table {
 }
 
 func writeCSV(w io.Writer, rows any) error {
+	if mapRows, ok := rows.([]map[string]any); ok {
+		return writeCSVMapRows(w, mapRows)
+	}
 	writer := csv.NewWriter(w)
 	encoder := csvutil.NewEncoder(writer)
 	if err := encoder.Encode(rows); err != nil {
@@ -252,4 +258,96 @@ func writeCSV(w io.Writer, rows any) error {
 	}
 	writer.Flush()
 	return oops.In("cli_output").Wrap(writer.Error())
+}
+
+func writeCSVMapRows(w io.Writer, rows []map[string]any) error {
+	writer := csv.NewWriter(w)
+	headers := csvMapHeaders(rows)
+	if len(headers) == 0 {
+		return nil
+	}
+	if err := writer.Write(headers); err != nil {
+		return oops.In("cli_output").Wrapf(err, "write csv header")
+	}
+	for index, row := range rows {
+		record := make([]string, 0, len(headers))
+		for _, header := range headers {
+			record = append(record, csvMapValue(row[header]))
+		}
+		if err := writer.Write(record); err != nil {
+			return oops.In("cli_output").With("row", index).Wrapf(err, "write csv row")
+		}
+	}
+	writer.Flush()
+	return oops.In("cli_output").Wrap(writer.Error())
+}
+
+func csvMapHeaders(rows []map[string]any) []string {
+	seen := map[string]struct{}{}
+	for _, row := range rows {
+		for key := range row {
+			seen[key] = struct{}{}
+		}
+	}
+	preferred := []string{
+		"ordinal",
+		"symbol",
+		"name",
+		"first_date",
+		"first_open",
+		"first_close",
+		"latest_date",
+		"latest_close",
+		"return_from_first_open_pct",
+		"return_from_first_close_pct",
+		"latest_traded_amount",
+		"avg_traded_amount_5d",
+		"avg_traded_amount_20d",
+	}
+	headers := make([]string, 0, len(seen))
+	for _, key := range preferred {
+		if _, ok := seen[key]; ok {
+			headers = append(headers, key)
+			delete(seen, key)
+		}
+	}
+	rest := make([]string, 0, len(seen))
+	for key := range seen {
+		rest = append(rest, key)
+	}
+	sort.Strings(rest)
+	return append(headers, rest...)
+}
+
+func csvMapValue(value any) string {
+	switch typed := value.(type) {
+	case nil:
+		return ""
+	case string:
+		return typed
+	case bool:
+		return strconv.FormatBool(typed)
+	case int:
+		return strconv.Itoa(typed)
+	case int64:
+		return strconv.FormatInt(typed, 10)
+	case float64:
+		return strconv.FormatFloat(typed, 'f', -1, 64)
+	case json.Number:
+		return typed.String()
+	case []string:
+		return strings.Join(typed, ",")
+	default:
+		rv := reflect.ValueOf(value)
+		if rv.IsValid() {
+			switch rv.Kind() {
+			case reflect.Map, reflect.Slice, reflect.Array:
+				data, err := json.Marshal(value)
+				if err == nil {
+					return string(data)
+				}
+			}
+		}
+		return fmt.Sprint(value)
+	}
 }
