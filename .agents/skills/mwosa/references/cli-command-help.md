@@ -19,10 +19,10 @@ MWOSA_HELP_REPO_ROOT=/path/to/mwosa skills/mwosa/references/generate-cli-command
 ## Captured Help
 
 ```text
-mwosa v0.1.1-0.20260516045510-92da4a85a78c
+mwosa v0.1.1-0.20260516051841-07b2a8392bda
 schema dev
-commit 92da4a85a78cd4ebbd035771dbe1e76a2164be52
-built 2026-05-16T04:55:10Z
+commit 07b2a8392bda21f2ffa286c345fdf3045523f12b
+built 2026-05-16T05:18:41Z
 go go1.25.6
 Investment research CLI for provider-backed market data
 
@@ -31,6 +31,7 @@ Usage:
 
 Available Commands:
   backfill    Collect historical data ranges
+  compare     Compare mwosa resources
   completion  Generate shell completion script
   config      Manage mwosa config file
   create      Create mwosa resources
@@ -48,6 +49,8 @@ Available Commands:
   logout      Remove credentials for a resource
   migrate     Manage local data migrations
   prefer      Set resource preference
+  rank        Rank mwosa resources
+  run         Run mwosa workflows
   screen      Run screening workflows
   search      Search local and provider-backed resources
   sync        Refresh provider-backed data batches
@@ -102,6 +105,111 @@ Flags:
       --security-type string   security type: stock, etf, etn, elw (default "etf")
       --to string              end trading date, YYYYMMDD or YYYY-MM-DD
       --workers int            number of workers for page-based daily providers (default 1)
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa compare --help
+Compare mwosa resources
+
+Usage:
+  mwosa compare [command]
+
+Available Commands:
+  backtest-runs Compare two saved backtest runs
+  evaluation    Compare saved backtest evaluation cases
+  screen        Compare saved screen resources
+
+Flags:
+  -h, --help   help for compare
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+Use "mwosa compare [command] --help" for more information about a command.
+
+
+### mwosa compare backtest-runs --help
+Compare two saved backtest runs
+
+Usage:
+  mwosa compare backtest-runs <left-id|name|result_hash> <right-id|name|result_hash> [flags]
+
+Flags:
+  -h, --help   help for backtest-runs
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa compare evaluation --help
+Compare saved backtest evaluation cases
+
+Usage:
+  mwosa compare evaluation <name|id> [flags]
+
+Flags:
+  -h, --help          help for evaluation
+      --view string   evaluation view: raw, summary, cases, regime, robustness, walk_forward (default "raw")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa compare screen --help
+Compare saved screen resources
+
+Usage:
+  mwosa compare screen [command]
+
+Available Commands:
+  strategies  Compare saved screen strategies without recording screen history
+
+Flags:
+  -h, --help   help for screen
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+Use "mwosa compare screen [command] --help" for more information about a command.
+
+
+### mwosa compare screen strategies --help
+Compare saved screen strategies without recording screen history
+
+Usage:
+  mwosa compare screen strategies <name> <name> [name...] [flags]
+
+Flags:
+      --as-of string   override YAML pipeline strategy as_of date in YYYY-MM-DD
+  -h, --help           help for strategies
+      --top int        top symbol count used for overlap (default 10)
 
 Global Flags:
       --config string            config file path
@@ -223,6 +331,7 @@ Usage:
   mwosa delete [command]
 
 Available Commands:
+  backtest    Delete backtest resources
   strategy    Soft delete a saved screening strategy
 
 Flags:
@@ -237,6 +346,47 @@ Global Flags:
       --provider string          force a provider by id
 
 Use "mwosa delete [command] --help" for more information about a command.
+
+
+### mwosa delete backtest --help
+Delete backtest resources
+
+Usage:
+  mwosa delete backtest [command]
+
+Available Commands:
+  strategy    Soft delete a saved backtest strategy
+
+Flags:
+  -h, --help   help for backtest
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+Use "mwosa delete backtest [command] --help" for more information about a command.
+
+
+### mwosa delete backtest strategy --help
+Soft delete a saved backtest strategy
+
+Usage:
+  mwosa delete backtest strategy <name> [flags]
+
+Flags:
+  -h, --help   help for strategy
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
 
 
 ### mwosa delete strategy --help
@@ -666,13 +816,20 @@ Usage:
   mwosa inspect [command]
 
 Available Commands:
-  config      Inspect resolved config and data paths
-  coverage    Inspect local daily bar coverage for a symbol
-  instrument  Inspect one provider instrument
-  provider    Inspect provider configuration and readiness
-  screen      Inspect a saved screening run
-  storage     Summarize local daily bar storage coverage
-  strategy    Inspect a saved screening strategy
+  backtest          Inspect backtest resources
+  backtest-run      Inspect a saved backtest run
+  backtest-universe Inspect a YAML backtest universe pipeline
+  config            Inspect resolved config and data paths
+  coverage          Inspect local daily bar coverage for a symbol
+  evaluation        Inspect a saved backtest evaluation
+  instrument        Inspect one provider instrument
+  market-regime     Inspect a YAML market regime model
+  provider          Inspect provider configuration and readiness
+  screen            Inspect a saved screening run
+  screen-pipeline   Inspect a YAML screen universe pipeline
+  storage           Summarize local daily bar storage coverage
+  strategy          Inspect a saved screening strategy
+  strategy-set      Inspect a YAML strategy set route by market regime
 
 Flags:
   -h, --help   help for inspect
@@ -686,6 +843,125 @@ Global Flags:
       --provider string          force a provider by id
 
 Use "mwosa inspect [command] --help" for more information about a command.
+
+
+### mwosa inspect backtest --help
+Inspect backtest resources
+
+Usage:
+  mwosa inspect backtest [command]
+
+Available Commands:
+  run         Inspect a saved backtest run
+  strategy    Inspect a saved backtest strategy
+  universe    Inspect a YAML backtest universe pipeline
+
+Flags:
+  -h, --help   help for backtest
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+Use "mwosa inspect backtest [command] --help" for more information about a command.
+
+
+### mwosa inspect backtest run --help
+Inspect a saved backtest run
+
+Usage:
+  mwosa inspect backtest run <id|name|result_hash> [flags]
+
+Flags:
+  -h, --help          help for run
+      --view string   backtest result view: raw, summary, metrics, orders, fills, trades, positions, equity, universe, events (default "summary")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa inspect backtest strategy --help
+Inspect a saved backtest strategy
+
+Usage:
+  mwosa inspect backtest strategy <name> [flags]
+
+Flags:
+  -h, --help   help for strategy
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa inspect backtest universe --help
+Inspect a YAML backtest universe pipeline
+
+Usage:
+  mwosa inspect backtest universe <yaml> [flags]
+
+Flags:
+  -h, --help          help for universe
+      --view string   universe explain view: summary, raw (default "summary")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa inspect backtest-run --help
+Inspect a saved backtest run
+
+Usage:
+  mwosa inspect backtest-run <id|name|result_hash> [flags]
+
+Flags:
+  -h, --help          help for backtest-run
+      --view string   backtest result view: raw, summary, metrics, orders, fills, trades, positions, equity, universe, events (default "summary")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa inspect backtest-universe --help
+Inspect a YAML backtest universe pipeline
+
+Usage:
+  mwosa inspect backtest-universe <yaml> [flags]
+
+Flags:
+  -h, --help          help for backtest-universe
+      --view string   universe explain view: summary, raw (default "summary")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
 
 
 ### mwosa inspect config --help
@@ -725,6 +1001,25 @@ Global Flags:
       --provider string          force a provider by id
 
 
+### mwosa inspect evaluation --help
+Inspect a saved backtest evaluation
+
+Usage:
+  mwosa inspect evaluation <name|id> [flags]
+
+Flags:
+  -h, --help          help for evaluation
+      --view string   evaluation view: raw, summary, cases, regime, robustness, walk_forward (default "raw")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
 ### mwosa inspect instrument --help
 Inspect one provider instrument
 
@@ -734,6 +1029,25 @@ Usage:
 Flags:
   -h, --help                   help for instrument
       --security-type string   security type: stock, etf, etn, elw (default "stock")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa inspect market-regime --help
+Inspect a YAML market regime model
+
+Usage:
+  mwosa inspect market-regime <yaml> [flags]
+
+Flags:
+      --as-of string   regime calculation date in YYYY-MM-DD
+  -h, --help           help for market-regime
 
 Global Flags:
       --config string            config file path
@@ -770,6 +1084,24 @@ Usage:
 
 Flags:
   -h, --help   help for screen
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa inspect screen-pipeline --help
+Inspect a YAML screen universe pipeline
+
+Usage:
+  mwosa inspect screen-pipeline <yaml> [flags]
+
+Flags:
+  -h, --help   help for screen-pipeline
 
 Global Flags:
       --config string            config file path
@@ -817,6 +1149,25 @@ Global Flags:
       --provider string          force a provider by id
 
 
+### mwosa inspect strategy-set --help
+Inspect a YAML strategy set route by market regime
+
+Usage:
+  mwosa inspect strategy-set <yaml> [flags]
+
+Flags:
+      --as-of string   strategy set routing date in YYYY-MM-DD
+  -h, --help           help for strategy-set
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
 ### mwosa list --help
 List mwosa resources
 
@@ -824,6 +1175,8 @@ Usage:
   mwosa list [command]
 
 Available Commands:
+  backtest    List backtest resources
+  evaluations List saved backtest evaluations
   instruments Search stored instruments, falling back to provider search
   krx-apis    List KRX OPEN API services known to mwosa
   providers   List configured and available providers
@@ -842,6 +1195,84 @@ Global Flags:
       --provider string          force a provider by id
 
 Use "mwosa list [command] --help" for more information about a command.
+
+
+### mwosa list backtest --help
+List backtest resources
+
+Usage:
+  mwosa list backtest [command]
+
+Available Commands:
+  runs        List saved backtest runs
+  strategies  List saved backtest strategies
+
+Flags:
+  -h, --help   help for backtest
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+Use "mwosa list backtest [command] --help" for more information about a command.
+
+
+### mwosa list backtest runs --help
+List saved backtest runs
+
+Usage:
+  mwosa list backtest runs [flags]
+
+Flags:
+  -h, --help   help for runs
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa list backtest strategies --help
+List saved backtest strategies
+
+Usage:
+  mwosa list backtest strategies [flags]
+
+Flags:
+  -h, --help   help for strategies
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa list evaluations --help
+List saved backtest evaluations
+
+Usage:
+  mwosa list evaluations [flags]
+
+Flags:
+  -h, --help   help for evaluations
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
 
 
 ### mwosa list instruments --help
@@ -1224,6 +1655,110 @@ Global Flags:
       --provider string          force a provider by id
 
 
+### mwosa rank --help
+Rank mwosa resources
+
+Usage:
+  mwosa rank [command]
+
+Available Commands:
+  evaluation  Rank saved backtest evaluation cases
+
+Flags:
+  -h, --help   help for rank
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+Use "mwosa rank [command] --help" for more information about a command.
+
+
+### mwosa rank evaluation --help
+Rank saved backtest evaluation cases
+
+Usage:
+  mwosa rank evaluation <name|id> [flags]
+
+Flags:
+  -h, --help               help for evaluation
+      --objective string   metric objective for ranking (default "calmar")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa run --help
+Run mwosa workflows
+
+Usage:
+  mwosa run [command]
+
+Available Commands:
+  backtest    Run a YAML backtest against stored canonical daily bars
+  evaluation  Run a YAML backtest evaluation against stored canonical daily bars
+
+Flags:
+  -h, --help   help for run
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+Use "mwosa run [command] --help" for more information about a command.
+
+
+### mwosa run backtest --help
+Run a YAML backtest against stored canonical daily bars
+
+Usage:
+  mwosa run backtest <yaml> [flags]
+
+Flags:
+  -h, --help          help for backtest
+      --view string   backtest result view: raw, summary, metrics, orders, fills, trades, positions, equity, universe, events (default "raw")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa run evaluation --help
+Run a YAML backtest evaluation against stored canonical daily bars
+
+Usage:
+  mwosa run evaluation <yaml> [flags]
+
+Flags:
+  -h, --help              help for evaluation
+      --parallelism int   bounded worker count for evaluation cases; overrides YAML execution.parallelism when positive
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
 ### mwosa screen --help
 Run screening workflows
 
@@ -1232,6 +1767,7 @@ Usage:
 
 Available Commands:
   etf         Run an inline jq screen against stored ETF daily records
+  pipeline    Run a YAML screen universe pipeline
   strategy    Run a saved screening strategy
 
 Flags:
@@ -1272,6 +1808,24 @@ Global Flags:
       --provider string          force a provider by id
 
 
+### mwosa screen pipeline --help
+Run a YAML screen universe pipeline
+
+Usage:
+  mwosa screen pipeline <yaml> [flags]
+
+Flags:
+  -h, --help   help for pipeline
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
 ### mwosa screen strategy --help
 Run a saved screening strategy
 
@@ -1279,8 +1833,10 @@ Usage:
   mwosa screen strategy <name> [flags]
 
 Flags:
-      --alias string   optional screen run alias
-  -h, --help           help for strategy
+      --alias string       optional screen run alias
+  -h, --help               help for strategy
+      --spec-hash string   strategy spec hash to run
+      --version string     strategy version number or latest
 
 Global Flags:
       --config string            config file path
@@ -1445,6 +2001,8 @@ Usage:
   mwosa update [command]
 
 Available Commands:
+  backtest    Update backtest resources
+  screen      Update saved screen resources
   strategy    Create a new version of a saved screening strategy
 
 Flags:
@@ -1459,6 +2017,90 @@ Global Flags:
       --provider string          force a provider by id
 
 Use "mwosa update [command] --help" for more information about a command.
+
+
+### mwosa update backtest --help
+Update backtest resources
+
+Usage:
+  mwosa update backtest [command]
+
+Available Commands:
+  strategy    Create or update a saved backtest strategy from YAML
+
+Flags:
+  -h, --help   help for backtest
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+Use "mwosa update backtest [command] --help" for more information about a command.
+
+
+### mwosa update backtest strategy --help
+Create or update a saved backtest strategy from YAML
+
+Usage:
+  mwosa update backtest strategy <name> [flags]
+
+Flags:
+  -h, --help               help for strategy
+      --yaml-file string   YAML file containing a Strategy document
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa update screen --help
+Update saved screen resources
+
+Usage:
+  mwosa update screen [command]
+
+Available Commands:
+  strategy    Create or update a saved screen strategy from YAML
+
+Flags:
+  -h, --help   help for screen
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+Use "mwosa update screen [command] --help" for more information about a command.
+
+
+### mwosa update screen strategy --help
+Create or update a saved screen strategy from YAML
+
+Usage:
+  mwosa update screen strategy <name> [flags]
+
+Flags:
+      --file string   path to a ScreenStrategy or ScreenRun YAML file
+  -h, --help          help for strategy
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
 
 
 ### mwosa update strategy --help
@@ -1488,6 +2130,8 @@ Usage:
   mwosa validate [command]
 
 Available Commands:
+  backtest    Validate a YAML backtest strategy and run spec
+  evaluation  Validate a YAML backtest evaluation spec
   provider    Validate provider configuration
 
 Flags:
@@ -1502,6 +2146,43 @@ Global Flags:
       --provider string          force a provider by id
 
 Use "mwosa validate [command] --help" for more information about a command.
+
+
+### mwosa validate backtest --help
+Validate a YAML backtest strategy and run spec
+
+Usage:
+  mwosa validate backtest <yaml> [flags]
+
+Flags:
+  -h, --help          help for backtest
+      --view string   validation view: summary, raw (default "summary")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa validate evaluation --help
+Validate a YAML backtest evaluation spec
+
+Usage:
+  mwosa validate evaluation <yaml> [flags]
+
+Flags:
+  -h, --help   help for evaluation
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
 
 
 ### mwosa validate provider --help
