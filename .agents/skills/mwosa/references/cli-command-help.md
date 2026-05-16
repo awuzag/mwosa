@@ -19,10 +19,10 @@ MWOSA_HELP_REPO_ROOT=/path/to/mwosa skills/mwosa/references/generate-cli-command
 ## Captured Help
 
 ```text
-mwosa v0.1.1-0.20260514082607-3568460081be
+mwosa v0.1.1-0.20260516045510-92da4a85a78c
 schema dev
-commit 3568460081befe0bc54415f9c242dfcf7dfa354b
-built 2026-05-14T08:26:07Z
+commit 92da4a85a78cd4ebbd035771dbe1e76a2164be52
+built 2026-05-16T04:55:10Z
 go go1.25.6
 Investment research CLI for provider-backed market data
 
@@ -667,9 +667,11 @@ Usage:
 
 Available Commands:
   config      Inspect resolved config and data paths
+  coverage    Inspect local daily bar coverage for a symbol
   instrument  Inspect one provider instrument
   provider    Inspect provider configuration and readiness
   screen      Inspect a saved screening run
+  storage     Summarize local daily bar storage coverage
   strategy    Inspect a saved screening strategy
 
 Flags:
@@ -694,6 +696,25 @@ Usage:
 
 Flags:
   -h, --help   help for config
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa inspect coverage --help
+Inspect local daily bar coverage for a symbol
+
+Usage:
+  mwosa inspect coverage <symbol> [flags]
+
+Flags:
+  -h, --help                   help for coverage
+      --security-type string   security type: stock, etf, etn, elw (default "etf")
 
 Global Flags:
       --config string            config file path
@@ -749,6 +770,25 @@ Usage:
 
 Flags:
   -h, --help   help for screen
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa inspect storage --help
+Summarize local daily bar storage coverage
+
+Usage:
+  mwosa inspect storage [flags]
+
+Flags:
+  -h, --help                   help for storage
+      --security-type string   security type: stock, etf, etn, elw (default "etf")
 
 Global Flags:
       --config string            config file path
