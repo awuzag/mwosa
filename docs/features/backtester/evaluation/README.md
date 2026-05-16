@@ -77,8 +77,8 @@ search plan 중 하나만 선택한다.
 ## CLI
 
 ```bash
-mwosa validate evaluation examples/backtest/evaluation-grid.yaml -o json
-mwosa run evaluation examples/backtest/evaluation-grid.yaml --parallelism 4 -o table
+mwosa validate evaluation examples/backtest/evaluation-grid/evaluation-grid.yaml -o json
+mwosa run evaluation examples/backtest/evaluation-grid/evaluation-grid.yaml --parallelism 4 -o table
 mwosa list evaluations -o table
 mwosa inspect evaluation sma-cross-robustness -o json
 mwosa inspect evaluation sma-cross-robustness --view regime -o table

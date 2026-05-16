@@ -1,0 +1,51 @@
+kind: Strategy
+schema_version: 1
+name: buy-and-hold-equal-weight
+description: Equal-weight buy-and-hold baseline for comparing with turtle-breakout.
+entries:
+  - gt:
+      - portfolio: cash_pct
+      - value: 0
+exits:
+  - gte:
+      - position: holding_bars
+      - value: 171
+sizing:
+  type: percent_of_equity
+  value: 33.3333333333
+risk:
+  max_positions: 3
+  max_symbol_weight_pct: 35
+---
+kind: BacktestRun
+schema_version: 1
+name: buy-and-hold-krx-etf-2024-02-02-to-2024-10-21
+strategy:
+  name: buy-and-hold-equal-weight
+data:
+  market: krx
+  timeframe: 1d
+  from: 2024-02-02
+  to: 2024-10-21
+universe:
+  pipeline:
+    - id: source.symbols
+      params:
+        symbols: ["069500", "102110", "229200"]
+        fields:
+          market: krx
+          security_type: etf
+portfolio:
+  initial_cash: 10000000
+  currency: KRW
+execution:
+  fill: same_close
+  commission:
+    type: bps
+    value: 0
+  slippage:
+    type: fixed_bps
+    value: 0
+report:
+  metrics:
+    preset: research

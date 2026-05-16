@@ -556,7 +556,7 @@ func TestLoadFileLoadsYAMLAndRunsBacktest(t *testing.T) {
 }
 
 func TestUniversePipelineExampleFixtureCompiles(t *testing.T) {
-	bundle, err := LoadFile(context.Background(), "../../examples/backtest/universe-pipeline.yaml")
+	bundle, err := LoadFile(context.Background(), "../../examples/backtest/universe-pipeline/universe-pipeline.yaml")
 	require.NoError(t, err)
 
 	registry, err := core.DefaultIndicatorRegistry()
@@ -572,6 +572,44 @@ func TestUniversePipelineExampleFixtureCompiles(t *testing.T) {
 	assert.Equal(t, "source.daily_bars", plan.Universe.Pipeline[0].ID)
 	assert.Equal(t, "filter.security_type", plan.Universe.Pipeline[1].ID)
 	assert.Equal(t, "rank.weighted", plan.Universe.Pipeline[5].ID)
+}
+
+func TestTurtleBreakoutExampleFixtureCompiles(t *testing.T) {
+	bundle, err := LoadFile(context.Background(), "../../examples/backtest/turtle-breakout/turtle-breakout.yaml")
+	require.NoError(t, err)
+
+	registry, err := core.DefaultIndicatorRegistry()
+	require.NoError(t, err)
+	plan, err := core.Compile(bundle.Strategy, bundle.Run, registry)
+	require.NoError(t, err)
+
+	assert.Equal(t, "turtle-breakout", plan.StrategyName)
+	assert.Equal(t, "turtle-breakout-krx-etf", plan.RunName)
+	assert.Equal(t, "sma", plan.Indicators["long_trend"].ID)
+	assert.Equal(t, "roc", plan.Indicators["momentum_60"].ID)
+	assert.Equal(t, "donchian_high", plan.Indicators["entry_channel"].ID)
+	assert.Equal(t, "donchian_low", plan.Indicators["exit_channel"].ID)
+	require.Len(t, plan.Entries, 1)
+	assert.Equal(t, "all", plan.Entries[0].Operator)
+	require.Len(t, plan.Stops, 1)
+	assert.Equal(t, "volatility_stop", plan.Stops[0].Operator)
+}
+
+func TestTurtleBreakoutBuyAndHoldBaselineExampleFixtureCompiles(t *testing.T) {
+	bundle, err := LoadFile(context.Background(), "../../examples/backtest/turtle-breakout/buy-and-hold-2024-02-02-to-2024-10-21.yaml")
+	require.NoError(t, err)
+
+	registry, err := core.DefaultIndicatorRegistry()
+	require.NoError(t, err)
+	plan, err := core.Compile(bundle.Strategy, bundle.Run, registry)
+	require.NoError(t, err)
+
+	assert.Equal(t, "buy-and-hold-equal-weight", plan.StrategyName)
+	assert.Equal(t, "buy-and-hold-krx-etf-2024-02-02-to-2024-10-21", plan.RunName)
+	assert.Equal(t, core.FillSameClose, plan.Fill)
+	assert.InDelta(t, 33.3333333333, plan.Sizing.Value, 0.0001)
+	require.Len(t, plan.Exits, 1)
+	assert.Equal(t, "gte", plan.Exits[0].Operator)
 }
 
 func TestDecodeStrategyOnlySupportsNestedRulesAndInlineIndicators(t *testing.T) {
