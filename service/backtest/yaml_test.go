@@ -595,6 +595,48 @@ func TestTurtleBreakoutExampleFixtureCompiles(t *testing.T) {
 	assert.Equal(t, "volatility_stop", plan.Stops[0].Operator)
 }
 
+func TestRelativeStrengthRotationExampleFixtureCompiles(t *testing.T) {
+	bundle, err := LoadFile(context.Background(), "../../examples/backtest/relative-strength-rotation/relative-strength-rotation.yaml")
+	require.NoError(t, err)
+
+	registry, err := core.DefaultIndicatorRegistry()
+	require.NoError(t, err)
+	plan, err := core.Compile(bundle.Strategy, bundle.Run, registry)
+	require.NoError(t, err)
+
+	assert.Equal(t, "relative-strength-rotation", plan.StrategyName)
+	assert.Equal(t, "relative-strength-rotation-krx-etf", plan.RunName)
+	assert.Equal(t, "weekly", plan.Universe.Schedule.Frequency)
+	assert.Equal(t, "liquidate", plan.Universe.PositionPolicy)
+	assert.Equal(t, core.OrderTypeRebalance, plan.OrderType)
+	assert.Equal(t, core.TimeInForceCancelOnRebalance, plan.TimeInForce)
+	require.Len(t, plan.Universe.Pipeline, 7)
+	assert.Equal(t, "source.daily_bars", plan.Universe.Pipeline[0].ID)
+	assert.Equal(t, "rank.by_field", plan.Universe.Pipeline[5].ID)
+	assert.Equal(t, "rank.weighted", plan.Universe.Pipeline[6].ID)
+}
+
+func TestDualMomentumRotationExampleFixtureCompiles(t *testing.T) {
+	bundle, err := LoadFile(context.Background(), "../../examples/backtest/dual-momentum-rotation/dual-momentum-rotation.yaml")
+	require.NoError(t, err)
+
+	registry, err := core.DefaultIndicatorRegistry()
+	require.NoError(t, err)
+	plan, err := core.Compile(bundle.Strategy, bundle.Run, registry)
+	require.NoError(t, err)
+
+	assert.Equal(t, "dual-momentum-rotation", plan.StrategyName)
+	assert.Equal(t, "dual-momentum-rotation-krx-etf", plan.RunName)
+	assert.Equal(t, "monthly", plan.Universe.Schedule.Frequency)
+	assert.Equal(t, "liquidate", plan.Universe.PositionPolicy)
+	assert.Equal(t, core.OrderTypeRebalance, plan.OrderType)
+	assert.Equal(t, 2, plan.Risk.MaxPositions)
+	require.Len(t, plan.Universe.Pipeline, 6)
+	assert.Equal(t, "source.daily_bars", plan.Universe.Pipeline[0].ID)
+	assert.Equal(t, "filter.field", plan.Universe.Pipeline[3].ID)
+	assert.Equal(t, "rank.by_field", plan.Universe.Pipeline[5].ID)
+}
+
 func TestTurtleBreakoutBuyAndHoldBaselineExampleFixtureCompiles(t *testing.T) {
 	bundle, err := LoadFile(context.Background(), "../../examples/backtest/turtle-breakout/buy-and-hold-2024-02-02-to-2024-10-21.yaml")
 	require.NoError(t, err)

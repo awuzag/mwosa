@@ -1,0 +1,86 @@
+kind: Strategy
+schema_version: 1
+name: dual-momentum-rotation
+description: Monthly ETF dual momentum rotation that stays in cash when no ETF has positive absolute momentum.
+entry:
+  all:
+    - monthly: {}
+    - target_weight_changed:
+        - value: 2
+sizing:
+  type: percent_of_equity
+  value: 50
+risk:
+  max_positions: 2
+  max_symbol_weight_pct: 55
+---
+kind: BacktestRun
+schema_version: 1
+name: dual-momentum-rotation-krx-etf
+strategy:
+  name: dual-momentum-rotation
+data:
+  market: krx
+  timeframe: 1d
+  from: 2024-01-02
+  to: 2024-12-31
+universe:
+  schedule:
+    frequency: monthly
+    anchor: first_trading_day
+    lookback_policy: closed_bars_only
+  position_policy: liquidate
+  pipeline:
+    - id: source.daily_bars
+      params:
+        market: krx
+        security_type: etf
+        lookback_days: 120
+    - id: transform.window_metrics
+      params:
+        metrics:
+          return_60d:
+            id: return
+            params:
+              window: 60
+          return_20d:
+            id: return
+            params:
+              window: 20
+          traded_amount_avg_20d:
+            id: average
+            params:
+              field: traded_amount
+              window: 20
+    - id: transform.latest_per_symbol
+    - id: filter.field
+      params:
+        field: return_60d
+        op: gt
+        value: 0
+    - id: filter.field
+      params:
+        field: traded_amount_avg_20d
+        op: gte
+        value: 1000000000
+    - id: rank.by_field
+      params:
+        field: return_60d
+        order: desc
+        limit: 2
+portfolio:
+  initial_cash: 10000000
+  currency: KRW
+execution:
+  fill: next_open
+  order_type: rebalance
+  time_in_force: cancel_on_rebalance
+  commission:
+    type: bps
+    value: 1.5
+  slippage:
+    type: bps
+    value: 0
+report:
+  metrics:
+    preset: research

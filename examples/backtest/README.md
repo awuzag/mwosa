@@ -12,5 +12,7 @@
 | [`sma-cross`](sma-cross/README.md) | 단일 ETF SMA cross 백테스트 smoke 예제 |
 | [`turtle-breakout`](turtle-breakout/README.md) | Donchian breakout 과 ATR stop 을 쓰는 터틀 스타일 추세 추종 예제 |
 | [`universe-pipeline`](universe-pipeline/README.md) | 월간 universe pipeline 과 유동성/모멘텀 ranking 예제 |
+| [`relative-strength-rotation`](relative-strength-rotation/README.md) | 주간 상대강도 ETF rotation 예제 |
+| [`dual-momentum-rotation`](dual-momentum-rotation/README.md) | 월간 dual momentum 현금 대기형 rotation 예제 |
 | [`evaluation-grid`](evaluation-grid/README.md) | 기간/파라미터 grid evaluation 예제 |
 | [`evaluation-walk-forward`](evaluation-walk-forward/README.md) | walk-forward train/test evaluation 예제 |
