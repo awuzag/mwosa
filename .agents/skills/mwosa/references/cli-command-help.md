@@ -19,11 +19,11 @@ MWOSA_HELP_REPO_ROOT=/path/to/mwosa skills/mwosa/references/generate-cli-command
 ## Captured Help
 
 ```text
-mwosa v0.1.1-0.20260517135847-dd1129d9745a
+mwosa v0.1.1-0.20260517143101-cb6938400971
 schema dev
-commit dd1129d9745a926944ff2c184365254b5f837bac
-built 2026-05-17T13:58:47Z
-go go1.25.6
+commit cb6938400971ccbae2007e27334bcc788419d78e
+built 2026-05-17T14:31:01Z
+go go1.26.3
 Investment research CLI for provider-backed market data
 
 Usage:
@@ -31,6 +31,7 @@ Usage:
 
 Available Commands:
   backfill    Collect historical data ranges
+  calc        Calculate derived mwosa resources
   compare     Compare mwosa resources
   completion  Generate shell completion script
   config      Manage mwosa config file
@@ -105,6 +106,99 @@ Flags:
       --security-type string   security type: stock, etf, etn, elw (default "etf")
       --to string              end trading date, YYYYMMDD or YYYY-MM-DD
       --workers int            number of workers for page-based daily providers (default 1)
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa calc --help
+Calculate derived mwosa resources
+
+Usage:
+  mwosa calc [command]
+
+Available Commands:
+  financials  Calculate financial derived data
+
+Flags:
+  -h, --help   help for calc
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+Use "mwosa calc [command] --help" for more information about a command.
+
+
+### mwosa calc financials --help
+Calculate financial derived data
+
+Usage:
+  mwosa calc financials [command]
+
+Available Commands:
+  metrics     Calculate stored canonical financial metrics
+  valuation   Calculate stored canonical valuation snapshots
+
+Flags:
+  -h, --help   help for financials
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+Use "mwosa calc financials [command] --help" for more information about a command.
+
+
+### mwosa calc financials metrics --help
+Calculate stored canonical financial metrics.
+
+This reads financial_statement_v1 and financial_line_item_v1, then writes
+financial_metric_v1. Missing source accounts are stored as uncomputable metrics
+with explicit reasons.
+
+Usage:
+  mwosa calc financials metrics <company> [flags]
+
+Flags:
+  -h, --help            help for metrics
+      --period string   financial period: annual, quarter (default "annual")
+      --window string   metric window, for example 3y (default "3y")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa calc financials valuation --help
+Calculate stored canonical valuation snapshots.
+
+This combines the issuer instrument's daily_bar_v2 price/market cap with stored
+financial statement line items, then writes valuation_snapshot_v1.
+
+Usage:
+  mwosa calc financials valuation <company> [flags]
+
+Flags:
+      --as-of string   valuation date, YYYY-MM-DD or latest (default "latest")
+  -h, --help           help for valuation
 
 Global Flags:
       --config string            config file path
@@ -582,13 +676,17 @@ Usage:
   mwosa get [command]
 
 Available Commands:
-  daily       Read stored daily bars for a symbol
-  financials  Fetch provider-backed financial statements by company name or KRX code
-  index       Fetch or read canonical index bars
-  intraday    Fetch provider intraday bars for a symbol
-  krx         Fetch a provider-native KRX OPEN API response
-  orderbook   Fetch a provider orderbook snapshot for a symbol
-  quote       Fetch a provider quote snapshot for a symbol
+  company-identifiers    List canonical company identifiers
+  daily                  Read stored daily bars for a symbol
+  filing                 Fetch provider-backed filing document metadata
+  financials             Fetch provider-backed financial statements by company name or KRX code
+  index                  Fetch or read canonical index bars
+  intraday               Fetch provider intraday bars for a symbol
+  krx                    Fetch a provider-native KRX OPEN API response
+  orderbook              Fetch a provider orderbook snapshot for a symbol
+  provider-raw           Read stored provider-native raw payload snapshots
+  provider-raw-snapshots Read stored provider-native raw snapshots
+  quote                  Fetch a provider quote snapshot for a symbol
 
 Flags:
   -h, --help   help for get
@@ -602,6 +700,27 @@ Global Flags:
       --provider string          force a provider by id
 
 Use "mwosa get [command] --help" for more information about a command.
+
+
+### mwosa get company-identifiers --help
+List canonical company identifiers.
+
+The query is resolved from local company_v1 and company_identifier_v1 rows. OpenDART
+corp_code and KRX stock_code are both identifiers, not canonical company keys.
+
+Usage:
+  mwosa get company-identifiers <company> [flags]
+
+Flags:
+  -h, --help   help for company-identifiers
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
 
 
 ### mwosa get daily --help
@@ -626,11 +745,48 @@ Global Flags:
       --provider string          force a provider by id
 
 
+### mwosa get filing --help
+Fetch provider-backed filing document metadata.
+
+With --provider opendart, this calls document.xml by rcept_no. Binary payload is
+omitted by default so table, csv, json, and ndjson output remain safe for normal
+stdout pipelines. Use --include-payload with json or ndjson to include the file
+body as base64.
+
+Usage:
+  mwosa get filing <rcept-no> [flags]
+
+Flags:
+  -h, --help              help for filing
+      --include-payload   include base64 file payload in json or ndjson output
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
 ### mwosa get financials --help
-Fetch provider-backed financial statements by company name or KRX code
+Fetch provider-backed financial statements by company name or KRX code.
+
+With --provider opendart, <company> may be an OpenDART corp_code or a listed-company
+stock_code. stock_code is resolved to corp_code before OpenDART financial API calls;
+corp_code and stock_code remain separate fields in output extensions.
 
 Usage:
   mwosa get financials <company> [flags]
+  mwosa get financials [command]
+
+Available Commands:
+  dividends   Read stored canonical dividend facts
+  facts       Read stored canonical company financial facts
+  health      Read stored financial health metrics and audit facts
+  metrics     Read stored canonical financial metrics
+  statements  Read stored canonical financial statements
+  valuation   Read stored canonical valuation snapshots
 
 Flags:
   -h, --help                   help for financials
@@ -639,6 +795,140 @@ Flags:
       --security-type string   security type: stock, etf, etn, elw (default "stock")
       --statement string       statement type: summary, income_statement, balance_sheet, cash_flow; empty fetches all
       --year string            fiscal year, for example 2025
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+Use "mwosa get financials [command] --help" for more information about a command.
+
+
+### mwosa get financials dividends --help
+Read stored canonical dividend facts
+
+Usage:
+  mwosa get financials dividends <company> [flags]
+
+Flags:
+  -h, --help            help for dividends
+      --window string   dividend window, for example 3y (default "3y")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa get financials facts --help
+Read stored canonical company financial facts
+
+Usage:
+  mwosa get financials facts <company> [flags]
+
+Flags:
+      --fact-type string   fact type filter, for example dividend
+      --from string        fact date lower bound, YYYY-MM-DD
+  -h, --help               help for facts
+      --limit int          maximum fact rows to return
+      --to string          fact date upper bound, YYYY-MM-DD
+      --year string        fiscal year, for example 2025
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa get financials health --help
+Read stored financial health metrics and audit facts.
+
+This command reads provider-neutral financial_metric_v1 rows plus audit opinion
+facts from company_fact_v1. Run calc financials metrics and sync financials facts
+first to populate the underlying canonical data.
+
+Usage:
+  mwosa get financials health <company> [flags]
+
+Flags:
+  -h, --help            help for health
+      --period string   financial period: annual, quarter (default "annual")
+      --window string   metric window, for example 3y (default "3y")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa get financials metrics --help
+Read stored canonical financial metrics
+
+Usage:
+  mwosa get financials metrics <company> [flags]
+
+Flags:
+  -h, --help            help for metrics
+      --period string   financial period: annual, quarter (default "annual")
+      --window string   metric window, for example 3y (default "3y")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa get financials statements --help
+Read stored canonical financial statements.
+
+This reads financial_statement_v1 and financial_line_item_v1 from local SQLite.
+The legacy shortcut get financials <company> still fetches provider-backed data
+through the router.
+
+Usage:
+  mwosa get financials statements <company> [flags]
+
+Flags:
+  -h, --help                   help for statements
+      --limit int              maximum number of statement rows to fetch
+      --period string          financial period: annual, quarter (default "annual")
+      --security-type string   security type: stock, etf, etn, elw (default "stock")
+      --statement string       statement type: summary, income_statement, balance_sheet, cash_flow; empty fetches all
+      --year string            fiscal year, for example 2025
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa get financials valuation --help
+Read stored canonical valuation snapshots
+
+Usage:
+  mwosa get financials valuation <company> [flags]
+
+Flags:
+      --as-of string   valuation date, YYYY-MM-DD or latest (default "latest")
+  -h, --help           help for valuation
 
 Global Flags:
       --config string            config file path
@@ -719,6 +1009,62 @@ Usage:
 Flags:
   -h, --help                   help for orderbook
       --security-type string   security type: stock, etf, etn (default "stock")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa get provider-raw --help
+Read stored provider-native raw payload snapshots.
+
+This is a friendlier alias over provider_raw_snapshots for canonicalization
+escape hatches. It does not call the provider live; it only reads snapshots that
+previous sync commands have already stored locally.
+
+Usage:
+  mwosa get provider-raw [provider] [operation] [flags]
+
+Flags:
+      --from string        base date lower bound, YYYYMMDD or YYYY-MM-DD
+      --group string       provider group filter
+  -h, --help               help for provider-raw
+      --include-payload    include decoded provider-native payload in JSON/NDJSON output
+      --limit int          maximum snapshots to return (default 50)
+      --operation string   provider operation/api id filter
+      --to string          base date upper bound, YYYYMMDD or YYYY-MM-DD
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa get provider-raw-snapshots --help
+Read stored provider-native raw snapshots.
+
+This reads provider_raw_snapshots from local SQLite. It is an escape hatch for
+provider APIs that are not yet canonicalized, while keeping canonical analysis
+tables separate from provider-native payloads.
+
+Usage:
+  mwosa get provider-raw-snapshots [flags]
+
+Flags:
+      --from string        base date lower bound, YYYYMMDD or YYYY-MM-DD
+      --group string       provider group filter
+  -h, --help               help for provider-raw-snapshots
+      --include-payload    include decoded provider-native payload in JSON/NDJSON output
+      --limit int          maximum snapshots to return (default 50)
+      --operation string   provider operation/api id filter
+      --to string          base date upper bound, YYYYMMDD or YYYY-MM-DD
 
 Global Flags:
       --config string            config file path
@@ -819,6 +1165,7 @@ Available Commands:
   backtest          Inspect backtest resources
   backtest-run      Inspect a saved backtest run
   backtest-universe Inspect a YAML backtest universe pipeline
+  company           Inspect one canonical company
   config            Inspect resolved config and data paths
   coverage          Inspect local daily bar coverage for a symbol
   evaluation        Inspect a saved backtest evaluation
@@ -827,6 +1174,7 @@ Available Commands:
   provider          Inspect provider configuration and readiness
   screen            Inspect a saved screening run
   screen-pipeline   Inspect a YAML screen universe pipeline
+  stock             Inspect a stored stock profile with financial analysis sections
   storage           Summarize local daily bar storage coverage
   strategy          Inspect a saved screening strategy
   strategy-set      Inspect a YAML strategy set route by market regime
@@ -954,6 +1302,28 @@ Usage:
 Flags:
   -h, --help          help for backtest-universe
       --view string   universe explain view: summary, raw (default "summary")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa inspect company --help
+Inspect one canonical company.
+
+The query is resolved from local company_v1 and company_identifier_v1 rows. Use
+sync companies --provider opendart to populate the initial Korean listed-company
+identity graph from corpCode.xml.
+
+Usage:
+  mwosa inspect company <company> [flags]
+
+Flags:
+  -h, --help   help for company
 
 Global Flags:
       --config string            config file path
@@ -1112,6 +1482,32 @@ Global Flags:
       --provider string          force a provider by id
 
 
+### mwosa inspect stock --help
+Inspect a stored stock profile with financial analysis sections.
+
+This command reads canonical local storage only. Use sync companies, sync
+financials statements, calc financials metrics, calc financials valuation, and
+sync financials facts or sync events to populate the underlying sections.
+
+Usage:
+  mwosa inspect stock <symbol-or-company> [flags]
+
+Flags:
+      --as-of string     valuation date, YYYY-MM-DD or latest (default "latest")
+  -h, --help             help for stock
+      --period string    financial period: annual, quarter (default "annual")
+      --section string   comma-separated sections: profile,investment,financials,scores,dividends,events,all; use facts explicitly for large fact rows (default "profile,investment,financials,scores,dividends,events")
+      --window string    financial metric/dividend window, for example 3y (default "3y")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
 ### mwosa inspect storage --help
 Summarize local daily bar storage coverage
 
@@ -1175,14 +1571,17 @@ Usage:
   mwosa list [command]
 
 Available Commands:
-  backtest     List backtest resources
-  constituents List composition constituents for a symbol
-  evaluations  List saved backtest evaluations
-  instruments  Search stored instruments, falling back to provider search
-  krx-apis     List KRX OPEN API services known to mwosa
-  providers    List configured and available providers
-  strategies   List saved screening strategies
-  trades       List recent market trade prints for a symbol
+  backtest      List backtest resources
+  constituents  List composition constituents for a symbol
+  evaluations   List saved backtest evaluations
+  events        List stored canonical company events
+  filings       List provider-backed filings
+  instruments   Search stored instruments, falling back to provider search
+  krx-apis      List KRX OPEN API services known to mwosa
+  provider-apis List provider-native APIs known to mwosa diagnostics
+  providers     List configured and available providers
+  strategies    List saved screening strategies
+  trades        List recent market trade prints for a symbol
 
 Flags:
   -h, --help   help for list
@@ -1295,6 +1694,59 @@ Global Flags:
       --provider string          force a provider by id
 
 
+### mwosa list events --help
+List stored canonical company events.
+
+This reads company_event_v1 from local SQLite. Use sync events --provider
+opendart to fetch canonicalized OpenDART material events first.
+
+Usage:
+  mwosa list events <company> [flags]
+
+Flags:
+      --event-type string   event type filter
+      --from string         event date lower bound, YYYY-MM-DD
+  -h, --help                help for events
+      --limit int           maximum event rows to return (default 50)
+      --to string           event date upper bound, YYYY-MM-DD
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa list filings --help
+List provider-backed filings.
+
+With --provider opendart, the positional argument may be an OpenDART corp_code or
+a listed-company stock_code. stock_code is resolved to corp_code before querying
+OpenDART. Use --corp-code to bypass stock_code resolution.
+
+Usage:
+  mwosa list filings [corp-code-or-stock-code] [flags]
+
+Flags:
+      --corp-code string    OpenDART corp_code; bypasses stock_code resolution
+      --from string         filing start date, YYYYMMDD or YYYY-MM-DD
+  -h, --help                help for filings
+      --last-report         request only final reports
+      --page-count string   OpenDART page size, max 100 (default "10")
+      --page-no string      OpenDART page number (default "1")
+      --to string           filing end date, YYYYMMDD or YYYY-MM-DD
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
 ### mwosa list instruments --help
 Search stored instruments, falling back to provider search
 
@@ -1323,6 +1775,24 @@ Usage:
 
 Flags:
   -h, --help   help for krx-apis
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa list provider-apis --help
+List provider-native APIs known to mwosa diagnostics
+
+Usage:
+  mwosa list provider-apis <provider> [flags]
+
+Flags:
+  -h, --help   help for provider-apis
 
 Global Flags:
       --config string            config file path
@@ -1424,6 +1894,7 @@ Available Commands:
   datago-corpfin Register datago-corpfin provider credentials
   kis            Register kis provider credentials
   krx            Register krx provider credentials
+  opendart       Register opendart provider credentials
 
 Flags:
   -h, --help   help for provider
@@ -1523,6 +1994,26 @@ Flags:
   -h, --help                     help for krx
       --sample-base-url string   override KRX OPEN API sample base URL
       --use-sample string        use the KRX OPEN API sample endpoint
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa login provider opendart --help
+Register opendart provider credentials
+
+Usage:
+  mwosa login provider opendart [flags]
+
+Flags:
+      --api-key string    OpenDART API key; OPENDART_API_KEY is preferred
+      --base-url string   override OpenDART base URL
+  -h, --help              help for opendart
 
 Global Flags:
       --config string            config file path
@@ -1788,6 +2279,7 @@ Usage:
 Available Commands:
   etf         Run an inline jq screen against stored ETF daily records
   pipeline    Run a YAML screen universe pipeline
+  stock       Run an inline jq screen against stored stock daily records enriched with financial metrics
   strategy    Run a saved screening strategy
 
 Flags:
@@ -1846,6 +2338,30 @@ Global Flags:
       --provider string          force a provider by id
 
 
+### mwosa screen stock --help
+Run an inline jq screen against stored stock daily records enriched with financial metrics
+
+Usage:
+  mwosa screen stock [flags]
+
+Aliases:
+  stock, stocks
+
+Flags:
+  -h, --help             help for stock
+      --input string     input dataset name (default "stock_daily_metrics")
+      --jq string        inline jq query
+      --jq-file string   path to a jq query file
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
 ### mwosa screen strategy --help
 Run a saved screening strategy
 
@@ -1874,6 +2390,7 @@ Usage:
   mwosa search [command]
 
 Available Commands:
+  companies   Search a provider-backed company registry
   instruments Search stored instruments
 
 Flags:
@@ -1888,6 +2405,30 @@ Global Flags:
       --provider string          force a provider by id
 
 Use "mwosa search [command] --help" for more information about a command.
+
+
+### mwosa search companies --help
+Search a provider-backed company registry.
+
+With --provider opendart, the query matches local OpenDART corp_code, stock_code,
+corp_name, or corp_eng_name. OpenDART corp_code is the disclosure identifier and
+stock_code is the listed-company KRX mapping.
+
+Usage:
+  mwosa search companies <query> [flags]
+
+Flags:
+  -h, --help          help for companies
+      --limit int     maximum company rows to return (default 20)
+      --listed-only   return only rows with OpenDART stock_code
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
 
 
 ### mwosa search instruments --help
@@ -1917,7 +2458,10 @@ Usage:
   mwosa sync [command]
 
 Available Commands:
+  companies   Sync provider-backed company registry
   daily       Collect one provider daily batch for a date
+  events      Fetch provider-backed material events and store canonical rows
+  financials  Sync provider-backed financial resources
   index       Fetch and store canonical index bars for a date
   instruments Fetch provider instrument master and store it locally
   krx         Fetch and store a provider-native KRX OPEN API snapshot
@@ -1936,6 +2480,29 @@ Global Flags:
 Use "mwosa sync [command] --help" for more information about a command.
 
 
+### mwosa sync companies --help
+Sync a provider-backed company registry.
+
+With --provider opendart, this fetches OpenDART corpCode.xml and stores corp_code,
+corp_name, corp_eng_name, stock_code, and modify_date. OpenDART corp_code is not a
+KRX stock_code; stock_code is stored only as a listed-company mapping.
+
+Usage:
+  mwosa sync companies [flags]
+
+Flags:
+  -h, --help          help for companies
+      --listed-only   store only companies with OpenDART stock_code
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
 ### mwosa sync daily --help
 Collect one provider daily batch for a date
 
@@ -1946,6 +2513,137 @@ Flags:
       --as-of string           trading date to collect, YYYYMMDD or YYYY-MM-DD
   -h, --help                   help for daily
       --security-type string   security type: stock, etf, etn, elw (default "etf")
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa sync events --help
+Fetch provider-backed material events and store canonical rows.
+
+With --provider opendart, this currently canonicalizes default, bank-management,
+lawsuit, capital increase/reduction, business/asset transfer, CB/BW/EB,
+merger/division, stock exchange/transfer, and treasury-stock decision APIs into
+company_event_v1. Additional material event APIs remain separate until each
+operation has an explicit mapping.
+
+Usage:
+  mwosa sync events <company> [flags]
+
+Flags:
+      --from string   event filing start date, YYYYMMDD or YYYY-MM-DD
+  -h, --help          help for events
+      --to string     event filing end date, YYYYMMDD or YYYY-MM-DD
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa sync financials --help
+Sync provider-backed financial resources
+
+Usage:
+  mwosa sync financials [command]
+
+Available Commands:
+  dividends   Fetch OpenDART dividend facts and store canonical company facts
+  facts       Fetch OpenDART periodic report facts and store canonical company facts
+  statements  Fetch provider-backed financial statements and store canonical rows
+
+Flags:
+  -h, --help   help for financials
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+Use "mwosa sync financials [command] --help" for more information about a command.
+
+
+### mwosa sync financials dividends --help
+Fetch OpenDART dividend matters and store canonical company facts.
+
+This writes company_fact_v1 rows with fact_type=dividend. The company must already
+exist in the canonical company identity graph so the OpenDART corp_code can be
+read as an identifier rather than treated as the canonical key.
+
+Usage:
+  mwosa sync financials dividends <company> [flags]
+
+Flags:
+      --from string   first fiscal year to sync, for example 2023
+  -h, --help          help for dividends
+      --to string     last fiscal year to sync, for example 2025
+      --year string   fiscal year, for example 2025
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa sync financials facts --help
+Fetch OpenDART periodic report facts and store canonical company facts.
+
+With --provider opendart, this currently canonicalizes dividends, treasury stock,
+major shareholders, major shareholder changes, employee status, and audit opinion
+rows into company_fact_v1. The company must already exist in the canonical company
+identity graph so OpenDART corp_code is used as a provider identifier.
+
+Usage:
+  mwosa sync financials facts <company> [flags]
+
+Flags:
+      --from string   first fiscal year to sync, for example 2023
+  -h, --help          help for facts
+      --to string     last fiscal year to sync, for example 2025
+      --year string   fiscal year, for example 2025
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa sync financials statements --help
+Fetch provider-backed financial statements and store canonical rows.
+
+The company must already exist in the canonical company identity graph. For
+OpenDART, run sync companies --provider opendart first so corp_code and stock_code
+are available as identifiers.
+
+Usage:
+  mwosa sync financials statements <company> [flags]
+
+Flags:
+      --from string            first fiscal year to sync, for example 2023
+  -h, --help                   help for statements
+      --limit int              maximum number of statement rows to fetch
+      --period string          financial period: annual, quarter (default "annual")
+      --security-type string   security type: stock, etf, etn, elw (default "stock")
+      --statement string       statement type: summary, income_statement, balance_sheet, cash_flow; empty fetches all
+      --to string              last fiscal year to sync, for example 2025
+      --year string            fiscal year, for example 2025
 
 Global Flags:
       --config string            config file path
