@@ -102,22 +102,12 @@ func (m CompositionMember) MarshalJSON() ([]byte, error) {
 	return json.Marshal(out)
 }
 
-type QuoteObservation struct {
-	Instrument   InstrumentRef `json:"instrument"`
-	ObservedAtMS int64         `json:"observed_at_ms,omitempty"`
-	Price        MoneyValue    `json:"price,omitempty"`
-	Change       MoneyValue    `json:"change,omitempty"`
-	ChangeRate   DecimalValue  `json:"change_rate,omitempty"`
-	Volume       DecimalValue  `json:"volume,omitempty"`
-}
-
 type ListResult struct {
-	Composition       Composition
-	QuoteObservations []QuoteObservation
-	Provider          provider.Identity
-	Group             provider.GroupID
-	Operation         provider.OperationID
-	TotalCount        int
+	Composition Composition
+	Provider    provider.Identity
+	Group       provider.GroupID
+	Operation   provider.OperationID
+	TotalCount  int
 }
 
 type Lister interface {

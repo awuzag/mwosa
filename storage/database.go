@@ -176,6 +176,8 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 		{name: "provider_source_v2", model: (*ProviderSourceV2Row)(nil)},
 		{name: "daily_bar_v2", model: (*DailyBarV2Row)(nil)},
 		{name: "daily_bar_extension_v2", model: (*DailyBarExtensionV2Row)(nil)},
+		{name: "composition_observation_v1", model: (*CompositionObservationV1Row)(nil)},
+		{name: "composition_member_v1", model: (*CompositionMemberV1Row)(nil)},
 		{name: "index_v1", model: (*IndexV1Row)(nil)},
 		{name: "index_source_v1", model: (*IndexSourceV1Row)(nil)},
 		{name: "index_bar_v1", model: (*IndexBarV1Row)(nil)},
@@ -284,6 +286,28 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 			name:    "idx_daily_bar_v2_instrument_date",
 			model:   (*DailyBarV2Row)(nil),
 			columns: []string{"instrument_id", "trading_date"},
+		},
+		{
+			name:    "composition_observation_v1_natural_key",
+			model:   (*CompositionObservationV1Row)(nil),
+			columns: []string{"source_id", "subject_instrument_id", "as_of_date", "observed_at_ms"},
+			unique:  true,
+		},
+		{
+			name:    "idx_composition_observation_v1_subject_as_of",
+			model:   (*CompositionObservationV1Row)(nil),
+			columns: []string{"subject_instrument_id", "as_of_date"},
+		},
+		{
+			name:    "composition_member_v1_ordinal_unique",
+			model:   (*CompositionMemberV1Row)(nil),
+			columns: []string{"composition_id", "ordinal"},
+			unique:  true,
+		},
+		{
+			name:    "idx_composition_member_v1_member",
+			model:   (*CompositionMemberV1Row)(nil),
+			columns: []string{"member_instrument_id"},
 		},
 		{
 			name:    "index_v1_natural_key",

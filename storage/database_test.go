@@ -180,6 +180,18 @@ func TestDatabaseCreatesDailyBarIndexes(t *testing.T) {
 			t.Fatalf("%s index was not created", name)
 		}
 	}
+	compositionIndexes := sqliteIndexes(t, client, "composition_observation_v1")
+	for _, name := range []string{"composition_observation_v1_natural_key", "idx_composition_observation_v1_subject_as_of"} {
+		if _, ok := compositionIndexes[name]; !ok {
+			t.Fatalf("%s index was not created", name)
+		}
+	}
+	compositionMemberIndexes := sqliteIndexes(t, client, "composition_member_v1")
+	for _, name := range []string{"composition_member_v1_ordinal_unique", "idx_composition_member_v1_member"} {
+		if _, ok := compositionMemberIndexes[name]; !ok {
+			t.Fatalf("%s index was not created", name)
+		}
+	}
 	extensionIndexes := sqliteIndexes(t, client, "daily_bar_extension_v2")
 	if _, ok := extensionIndexes["idx_daily_bar_extension_v2_bar"]; ok {
 		t.Fatal("idx_daily_bar_extension_v2_bar should not be created because the primary key index covers bar-prefix lookups")

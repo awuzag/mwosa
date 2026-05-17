@@ -438,16 +438,9 @@ func (p *Provider) listConstituents(ctx context.Context, input composition.ListI
 		Symbol:       symbol,
 	}
 	members := make([]composition.CompositionMember, 0, len(result.Rows))
-	quotes := make([]composition.QuoteObservation, 0, len(result.Rows)+1)
-	if subjectQuote := quoteObservationFromHeader(result.Output1, subject, observedAtMS); subjectQuote.Price.Value != "" {
-		quotes = append(quotes, subjectQuote)
-	}
 	for _, row := range limitSlice(result.Rows, input.Limit) {
-		member, quote := compositionMemberFromKISComponentRow(row, observedAtMS)
+		member := compositionMemberFromKISComponentRow(row)
 		members = append(members, member)
-		if quote.Price.Value != "" || quote.Volume.Value != "" {
-			quotes = append(quotes, quote)
-		}
 	}
 	return composition.ListResult{
 		Composition: composition.Composition{
@@ -457,11 +450,10 @@ func (p *Provider) listConstituents(ctx context.Context, input composition.ListI
 			ObservedAtMS: observedAtMS,
 			Members:      members,
 		},
-		QuoteObservations: quotes,
-		Provider:          p.Identity,
-		Group:             provider.GroupKISDomesticStockQuotation,
-		Operation:         provider.OperationKISETFComponentStockPrice,
-		TotalCount:        len(members),
+		Provider:   p.Identity,
+		Group:      provider.GroupKISDomesticStockQuotation,
+		Operation:  provider.OperationKISETFComponentStockPrice,
+		TotalCount: len(members),
 	}, nil
 }
 
@@ -641,38 +633,18 @@ func normalizeTimedTrade(trade kisclient.TimedTrade, symbol string, securityType
 	}
 }
 
-func compositionMemberFromKISComponentRow(row kisclient.ETFComponentStockPrice, observedAtMS int64) (composition.CompositionMember, composition.QuoteObservation) {
+func compositionMemberFromKISComponentRow(row kisclient.ETFComponentStockPrice) composition.CompositionMember {
 	instrument := composition.InstrumentRef{
 		Market:       provider.MarketKRX,
 		SecurityType: provider.SecurityTypeStock,
 		Symbol:       row.Symbol,
 		Name:         row.Name,
 	}
-	member := composition.CompositionMember{
+	return composition.CompositionMember{
 		Instrument: instrument,
 		Weight:     decimalValue(row.Weight),
 		Quantity:   decimalValue(row.Quantity),
 		Valuation:  moneyValue(row.ValuationAmount),
-	}
-	quote := composition.QuoteObservation{
-		Instrument:   instrument,
-		ObservedAtMS: observedAtMS,
-		Price:        moneyValue(row.Current),
-		Change:       moneyValue(row.PreviousChange),
-		ChangeRate:   decimalValue(row.PreviousChangeRate),
-		Volume:       decimalValue(row.Volume),
-	}
-	return member, quote
-}
-
-func quoteObservationFromHeader(header map[string]string, subject composition.InstrumentRef, observedAtMS int64) composition.QuoteObservation {
-	return composition.QuoteObservation{
-		Instrument:   subject,
-		ObservedAtMS: observedAtMS,
-		Price:        moneyValue(firstNonEmpty(header["stck_prpr"], header["prpr"])),
-		Change:       moneyValue(header["prdy_vrss"]),
-		ChangeRate:   decimalValue(header["prdy_ctrt"]),
-		Volume:       decimalValue(header["acml_vol"]),
 	}
 }
 
@@ -928,12 +900,12 @@ func newDomesticStockQuotationGroup(snapshot quote.SnapshotFunc, fetch dailybar.
 			Compatibility: provider.Compatibility{
 				DataLatency:         provider.DataLatencyRealtime,
 				CurrentDaySupported: true,
-				Notes:               []string{"KIS ETF component stock price API is adapted into canonical composition members plus quote observations"},
+				Notes:               []string{"KIS ETF component stock price API is adapted into canonical composition members"},
 			},
 			RequiresAuth: true,
 			Priority:     90,
 			Limitations: []string{
-				"live read-through composition only; canonical composition storage is not implemented in this path",
+				"live read-through composition command; canonical composition storage is handled by the storage repository path",
 				"ETF only; ETN and ELW component rows are not registered",
 			},
 		}, listConstituents),

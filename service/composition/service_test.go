@@ -40,6 +40,52 @@ func TestListRoutesAndFetchesConstituents(t *testing.T) {
 	require.Len(t, result.Composition.Members, 1)
 }
 
+func TestStoreDelegatesToCompositionRepository(t *testing.T) {
+	repository := &fakeCompositionRepository{}
+	service, err := NewService(&fakeCompositionRouter{}, WithRepository(repository))
+	require.NoError(t, err)
+
+	aggregate := compositionrole.Composition{
+		Source: compositionrole.SourceRef{
+			Provider:  provider.ProviderKIS,
+			Group:     provider.GroupKISDomesticStockQuotation,
+			Operation: provider.OperationKISETFComponentStockPrice,
+		},
+		Subject: compositionrole.InstrumentRef{
+			Market:       provider.MarketKRX,
+			SecurityType: provider.SecurityTypeETF,
+			Symbol:       "069500",
+		},
+		AsOfDate:     "2026-05-17",
+		ObservedAtMS: 1779010800000,
+	}
+	result, err := service.Store(context.Background(), StoreRequest{Composition: aggregate})
+
+	require.NoError(t, err)
+	require.Equal(t, "069500", repository.gotComposition.Subject.Symbol)
+	require.Equal(t, 1, result.CompositionsStored)
+}
+
+func TestGetDelegatesToCompositionRepository(t *testing.T) {
+	repository := &fakeCompositionRepository{
+		composition: compositionrole.Composition{
+			Subject: compositionrole.InstrumentRef{Symbol: "069500"},
+		},
+	}
+	service, err := NewService(&fakeCompositionRouter{}, WithRepository(repository))
+	require.NoError(t, err)
+
+	result, err := service.Get(context.Background(), Query{
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeETF,
+		Symbol:       "069500",
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, "069500", repository.gotQuery.Symbol)
+	require.Equal(t, "069500", result.Subject.Symbol)
+}
+
 type fakeCompositionRouter struct {
 	lister   compositionrole.Lister
 	gotRoute compositionrole.RouteInput
@@ -48,4 +94,24 @@ type fakeCompositionRouter struct {
 func (r *fakeCompositionRouter) RouteComposition(_ context.Context, input compositionrole.RouteInput) (compositionrole.Lister, error) {
 	r.gotRoute = input
 	return r.lister, nil
+}
+
+type fakeCompositionRepository struct {
+	gotComposition compositionrole.Composition
+	gotQuery       Query
+	composition    compositionrole.Composition
+}
+
+func (r *fakeCompositionRepository) UpsertComposition(_ context.Context, aggregate compositionrole.Composition) (WriteResult, error) {
+	r.gotComposition = aggregate
+	return WriteResult{
+		RowsAffected:       1 + len(aggregate.Members),
+		CompositionsStored: 1,
+		MembersStored:      len(aggregate.Members),
+	}, nil
+}
+
+func (r *fakeCompositionRepository) GetComposition(_ context.Context, query Query) (compositionrole.Composition, error) {
+	r.gotQuery = query
+	return r.composition, nil
 }

@@ -33,6 +33,7 @@ import (
 	universeservice "github.com/ev3rlit/mwosa/service/universe"
 	"github.com/ev3rlit/mwosa/storage"
 	backteststorage "github.com/ev3rlit/mwosa/storage/backtest"
+	compositionstorage "github.com/ev3rlit/mwosa/storage/composition"
 	dailybarstorage "github.com/ev3rlit/mwosa/storage/dailybar"
 	indexbarstorage "github.com/ev3rlit/mwosa/storage/indexbar"
 	instrumentstorage "github.com/ev3rlit/mwosa/storage/instrument"
@@ -62,6 +63,7 @@ type Runtime struct {
 type StorageRuntime struct {
 	Database             *storage.Database
 	ProviderAuthDatabase *providerauth.Database
+	Compositions         compositionservice.Repository
 	DailyBars            DailyBarStorage
 	IndexBars            IndexBarStorage
 	Instruments          instrumentservice.Repository
@@ -171,6 +173,14 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create instrument repository"),
+			database.Close(),
+			providerAuthDatabase.Close(),
+		)
+	}
+	compositionRepository, err := compositionstorage.NewRepository(database)
+	if err != nil {
+		return nil, oops.Join(
+			errb.Wrapf(err, "create composition repository"),
 			database.Close(),
 			providerAuthDatabase.Close(),
 		)
@@ -329,7 +339,7 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 			providerAuthDatabase.Close(),
 		)
 	}
-	compositionService, err := compositionservice.NewService(providerRuntime.Compositions)
+	compositionService, err := compositionservice.NewService(providerRuntime.Compositions, compositionservice.WithRepository(compositionRepository))
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create composition service"),
@@ -392,6 +402,7 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 		Storage: StorageRuntime{
 			Database:             database,
 			ProviderAuthDatabase: providerAuthDatabase,
+			Compositions:         compositionRepository,
 			DailyBars: DailyBarStorage{
 				Reader: reader,
 				Writer: writer,

@@ -82,7 +82,7 @@ func TestFetchETFQuoteUsesETFETNPrice(t *testing.T) {
 	require.Equal(t, "10250", result.Price)
 }
 
-func TestListConstituentsSplitsCompositionAndQuoteObservations(t *testing.T) {
+func TestListConstituentsReturnsOnlyCompositionMembers(t *testing.T) {
 	client := &fakeKISClient{
 		etfComponents: kisclient.ETFComponentStockPriceResult{
 			Rows: []kisclient.ETFComponentStockPrice{
@@ -118,9 +118,6 @@ func TestListConstituentsSplitsCompositionAndQuoteObservations(t *testing.T) {
 	require.Equal(t, "삼성전자", result.Composition.Members[0].Instrument.Name)
 	require.Equal(t, "28.15", result.Composition.Members[0].Weight.Value)
 	require.Equal(t, "1942000000", result.Composition.Members[0].Valuation.Value)
-	require.Len(t, result.QuoteObservations, 2)
-	require.Equal(t, "36090", result.QuoteObservations[0].Price.Value)
-	require.Equal(t, "75000", result.QuoteObservations[1].Price.Value)
 }
 
 func TestFetchQuoteUsesValidCachedTokenWithoutIssuingToken(t *testing.T) {

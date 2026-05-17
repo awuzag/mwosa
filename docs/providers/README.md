@@ -180,6 +180,18 @@ provider 와 group 을 한 문자열로 합쳐 `datago/securitiesProductPrice` �
 | `macro` | `ecos`, `fred` | `world-bank`, `oecd`, `ecb` |
 | `fx` | `ecos` | `alpha-vantage`, `twelve-data`, `ecb`, `stooq` |
 
+## Composition storage 방향
+
+`composition` capability 는 ETF 같은 상품의 구성 종목 정보를 canonical aggregate 로
+다룬다. provider adapter 는 provider-native 구성 종목 응답에서 구성 정보만
+`Composition` 으로 옮기고, canonical storage 는 raw 응답이나 KIS DTO 를 저장하지 않는다.
+
+저장소는 `market_v2`, `instrument_v2`, `provider_source_v2` 를 공유 식별자 계층으로
+재사용한다. 구성 aggregate 는 `composition_observation_v1` 과 `composition_member_v1` 로
+저장한다. 구성 정보 조회 결과에 현재가, 등락, 거래량 같은 값이 함께 들어오더라도
+composition 저장 대상에는 포함하지 않는다. 따라서 기본 constituents 출력과 저장 aggregate
+에는 provider raw field 나 API 전용 `etf_snapshot` 모델이 섞이지 않는다.
+
 ## Compatibility contract
 
 각 provider adapter 는 가능한 한 같은 public CLI 경험을 제공해야 한다.

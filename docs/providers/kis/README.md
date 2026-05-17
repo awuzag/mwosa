@@ -27,7 +27,7 @@ operation metadata 로만 남긴다.
 | `Token` | `/oauth2/tokenP` | 없음 | auth dependency | credential bootstrap | 내부 사용 |
 | `Price` | `/uapi/domestic-stock/v1/quotations/inquire-price` | 없음 | quote snapshot | `quote_snapshot` / `price` | 구현 |
 | `ETFETNPrice` | `/uapi/etfetn/v1/quotations/inquire-price` | 없음 | quote snapshot | `quote_snapshot` / `etfetnPrice` | 구현 |
-| `ETFComponentStockPrices` | `/uapi/etfetn/v1/quotations/inquire-component-stock-price` | 없음 | composition members + quote observation 후보 | `composition` / `etfComponentStockPrice` | 구현 |
+| `ETFComponentStockPrices` | `/uapi/etfetn/v1/quotations/inquire-component-stock-price` | 없음 | composition members | `composition` / `etfComponentStockPrice` | 구현 |
 | `Daily` | `/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice` | 없음 | daily bar | `daily_bar` / `daily` | 구현 |
 | `Product` | `/uapi/domestic-stock/v1/quotations/search-info` | 없음 | instrument | `instrument` / `product` | 구현 |
 | `Stock` | `/uapi/domestic-stock/v1/quotations/search-stock-info` | 없음 | instrument | `instrument` / `stock` | 구현 |
@@ -61,12 +61,31 @@ mwosa doctor provider kis -o json
 
 `kis` 일봉은 심볼 단위 조회다. `sync daily` 또는 `backfill daily` 처럼 provider
 전체 배치를 수집하는 command 는 현재 KIS adapter 의 범위가 아니다.
-분봉, 호가, 시장 체결 조회, 구성 종목 조회도 provider live/read-through 조회이며 현재 로컬
-canonical storage 에 저장하지 않는다. KIS `ETFComponentStockPrices` 응답은
-provider-native DTO 로만 다루고, adapter 에서 `Composition` aggregate 와
-`QuoteObservation` 후보로 분해한다. 기본 CLI 출력은 구성 종목 정보 중심이며 raw 나
-KIS 응답 구조를 노출하지 않는다. `--at` 은 `HHMMSS` 또는 `HH:MM:SS` 형식의
-범용 시간 anchor 로 받고, KIS adapter 내부에서 provider 요청 형식으로 바꾼다.
+분봉, 호가, 시장 체결 조회, 구성 종목 조회도 현재 public CLI 에서는 provider
+live/read-through 조회다. `mwosa list constituents` 는 조회 결과를 자동 저장하지
+않으며, composition 저장은 별도 sync/ensure 류 command 로 열 때 service/repository
+경계에서 붙인다. KIS `ETFComponentStockPrices` 응답은 provider-native DTO 로만
+다루고, adapter 에서 구성 정보만 `Composition` aggregate 로 옮긴다.
+기본 CLI 출력은 구성 종목 정보 중심이며 raw 나 KIS 응답 구조를 노출하지 않는다. `--at`
+은 `HHMMSS` 또는 `HH:MM:SS` 형식의 범용 시간 anchor 로 받고, KIS adapter 내부에서
+provider 요청 형식으로 바꾼다.
+
+## Composition canonical storage
+
+KIS 구성 종목 조회 결과를 저장할 때 canonical storage 는 KIS 응답 전체나 raw payload 를
+보관하지 않는다. 저장 경계에서는 `Composition` 을 aggregate 문서처럼 다루되 물리 저장은
+SQLite+Bun 관계 모델로 숨긴다.
+
+| canonical model | storage table | 역할 |
+| --- | --- | --- |
+| `Composition` | `composition_observation_v1` | source, subject instrument, as-of date, observed time 을 가진 aggregate root |
+| `CompositionMember` | `composition_member_v1` | aggregate root 에 종속되는 구성 종목, 비중, 수량, 평가금액 |
+
+`composition_observation_v1` 과 `composition_member_v1` 은 ETF 구성 정보만 표현한다.
+KIS 응답에 현재가, 등락, 거래량 같은 값이 함께 들어오더라도 composition 저장 대상에는
+포함하지 않는다. 저장소는 `market_v2`, `instrument_v2`, `provider_source_v2` 를 재사용해
+instrument/source 식별자를 정규화한다. `etf_snapshot` 같은 ETF/API 전용 테이블은 만들지
+않고, `snapshot` 이름 대신 관측 시점이 필요한 데이터에는 `observation` 이름을 쓴다.
 
 ## 인증
 
