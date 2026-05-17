@@ -17,7 +17,8 @@ type stockInspectFlags struct {
 }
 
 type stockInspectOutput struct {
-	Summary stocksummary.Summary
+	Summary          stocksummary.Summary
+	RawTableSections map[string]struct{}
 }
 
 func registerStockCommands(roots commandRoots, opts *Options) {
@@ -26,7 +27,7 @@ func registerStockCommands(roots commandRoots, opts *Options) {
 
 func newInspectStockCommand(opts *Options) *cobra.Command {
 	flags := stockInspectFlags{
-		Section: "profile,investment,financials,scores,dividends,facts,events",
+		Section: "profile,investment,financials,scores,dividends,events",
 		AsOf:    "latest",
 		Window:  "3y",
 		Period:  string(financials.PeriodTypeAnnual),
@@ -64,10 +65,13 @@ sync financials facts or sync events to populate the underlying sections.`),
 			if err != nil {
 				return nil, err
 			}
-			return stockInspectOutput{Summary: summary}, nil
+			return stockInspectOutput{
+				Summary:          summary,
+				RawTableSections: stockInspectRawTableSections(flags.Section),
+			}, nil
 		}),
 	}
-	cmd.Flags().StringVar(&flags.Section, "section", flags.Section, "comma-separated sections: profile,investment,financials,scores,dividends,facts,events,all")
+	cmd.Flags().StringVar(&flags.Section, "section", flags.Section, "comma-separated sections: profile,investment,financials,scores,dividends,events,all; use facts explicitly for large fact rows")
 	cmd.Flags().StringVar(&flags.AsOf, "as-of", flags.AsOf, "valuation date, YYYY-MM-DD or latest")
 	cmd.Flags().StringVar(&flags.Window, "window", flags.Window, "financial metric/dividend window, for example 3y")
 	cmd.Flags().StringVar(&flags.Period, "period", flags.Period, "financial period: annual, quarter")
@@ -77,6 +81,25 @@ sync financials facts or sync events to populate the underlying sections.`),
 
 func (o stockInspectOutput) JSONValue() any {
 	return o.Summary
+}
+
+func (o stockInspectOutput) TableBlocks() []TableBlock {
+	if len(o.RawTableSections) > 0 {
+		return o.rawTableBlocks()
+	}
+	blocks := make([]TableBlock, 0, len(o.Summary.Report.Tables))
+	for _, table := range o.Summary.Report.Tables {
+		blocks = append(blocks, TableBlock{
+			Title:  table.Title,
+			Header: table.Header,
+			Rows:   table.Rows,
+		})
+	}
+	if len(blocks) > 0 {
+		return blocks
+	}
+	header, rows := o.TableRows()
+	return []TableBlock{{Header: header, Rows: rows}}
 }
 
 func (o stockInspectOutput) TableRows() ([]string, [][]string) {
@@ -188,6 +211,99 @@ func (o stockInspectOutput) TableRows() ([]string, [][]string) {
 		rows = append(rows, []string{missing.Section, "missing", missing.Reason, ""})
 	}
 	return []string{"section", "key", "value", "source"}, rows
+}
+
+func (o stockInspectOutput) rawTableBlocks() []TableBlock {
+	blocks := make([]TableBlock, 0, len(o.RawTableSections)+1)
+	if _, ok := o.RawTableSections[stocksummary.SectionFacts]; ok {
+		rows := make([][]string, 0, len(o.Summary.Facts))
+		for _, fact := range o.Summary.Facts {
+			rows = append(rows, []string{
+				fact.FiscalYear,
+				fact.FactType,
+				fact.Key,
+				fact.ValueText,
+				fact.ValueNumber,
+				fact.FactDate,
+				fact.RceptNo,
+				string(fact.Provider) + "/" + string(fact.Group) + "/" + string(fact.Operation),
+			})
+		}
+		blocks = append(blocks, TableBlock{
+			Title:  "facts 상세",
+			Header: []string{"year", "fact_type", "key", "value_text", "value_number", "fact_date", "rcept_no", "source"},
+			Rows:   rows,
+		})
+	}
+	if _, ok := o.RawTableSections[stocksummary.SectionDividends]; ok {
+		rows := make([][]string, 0, len(o.Summary.Dividends))
+		for _, fact := range o.Summary.Dividends {
+			rows = append(rows, []string{
+				fact.FiscalYear,
+				fact.Key,
+				fact.ValueText,
+				fact.ValueNumber,
+				fact.FactDate,
+				fact.RceptNo,
+				string(fact.Provider) + "/" + string(fact.Group) + "/" + string(fact.Operation),
+			})
+		}
+		blocks = append(blocks, TableBlock{
+			Title:  "dividends 상세",
+			Header: []string{"year", "key", "value_text", "value_number", "fact_date", "rcept_no", "source"},
+			Rows:   rows,
+		})
+	}
+	if _, ok := o.RawTableSections[stocksummary.SectionEvents]; ok {
+		rows := make([][]string, 0, len(o.Summary.Events))
+		for _, event := range o.Summary.Events {
+			rows = append(rows, []string{
+				event.EventDate,
+				event.EventType,
+				event.Title,
+				event.ValueText,
+				event.RceptNo,
+				string(event.Provider) + "/" + string(event.Group) + "/" + string(event.Operation),
+			})
+		}
+		blocks = append(blocks, TableBlock{
+			Title:  "events 상세",
+			Header: []string{"event_date", "event_type", "title", "value_text", "rcept_no", "source"},
+			Rows:   rows,
+		})
+	}
+	if len(o.Summary.Missing) > 0 {
+		rows := make([][]string, 0, len(o.Summary.Missing))
+		for _, missing := range o.Summary.Missing {
+			rows = append(rows, []string{missing.Section, missing.Reason})
+		}
+		blocks = append(blocks, TableBlock{
+			Title:  "누락",
+			Header: []string{"section", "reason"},
+			Rows:   rows,
+		})
+	}
+	return blocks
+}
+
+func stockInspectRawTableSections(value string) map[string]struct{} {
+	parts := strings.Split(value, ",")
+	out := make(map[string]struct{})
+	for _, part := range parts {
+		section := strings.ToLower(strings.TrimSpace(part))
+		switch section {
+		case stocksummary.SectionFacts, stocksummary.SectionDividends, stocksummary.SectionEvents:
+			out[section] = struct{}{}
+		case "", stocksummary.SectionAll:
+			return nil
+		default:
+			return nil
+		}
+	}
+	if len(out) == 0 {
+		return nil
+	}
+	return out
 }
 
 func appendScoreRow(rows [][]string, key string, value *int, source string) [][]string {

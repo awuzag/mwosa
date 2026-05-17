@@ -12,6 +12,7 @@ import (
 	"github.com/ev3rlit/mwosa/storage/companyevent"
 	"github.com/ev3rlit/mwosa/storage/companyfact"
 	"github.com/ev3rlit/mwosa/storage/companyidentity"
+	"github.com/ev3rlit/mwosa/storage/financialstatement"
 	"github.com/stretchr/testify/require"
 )
 
@@ -33,7 +34,7 @@ func TestRepositoryInspectBuildsStoredStockSummary(t *testing.T) {
 		Period:   financials.PeriodTypeAnnual,
 	})
 	require.NoError(t, err)
-	require.Equal(t, []string{SectionProfile, SectionInvestment, SectionFinancials, SectionScores, SectionDividends, SectionFacts, SectionEvents}, summary.Sections)
+	require.Equal(t, []string{SectionProfile, SectionInvestment, SectionFinancials, SectionScores, SectionDividends, SectionEvents}, summary.Sections)
 	require.Equal(t, "삼성전자", summary.Company.Name)
 	require.Equal(t, "005930", summary.Instrument.Symbol)
 	require.Len(t, summary.Valuation, 1)
@@ -46,8 +47,7 @@ func TestRepositoryInspectBuildsStoredStockSummary(t *testing.T) {
 	require.Equal(t, "no usable growth metrics", summary.Scores.Uncomputable["growth_score"])
 	require.Len(t, summary.Dividends, 1)
 	require.Equal(t, "9809437000000", summary.Dividends[0].ValueNumber)
-	require.Len(t, summary.Facts, 1)
-	require.Equal(t, "audit_opinion", summary.Facts[0].FactType)
+	require.Empty(t, summary.Facts)
 	require.Len(t, summary.Events, 1)
 	require.Equal(t, "company_merger", summary.Events[0].EventType)
 	require.Empty(t, summary.Missing)
@@ -59,6 +59,32 @@ func TestRepositoryInspectBuildsStoredStockSummary(t *testing.T) {
 	require.NotNil(t, summary.Profile.ScreenCandidate)
 	require.Equal(t, "005930", summary.Profile.ScreenCandidate.Symbol)
 	require.Equal(t, "company_fact_v1", summary.Profile.CapitalPolicyProfile.Dividends[0].Source.SourceTable)
+	require.Nil(t, summary.Profile.GovernanceProfile)
+	require.NotEmpty(t, summary.Report.Tables)
+	require.Equal(t, "overview", summary.Report.Tables[0].ID)
+}
+
+func TestRepositoryInspectReadsFactsOnlyWhenRequested(t *testing.T) {
+	ctx := context.Background()
+	database := storage.NewDatabase(filepath.Join(t.TempDir(), "mwosa.db"))
+	t.Cleanup(func() {
+		require.NoError(t, database.Close())
+	})
+	company := seedCompany(t, ctx, database)
+	require.NoError(t, seedSummaryData(ctx, database, company))
+
+	repository, err := NewRepository(database)
+	require.NoError(t, err)
+	summary, err := repository.Inspect(ctx, "005930", Query{
+		Sections: []string{SectionFacts},
+		Window:   3,
+		Period:   financials.PeriodTypeAnnual,
+	})
+	require.NoError(t, err)
+	require.Equal(t, []string{SectionFacts}, summary.Sections)
+	require.Len(t, summary.Facts, 1)
+	require.Equal(t, "audit_opinion", summary.Facts[0].FactType)
+	require.NotNil(t, summary.Profile.GovernanceProfile)
 }
 
 func TestRepositoryInspectMarksMissingOptionalSections(t *testing.T) {
@@ -78,8 +104,9 @@ func TestRepositoryInspectMarksMissingOptionalSections(t *testing.T) {
 		Period:   financials.PeriodTypeAnnual,
 	})
 	require.NoError(t, err)
-	require.Len(t, summary.Missing, 3)
+	require.Len(t, summary.Missing, 4)
 	require.Equal(t, SectionInvestment, summary.Missing[0].Section)
+	require.Equal(t, "statements", summary.Missing[2].Section)
 }
 
 func seedCompany(t *testing.T, ctx context.Context, database *storage.Database) companyidentity.InspectResult {
@@ -166,6 +193,80 @@ func seedSummaryData(ctx context.Context, database *storage.Database, company co
 		UpdatedAtMS:         nowMS,
 	}
 	if _, err := client.NewInsert().Model(&snapshot).Exec(ctx); err != nil {
+		return err
+	}
+	statementRepository, err := financialstatement.NewRepository(database)
+	if err != nil {
+		return err
+	}
+	if _, err := statementRepository.UpsertStatements(ctx, company, []financials.Statement{
+		{
+			Statement:    financials.StatementTypeSummary,
+			Symbol:       "005930",
+			Name:         "삼성전자",
+			FiscalYear:   "2025",
+			FiscalPeriod: "11011",
+			Period:       financials.PeriodTypeAnnual,
+			Provider:     provider.ProviderOpenDART,
+			Group:        provider.GroupOpenDARTFinancials,
+			Operation:    provider.OperationOpenDARTSinglAcntAll,
+			Extensions: map[string]string{
+				"reprt_code": "11011",
+				"fs_div":     "CFS",
+			},
+			Lines: []financials.LineItem{
+				{
+					AccountID:   "ifrs-full_Revenue",
+					AccountName: "매출액",
+					Value:       "1,000",
+					Currency:    "KRW",
+					Extensions:  map[string]string{"sj_div": "IS", "reprt_code": "11011", "fs_div": "CFS", "rcept_no": "20260330000001", "ord": "1"},
+				},
+				{
+					AccountID:   "dart_OperatingIncomeLoss",
+					AccountName: "영업이익",
+					Value:       "150",
+					Currency:    "KRW",
+					Extensions:  map[string]string{"sj_div": "IS", "reprt_code": "11011", "fs_div": "CFS", "rcept_no": "20260330000001", "ord": "2"},
+				},
+				{
+					AccountID:   "ifrs-full_ProfitLoss",
+					AccountName: "당기순이익",
+					Value:       "90",
+					Currency:    "KRW",
+					Extensions:  map[string]string{"sj_div": "IS", "reprt_code": "11011", "fs_div": "CFS", "rcept_no": "20260330000001", "ord": "3"},
+				},
+				{
+					AccountID:   "ifrs-full_Assets",
+					AccountName: "자산총계",
+					Value:       "3,000",
+					Currency:    "KRW",
+					Extensions:  map[string]string{"sj_div": "BS", "reprt_code": "11011", "fs_div": "CFS", "rcept_no": "20260330000001", "ord": "1"},
+				},
+				{
+					AccountID:   "ifrs-full_Liabilities",
+					AccountName: "부채총계",
+					Value:       "1,000",
+					Currency:    "KRW",
+					Extensions:  map[string]string{"sj_div": "BS", "reprt_code": "11011", "fs_div": "CFS", "rcept_no": "20260330000001", "ord": "2"},
+				},
+				{
+					AccountID:   "ifrs-full_Equity",
+					AccountName: "자본총계",
+					Value:       "2,000",
+					Currency:    "KRW",
+					Extensions:  map[string]string{"sj_div": "BS", "reprt_code": "11011", "fs_div": "CFS", "rcept_no": "20260330000001", "ord": "3"},
+				},
+				{
+					AccountID:   "ifrs-full_CashFlowsFromUsedInOperatingActivities",
+					AccountName: "영업활동 현금흐름",
+					Value:       "120",
+					Currency:    "KRW",
+					Extensions:  map[string]string{"sj_div": "CF", "reprt_code": "11011", "fs_div": "CFS", "rcept_no": "20260330000001", "ord": "1"},
+				},
+			},
+		},
+	}); err != nil {
 		return err
 	}
 	factRepository, err := companyfact.NewRepository(database)

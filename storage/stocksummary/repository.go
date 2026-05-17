@@ -13,6 +13,7 @@ import (
 	"github.com/ev3rlit/mwosa/storage/companyfact"
 	"github.com/ev3rlit/mwosa/storage/companyidentity"
 	"github.com/ev3rlit/mwosa/storage/financialmetric"
+	"github.com/ev3rlit/mwosa/storage/financialstatement"
 	"github.com/ev3rlit/mwosa/storage/valuation"
 	"github.com/samber/oops"
 )
@@ -27,6 +28,8 @@ const (
 	SectionFacts      = "facts"
 	SectionEvents     = "events"
 )
+
+var defaultSections = []string{SectionProfile, SectionInvestment, SectionFinancials, SectionScores, SectionDividends, SectionEvents}
 
 type Repository struct {
 	database *storage.Database
@@ -52,6 +55,7 @@ type Summary struct {
 	Events      []companyevent.Event           `json:"events,omitempty"`
 	Missing     []MissingSection               `json:"missing,omitempty"`
 	Profile     research.StockResearchProfile  `json:"research_profile,omitempty"`
+	Report      StockInspectReport             `json:"report,omitempty"`
 }
 
 type MissingSection struct {
@@ -97,6 +101,7 @@ func (r Repository) Inspect(ctx context.Context, query string, options Query) (S
 		}
 	}
 	var metrics []financialmetric.Metric
+	var statements []financials.Statement
 	if hasSection(sections, SectionFinancials) || hasSection(sections, SectionScores) {
 		metrics, err = listMetrics(ctx, r.database, company, options.Window, options.Period)
 		if err != nil {
@@ -106,6 +111,13 @@ func (r Repository) Inspect(ctx context.Context, query string, options Query) (S
 			out.Metrics = metrics
 			if len(metrics) == 0 {
 				out.Missing = append(out.Missing, MissingSection{Section: SectionFinancials, Reason: "stored financial metrics not found"})
+			}
+			statements, err = listStatements(ctx, r.database, company, options.Period)
+			if err != nil {
+				return Summary{}, errb.Wrap(err)
+			}
+			if len(statements) == 0 {
+				out.Missing = append(out.Missing, MissingSection{Section: "statements", Reason: "stored financial statements not found"})
 			}
 		}
 	}
@@ -137,6 +149,13 @@ func (r Repository) Inspect(ctx context.Context, query string, options Query) (S
 			out.Missing = append(out.Missing, MissingSection{Section: SectionFacts, Reason: "stored company facts not found"})
 		}
 	}
+	reportFacts := out.Facts
+	if !hasSection(sections, SectionFacts) && (hasSection(sections, SectionDividends) || hasSection(sections, SectionEvents)) {
+		reportFacts, err = listFacts(ctx, r.database, company, options.Window)
+		if err != nil {
+			return Summary{}, errb.Wrap(err)
+		}
+	}
 	if hasSection(sections, SectionEvents) {
 		events, err := listEvents(ctx, r.database, company)
 		if err != nil {
@@ -148,12 +167,13 @@ func (r Repository) Inspect(ctx context.Context, query string, options Query) (S
 		}
 	}
 	out.Profile = buildResearchProfile(out)
+	out.Report = BuildStockInspectReport(out, statements, reportFacts)
 	return out, nil
 }
 
 func normalizeSections(sections []string) map[string]struct{} {
 	if len(sections) == 0 {
-		sections = []string{SectionProfile, SectionInvestment, SectionFinancials, SectionScores, SectionDividends, SectionFacts, SectionEvents}
+		sections = defaultSections
 	}
 	out := make(map[string]struct{})
 	for _, section := range sections {
@@ -163,13 +183,9 @@ func normalizeSections(sections []string) map[string]struct{} {
 				continue
 			}
 			if trimmed == SectionAll {
-				out[SectionProfile] = struct{}{}
-				out[SectionInvestment] = struct{}{}
-				out[SectionFinancials] = struct{}{}
-				out[SectionScores] = struct{}{}
-				out[SectionDividends] = struct{}{}
-				out[SectionFacts] = struct{}{}
-				out[SectionEvents] = struct{}{}
+				for _, defaultSection := range defaultSections {
+					out[defaultSection] = struct{}{}
+				}
 				continue
 			}
 			out[trimmed] = struct{}{}
@@ -228,6 +244,14 @@ func listMetrics(ctx context.Context, database *storage.Database, company compan
 		return nil, err
 	}
 	return repository.ListMetrics(ctx, company, financialmetric.Query{WindowYears: window, Period: period})
+}
+
+func listStatements(ctx context.Context, database *storage.Database, company companyidentity.InspectResult, period financials.PeriodType) ([]financials.Statement, error) {
+	repository, err := financialstatement.NewRepository(database)
+	if err != nil {
+		return nil, err
+	}
+	return repository.ListStatements(ctx, company, financialstatement.Query{Period: period})
 }
 
 func listDividends(ctx context.Context, database *storage.Database, company companyidentity.InspectResult, window int) ([]companyfact.Fact, error) {
@@ -457,8 +481,8 @@ func researchScreenCandidate(summary Summary) *research.ScreenCandidate {
 		valuation := researchValuations(summary.Valuation)[0]
 		candidate.Valuation = &valuation
 	}
-	if len(summary.Facts) > 0 || len(summary.Dividends) > 0 {
-		facts := append(researchFacts(summary.Dividends, "company_fact_v1"), researchFacts(summary.Facts, "company_fact_v1")...)
+	if len(summary.Facts) > 0 {
+		facts := researchFacts(summary.Facts, "company_fact_v1")
 		candidate.Facts = make(map[string]research.CompanyFact, len(facts))
 		for _, fact := range facts {
 			candidate.Facts[researchFactKey(fact)] = fact
