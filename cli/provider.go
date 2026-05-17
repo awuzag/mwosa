@@ -7,6 +7,7 @@ import (
 	appconfig "github.com/ev3rlit/mwosa/app/config"
 	"github.com/ev3rlit/mwosa/providers/builtin"
 	provider "github.com/ev3rlit/mwosa/providers/core"
+	opendartprovider "github.com/ev3rlit/mwosa/providers/opendart"
 	"github.com/samber/oops"
 	"github.com/spf13/cobra"
 )
@@ -426,20 +427,61 @@ func doctorProvider(builder provider.ProviderBuilder, config provider.Config) pr
 func providerOperationCatalog(id provider.ProviderID) *providerOperationCatalogSummary {
 	switch id {
 	case provider.ProviderOpenDART:
+		services := opendartprovider.ServiceCatalog()
 		return &providerOperationCatalogSummary{
-			Command:         "mwosa list provider-apis opendart",
-			KnownOperations: 29,
-			Categories:      []string{"disclosure", "financial", "periodic_report", "material_event"},
-			CanonicalSupport: []string{
-				"company_registry",
-				"filings",
-				"financials",
-				"company_facts/*",
-				"company_events/*",
-			},
+			Command:          "mwosa list provider-apis opendart",
+			KnownOperations:  len(services),
+			Categories:       catalogCategories(services),
+			CanonicalSupport: catalogCanonicalSupport(services),
 		}
 	default:
 		return nil
+	}
+}
+
+func catalogCategories(services []opendartprovider.CatalogService) []string {
+	out := make([]string, 0)
+	seen := map[string]struct{}{}
+	for _, service := range services {
+		value := strings.TrimSpace(service.Category)
+		if value == "" {
+			continue
+		}
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		out = append(out, value)
+	}
+	return out
+}
+
+func catalogCanonicalSupport(services []opendartprovider.CatalogService) []string {
+	out := make([]string, 0)
+	seen := map[string]struct{}{}
+	for _, service := range services {
+		value := compactCanonicalSupport(service.CanonicalSupport)
+		if value == "" {
+			continue
+		}
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		out = append(out, value)
+	}
+	return out
+}
+
+func compactCanonicalSupport(value string) string {
+	trimmed := strings.TrimSpace(value)
+	switch {
+	case strings.HasPrefix(trimmed, "company_facts/"):
+		return "company_facts/*"
+	case strings.HasPrefix(trimmed, "company_events/"):
+		return "company_events/*"
+	default:
+		return trimmed
 	}
 }
 

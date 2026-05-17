@@ -45,6 +45,21 @@ type fakeClient struct {
 	tsstkDpParams   opendartsdk.TsstkDpDecsnParams
 }
 
+func TestServiceCatalogExposesCanonicalSupport(t *testing.T) {
+	catalog := ServiceCatalog()
+	require.Len(t, catalog, 29)
+
+	byOperation := make(map[provider.OperationID]CatalogService, len(catalog))
+	for _, service := range catalog {
+		byOperation[service.Operation] = service
+	}
+
+	require.Equal(t, "company_registry", byOperation[provider.OperationOpenDARTCorpCode].CanonicalSupport)
+	require.Equal(t, "financials", byOperation[provider.OperationOpenDARTSinglAcntAll].CanonicalSupport)
+	require.Equal(t, "company_facts/audit_opinion", byOperation[provider.OperationOpenDARTAuditOpinion].CanonicalSupport)
+	require.Equal(t, "company_events/company_merger", byOperation[provider.OperationOpenDARTCmpMgDecsn].CanonicalSupport)
+}
+
 func (f *fakeClient) CorpCode(context.Context) (*opendartsdk.FileResponse, error) {
 	return &opendartsdk.FileResponse{ContentType: "application/zip", Body: f.corpCodeBody}, nil
 }
