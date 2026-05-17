@@ -15,6 +15,7 @@ const (
 	ProviderDataGo                 ProviderID = "datago"
 	ProviderDataGoCorporateFinance ProviderID = "datago-corpfin"
 	ProviderKRX                    ProviderID = "krx"
+	ProviderOpenDART               ProviderID = "opendart"
 
 	GroupKISDomesticStockQuotation  GroupID = "domesticStockQuotation"
 	GroupKISDomesticStockInstrument GroupID = "domesticStockInstrument"
@@ -30,6 +31,8 @@ const (
 	GroupKRXDerivativesDailyTrade   GroupID = "derivativesDailyTrade"
 	GroupKRXCommodityDailyTrade     GroupID = "commodityDailyTrade"
 	GroupKRXESGReference            GroupID = "esgReference"
+	GroupOpenDARTDisclosure         GroupID = "disclosure"
+	GroupOpenDARTFinancials         GroupID = "financials"
 
 	OperationKISPrice             OperationID = "price"
 	OperationKISDaily             OperationID = "daily"
@@ -79,6 +82,9 @@ const (
 	OperationESGETPInfo           OperationID = "esg_etp_info"
 	OperationSRIBondInfo          OperationID = "sri_bond_info"
 	OperationESGIndexInfo         OperationID = "esg_index_info"
+	OperationOpenDARTCorpCode     OperationID = "corpCode"
+	OperationOpenDARTList         OperationID = "list"
+	OperationOpenDARTSinglAcntAll OperationID = "fnlttSinglAcntAll"
 
 	MarketKRX Market = "krx"
 
@@ -87,9 +93,10 @@ const (
 	SecurityTypeELW   SecurityType = "elw"
 	SecurityTypeStock SecurityType = "stock"
 
-	CredentialScopeKIS    CredentialScope = "kis"
-	CredentialScopeDataGo CredentialScope = "datago"
-	CredentialScopeKRX    CredentialScope = "krx"
+	CredentialScopeKIS      CredentialScope = "kis"
+	CredentialScopeDataGo   CredentialScope = "datago"
+	CredentialScopeKRX      CredentialScope = "krx"
+	CredentialScopeOpenDART CredentialScope = "opendart"
 
 	FreshnessDaily    Freshness = "daily"
 	FreshnessFiling   Freshness = "filing"
@@ -100,14 +107,16 @@ const (
 	DataLatencyPreviousBusinessDay DataLatency = "previous_business_day"
 	DataLatencyHistorical          DataLatency = "historical"
 
-	RoleDailyBar    Role = "daily_bar"
-	RoleFinancials  Role = "financials"
-	RoleInstrument  Role = "instrument"
-	RoleIntradayBar Role = "intraday_bar"
-	RoleIndexBar    Role = "index_bar"
-	RoleOrderbook   Role = "orderbook"
-	RoleQuote       Role = "quote_snapshot"
-	RoleTrades      Role = "trades"
+	RoleCompanyRegistry Role = "company_registry"
+	RoleDailyBar        Role = "daily_bar"
+	RoleFilings         Role = "filings"
+	RoleFinancials      Role = "financials"
+	RoleInstrument      Role = "instrument"
+	RoleIntradayBar     Role = "intraday_bar"
+	RoleIndexBar        Role = "index_bar"
+	RoleOrderbook       Role = "orderbook"
+	RoleQuote           Role = "quote_snapshot"
+	RoleTrades          Role = "trades"
 )
 
 type Compatibility struct {

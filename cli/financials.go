@@ -27,7 +27,12 @@ func newGetFinancialsCommand(opts *Options) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "financials <company>",
 		Short: "Fetch provider-backed financial statements by company name or KRX code",
-		Args:  cobra.ExactArgs(1),
+		Long: `Fetch provider-backed financial statements by company name or KRX code.
+
+With --provider opendart, <company> may be an OpenDART corp_code or a listed-company
+stock_code. stock_code is resolved to corp_code before OpenDART financial API calls;
+corp_code and stock_code remain separate fields in output extensions.`,
+		Args: cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
 			runtime, err := newAppRuntime(opts, true)
 			if err != nil {

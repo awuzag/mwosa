@@ -69,7 +69,7 @@ provider 와 group 을 한 문자열로 합쳐 `datago/securitiesProductPrice` �
 | `datago` | `core` | 한국 ETF, ETN, ELW, 주식 | `candles`, `instrument` | group별 공공 OpenAPI 를 묶는 provider 다. 실시간 quote provider 로 보지 않는다. |
 | `krx` | `planned` | 한국 거래소, 시장, 종목, 지수 | `instrument`, `candles`, `index`, `market` | 국내 종목 reference 와 시장 calendar 보강용이다. |
 | `kiwoom` | `planned` | 한국 주식, ETF | `quote`, `candles`, `orderbook`, `trades` | 국내 실시간/브로커 데이터 확장 대상으로 둔다. 여기서 `trades` 는 시장 체결 데이터이며 계좌 체결내역이 아니다. |
-| `dart` | `reference` | 한국 상장사 공시 | `filings`, `instrument`, `fundamentals` | 기업 공시와 재무 원천 자료 보강용이다. |
+| `opendart` | `reference` | 한국 상장사 공시 | `filings`, `company_registry`, `financials`, `fundamentals` | 기업 공시와 재무 원천 자료 보강용이다. 기존 `dart` 표기는 구현 id가 아니라 이전 자리 표시자로 본다. |
 | `ecos` | `reference` | 한국 거시 지표, 환율, 금리 | `macro`, `fx`, `rates` | 한국 macro context 보강용이다. |
 
 ## 국내 provider group 계획
@@ -109,7 +109,7 @@ provider 와 group 을 한 문자열로 합쳐 `datago/securitiesProductPrice` �
 | provider | 상태 | 호환 범위 | 주요 capability | 비고 |
 | --- | --- | --- | --- | --- |
 | `datago-corpfin` | `core` | 한국 기업 재무정보, KRX 상장종목 식별자 | `financials` | KRX 상장종목정보 API 로 종목명/회사명을 우선 법인등록번호로 해석하고, 보조로 단축코드/ISIN 을 지원한 뒤 금융위원회 기업 재무정보 API 를 조회한다. |
-| `dart` | `reference` | 한국 상장사 공시 | `filings`, `instrument`, `fundamentals` | 국내 기업 리서치의 기본 filing provider 다. |
+| `opendart` | `reference` | 한국 상장사 공시 | `filings`, `company_registry`, `financials`, `fundamentals` | 국내 기업 리서치의 기본 filing provider 다. `corp_code`와 상장회사 `stock_code`를 별도 식별자로 보존한다. |
 | `sec-edgar` | `reference` | 미국 상장사 공시 | `filings`, `instrument` | 10-K, 10-Q, 8-K 같은 미국 공시용이다. |
 | `fmp` | `planned` | 글로벌 재무 | `financials`, `fundamentals`, `earnings` | raw filing 보다 normalized financial API 로 본다. |
 | `finnhub` | `planned` | 글로벌 재무, 이벤트 | `fundamentals`, `earnings`, `news` | 실적 이벤트와 뉴스 context 보강용이다. |
@@ -172,9 +172,9 @@ provider 와 group 을 한 문자열로 합쳐 `datago/securitiesProductPrice` �
 | `intraday_bar` | `kis` | `kiwoom`, `polygon`, `twelve-data` |
 | `orderbook` | `kis` | `kiwoom`, `binance` |
 | `trades` | `kis` | `kiwoom`, `polygon`, `binance`, `coinbase` |
-| `fundamentals` | `dart` | `fmp`, `finnhub`, `alpha-vantage`, `tiingo` |
-| `financials` | `datago-corpfin`, `dart` | `fmp`, `sec-edgar`, `finnhub`, `alpha-vantage` |
-| `filings` | `dart`, `sec-edgar` | `finnhub` |
+| `fundamentals` | `opendart` | `fmp`, `finnhub`, `alpha-vantage`, `tiingo` |
+| `financials` | `datago-corpfin`, `opendart` | `fmp`, `sec-edgar`, `finnhub`, `alpha-vantage` |
+| `filings` | `opendart`, `sec-edgar` | `finnhub` |
 | `news` | `finnhub` | `newsapi`, `gdelt`, `naver-news` |
 | `macro` | `ecos`, `fred` | `world-bank`, `oecd`, `ecb` |
 | `fx` | `ecos` | `alpha-vantage`, `twelve-data`, `ecb`, `stooq` |
@@ -194,3 +194,4 @@ provider 와 group 을 한 문자열로 합쳐 `datago/securitiesProductPrice` �
 - `docs/adr/0003-provider-group-role-registration.md`
 - `docs/providers/datago/README.md`
 - `docs/providers/krx/README.md`
+- `docs/providers/opendart/README.md`

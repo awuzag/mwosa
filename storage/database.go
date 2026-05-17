@@ -194,6 +194,7 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 		{name: "backtest_metric_summaries", model: (*BacktestMetricSummaryRow)(nil)},
 		{name: "backtest_walk_forward_steps", model: (*BacktestWalkForwardStepRow)(nil)},
 		{name: "provider_raw_snapshots", model: (*ProviderRawSnapshotRow)(nil)},
+		{name: "opendart_companies", model: (*OpenDARTCompanyRow)(nil)},
 	}
 	for _, table := range tables {
 		if _, err := db.NewCreateTable().
@@ -434,6 +435,22 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 			name:    "idx_provider_raw_snapshots_operation_date",
 			model:   (*ProviderRawSnapshotRow)(nil),
 			columns: []string{"provider", "operation", "base_date"},
+		},
+		{
+			name:    "opendart_companies_corp_code_unique",
+			model:   (*OpenDARTCompanyRow)(nil),
+			columns: []string{"corp_code"},
+			unique:  true,
+		},
+		{
+			name:    "idx_opendart_companies_stock_code",
+			model:   (*OpenDARTCompanyRow)(nil),
+			columns: []string{"stock_code"},
+		},
+		{
+			name:    "idx_opendart_companies_corp_name",
+			model:   (*OpenDARTCompanyRow)(nil),
+			columns: []string{"corp_name"},
 		},
 	}
 	for _, index := range indexes {
