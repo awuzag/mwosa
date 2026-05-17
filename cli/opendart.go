@@ -8,6 +8,8 @@ import (
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	opendartprovider "github.com/ev3rlit/mwosa/providers/opendart"
 	"github.com/ev3rlit/mwosa/storage"
+	"github.com/ev3rlit/mwosa/storage/companyevent"
+	"github.com/ev3rlit/mwosa/storage/companyidentity"
 	"github.com/ev3rlit/mwosa/storage/opendartcompany"
 	"github.com/ev3rlit/mwosa/storage/providerraw"
 	"github.com/samber/oops"
@@ -32,6 +34,13 @@ type opendartFilingFlags struct {
 	PageCount  string
 }
 
+type companyEventFlags struct {
+	From      string
+	To        string
+	EventType string
+	Limit     int
+}
+
 type opendartAPIListOutput struct {
 	Services []opendartAPIOutputRow `json:"services"`
 }
@@ -49,21 +58,38 @@ type opendartCompanySearchOutput struct {
 }
 
 type opendartCompanySyncOutput struct {
-	Provider  provider.ProviderID          `json:"provider"`
-	Operation provider.OperationID         `json:"operation"`
-	Companies opendartcompany.UpsertResult `json:"companies"`
-	Snapshot  providerraw.WriteResult      `json:"raw_snapshot"`
+	Provider      provider.ProviderID          `json:"provider"`
+	Operation     provider.OperationID         `json:"operation"`
+	Companies     opendartcompany.UpsertResult `json:"companies"`
+	IdentityGraph companyidentity.UpsertResult `json:"identity_graph"`
+	Snapshot      providerraw.WriteResult      `json:"raw_snapshot"`
 }
 
 type opendartFilingOutput struct {
 	Result opendartprovider.FilingResult
 }
 
+type companyInspectOutput struct {
+	Result companyidentity.InspectResult
+}
+
+type companyIdentifiersOutput struct {
+	Result companyidentity.InspectResult
+}
+
+type companyEventsOutput struct {
+	Events []companyevent.Event
+}
+
 func registerOpenDARTCommands(roots commandRoots, opts *Options) {
 	roots.List.AddCommand(newListProviderAPIsCommand(opts))
 	roots.List.AddCommand(newListFilingsCommand(opts))
+	roots.List.AddCommand(newListEventsCommand(opts))
+	roots.Get.AddCommand(newGetCompanyIdentifiersCommand(opts))
+	roots.Inspect.AddCommand(newInspectCompanyCommand(opts))
 	roots.Search.AddCommand(newSearchCompaniesCommand(opts))
 	roots.Sync.AddCommand(newSyncCompaniesCommand(opts))
+	roots.Sync.AddCommand(newSyncEventsCommand(opts))
 }
 
 func newListProviderAPIsCommand(opts *Options) *cobra.Command {
@@ -100,10 +126,263 @@ func newListProviderAPIsCommand(opts *Options) *cobra.Command {
 					Description:      "OpenDART single-company full financial statements; stock_code is resolved to corp_code",
 					CanonicalSupport: "financials",
 				},
+				{
+					Category:         "periodic_report",
+					Group:            string(provider.GroupOpenDARTPeriodicReport),
+					APIID:            string(provider.OperationOpenDARTAlotMatter),
+					Description:      "OpenDART dividend matters from periodic reports",
+					CanonicalSupport: "company_facts/dividends",
+				},
+				{
+					Category:         "periodic_report",
+					Group:            string(provider.GroupOpenDARTPeriodicReport),
+					APIID:            string(provider.OperationOpenDARTTesstkAcqs),
+					Description:      "OpenDART treasury stock acquisition and disposal status from periodic reports",
+					CanonicalSupport: "company_facts/treasury_stock",
+				},
+				{
+					Category:         "periodic_report",
+					Group:            string(provider.GroupOpenDARTPeriodicReport),
+					APIID:            string(provider.OperationOpenDARTHyslrSttus),
+					Description:      "OpenDART major shareholder status from periodic reports",
+					CanonicalSupport: "company_facts/major_shareholder",
+				},
+				{
+					Category:         "periodic_report",
+					Group:            string(provider.GroupOpenDARTPeriodicReport),
+					APIID:            string(provider.OperationOpenDARTHyslrChg),
+					Description:      "OpenDART major shareholder changes from periodic reports",
+					CanonicalSupport: "company_facts/major_shareholder_change",
+				},
+				{
+					Category:         "periodic_report",
+					Group:            string(provider.GroupOpenDARTPeriodicReport),
+					APIID:            string(provider.OperationOpenDARTEmpSttus),
+					Description:      "OpenDART employee status from periodic reports",
+					CanonicalSupport: "company_facts/employee",
+				},
+				{
+					Category:         "periodic_report",
+					Group:            string(provider.GroupOpenDARTPeriodicReport),
+					APIID:            string(provider.OperationOpenDARTAuditOpinion),
+					Description:      "OpenDART auditor name and audit opinion from periodic reports",
+					CanonicalSupport: "company_facts/audit_opinion",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTDfOcr),
+					Description:      "OpenDART default occurrence reports",
+					CanonicalSupport: "company_events/default_occurrence",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTPiicDecsn),
+					Description:      "OpenDART paid-in capital increase decisions from material event reports",
+					CanonicalSupport: "company_events/paid_in_capital_increase",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTFricDecsn),
+					Description:      "OpenDART free capital increase decisions from material event reports",
+					CanonicalSupport: "company_events/free_capital_increase",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTPifricDecsn),
+					Description:      "OpenDART paid-in and free capital increase decisions from material event reports",
+					CanonicalSupport: "company_events/paid_in_free_capital_increase",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTCrDecsn),
+					Description:      "OpenDART capital reduction decisions from material event reports",
+					CanonicalSupport: "company_events/capital_reduction",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTBnkMngtPcbg),
+					Description:      "OpenDART bank management procedure start reports",
+					CanonicalSupport: "company_events/bank_management_procedure_start",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTLwstLg),
+					Description:      "OpenDART lawsuit filing reports",
+					CanonicalSupport: "company_events/lawsuit_filing",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTBsnInhDecsn),
+					Description:      "OpenDART business transfer-in decisions from material event reports",
+					CanonicalSupport: "company_events/business_transfer_in",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTBsnTrfDecsn),
+					Description:      "OpenDART business transfer-out decisions from material event reports",
+					CanonicalSupport: "company_events/business_transfer_out",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTTgastInhDecsn),
+					Description:      "OpenDART tangible asset transfer-in decisions from material event reports",
+					CanonicalSupport: "company_events/tangible_asset_transfer_in",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTTgastTrfDecsn),
+					Description:      "OpenDART tangible asset transfer-out decisions from material event reports",
+					CanonicalSupport: "company_events/tangible_asset_transfer_out",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTCvbdIsDecsn),
+					Description:      "OpenDART convertible bond issuance decisions from material event reports",
+					CanonicalSupport: "company_events/convertible_bond_issuance",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTBdwtIsDecsn),
+					Description:      "OpenDART bond with warrant issuance decisions from material event reports",
+					CanonicalSupport: "company_events/bond_with_warrant_issuance",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTExbdIsDecsn),
+					Description:      "OpenDART exchangeable bond issuance decisions from material event reports",
+					CanonicalSupport: "company_events/exchangeable_bond_issuance",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTCmpMgDecsn),
+					Description:      "OpenDART company merger decisions from material event reports",
+					CanonicalSupport: "company_events/company_merger",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTCmpDvDecsn),
+					Description:      "OpenDART company division decisions from material event reports",
+					CanonicalSupport: "company_events/company_division",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTCmpDvmgDecsn),
+					Description:      "OpenDART company division merger decisions from material event reports",
+					CanonicalSupport: "company_events/company_division_merger",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTStkExtrDecsn),
+					Description:      "OpenDART stock exchange or transfer decisions from material event reports",
+					CanonicalSupport: "company_events/stock_exchange_transfer",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTTsstkAqDecsn),
+					Description:      "OpenDART treasury stock acquisition decisions from material event reports",
+					CanonicalSupport: "company_events/treasury_stock_acquisition",
+				},
+				{
+					Category:         "material_event",
+					Group:            string(provider.GroupOpenDARTMaterialEvents),
+					APIID:            string(provider.OperationOpenDARTTsstkDpDecsn),
+					Description:      "OpenDART treasury stock disposal decisions from material event reports",
+					CanonicalSupport: "company_events/treasury_stock_disposal",
+				},
 			}
 			return opendartAPIListOutput{Services: rows}, nil
 		}),
 	}
+}
+
+type companyEventsSyncOutput struct {
+	Company companyidentity.Company                  `json:"company"`
+	Events  companyevent.UpsertResult                `json:"events"`
+	Source  opendartprovider.CompanyEventBatchResult `json:"source"`
+}
+
+func newSyncEventsCommand(opts *Options) *cobra.Command {
+	flags := companyEventFlags{}
+	cmd := &cobra.Command{
+		Use:   "events <company>",
+		Short: "Fetch provider-backed material events and store canonical rows",
+		Long: strings.TrimSpace(`Fetch provider-backed material events and store canonical rows.
+
+With --provider opendart, this currently canonicalizes default, bank-management,
+lawsuit, capital increase/reduction, business/asset transfer, CB/BW/EB,
+merger/division, stock exchange/transfer, and treasury-stock decision APIs into
+company_event_v1. Additional material event APIs remain separate until each
+operation has an explicit mapping.`),
+		Args: cobra.ExactArgs(1),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			if err := loadConfig(opts); err != nil {
+				return nil, err
+			}
+			if err := requireOpenDARTProvider(opts, "sync events"); err != nil {
+				return nil, err
+			}
+			p, err := buildOpenDARTProvider(opts)
+			if err != nil {
+				return nil, err
+			}
+			database := storage.NewDatabase(opts.Database)
+			defer func() {
+				err = oops.Join(err, database.Close())
+			}()
+			companyRepository, err := companyidentity.NewRepository(database)
+			if err != nil {
+				return nil, err
+			}
+			company, err := companyRepository.Inspect(cmd.Context(), args[0])
+			if err != nil {
+				return nil, err
+			}
+			corpCode, err := dartCorpCode(company)
+			if err != nil {
+				return nil, err
+			}
+			source, err := p.FetchMaterialEvents(cmd.Context(), opendartprovider.EventRequest{
+				CorpCode: corpCode,
+				From:     flags.From,
+				To:       flags.To,
+			})
+			if err != nil {
+				return nil, err
+			}
+			eventRepository, err := companyevent.NewRepository(database)
+			if err != nil {
+				return nil, err
+			}
+			upsert, err := eventRepository.UpsertEvents(cmd.Context(), company, openDARTEventsToStorage(source.Events))
+			if err != nil {
+				return nil, err
+			}
+			source.Events = nil
+			return companyEventsSyncOutput{Company: company.Company, Events: upsert, Source: source}, nil
+		}),
+	}
+	cmd.Flags().StringVar(&flags.From, "from", flags.From, "event filing start date, YYYYMMDD or YYYY-MM-DD")
+	cmd.Flags().StringVar(&flags.To, "to", flags.To, "event filing end date, YYYYMMDD or YYYY-MM-DD")
+	return cmd
 }
 
 func newSyncCompaniesCommand(opts *Options) *cobra.Command {
@@ -144,6 +423,14 @@ KRX stock_code; stock_code is stored only as a listed-company mapping.`),
 			if err != nil {
 				return nil, err
 			}
+			identityRepository, err := companyidentity.NewRepository(database)
+			if err != nil {
+				return nil, err
+			}
+			identityResult, err := identityRepository.UpsertCompanies(cmd.Context(), openDARTCompaniesToCanonical(registryResult.Companies))
+			if err != nil {
+				return nil, err
+			}
 			rawRepository, err := providerraw.NewRepository(database)
 			if err != nil {
 				return nil, err
@@ -161,14 +448,78 @@ KRX stock_code; stock_code is stored only as a listed-company mapping.`),
 				return nil, err
 			}
 			return opendartCompanySyncOutput{
-				Provider:  provider.ProviderOpenDART,
-				Operation: provider.OperationOpenDARTCorpCode,
-				Companies: companyResult,
-				Snapshot:  snapshot,
+				Provider:      provider.ProviderOpenDART,
+				Operation:     provider.OperationOpenDARTCorpCode,
+				Companies:     companyResult,
+				IdentityGraph: identityResult,
+				Snapshot:      snapshot,
 			}, nil
 		}),
 	}
 	cmd.Flags().BoolVar(&flags.ListedOnly, "listed-only", flags.ListedOnly, "store only companies with OpenDART stock_code")
+	return cmd
+}
+
+func newGetCompanyIdentifiersCommand(opts *Options) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "company-identifiers <company>",
+		Short: "List canonical company identifiers",
+		Long: strings.TrimSpace(`List canonical company identifiers.
+
+The query is resolved from local company_v1 and company_identifier_v1 rows. OpenDART
+corp_code and KRX stock_code are both identifiers, not canonical company keys.`),
+		Args: cobra.ExactArgs(1),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			if err := loadConfig(opts); err != nil {
+				return nil, err
+			}
+			database := storage.NewDatabase(opts.Database)
+			defer func() {
+				err = oops.Join(err, database.Close())
+			}()
+			repository, err := companyidentity.NewRepository(database)
+			if err != nil {
+				return nil, err
+			}
+			inspect, err := repository.Inspect(cmd.Context(), args[0])
+			if err != nil {
+				return nil, err
+			}
+			return companyIdentifiersOutput{Result: inspect}, nil
+		}),
+	}
+	return cmd
+}
+
+func newInspectCompanyCommand(opts *Options) *cobra.Command {
+	cmd := &cobra.Command{
+		Use:   "company <company>",
+		Short: "Inspect one canonical company",
+		Long: strings.TrimSpace(`Inspect one canonical company.
+
+The query is resolved from local company_v1 and company_identifier_v1 rows. Use
+sync companies --provider opendart to populate the initial Korean listed-company
+identity graph from corpCode.xml.`),
+		Args: cobra.ExactArgs(1),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			if err := loadConfig(opts); err != nil {
+				return nil, err
+			}
+			database := storage.NewDatabase(opts.Database)
+			defer func() {
+				err = oops.Join(err, database.Close())
+			}()
+			repository, err := companyidentity.NewRepository(database)
+			if err != nil {
+				return nil, err
+			}
+			inspect, err := repository.Inspect(cmd.Context(), args[0])
+			if err != nil {
+				return nil, err
+			}
+			return companyInspectOutput{Result: inspect}, nil
+		}),
+	}
 	return cmd
 }
 
@@ -266,6 +617,59 @@ OpenDART. Use --corp-code to bypass stock_code resolution.`),
 	return cmd
 }
 
+func newListEventsCommand(opts *Options) *cobra.Command {
+	flags := companyEventFlags{Limit: 50}
+	cmd := &cobra.Command{
+		Use:   "events <company>",
+		Short: "List stored canonical company events",
+		Long: strings.TrimSpace(`List stored canonical company events.
+
+This reads company_event_v1 from local SQLite. Use sync events --provider
+opendart to fetch canonicalized OpenDART material events first.`),
+		Args: cobra.ExactArgs(1),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			if err := loadConfig(opts); err != nil {
+				return nil, err
+			}
+			database := storage.NewDatabase(opts.Database)
+			defer func() {
+				err = oops.Join(err, database.Close())
+			}()
+			companyRepository, err := companyidentity.NewRepository(database)
+			if err != nil {
+				return nil, err
+			}
+			company, err := companyRepository.Inspect(cmd.Context(), args[0])
+			if err != nil {
+				return nil, err
+			}
+			eventRepository, err := companyevent.NewRepository(database)
+			if err != nil {
+				return nil, err
+			}
+			events, err := eventRepository.ListEvents(cmd.Context(), company, companyevent.Query{
+				Provider:  provider.ProviderID(opts.Provider),
+				EventType: flags.EventType,
+				From:      flags.From,
+				To:        flags.To,
+				Limit:     flags.Limit,
+			})
+			if err != nil {
+				return nil, err
+			}
+			if len(events) == 0 {
+				return nil, oops.In("cli").With("company", args[0], "from", flags.From, "provider", opts.Provider).New("stored company events not found")
+			}
+			return companyEventsOutput{Events: events}, nil
+		}),
+	}
+	cmd.Flags().StringVar(&flags.From, "from", flags.From, "event date lower bound, YYYY-MM-DD")
+	cmd.Flags().StringVar(&flags.To, "to", flags.To, "event date upper bound, YYYY-MM-DD")
+	cmd.Flags().StringVar(&flags.EventType, "event-type", flags.EventType, "event type filter")
+	cmd.Flags().IntVar(&flags.Limit, "limit", flags.Limit, "maximum event rows to return")
+	return cmd
+}
+
 func requireOpenDARTProvider(opts *Options, command string) error {
 	selected := ""
 	if opts != nil {
@@ -296,6 +700,114 @@ func buildOpenDARTProvider(opts *Options) (*opendartprovider.Provider, error) {
 
 func (o opendartAPIListOutput) JSONValue() any {
 	return o.Services
+}
+
+func openDARTCompaniesToCanonical(companies []opendartprovider.Company) []companyidentity.CompanyInput {
+	inputs := make([]companyidentity.CompanyInput, 0, len(companies))
+	for _, company := range companies {
+		identifiers := []companyidentity.IdentifierInput{
+			{
+				Provider:        provider.ProviderOpenDART,
+				Group:           provider.GroupOpenDARTDisclosure,
+				Operation:       provider.OperationOpenDARTCorpCode,
+				IdentifierType:  companyidentity.IdentifierTypeDARTCorpCode,
+				IdentifierValue: strings.TrimSpace(company.CorpCode),
+				Primary:         true,
+				Confidence:      1,
+				SourceUpdatedAt: strings.TrimSpace(company.ModifyDate),
+			},
+		}
+		stockCode := strings.TrimSpace(company.StockCode)
+		if stockCode != "" {
+			identifiers = append(identifiers, companyidentity.IdentifierInput{
+				Provider:        provider.ProviderOpenDART,
+				Group:           provider.GroupOpenDARTDisclosure,
+				Operation:       provider.OperationOpenDARTCorpCode,
+				IdentifierType:  companyidentity.IdentifierTypeKRXStockCode,
+				IdentifierValue: stockCode,
+				Primary:         false,
+				Confidence:      1,
+				SourceUpdatedAt: strings.TrimSpace(company.ModifyDate),
+			})
+		}
+		input := companyidentity.CompanyInput{
+			Name:        strings.TrimSpace(company.CorpName),
+			LegalName:   strings.TrimSpace(company.CorpName),
+			EnglishName: strings.TrimSpace(company.CorpEngName),
+			CountryCode: "KR",
+			Identifiers: identifiers,
+		}
+		if stockCode != "" {
+			input.InstrumentRef = companyidentity.InstrumentRef{
+				Market:       provider.MarketKRX,
+				SecurityType: provider.SecurityTypeStock,
+				Symbol:       stockCode,
+				Name:         strings.TrimSpace(company.CorpName),
+				RelationType: companyidentity.RelationTypeIssuer,
+			}
+		}
+		inputs = append(inputs, input)
+	}
+	return inputs
+}
+
+func (o companyInspectOutput) JSONValue() any {
+	return o.Result
+}
+
+func (o companyInspectOutput) TableRows() ([]string, [][]string) {
+	rows := [][]string{
+		{"company", "id", fmt.Sprint(o.Result.Company.ID), ""},
+		{"company", "name", o.Result.Company.Name, ""},
+		{"company", "legal_name", o.Result.Company.LegalName, ""},
+		{"company", "english_name", o.Result.Company.EnglishName, ""},
+		{"company", "country_code", o.Result.Company.CountryCode, ""},
+	}
+	for _, identifier := range o.Result.Identifiers {
+		rows = append(rows, []string{
+			"identifier",
+			identifier.IdentifierType,
+			identifier.IdentifierValue,
+			string(identifier.Provider) + "/" + string(identifier.Group) + "/" + string(identifier.Operation),
+		})
+	}
+	for _, link := range o.Result.Instruments {
+		rows = append(rows, []string{
+			"instrument",
+			link.RelationType,
+			string(link.Market) + "/" + string(link.SecurityType) + "/" + link.Symbol,
+			link.Name,
+		})
+	}
+	return []string{"section", "key", "value", "source"}, rows
+}
+
+func (o companyIdentifiersOutput) JSONValue() any {
+	return o.Result.Identifiers
+}
+
+func (o companyIdentifiersOutput) NDJSONRows() any {
+	return o.Result.Identifiers
+}
+
+func (o companyIdentifiersOutput) CSVRows() any {
+	return o.Result.Identifiers
+}
+
+func (o companyIdentifiersOutput) TableRows() ([]string, [][]string) {
+	rows := make([][]string, 0, len(o.Result.Identifiers))
+	for _, identifier := range o.Result.Identifiers {
+		rows = append(rows, []string{
+			identifier.IdentifierType,
+			identifier.IdentifierValue,
+			string(identifier.Provider),
+			string(identifier.Group),
+			string(identifier.Operation),
+			fmt.Sprint(identifier.Primary),
+			fmt.Sprintf("%.2f", identifier.Confidence),
+		})
+	}
+	return []string{"identifier_type", "identifier_value", "provider", "group", "operation", "primary", "confidence"}, rows
 }
 
 func (o opendartAPIListOutput) NDJSONRows() any {
@@ -363,4 +875,61 @@ func (o opendartFilingOutput) TableRows() ([]string, [][]string) {
 		rows = append(rows, []string{item.CorpCode, item.StockCode, item.CorpName, item.Report, item.ReceiptNo, item.ReceiptAt, item.Remark})
 	}
 	return []string{"corp_code", "stock_code", "corp_name", "report_nm", "rcept_no", "rcept_dt", "rm"}, rows
+}
+
+func (o companyEventsOutput) JSONValue() any {
+	return o.Events
+}
+
+func (o companyEventsOutput) NDJSONRows() any {
+	return o.Events
+}
+
+func (o companyEventsOutput) CSVRows() any {
+	return o.Events
+}
+
+func (o companyEventsOutput) TableRows() ([]string, [][]string) {
+	rows := make([][]string, 0, len(o.Events))
+	for _, event := range o.Events {
+		rows = append(rows, []string{
+			event.EventDate,
+			event.EventType,
+			event.Title,
+			event.ValueText,
+			event.RceptNo,
+			string(event.Provider) + "/" + string(event.Group) + "/" + string(event.Operation),
+		})
+	}
+	return []string{"event_date", "event_type", "title", "value_text", "rcept_no", "source"}, rows
+}
+
+func (o companyEventsSyncOutput) TableRows() ([]string, [][]string) {
+	return []string{"company_id", "company", "events_written", "provider", "sources"}, [][]string{{
+		fmt.Sprint(o.Company.ID),
+		o.Company.Name,
+		fmt.Sprint(o.Events.EventsWritten),
+		string(o.Source.Provider),
+		fmt.Sprint(len(o.Source.Sources)),
+	}}
+}
+
+func openDARTEventsToStorage(events []opendartprovider.CompanyEvent) []companyevent.EventInput {
+	out := make([]companyevent.EventInput, 0, len(events))
+	for _, event := range events {
+		out = append(out, companyevent.EventInput{
+			EventType:   event.EventType,
+			EventDate:   event.EventDate,
+			RceptDt:     event.RceptDt,
+			RceptNo:     event.RceptNo,
+			Provider:    event.Provider,
+			Group:       event.Group,
+			Operation:   event.Operation,
+			Title:       event.Title,
+			AmountMinor: event.AmountMinor,
+			ValueText:   event.ValueText,
+			Raw:         event.Raw,
+		})
+	}
+	return out
 }

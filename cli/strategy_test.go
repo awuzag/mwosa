@@ -12,7 +12,9 @@ import (
 
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
+	"github.com/ev3rlit/mwosa/providers/core/financials"
 	"github.com/ev3rlit/mwosa/storage"
+	"github.com/ev3rlit/mwosa/storage/companyidentity"
 	dailybarstorage "github.com/ev3rlit/mwosa/storage/dailybar"
 )
 
@@ -178,6 +180,32 @@ func TestScreenETFExecutesInlineJQWithoutSavedStrategy(t *testing.T) {
 	}
 	if strings.Contains(historyOut.String(), `"result_count"`) {
 		t.Fatalf("inline jq screen should not create saved screen history:\n%s", historyOut.String())
+	}
+}
+
+func TestScreenStockReadsFinancialMetricAndValuationDataset(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	databasePath := filepath.Join(dir, "mwosa.db")
+	seedStrategyStockFundamentals(t, ctx, databasePath)
+
+	var out bytes.Buffer
+	cmd := NewRootCommand(BuildInfo{})
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	if err := executeForTest(t, ctx, cmd,
+		"--config", filepath.Join(dir, "config.json"),
+		"--database", databasePath,
+		"--output", "json",
+		"screen", "stock",
+		"--jq", `map(select(.financial_metrics.roe.value_bp == 1800 and .valuation.per_bp == 120000 and .fundamental_scores.quality_score == 72 and .fundamental_scores.valuation_score == 82 and .company_facts.audit_opinion.value_text == "적정" and .company_events[0].event_type == "company_merger"))`,
+	); err != nil {
+		t.Fatalf("screen stock: %v\n%s", err, out.String())
+	}
+	for _, want := range []string{`"input_dataset": "stock_daily_metrics"`, `"result_count": 1`, `"symbol": "005930"`, `"financial_metrics"`, `"valuation"`, `"fundamental_scores"`, `"company_facts"`, `"company_events"`} {
+		if !strings.Contains(out.String(), want) {
+			t.Fatalf("screen stock output missing %q in:\n%s", want, out.String())
+		}
 	}
 }
 
@@ -492,6 +520,163 @@ func seedStrategyDailyBars(t *testing.T, ctx context.Context, databasePath strin
 	}
 	if err := database.Close(); err != nil {
 		t.Fatalf("close seeded database: %v", err)
+	}
+}
+
+func seedStrategyStockFundamentals(t *testing.T, ctx context.Context, databasePath string) {
+	t.Helper()
+	database := storage.NewDatabase(databasePath)
+	t.Cleanup(func() {
+		if err := database.Close(); err != nil {
+			t.Fatalf("close stock seed database: %v", err)
+		}
+	})
+	_, writer, err := dailybarstorage.NewRepositories(database)
+	if err != nil {
+		t.Fatalf("new daily bar repositories: %v", err)
+	}
+	if _, err := writer.UpsertDailyBars(ctx, []dailybar.Bar{
+		{
+			Provider:     provider.ProviderDataGo,
+			Group:        provider.GroupStockPrice,
+			Operation:    provider.OperationGetStockPriceInfo,
+			Market:       provider.MarketKRX,
+			SecurityType: provider.SecurityTypeStock,
+			Symbol:       "005930",
+			Name:         "삼성전자",
+			TradingDate:  "2026-05-16",
+			Close:        "70000",
+			MarketCap:    "1000000000",
+		},
+	}); err != nil {
+		t.Fatalf("seed stock daily bars: %v", err)
+	}
+	companyRepository, err := companyidentity.NewRepository(database)
+	if err != nil {
+		t.Fatalf("company identity repository: %v", err)
+	}
+	_, err = companyRepository.UpsertCompanies(ctx, []companyidentity.CompanyInput{
+		{
+			Name:        "삼성전자",
+			LegalName:   "삼성전자",
+			CountryCode: "KR",
+			Identifiers: []companyidentity.IdentifierInput{
+				{
+					Provider:        provider.ProviderOpenDART,
+					Group:           provider.GroupOpenDARTDisclosure,
+					Operation:       provider.OperationOpenDARTCorpCode,
+					IdentifierType:  companyidentity.IdentifierTypeDARTCorpCode,
+					IdentifierValue: "00126380",
+					Primary:         true,
+					Confidence:      1,
+				},
+				{
+					Provider:        provider.ProviderOpenDART,
+					Group:           provider.GroupOpenDARTDisclosure,
+					Operation:       provider.OperationOpenDARTCorpCode,
+					IdentifierType:  companyidentity.IdentifierTypeKRXStockCode,
+					IdentifierValue: "005930",
+					Confidence:      1,
+				},
+			},
+			InstrumentRef: companyidentity.InstrumentRef{
+				Market:       provider.MarketKRX,
+				SecurityType: provider.SecurityTypeStock,
+				Symbol:       "005930",
+				Name:         "삼성전자",
+				RelationType: companyidentity.RelationTypeIssuer,
+			},
+		},
+	})
+	if err != nil {
+		t.Fatalf("upsert stock company identity: %v", err)
+	}
+	company, err := companyRepository.Inspect(ctx, "005930")
+	if err != nil {
+		t.Fatalf("inspect stock company identity: %v", err)
+	}
+	client, err := database.Client(ctx)
+	if err != nil {
+		t.Fatalf("database client: %v", err)
+	}
+	nowMS := time.Now().UTC().UnixMilli()
+	roe := int64(1800)
+	metric := storage.FinancialMetricV1Row{
+		CompanyID:      company.Company.ID,
+		InstrumentID:   company.Instruments[0].InstrumentID,
+		Metric:         "roe",
+		FiscalYear:     "2025",
+		FiscalPeriod:   string(financials.PeriodTypeAnnual),
+		AsOfDate:       "2025-12-31",
+		ValueBP:        &roe,
+		FormulaVersion: "financialmetrics/v1",
+		ProvenanceJSON: "{}",
+		CreatedAtMS:    nowMS,
+		UpdatedAtMS:    nowMS,
+	}
+	if _, err := client.NewInsert().Model(&metric).Exec(ctx); err != nil {
+		t.Fatalf("insert stock financial metric: %v", err)
+	}
+	per := int64(120000)
+	marketCap := int64(1000000000)
+	valuation := storage.ValuationSnapshotV1Row{
+		CompanyID:           company.Company.ID,
+		InstrumentID:        company.Instruments[0].InstrumentID,
+		AsOfDate:            "2026-05-16",
+		SourcePriceDate:     "2026-05-16",
+		MarketCapMinor:      &marketCap,
+		PerBP:               &per,
+		MetricSourceVersion: "valuation/v1",
+		ProvenanceJSON:      "{}",
+		UncomputableJSON:    "{}",
+		CreatedAtMS:         nowMS,
+		UpdatedAtMS:         nowMS,
+	}
+	if _, err := client.NewInsert().Model(&valuation).Exec(ctx); err != nil {
+		t.Fatalf("insert stock valuation: %v", err)
+	}
+	fact := storage.CompanyFactV1Row{
+		CompanyID:                      company.Company.ID,
+		InstrumentID:                   company.Instruments[0].InstrumentID,
+		Provider:                       string(provider.ProviderOpenDART),
+		ProviderGroup:                  string(provider.GroupOpenDARTPeriodicReport),
+		Operation:                      string(provider.OperationOpenDARTAuditOpinion),
+		ProviderCompanyIdentifierType:  companyidentity.IdentifierTypeDARTCorpCode,
+		ProviderCompanyIdentifierValue: "00126380",
+		FactType:                       "audit_opinion",
+		FiscalYear:                     "2025",
+		ReportCode:                     "11011",
+		RceptNo:                        "20260331000123",
+		FactDate:                       "2025-12-31",
+		Key:                            "audit_opinion",
+		ValueText:                      "적정",
+		RawJSON:                        "{}",
+		CreatedAtMS:                    nowMS,
+		UpdatedAtMS:                    nowMS,
+	}
+	if _, err := client.NewInsert().Model(&fact).Exec(ctx); err != nil {
+		t.Fatalf("insert stock company fact: %v", err)
+	}
+	event := storage.CompanyEventV1Row{
+		CompanyID:     company.Company.ID,
+		InstrumentID:  company.Instruments[0].InstrumentID,
+		EventType:     "company_merger",
+		EventDate:     "2026-05-10",
+		RceptDt:       "20260510",
+		RceptNo:       "20260510000123",
+		Provider:      string(provider.ProviderOpenDART),
+		ProviderGroup: string(provider.GroupOpenDARTMaterialEvents),
+		Operation:     string(provider.OperationOpenDARTCmpMgDecsn),
+		Title:         "합병 결정",
+		RawJSON:       "{}",
+		CreatedAtMS:   nowMS,
+		UpdatedAtMS:   nowMS,
+	}
+	if _, err := client.NewInsert().Model(&event).Exec(ctx); err != nil {
+		t.Fatalf("insert stock company event: %v", err)
+	}
+	if err := database.Close(); err != nil {
+		t.Fatalf("close seeded stock database: %v", err)
 	}
 }
 

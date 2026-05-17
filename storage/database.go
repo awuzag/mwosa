@@ -195,6 +195,15 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 		{name: "backtest_walk_forward_steps", model: (*BacktestWalkForwardStepRow)(nil)},
 		{name: "provider_raw_snapshots", model: (*ProviderRawSnapshotRow)(nil)},
 		{name: "opendart_companies", model: (*OpenDARTCompanyRow)(nil)},
+		{name: "company_v1", model: (*CompanyV1Row)(nil)},
+		{name: "company_identifier_v1", model: (*CompanyIdentifierV1Row)(nil)},
+		{name: "instrument_company_link_v1", model: (*InstrumentCompanyLinkV1Row)(nil)},
+		{name: "financial_statement_v1", model: (*FinancialStatementV1Row)(nil)},
+		{name: "financial_line_item_v1", model: (*FinancialLineItemV1Row)(nil)},
+		{name: "financial_metric_v1", model: (*FinancialMetricV1Row)(nil)},
+		{name: "valuation_snapshot_v1", model: (*ValuationSnapshotV1Row)(nil)},
+		{name: "company_fact_v1", model: (*CompanyFactV1Row)(nil)},
+		{name: "company_event_v1", model: (*CompanyEventV1Row)(nil)},
 	}
 	for _, table := range tables {
 		if _, err := db.NewCreateTable().
@@ -451,6 +460,124 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 			name:    "idx_opendart_companies_corp_name",
 			model:   (*OpenDARTCompanyRow)(nil),
 			columns: []string{"corp_name"},
+		},
+		{
+			name:    "idx_company_v1_name",
+			model:   (*CompanyV1Row)(nil),
+			columns: []string{"name"},
+		},
+		{
+			name:    "company_identifier_v1_natural_key",
+			model:   (*CompanyIdentifierV1Row)(nil),
+			columns: []string{"provider", "provider_group", "operation", "identifier_type", "identifier_value", "valid_from"},
+			unique:  true,
+		},
+		{
+			name:    "idx_company_identifier_v1_company",
+			model:   (*CompanyIdentifierV1Row)(nil),
+			columns: []string{"company_id"},
+		},
+		{
+			name:    "idx_company_identifier_v1_type_value",
+			model:   (*CompanyIdentifierV1Row)(nil),
+			columns: []string{"identifier_type", "identifier_value"},
+		},
+		{
+			name:    "instrument_company_link_v1_natural_key",
+			model:   (*InstrumentCompanyLinkV1Row)(nil),
+			columns: []string{"instrument_id", "company_id", "relation_type", "valid_from"},
+			unique:  true,
+		},
+		{
+			name:    "idx_instrument_company_link_v1_company",
+			model:   (*InstrumentCompanyLinkV1Row)(nil),
+			columns: []string{"company_id"},
+		},
+		{
+			name:    "financial_statement_v1_natural_key",
+			model:   (*FinancialStatementV1Row)(nil),
+			columns: []string{"company_id", "instrument_id", "provider", "provider_group", "operation", "rcept_no", "fiscal_year", "report_code", "fs_div", "statement_type"},
+			unique:  true,
+		},
+		{
+			name:    "idx_financial_statement_v1_company_year",
+			model:   (*FinancialStatementV1Row)(nil),
+			columns: []string{"company_id", "fiscal_year", "fiscal_period"},
+		},
+		{
+			name:    "financial_line_item_v1_natural_key",
+			model:   (*FinancialLineItemV1Row)(nil),
+			columns: []string{"statement_id", "account_id", "account_name", "period_name", "ord"},
+			unique:  true,
+		},
+		{
+			name:    "idx_financial_line_item_v1_statement",
+			model:   (*FinancialLineItemV1Row)(nil),
+			columns: []string{"statement_id"},
+		},
+		{
+			name:    "idx_financial_line_item_v1_canonical",
+			model:   (*FinancialLineItemV1Row)(nil),
+			columns: []string{"canonical_account"},
+		},
+		{
+			name:    "financial_metric_v1_natural_key",
+			model:   (*FinancialMetricV1Row)(nil),
+			columns: []string{"company_id", "instrument_id", "metric", "fiscal_year", "fiscal_period", "as_of_date", "formula_version"},
+			unique:  true,
+		},
+		{
+			name:    "idx_financial_metric_v1_company_metric",
+			model:   (*FinancialMetricV1Row)(nil),
+			columns: []string{"company_id", "metric", "fiscal_year", "fiscal_period"},
+		},
+		{
+			name:    "idx_financial_metric_v1_instrument_metric",
+			model:   (*FinancialMetricV1Row)(nil),
+			columns: []string{"instrument_id", "metric", "as_of_date"},
+		},
+		{
+			name:    "valuation_snapshot_v1_natural_key",
+			model:   (*ValuationSnapshotV1Row)(nil),
+			columns: []string{"company_id", "instrument_id", "as_of_date", "metric_source_version"},
+			unique:  true,
+		},
+		{
+			name:    "idx_valuation_snapshot_v1_instrument_date",
+			model:   (*ValuationSnapshotV1Row)(nil),
+			columns: []string{"instrument_id", "as_of_date"},
+		},
+		{
+			name:    "company_fact_v1_natural_key",
+			model:   (*CompanyFactV1Row)(nil),
+			columns: []string{"company_id", "instrument_id", "provider", "provider_group", "operation", "fact_type", "fiscal_year", "report_code", "rcept_no", "key"},
+			unique:  true,
+		},
+		{
+			name:    "idx_company_fact_v1_company_type",
+			model:   (*CompanyFactV1Row)(nil),
+			columns: []string{"company_id", "fact_type", "fiscal_year"},
+		},
+		{
+			name:    "idx_company_fact_v1_instrument_type_date",
+			model:   (*CompanyFactV1Row)(nil),
+			columns: []string{"instrument_id", "fact_type", "fact_date"},
+		},
+		{
+			name:    "company_event_v1_natural_key",
+			model:   (*CompanyEventV1Row)(nil),
+			columns: []string{"company_id", "instrument_id", "provider", "provider_group", "operation", "event_type", "rcept_no", "title"},
+			unique:  true,
+		},
+		{
+			name:    "idx_company_event_v1_company_date",
+			model:   (*CompanyEventV1Row)(nil),
+			columns: []string{"company_id", "event_date", "rcept_dt"},
+		},
+		{
+			name:    "idx_company_event_v1_instrument_type_date",
+			model:   (*CompanyEventV1Row)(nil),
+			columns: []string{"instrument_id", "event_type", "event_date"},
 		},
 	}
 	for _, index := range indexes {

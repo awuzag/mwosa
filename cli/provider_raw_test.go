@@ -1,0 +1,62 @@
+package cli
+
+import (
+	"bytes"
+	"context"
+	"path/filepath"
+	"strings"
+	"testing"
+
+	provider "github.com/ev3rlit/mwosa/providers/core"
+	"github.com/ev3rlit/mwosa/storage"
+	"github.com/ev3rlit/mwosa/storage/providerraw"
+)
+
+func TestGetProviderRawSnapshotsReadsStoredPayload(t *testing.T) {
+	ctx := context.Background()
+	dir := t.TempDir()
+	databasePath := filepath.Join(dir, "mwosa.db")
+	database := storage.NewDatabase(databasePath)
+	repository, err := providerraw.NewRepository(database)
+	if err != nil {
+		t.Fatalf("provider raw repository: %v", err)
+	}
+	_, err = repository.UpsertSnapshot(ctx, providerraw.Snapshot{
+		Provider:         provider.ProviderOpenDART,
+		Group:            provider.GroupOpenDARTDisclosure,
+		Operation:        provider.OperationOpenDARTCorpCode,
+		BaseDate:         "2026-05-17",
+		CanonicalSupport: "company_registry",
+		Rows: []map[string]string{
+			{"corp_code": "00126380", "corp_name": "삼성전자"},
+		},
+		RowCount: 1,
+	})
+	if err != nil {
+		t.Fatalf("seed provider raw snapshot: %v", err)
+	}
+	if err := database.Close(); err != nil {
+		t.Fatalf("close database: %v", err)
+	}
+
+	var out bytes.Buffer
+	cmd := NewRootCommand(BuildInfo{})
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	if err := executeForTest(t, ctx, cmd,
+		"--config", filepath.Join(dir, "config.json"),
+		"--database", databasePath,
+		"--output", "json",
+		"--provider", "opendart",
+		"get", "provider-raw-snapshots",
+		"--operation", "corpCode",
+		"--include-payload",
+	); err != nil {
+		t.Fatalf("get provider-raw-snapshots: %v\n%s", err, out.String())
+	}
+	for _, want := range []string{`"provider": "opendart"`, `"operation": "corpCode"`, `"base_date": "2026-05-17"`, `"canonical_support": "company_registry"`, `"payload"`, `"corp_code": "00126380"`} {
+		if !strings.Contains(out.String(), want) {
+			t.Fatalf("provider raw snapshot output missing %q in:\n%s", want, out.String())
+		}
+	}
+}

@@ -13,6 +13,7 @@ func registerStrategyCommands(roots commandRoots, opts *Options) {
 	roots.Update.AddCommand(newUpdateScreenCommand(opts))
 	roots.Delete.AddCommand(newDeleteStrategyCommand(opts))
 	roots.Screen.AddCommand(newScreenETFCommand(opts))
+	roots.Screen.AddCommand(newScreenStockCommand(opts))
 	roots.Screen.AddCommand(newScreenStrategyCommand(opts))
 	roots.Screen.AddCommand(newScreenPipelineCommand(opts))
 	roots.Compare.AddCommand(newCompareScreenCommand(opts))
@@ -153,6 +154,35 @@ func newScreenETFCommand(opts *Options) *cobra.Command {
 		Use:     "etf",
 		Aliases: []string{"etfs"},
 		Short:   "Run an inline jq screen against stored ETF daily records",
+		Args:    cobra.NoArgs,
+		RunE: runResult(opts, func(cmd *cobra.Command, _ []string) (result any, err error) {
+			queryText, err := resolveJQSource(flags)
+			if err != nil {
+				return nil, err
+			}
+			runtime, err := newAppRuntime(opts, false)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Strategy.ScreenJQ(cmd.Context(), handler.ScreenJQRequest{
+				InputDataset: flags.Input,
+				QueryText:    queryText,
+			})
+		}),
+	}
+	cmd.Flags().StringVar(&flags.Input, "input", flags.Input, "input dataset name")
+	addJQFlags(cmd, &flags)
+	return cmd
+}
+
+func newScreenStockCommand(opts *Options) *cobra.Command {
+	flags := strategySourceFlags{Input: "stock_daily_metrics"}
+	cmd := &cobra.Command{
+		Use:     "stock",
+		Aliases: []string{"stocks"},
+		Short:   "Run an inline jq screen against stored stock daily records enriched with financial metrics",
 		Args:    cobra.NoArgs,
 		RunE: runResult(opts, func(cmd *cobra.Command, _ []string) (result any, err error) {
 			queryText, err := resolveJQSource(flags)

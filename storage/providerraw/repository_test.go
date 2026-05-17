@@ -51,4 +51,18 @@ func TestUpsertSnapshot(t *testing.T) {
 	if row.Operation != string(provider.OperationETFByddTrd) || row.RowCount != 1 || row.PayloadJSON == "" {
 		t.Fatalf("unexpected row: %+v", row)
 	}
+
+	snapshots, err := repository.ListSnapshots(ctx, Query{
+		Provider:       provider.ProviderKRX,
+		Operation:      provider.OperationETFByddTrd,
+		From:           "2024-04-01",
+		To:             "2024-04-30",
+		IncludePayload: true,
+	})
+	if err != nil {
+		t.Fatalf("list snapshots: %v", err)
+	}
+	if len(snapshots) != 1 || snapshots[0].BaseDate != "2024-04-15" || snapshots[0].Payload == nil {
+		t.Fatalf("unexpected snapshots: %+v", snapshots)
+	}
 }

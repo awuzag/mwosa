@@ -198,6 +198,54 @@ func TestDatabaseCreatesDailyBarIndexes(t *testing.T) {
 			t.Fatalf("%s index was not created", name)
 		}
 	}
+	companyIdentifierIndexes := sqliteIndexes(t, client, "company_identifier_v1")
+	for _, name := range []string{"company_identifier_v1_natural_key", "idx_company_identifier_v1_company", "idx_company_identifier_v1_type_value"} {
+		if _, ok := companyIdentifierIndexes[name]; !ok {
+			t.Fatalf("%s index was not created", name)
+		}
+	}
+	linkIndexes := sqliteIndexes(t, client, "instrument_company_link_v1")
+	for _, name := range []string{"instrument_company_link_v1_natural_key", "idx_instrument_company_link_v1_company"} {
+		if _, ok := linkIndexes[name]; !ok {
+			t.Fatalf("%s index was not created", name)
+		}
+	}
+	statementIndexes := sqliteIndexes(t, client, "financial_statement_v1")
+	for _, name := range []string{"financial_statement_v1_natural_key", "idx_financial_statement_v1_company_year"} {
+		if _, ok := statementIndexes[name]; !ok {
+			t.Fatalf("%s index was not created", name)
+		}
+	}
+	lineItemIndexes := sqliteIndexes(t, client, "financial_line_item_v1")
+	for _, name := range []string{"financial_line_item_v1_natural_key", "idx_financial_line_item_v1_statement", "idx_financial_line_item_v1_canonical"} {
+		if _, ok := lineItemIndexes[name]; !ok {
+			t.Fatalf("%s index was not created", name)
+		}
+	}
+	metricIndexes := sqliteIndexes(t, client, "financial_metric_v1")
+	for _, name := range []string{"financial_metric_v1_natural_key", "idx_financial_metric_v1_company_metric", "idx_financial_metric_v1_instrument_metric"} {
+		if _, ok := metricIndexes[name]; !ok {
+			t.Fatalf("%s index was not created", name)
+		}
+	}
+	valuationIndexes := sqliteIndexes(t, client, "valuation_snapshot_v1")
+	for _, name := range []string{"valuation_snapshot_v1_natural_key", "idx_valuation_snapshot_v1_instrument_date"} {
+		if _, ok := valuationIndexes[name]; !ok {
+			t.Fatalf("%s index was not created", name)
+		}
+	}
+	factIndexes := sqliteIndexes(t, client, "company_fact_v1")
+	for _, name := range []string{"company_fact_v1_natural_key", "idx_company_fact_v1_company_type", "idx_company_fact_v1_instrument_type_date"} {
+		if _, ok := factIndexes[name]; !ok {
+			t.Fatalf("%s index was not created", name)
+		}
+	}
+	eventIndexes := sqliteIndexes(t, client, "company_event_v1")
+	for _, name := range []string{"company_event_v1_natural_key", "idx_company_event_v1_company_date", "idx_company_event_v1_instrument_type_date"} {
+		if _, ok := eventIndexes[name]; !ok {
+			t.Fatalf("%s index was not created", name)
+		}
+	}
 }
 
 func TestDatabaseMigratesBacktestRuntimeMetadataColumns(t *testing.T) {
