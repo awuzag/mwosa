@@ -9,12 +9,14 @@ import (
 	"strings"
 	"time"
 
+	"github.com/ev3rlit/mwosa/packages/financialscores"
 	"github.com/ev3rlit/mwosa/packages/hashutil"
 	"github.com/ev3rlit/mwosa/packages/idgen"
 	universecore "github.com/ev3rlit/mwosa/packages/universe"
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
 	"github.com/ev3rlit/mwosa/service/daily"
+	"github.com/ev3rlit/mwosa/service/research"
 	"github.com/itchyny/gojq"
 	"github.com/samber/oops"
 )
@@ -219,6 +221,21 @@ type Dataset struct {
 type DatasetReader interface {
 	ReadDataset(ctx context.Context, name string) (Dataset, error)
 }
+
+type FundamentalsRepository interface {
+	ListLatestFundamentals(ctx context.Context, query FundamentalsQuery) (map[string]Fundamentals, error)
+}
+
+type FundamentalsQuery struct {
+	Market       provider.Market
+	SecurityType provider.SecurityType
+}
+
+type Fundamentals = research.ScreenCandidate
+type FundamentalMetric = research.FinancialMetric
+type FundamentalValuation = research.ValuationSnapshot
+type FundamentalFact = research.CompanyFact
+type FundamentalEvent = research.DisclosureEvent
 
 type PipelineExecutor interface {
 	ExecuteScreenStrategyPipeline(ctx context.Context, spec ScreenStrategySpec) (PipelineExecutionResult, error)
@@ -1046,8 +1063,9 @@ func extractSymbol(raw json.RawMessage) string {
 }
 
 type DailyBarDatasetReader struct {
-	reader daily.ReadRepository
-	market provider.Market
+	reader       daily.ReadRepository
+	fundamentals FundamentalsRepository
+	market       provider.Market
 }
 
 func NewDailyBarDatasetReader(reader daily.ReadRepository, market provider.Market) (DailyBarDatasetReader, error) {
@@ -1058,6 +1076,18 @@ func NewDailyBarDatasetReader(reader daily.ReadRepository, market provider.Marke
 		market = provider.MarketKRX
 	}
 	return DailyBarDatasetReader{reader: reader, market: market}, nil
+}
+
+func NewDailyBarDatasetReaderWithFundamentals(reader daily.ReadRepository, fundamentals FundamentalsRepository, market provider.Market) (DailyBarDatasetReader, error) {
+	datasetReader, err := NewDailyBarDatasetReader(reader, market)
+	if err != nil {
+		return DailyBarDatasetReader{}, err
+	}
+	if fundamentals == nil {
+		return DailyBarDatasetReader{}, oops.In("strategy_service").New("fundamentals dataset repository is nil")
+	}
+	datasetReader.fundamentals = fundamentals
+	return datasetReader, nil
 }
 
 func (r DailyBarDatasetReader) ReadDataset(ctx context.Context, name string) (Dataset, error) {
@@ -1075,10 +1105,14 @@ func (r DailyBarDatasetReader) ReadDataset(ctx context.Context, name string) (Da
 
 func (r DailyBarDatasetReader) readDailyBars(ctx context.Context, name string) ([]json.RawMessage, error) {
 	query := daily.Query{Market: r.market}
+	enrichFundamentals := false
 	switch name {
 	case "daily_bar", "daily_bars":
 	case "etf_daily_metrics":
 		query.SecurityType = provider.SecurityTypeETF
+	case "stock_daily_metrics", "stock_daily_fundamentals":
+		query.SecurityType = provider.SecurityTypeStock
+		enrichFundamentals = true
 	default:
 		return nil, oops.In("strategy_service").With("input_dataset", name).Errorf("unsupported input dataset: %s", name)
 	}
@@ -1086,7 +1120,10 @@ func (r DailyBarDatasetReader) readDailyBars(ctx context.Context, name string) (
 	if err != nil {
 		return nil, oops.In("strategy_service").With("input_dataset", name).Wrapf(err, "query daily bar dataset")
 	}
-	return dailyBarsToRawMessages(bars)
+	if !enrichFundamentals {
+		return dailyBarsToRawMessages(bars)
+	}
+	return r.stockDailyBarsToRawMessages(ctx, query, bars)
 }
 
 func dailyBarsToRawMessages(bars []dailybar.Bar) ([]json.RawMessage, error) {
@@ -1099,6 +1136,75 @@ func dailyBarsToRawMessages(bars []dailybar.Bar) ([]json.RawMessage, error) {
 		records = append(records, data)
 	}
 	return records, nil
+}
+
+func (r DailyBarDatasetReader) stockDailyBarsToRawMessages(ctx context.Context, query daily.Query, bars []dailybar.Bar) ([]json.RawMessage, error) {
+	errb := oops.In("strategy_service").With("input_dataset", "stock_daily_metrics", "market", query.Market, "security_type", query.SecurityType)
+	if r.fundamentals == nil {
+		return nil, errb.New("stock_daily_metrics requires fundamentals dataset repository")
+	}
+	fundamentals, err := r.fundamentals.ListLatestFundamentals(ctx, FundamentalsQuery{
+		Market:       query.Market,
+		SecurityType: query.SecurityType,
+	})
+	if err != nil {
+		return nil, errb.Wrap(err)
+	}
+	records := make([]json.RawMessage, 0, len(bars))
+	for _, bar := range bars {
+		var data map[string]any
+		body, err := json.Marshal(bar)
+		if err != nil {
+			return nil, errb.With("symbol", bar.Symbol).Wrapf(err, "encode stock daily bar record")
+		}
+		if err := json.Unmarshal(body, &data); err != nil {
+			return nil, errb.With("symbol", bar.Symbol).Wrapf(err, "decode stock daily bar record")
+		}
+		if item, ok := fundamentals[bar.Symbol]; ok {
+			if len(item.Metrics) > 0 {
+				data["financial_metrics"] = item.Metrics
+			}
+			if item.Valuation != nil {
+				data["valuation"] = item.Valuation
+			}
+			scores := calculateFundamentalScores(item)
+			if scores.HasSignal() {
+				data["fundamental_scores"] = scores
+			}
+			if len(item.Facts) > 0 {
+				data["company_facts"] = item.Facts
+			}
+			if len(item.Events) > 0 {
+				data["company_events"] = item.Events
+			}
+		}
+		enriched, err := json.Marshal(data)
+		if err != nil {
+			return nil, errb.With("symbol", bar.Symbol).Wrapf(err, "encode enriched stock daily record")
+		}
+		records = append(records, enriched)
+	}
+	return records, nil
+}
+
+func calculateFundamentalScores(item Fundamentals) financialscores.Scores {
+	metrics := make(map[string]financialscores.Metric, len(item.Metrics))
+	for key, metric := range item.Metrics {
+		metrics[key] = financialscores.Metric{
+			ValueBP:            metric.ValueBP,
+			UncomputableReason: metric.UncomputableReason,
+		}
+	}
+	var valuation *financialscores.Valuation
+	if item.Valuation != nil {
+		valuation = &financialscores.Valuation{
+			PerBP:           item.Valuation.PerBP,
+			PbrBP:           item.Valuation.PbrBP,
+			PsrBP:           item.Valuation.PsrBP,
+			DividendYieldBP: item.Valuation.DividendYieldBP,
+		}
+	}
+	return financialscores.Calculate(financialscores.Input{Metrics: metrics, Valuation: valuation})
 }
 
 func executeJQ(ctx context.Context, queryText string, input any) ([]json.RawMessage, error) {

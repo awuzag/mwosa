@@ -40,6 +40,7 @@ import (
 	migrationstorage "github.com/ev3rlit/mwosa/storage/migration"
 	"github.com/ev3rlit/mwosa/storage/providerauth"
 	strategystorage "github.com/ev3rlit/mwosa/storage/strategy"
+	strategyfundamentalsstorage "github.com/ev3rlit/mwosa/storage/strategyfundamentals"
 	"github.com/samber/oops"
 )
 
@@ -347,7 +348,15 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 			providerAuthDatabase.Close(),
 		)
 	}
-	datasetReader, err := strategyservice.NewDailyBarDatasetReader(reader, opts.Market)
+	fundamentalsRepository, err := strategyfundamentalsstorage.NewRepository(database)
+	if err != nil {
+		return nil, oops.Join(
+			errb.Wrapf(err, "create strategy fundamentals repository"),
+			database.Close(),
+			providerAuthDatabase.Close(),
+		)
+	}
+	datasetReader, err := strategyservice.NewDailyBarDatasetReaderWithFundamentals(reader, fundamentalsRepository, opts.Market)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create strategy dataset reader"),

@@ -9,6 +9,9 @@ import (
 	"time"
 
 	universecore "github.com/ev3rlit/mwosa/packages/universe"
+	provider "github.com/ev3rlit/mwosa/providers/core"
+	"github.com/ev3rlit/mwosa/providers/core/dailybar"
+	"github.com/ev3rlit/mwosa/service/daily"
 	"github.com/samber/oops"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -80,6 +83,68 @@ func TestServiceJQStrategyStillScreensDataset(t *testing.T) {
 	require.Len(t, detail.Items, 1)
 	assert.Equal(t, "102110", detail.Items[0].Symbol)
 	assert.NotEmpty(t, detail.StrategyVersion.SpecHash)
+}
+
+func TestDailyBarDatasetReaderEnrichesStockDailyMetrics(t *testing.T) {
+	ctx := context.Background()
+	per := int64(120000)
+	reader, err := NewDailyBarDatasetReaderWithFundamentals(
+		fakeDailyReadRepository{bars: []dailybar.Bar{
+			{
+				Market:       provider.MarketKRX,
+				SecurityType: provider.SecurityTypeStock,
+				TradingDate:  "2026-05-16",
+				Symbol:       "005930",
+				Close:        "70000",
+			},
+		}},
+		fakeFundamentalsRepository{items: map[string]Fundamentals{
+			"005930": {
+				Symbol: "005930",
+				Metrics: map[string]FundamentalMetric{
+					"roe": {FiscalYear: "2025", ValueBP: int64Ptr(1800)},
+				},
+				Valuation: &FundamentalValuation{AsOfDate: "2026-05-16", PerBP: &per},
+				Facts: map[string]FundamentalFact{
+					"audit_opinion": {
+						FactType:   "audit_opinion",
+						FiscalYear: "2025",
+						Key:        "audit_opinion",
+						ValueText:  "적정",
+					},
+				},
+				Events: []FundamentalEvent{
+					{
+						EventType: "company_merger",
+						EventDate: "2026-05-10",
+						RceptNo:   "20260510000123",
+						Title:     "합병 결정",
+					},
+				},
+			},
+		}},
+		provider.MarketKRX,
+	)
+	require.NoError(t, err)
+
+	dataset, err := reader.ReadDataset(ctx, "stock_daily_metrics")
+	require.NoError(t, err)
+	require.Len(t, dataset.Records, 1)
+	var row map[string]any
+	require.NoError(t, json.Unmarshal(dataset.Records[0], &row))
+	require.Equal(t, "005930", row["symbol"])
+	require.Contains(t, row, "financial_metrics")
+	require.Contains(t, row, "valuation")
+	require.Contains(t, row, "fundamental_scores")
+	require.Contains(t, row, "company_facts")
+	require.Contains(t, row, "company_events")
+
+	scores, ok := row["fundamental_scores"].(map[string]any)
+	require.True(t, ok)
+	assert.Equal(t, "fundamentals-score/v1", scores["score_version"])
+	assert.Equal(t, float64(72), scores["quality_score"])
+	assert.Equal(t, float64(82), scores["valuation_score"])
+	assert.Contains(t, scores["uncomputable"], "growth_score")
 }
 
 func TestServiceComparesScreenStrategiesWithoutRecordingRuns(t *testing.T) {
@@ -254,6 +319,41 @@ type fakeDatasetReader struct {
 
 func (r fakeDatasetReader) ReadDataset(_ context.Context, name string) (Dataset, error) {
 	return Dataset{Name: name, SchemaVersion: 1, Records: r.records}, nil
+}
+
+type fakeDailyReadRepository struct {
+	bars []dailybar.Bar
+}
+
+func (r fakeDailyReadRepository) QueryDailyBars(_ context.Context, query daily.Query) ([]dailybar.Bar, error) {
+	out := make([]dailybar.Bar, 0, len(r.bars))
+	for _, bar := range r.bars {
+		if query.SecurityType != "" && bar.SecurityType != query.SecurityType {
+			continue
+		}
+		out = append(out, bar)
+	}
+	return out, nil
+}
+
+func (r fakeDailyReadRepository) SummarizeDailyBarStorage(context.Context, daily.Query) (daily.StorageSummaryResult, error) {
+	return daily.StorageSummaryResult{}, nil
+}
+
+func (r fakeDailyReadRepository) QueryDailyBarCoverage(context.Context, daily.Query) (daily.CoverageResult, error) {
+	return daily.CoverageResult{}, nil
+}
+
+type fakeFundamentalsRepository struct {
+	items map[string]Fundamentals
+}
+
+func (r fakeFundamentalsRepository) ListLatestFundamentals(context.Context, FundamentalsQuery) (map[string]Fundamentals, error) {
+	return r.items, nil
+}
+
+func int64Ptr(value int64) *int64 {
+	return &value
 }
 
 type fakePipelineExecutor struct{}

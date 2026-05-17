@@ -98,6 +98,16 @@ type TableOutput interface {
 	TableRows() (header []string, rows [][]string)
 }
 
+type TableBlock struct {
+	Title  string
+	Header []string
+	Rows   [][]string
+}
+
+type MultiTableOutput interface {
+	TableBlocks() []TableBlock
+}
+
 func runResult(opts *Options, handler resultHandler) func(*cobra.Command, []string) error {
 	return func(cmd *cobra.Command, args []string) error {
 		result, err := handler(cmd, args)
@@ -122,6 +132,9 @@ func Render(w io.Writer, output OutputMode, result any) error {
 	errb := oops.In("cli_output").With("format", output)
 	switch output {
 	case "", OutputModeTable:
+		if value, ok := result.(MultiTableOutput); ok {
+			return writeTableBlocks(w, value.TableBlocks())
+		}
 		if value, ok := result.(TableOutput); ok {
 			header, rows := value.TableRows()
 			return writeTable(w, header, rows)
@@ -145,6 +158,28 @@ func Render(w io.Writer, output OutputMode, result any) error {
 	default:
 		return errb.Errorf("unsupported output format: %s", output)
 	}
+}
+
+func writeTableBlocks(w io.Writer, blocks []TableBlock) error {
+	for index, block := range blocks {
+		if len(block.Header) == 0 {
+			continue
+		}
+		if index > 0 {
+			if _, err := fmt.Fprintln(w); err != nil {
+				return oops.In("cli_output").With("block", index).Wrapf(err, "write table separator")
+			}
+		}
+		if strings.TrimSpace(block.Title) != "" {
+			if _, err := fmt.Fprintln(w, block.Title); err != nil {
+				return oops.In("cli_output").With("block", index).Wrapf(err, "write table title")
+			}
+		}
+		if err := writeTable(w, block.Header, block.Rows); err != nil {
+			return oops.In("cli_output").With("block", index).Wrap(err)
+		}
+	}
+	return nil
 }
 
 func writeIndentedJSON(w io.Writer, value any) error {

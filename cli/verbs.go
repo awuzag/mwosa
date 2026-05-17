@@ -14,6 +14,7 @@ type commandRoots struct {
 	Run      *cobra.Command
 	Compare  *cobra.Command
 	Rank     *cobra.Command
+	Calc     *cobra.Command
 	Migrate  *cobra.Command
 	Get      *cobra.Command
 	Ensure   *cobra.Command
@@ -102,6 +103,13 @@ func newRankCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "rank",
 		Short: "Rank mwosa resources",
+	}
+}
+
+func newCalcCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "calc",
+		Short: "Calculate derived mwosa resources",
 	}
 }
 

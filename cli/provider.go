@@ -7,6 +7,7 @@ import (
 	appconfig "github.com/ev3rlit/mwosa/app/config"
 	"github.com/ev3rlit/mwosa/providers/builtin"
 	provider "github.com/ev3rlit/mwosa/providers/core"
+	opendartprovider "github.com/ev3rlit/mwosa/providers/opendart"
 	"github.com/samber/oops"
 	"github.com/spf13/cobra"
 )
@@ -38,11 +39,12 @@ type providerDoctorResult struct {
 }
 
 type providerDoctorProvider struct {
-	ID      string                `json:"id"`
-	Enabled bool                  `json:"enabled"`
-	Status  string                `json:"status"`
-	Fields  []providerDoctorField `json:"fields"`
-	Issues  []providerDoctorIssue `json:"issues"`
+	ID               string                           `json:"id"`
+	Enabled          bool                             `json:"enabled"`
+	Status           string                           `json:"status"`
+	Fields           []providerDoctorField            `json:"fields"`
+	Issues           []providerDoctorIssue            `json:"issues"`
+	OperationCatalog *providerOperationCatalogSummary `json:"operation_catalog,omitempty"`
 }
 
 type providerDoctorField struct {
@@ -57,6 +59,13 @@ type providerDoctorIssue struct {
 	Severity string `json:"severity"`
 	Path     string `json:"path,omitempty"`
 	Message  string `json:"message"`
+}
+
+type providerOperationCatalogSummary struct {
+	Command          string   `json:"command"`
+	KnownOperations  int      `json:"known_operations"`
+	Categories       []string `json:"categories"`
+	CanonicalSupport []string `json:"canonical_support"`
 }
 
 func registerProviderCommands(roots commandRoots, opts *Options) {
@@ -102,9 +111,11 @@ func newInspectProviderCommand(opts *Options) *cobra.Command {
 			if err != nil {
 				return nil, err
 			}
+			inspected := doctorProvider(builder, opts.ProviderConfig)
+			inspected.OperationCatalog = providerOperationCatalog(builder.ID())
 			return providerDoctorResult{
 				ConfigFile: opts.ConfigState.ConfigPath,
-				Providers:  []providerDoctorProvider{doctorProvider(builder, opts.ProviderConfig)},
+				Providers:  []providerDoctorProvider{inspected},
 			}, nil
 		}),
 	}
@@ -411,6 +422,67 @@ func doctorProvider(builder provider.ProviderBuilder, config provider.Config) pr
 		}
 	}
 	return result
+}
+
+func providerOperationCatalog(id provider.ProviderID) *providerOperationCatalogSummary {
+	switch id {
+	case provider.ProviderOpenDART:
+		services := opendartprovider.ServiceCatalog()
+		return &providerOperationCatalogSummary{
+			Command:          "mwosa list provider-apis opendart",
+			KnownOperations:  len(services),
+			Categories:       catalogCategories(services),
+			CanonicalSupport: catalogCanonicalSupport(services),
+		}
+	default:
+		return nil
+	}
+}
+
+func catalogCategories(services []opendartprovider.CatalogService) []string {
+	out := make([]string, 0)
+	seen := map[string]struct{}{}
+	for _, service := range services {
+		value := strings.TrimSpace(service.Category)
+		if value == "" {
+			continue
+		}
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		out = append(out, value)
+	}
+	return out
+}
+
+func catalogCanonicalSupport(services []opendartprovider.CatalogService) []string {
+	out := make([]string, 0)
+	seen := map[string]struct{}{}
+	for _, service := range services {
+		value := compactCanonicalSupport(service.CanonicalSupport)
+		if value == "" {
+			continue
+		}
+		if _, ok := seen[value]; ok {
+			continue
+		}
+		seen[value] = struct{}{}
+		out = append(out, value)
+	}
+	return out
+}
+
+func compactCanonicalSupport(value string) string {
+	trimmed := strings.TrimSpace(value)
+	switch {
+	case strings.HasPrefix(trimmed, "company_facts/"):
+		return "company_facts/*"
+	case strings.HasPrefix(trimmed, "company_events/"):
+		return "company_events/*"
+	default:
+		return trimmed
+	}
 }
 
 func providerEnabled(config provider.Config, id provider.ProviderID) bool {

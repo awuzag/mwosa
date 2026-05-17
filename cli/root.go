@@ -139,6 +139,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	runCommand := newRunCommand()
 	compareCommand := newCompareCommand()
 	rankCommand := newRankCommand()
+	calcCommand := newCalcCommand()
 	migrateCommand := newMigrateCommand()
 	getCommand := newGetCommand()
 	ensureCommand := newEnsureCommand()
@@ -163,6 +164,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 		Run:      runCommand,
 		Compare:  compareCommand,
 		Rank:     rankCommand,
+		Calc:     calcCommand,
 		Migrate:  migrateCommand,
 		Get:      getCommand,
 		Ensure:   ensureCommand,
@@ -181,13 +183,16 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	registerIndexCommands(roots, &opts)
 	registerFinancialsCommands(roots, &opts)
 	registerInstrumentCommands(roots, &opts)
+	registerStockCommands(roots, &opts)
 	registerMarketDataCommands(roots, &opts)
 	registerQuoteCommands(roots, &opts)
 	registerStrategyCommands(roots, &opts)
 	registerBacktestCommands(roots, &opts)
 	registerProviderCommands(roots, &opts)
+	registerProviderRawCommands(roots, &opts)
 	registerMigrationCommands(roots, &opts)
 	registerKRXCommands(roots, &opts)
+	registerOpenDARTCommands(roots, &opts)
 
 	cmd.AddCommand(newCompletionCommand())
 	cmd.AddCommand(newVersionCommand(build))
@@ -203,6 +208,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	cmd.AddCommand(runCommand)
 	cmd.AddCommand(compareCommand)
 	cmd.AddCommand(rankCommand)
+	cmd.AddCommand(calcCommand)
 	cmd.AddCommand(migrateCommand)
 	cmd.AddCommand(loginCommand)
 	cmd.AddCommand(logoutCommand)

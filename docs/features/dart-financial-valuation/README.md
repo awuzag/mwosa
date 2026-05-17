@@ -128,25 +128,53 @@ valuation:
 
 ## CLI 초안
 
-재무 데이터 수집은 provider-backed 명령으로 시작한다.
+재무 데이터 수집은 provider-backed 명령으로 시작한다. 현재 구현 id 는 `dart` 가
+아니라 `opendart` 다.
 
 ```bash
-mwosa sync financials \
-  --provider dart \
-  --security-type stock \
-  --year 2025 \
-  --report annual \
+mwosa sync financials statements 005930 \
+  --provider opendart \
+  --from 2023 \
+  --to 2025 \
+  --period quarter \
   -o json
 ```
 
-단일 종목 조회는 기존 `get financials` 흐름과 맞춘다.
+저장된 재무제표와 계산 지표는 canonical storage 에서 읽는다.
 
 ```bash
-mwosa get financials 005930 \
-  --provider dart \
+mwosa get financials statements 005930 \
   --year 2025 \
+  --period quarter \
   --statement income_statement \
+  -o table
+
+mwosa calc financials metrics 005930 \
+  --window 3y \
+  --period quarter \
   -o json
+
+mwosa get financials metrics 005930 \
+  --window 3y \
+  --period quarter \
+  -o table
+
+mwosa calc financials valuation 005930 \
+  --as-of latest \
+  -o json
+
+mwosa get financials valuation 005930 \
+  --as-of latest \
+  -o table
+```
+
+배당, 감사의견, 기타 정기보고서 fact 와 이벤트는 별도 sync 후 읽는다.
+
+```bash
+mwosa sync financials facts 005930 --provider opendart --from 2023 --to 2025 -o json
+mwosa get financials health 005930 --window 3y -o table
+mwosa sync events 005930 --provider opendart --from 2023-01-01 -o json
+mwosa inspect stock 005930 --section all -o json
 ```
 
 스크리닝은 가격 지표와 재무 점수를 함께 받는다.
@@ -158,6 +186,23 @@ mwosa screen stocks \
   --as-of latest \
   -o table
 ```
+
+현재 screen/strategy 입력 표면에서는 저장된 일봉 dataset 인 `stock_daily_metrics`
+또는 `stock_daily_fundamentals` 에 다음 필드를 붙인다.
+
+| 필드 | 원천 |
+| --- | --- |
+| `financial_metrics` | `financial_metric_v1` |
+| `valuation` | `valuation_snapshot_v1` |
+| `fundamental_scores` | `financial_metrics` 와 `valuation` 으로 계산한 score |
+| `company_facts` | `company_fact_v1` |
+| `company_events` | `company_event_v1` |
+
+이 dataset 은 `service/research.ScreenCandidate` projection 을 공유한다. 즉
+strategy service 가 storage row shape 를 직접 도메인 모델로 삼는 대신, 가격
+row 에 붙일 재무/가치/이벤트 입력을 provider-neutral 후보 모델로 한 번 모은다.
+OpenDART 의 `rcept_no`, `reprt_code`, `fs_div` 같은 값은 계산 provenance 나 source
+reference 로 남기되 screen 조건의 중심 필드는 canonical metric 이름이어야 한다.
 
 전략 파일 예시는 다음처럼 둔다.
 
@@ -218,12 +263,14 @@ provider-native 원문은 raw snapshot 으로 보존하되, screen 은 canonical
 MVP 완료 기준은 다음과 같다.
 
 - DART `corp_code` 와 KRX symbol 을 연결할 수 있다.
-- 단일 종목의 사업보고서 기준 손익계산서, 재무상태표, 현금흐름표를 조회할 수
-  있다.
+- 단일 종목의 사업보고서, 반기보고서, 분기보고서 기준 손익계산서, 재무상태표,
+  현금흐름표를 저장하고 조회할 수 있다.
 - canonical metric 최소 6개 이상을 계산한다.
-- `mwosa get financials <symbol> --provider dart -o json` 이 jq 로 다루기 쉬운
-  구조를 출력한다.
-- KOSPI 후보군에 대해 `valuation_score` 를 계산해 screen 결과에 합칠 수 있다.
+- `mwosa get financials statements <symbol> -o json` 과
+  `mwosa get financials metrics <symbol> -o json` 이 jq 로 다루기 쉬운 구조를
+  출력한다.
+- KOSPI 후보군에 대해 `fundamental_scores.valuation_score` 를 계산해
+  `stock_daily_metrics` screen 결과에 합칠 수 있다.
 - missing filing, unsupported statement, account mapping 실패는 빈 성공이 아니라
   명시적인 error 또는 uncomputable reason 으로 드러난다.
 

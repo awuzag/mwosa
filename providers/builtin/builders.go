@@ -5,6 +5,7 @@ import (
 	"github.com/ev3rlit/mwosa/providers/datago"
 	"github.com/ev3rlit/mwosa/providers/kis"
 	"github.com/ev3rlit/mwosa/providers/krx"
+	"github.com/ev3rlit/mwosa/providers/opendart"
 )
 
 func Builders() []provider.ProviderBuilder {
@@ -13,5 +14,6 @@ func Builders() []provider.ProviderBuilder {
 		datago.NewCorporateFinanceBuilder(),
 		kis.NewBuilder(),
 		krx.NewBuilder(),
+		opendart.NewBuilder(),
 	}
 }
