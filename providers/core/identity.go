@@ -86,6 +86,7 @@ const (
 	OperationESGIndexInfo          OperationID = "esg_index_info"
 	OperationOpenDARTCorpCode      OperationID = "corpCode"
 	OperationOpenDARTList          OperationID = "list"
+	OperationOpenDARTDocumentRaw   OperationID = "document"
 	OperationOpenDARTSinglAcntAll  OperationID = "fnlttSinglAcntAll"
 	OperationOpenDARTAlotMatter    OperationID = "alotMatter"
 	OperationOpenDARTTesstkAcqs    OperationID = "tesstkAcqsDspsSttus"

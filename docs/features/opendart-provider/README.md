@@ -195,10 +195,12 @@ screen 조건에서는 배당, 자기주식, 감사의견, 직원 수 변화 같
 
 ### Documents And XBRL
 
-- `document.xml` 원문 파일을 `rcept_no` 기준으로 저장한다.
+- `document.xml` 원문 파일을 `rcept_no` 기준으로 조회한다.
+- 기본 출력은 metadata 로 두고, 사용자가 명시적으로 요청할 때만 base64 payload 를
+  포함한다.
 - `fnlttXbrl.xml` 은 file response 로 보존하고, full parser 는 별도 장기 과제로 둔다.
 - JSON API 와 file/XML API 를 같은 출력/저장 모델로 억지로 합치지 않는다.
-- 파일 응답은 기본 JSON 출력과 raw bytes 출력 계약을 분리한다.
+- 파일 응답은 metadata 출력과 payload 출력 계약을 분리한다.
 - 대용량 원문은 canonical query path 에 끼워 넣지 않고, 사용자가 명시적으로
   요청할 때 내려받는다.
 - 기본 `go test ./...` 는 파일 API live 호출에 의존하지 않아야 한다.
@@ -243,21 +245,97 @@ mwosa get provider-raw opendart fnlttSinglAcnt --corp-code 00126380 --business-y
 CLI 는 stdout/stderr 계약을 지킨다. JSON, NDJSON, CSV 는 stdout 으로만 결과를
 출력하고, 진행 상황과 경고는 stderr 로 보낸다.
 
-2026-05-17 초기 구현의 실제 CLI 범위는 아래처럼 작게 시작한다.
+2026-05-17 현재 구현된 실제 CLI 범위는 아래와 같다.
 
 ```bash
 mwosa list provider-apis opendart -o json
 mwosa sync companies --provider opendart --listed-only -o json
-mwosa search companies 005930 --provider opendart -o json
+mwosa search companies 삼성전자 -o table
+mwosa inspect company 005930 -o json
+mwosa get company-identifiers 005930 -o table
+
 mwosa list filings 005930 --provider opendart --from 2025-01-01 --to 2025-12-31 -o json
 mwosa list filings --corp-code 00126380 --provider opendart --from 2025-01-01 -o json
-mwosa get financials 005930 --provider opendart --year 2025 -o json
+mwosa get filing 20250318000935 --provider opendart -o json
+mwosa get filing 20250318000935 --provider opendart --include-payload -o json
+
+mwosa sync financials statements 005930 --provider opendart --from 2023 --to 2025 --period quarter -o json
+mwosa get financials statements 005930 --year 2025 --period quarter --statement income_statement -o table
+mwosa calc financials metrics 005930 --window 3y --period quarter -o json
+mwosa get financials metrics 005930 --window 3y --period quarter -o table
+mwosa calc financials valuation 005930 --as-of latest -o json
+mwosa get financials valuation 005930 --as-of latest -o table
+
+mwosa sync financials dividends 005930 --provider opendart --from 2023 --to 2025 -o json
+mwosa get financials dividends 005930 --window 3y -o table
+mwosa sync financials facts 005930 --provider opendart --from 2023 --to 2025 -o json
+mwosa get financials facts 005930 --year 2025 -o table
+mwosa get financials health 005930 --window 3y -o table
+
+mwosa sync events 005930 --provider opendart --from 2023-01-01 -o json
+mwosa list events 005930 --provider opendart --from 2023-01-01 -o table
+mwosa inspect stock 005930 --section profile,investment,financials,dividends -o table
+mwosa inspect stock 005930 --section all -o json
 ```
 
 이 범위는 전체 85개 API canonicalization 이 아니라 provider foundation, 회사
-식별자 매핑, 공시 검색, 단일회사 전체 재무제표 조회를 검증하기 위한 첫 범위다.
-`provider-apis` 는 raw/API catalog 진단용 escape hatch 이며, 일반 workflow 의
-중심 command 로 두지 않는다.
+식별자 매핑, 공시 검색, 단일회사 전체 재무제표, 계산 metric, valuation snapshot,
+periodic report fact, material event, stock summary 흐름을 검증하기 위한 범위다.
+`provider-apis`, `provider-raw`, `provider-raw-snapshots`, `get filing` 은 raw/API
+catalog 와 file response escape hatch 이며, 일반 workflow 의 중심 command 로 두지
+않는다.
+
+## 현재 저장/분석 표면
+
+현재 구현은 OpenDART 전용 schema 를 늘리기보다 provider-neutral canonical storage
+를 중심으로 둔다.
+
+| 영역 | 현재 표면 |
+| --- | --- |
+| 회사 식별자 | `company_v1`, `company_identifier_v1`, `instrument_company_link_v1` |
+| 전환 경로 | `opendart_companies` |
+| 재무제표 | `financial_statement_v1`, `financial_line_item_v1` |
+| 재무지표 | `financial_metric_v1` |
+| 밸류에이션 | `valuation_snapshot_v1` |
+| 배당/사실 | `company_fact_v1` |
+| 이벤트 | `company_event_v1` |
+| 종합 조회 | `inspect stock` |
+| screen 입력 | `stock_daily_metrics`, `stock_daily_fundamentals` |
+
+`stock_daily_metrics` 와 `stock_daily_fundamentals` dataset 은 저장된 daily bar 에
+`financial_metrics`, `valuation`, `fundamental_scores`, `company_facts`,
+`company_events` 를 붙여 가격 모멘텀, 재무 품질, 가치 지표를 함께 screen 할 수
+있게 한다.
+
+## 현재 의존 순서
+
+저장된 canonical 데이터를 읽는 명령은 선행 sync/calc 가 필요하다.
+
+| 조회 명령 | 선행 명령 |
+| --- | --- |
+| `inspect company`, `get company-identifiers` | `sync companies --provider opendart` |
+| `get financials statements` | `sync financials statements` |
+| `get financials metrics`, `get financials health` | `calc financials metrics` |
+| `get financials valuation` | 저장된 daily price/market cap 과 `calc financials valuation` |
+| `get financials dividends` | `sync financials dividends` |
+| `get financials facts` | `sync financials facts` |
+| `list events`, `inspect stock --section events` | `sync events` |
+
+missing data 는 빈 성공처럼 숨기지 않는다. 저장 데이터가 없으면 조회 명령은 명시적
+error 를 반환하고, `inspect stock` 은 section 별 `missing` reason 을 함께 출력한다.
+계산 불가는 `uncomputable_reason` 으로 보존한다.
+
+## 남은 결정점
+
+- `fnlttXbrl` file response 보존과 XBRL full parser 의 경계를 분리한다.
+- 추가 periodic report facts 는 canonical mapping 이 정해진 항목부터
+  `company_fact_v1` 로 확장한다.
+- 주식 수, 자기주식, 최대주주, 임원 지분 변화는 screen 에 필요한 key 를 먼저
+  정한 뒤 세부 fact 로 늘린다.
+- 이벤트성 공시 coverage 는 현재 material event mapping 을 기준으로 operation 별
+  canonical support label 을 추가한다.
+- canonical 미지원 API 는 `provider_raw_snapshots` 또는 raw file escape hatch 로
+  유지하고, unsupported capability 는 명시적 error 로 드러낸다.
 
 ## 저장 모델 방향
 

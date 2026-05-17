@@ -56,7 +56,7 @@ func TestInspectProviderOpenDARTIncludesOperationCatalogSummary(t *testing.T) {
 		`"id": "opendart"`,
 		`"operation_catalog"`,
 		`"command": "mwosa list provider-apis opendart"`,
-		`"known_operations": 29`,
+		`"known_operations": 30`,
 		`"company_facts/*"`,
 		`"company_events/*"`,
 	} {
@@ -312,6 +312,64 @@ func TestListOpenDARTFilingsResolvesStockCodeToCorpCode(t *testing.T) {
 	}
 }
 
+func TestGetOpenDARTFilingDocument(t *testing.T) {
+	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
+		if r.URL.Path != "/api/document.xml" {
+			t.Fatalf("unexpected path: %s", r.URL.Path)
+		}
+		if got := r.URL.Query().Get("crtfc_key"); got != "test-key" {
+			t.Fatalf("crtfc_key = %q, want test-key", got)
+		}
+		if got := r.URL.Query().Get("rcept_no"); got != "20260330000001" {
+			t.Fatalf("rcept_no = %q, want 20260330000001", got)
+		}
+		w.Header().Set("Content-Type", "application/zip")
+		_, _ = w.Write([]byte("zip-bytes"))
+	}))
+	defer server.Close()
+
+	t.Setenv("OPENDART_API_KEY", "test-key")
+	t.Setenv("MWOSA_OPENDART_BASE_URL", server.URL)
+
+	var out bytes.Buffer
+	cmd := NewRootCommand(BuildInfo{})
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	if err := executeForTest(t, context.Background(), cmd,
+		"--config", filepath.Join(t.TempDir(), "config.json"),
+		"--output", "json",
+		"--provider", "opendart",
+		"get", "filing", "20260330000001",
+		"--include-payload",
+	); err != nil {
+		t.Fatalf("get filing --provider opendart: %v\n%s", err, out.String())
+	}
+	for _, want := range []string{`"provider": "opendart"`, `"operation": "document"`, `"rcept_no": "20260330000001"`, `"content_type": "application/zip"`, `"size_bytes": 9`, `"payload_base64": "emlwLWJ5dGVz"`} {
+		if !strings.Contains(out.String(), want) {
+			t.Fatalf("filing document output missing %q in:\n%s", want, out.String())
+		}
+	}
+	if strings.Contains(out.String(), "test-key") {
+		t.Fatalf("filing document output exposed secret:\n%s", out.String())
+	}
+
+	var metadataOnlyOut bytes.Buffer
+	metadataOnlyCmd := NewRootCommand(BuildInfo{})
+	metadataOnlyCmd.SetOut(&metadataOnlyOut)
+	metadataOnlyCmd.SetErr(&metadataOnlyOut)
+	if err := executeForTest(t, context.Background(), metadataOnlyCmd,
+		"--config", filepath.Join(t.TempDir(), "config.json"),
+		"--output", "json",
+		"--provider", "opendart",
+		"get", "filing", "20260330000001",
+	); err != nil {
+		t.Fatalf("get filing metadata --provider opendart: %v\n%s", err, metadataOnlyOut.String())
+	}
+	if strings.Contains(metadataOnlyOut.String(), "payload_base64") {
+		t.Fatalf("filing document metadata output included payload:\n%s", metadataOnlyOut.String())
+	}
+}
+
 func TestSyncAndListOpenDARTEvents(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		switch r.URL.Path {
@@ -531,7 +589,7 @@ func TestListProviderAPIsOpenDART(t *testing.T) {
 	); err != nil {
 		t.Fatalf("list provider-apis opendart: %v\n%s", err, out.String())
 	}
-	for _, want := range []string{`"provider_group": "disclosure"`, `"api_id": "corpCode"`, `"canonical_support": "financials"`, `"api_id": "alotMatter"`, `"canonical_support": "company_facts/dividends"`, `"api_id": "tesstkAcqsDspsSttus"`, `"canonical_support": "company_facts/treasury_stock"`, `"api_id": "hyslrSttus"`, `"canonical_support": "company_facts/major_shareholder"`, `"api_id": "hyslrChgSttus"`, `"canonical_support": "company_facts/major_shareholder_change"`, `"api_id": "empSttus"`, `"canonical_support": "company_facts/employee"`, `"api_id": "accnutAdtorNmNdAdtOpinion"`, `"canonical_support": "company_facts/audit_opinion"`, `"api_id": "dfOcr"`, `"canonical_support": "company_events/default_occurrence"`, `"api_id": "piicDecsn"`, `"canonical_support": "company_events/paid_in_capital_increase"`, `"api_id": "fricDecsn"`, `"canonical_support": "company_events/free_capital_increase"`, `"api_id": "pifricDecsn"`, `"canonical_support": "company_events/paid_in_free_capital_increase"`, `"api_id": "crDecsn"`, `"canonical_support": "company_events/capital_reduction"`, `"api_id": "bnkMngtPcbg"`, `"canonical_support": "company_events/bank_management_procedure_start"`, `"api_id": "lwstLg"`, `"canonical_support": "company_events/lawsuit_filing"`, `"api_id": "bsnInhDecsn"`, `"canonical_support": "company_events/business_transfer_in"`, `"api_id": "bsnTrfDecsn"`, `"canonical_support": "company_events/business_transfer_out"`, `"api_id": "tgastInhDecsn"`, `"canonical_support": "company_events/tangible_asset_transfer_in"`, `"api_id": "tgastTrfDecsn"`, `"canonical_support": "company_events/tangible_asset_transfer_out"`, `"api_id": "cvbdIsDecsn"`, `"canonical_support": "company_events/convertible_bond_issuance"`, `"api_id": "bdwtIsDecsn"`, `"canonical_support": "company_events/bond_with_warrant_issuance"`, `"api_id": "exbdIsDecsn"`, `"canonical_support": "company_events/exchangeable_bond_issuance"`, `"api_id": "cmpMgDecsn"`, `"canonical_support": "company_events/company_merger"`, `"api_id": "cmpDvDecsn"`, `"canonical_support": "company_events/company_division"`, `"api_id": "cmpDvmgDecsn"`, `"canonical_support": "company_events/company_division_merger"`, `"api_id": "stkExtrDecsn"`, `"canonical_support": "company_events/stock_exchange_transfer"`, `"api_id": "tsstkAqDecsn"`, `"canonical_support": "company_events/treasury_stock_acquisition"`, `"api_id": "tsstkDpDecsn"`, `"canonical_support": "company_events/treasury_stock_disposal"`} {
+	for _, want := range []string{`"provider_group": "disclosure"`, `"api_id": "corpCode"`, `"api_id": "document"`, `"canonical_support": "raw_file/document"`, `"canonical_support": "financials"`, `"api_id": "alotMatter"`, `"canonical_support": "company_facts/dividends"`, `"api_id": "tesstkAcqsDspsSttus"`, `"canonical_support": "company_facts/treasury_stock"`, `"api_id": "hyslrSttus"`, `"canonical_support": "company_facts/major_shareholder"`, `"api_id": "hyslrChgSttus"`, `"canonical_support": "company_facts/major_shareholder_change"`, `"api_id": "empSttus"`, `"canonical_support": "company_facts/employee"`, `"api_id": "accnutAdtorNmNdAdtOpinion"`, `"canonical_support": "company_facts/audit_opinion"`, `"api_id": "dfOcr"`, `"canonical_support": "company_events/default_occurrence"`, `"api_id": "piicDecsn"`, `"canonical_support": "company_events/paid_in_capital_increase"`, `"api_id": "fricDecsn"`, `"canonical_support": "company_events/free_capital_increase"`, `"api_id": "pifricDecsn"`, `"canonical_support": "company_events/paid_in_free_capital_increase"`, `"api_id": "crDecsn"`, `"canonical_support": "company_events/capital_reduction"`, `"api_id": "bnkMngtPcbg"`, `"canonical_support": "company_events/bank_management_procedure_start"`, `"api_id": "lwstLg"`, `"canonical_support": "company_events/lawsuit_filing"`, `"api_id": "bsnInhDecsn"`, `"canonical_support": "company_events/business_transfer_in"`, `"api_id": "bsnTrfDecsn"`, `"canonical_support": "company_events/business_transfer_out"`, `"api_id": "tgastInhDecsn"`, `"canonical_support": "company_events/tangible_asset_transfer_in"`, `"api_id": "tgastTrfDecsn"`, `"canonical_support": "company_events/tangible_asset_transfer_out"`, `"api_id": "cvbdIsDecsn"`, `"canonical_support": "company_events/convertible_bond_issuance"`, `"api_id": "bdwtIsDecsn"`, `"canonical_support": "company_events/bond_with_warrant_issuance"`, `"api_id": "exbdIsDecsn"`, `"canonical_support": "company_events/exchangeable_bond_issuance"`, `"api_id": "cmpMgDecsn"`, `"canonical_support": "company_events/company_merger"`, `"api_id": "cmpDvDecsn"`, `"canonical_support": "company_events/company_division"`, `"api_id": "cmpDvmgDecsn"`, `"canonical_support": "company_events/company_division_merger"`, `"api_id": "stkExtrDecsn"`, `"canonical_support": "company_events/stock_exchange_transfer"`, `"api_id": "tsstkAqDecsn"`, `"canonical_support": "company_events/treasury_stock_acquisition"`, `"api_id": "tsstkDpDecsn"`, `"canonical_support": "company_events/treasury_stock_disposal"`} {
 		if !strings.Contains(out.String(), want) {
 			t.Fatalf("provider API output missing %q in:\n%s", want, out.String())
 		}

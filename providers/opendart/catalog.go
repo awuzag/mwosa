@@ -27,6 +27,13 @@ func ServiceCatalog() []CatalogService {
 			CanonicalSupport: "filings",
 		},
 		{
+			Category:         "disclosure",
+			Group:            provider.GroupOpenDARTDisclosure,
+			Operation:        provider.OperationOpenDARTDocumentRaw,
+			Description:      "OpenDART filing document file response by rcept_no",
+			CanonicalSupport: "raw_file/document",
+		},
+		{
 			Category:         "financial",
 			Group:            provider.GroupOpenDARTFinancials,
 			Operation:        provider.OperationOpenDARTSinglAcntAll,

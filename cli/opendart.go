@@ -34,6 +34,10 @@ type opendartFilingFlags struct {
 	PageCount  string
 }
 
+type opendartFilingDocumentFlags struct {
+	IncludePayload bool
+}
+
 type companyEventFlags struct {
 	From      string
 	To        string
@@ -69,6 +73,10 @@ type opendartFilingOutput struct {
 	Result opendartprovider.FilingResult
 }
 
+type opendartFilingDocumentOutput struct {
+	Result opendartprovider.FilingDocument
+}
+
 type companyInspectOutput struct {
 	Result companyidentity.InspectResult
 }
@@ -86,6 +94,7 @@ func registerOpenDARTCommands(roots commandRoots, opts *Options) {
 	roots.List.AddCommand(newListFilingsCommand(opts))
 	roots.List.AddCommand(newListEventsCommand(opts))
 	roots.Get.AddCommand(newGetCompanyIdentifiersCommand(opts))
+	roots.Get.AddCommand(newGetFilingCommand(opts))
 	roots.Inspect.AddCommand(newInspectCompanyCommand(opts))
 	roots.Search.AddCommand(newSearchCompaniesCommand(opts))
 	roots.Sync.AddCommand(newSyncCompaniesCommand(opts))
@@ -422,6 +431,43 @@ OpenDART. Use --corp-code to bypass stock_code resolution.`),
 	return cmd
 }
 
+func newGetFilingCommand(opts *Options) *cobra.Command {
+	flags := opendartFilingDocumentFlags{}
+	cmd := &cobra.Command{
+		Use:   "filing <rcept-no>",
+		Short: "Fetch provider-backed filing document metadata",
+		Long: strings.TrimSpace(`Fetch provider-backed filing document metadata.
+
+With --provider opendart, this calls document.xml by rcept_no. Binary payload is
+omitted by default so table, csv, json, and ndjson output remain safe for normal
+stdout pipelines. Use --include-payload with json or ndjson to include the file
+body as base64.`),
+		Args: cobra.ExactArgs(1),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (any, error) {
+			if err := loadConfig(opts); err != nil {
+				return nil, err
+			}
+			if err := requireOpenDARTProvider(opts, "get filing"); err != nil {
+				return nil, err
+			}
+			p, err := buildOpenDARTProvider(opts)
+			if err != nil {
+				return nil, err
+			}
+			result, err := p.FetchFilingDocument(cmd.Context(), opendartprovider.FilingDocumentRequest{ReceiptNo: args[0]})
+			if err != nil {
+				return nil, err
+			}
+			if !flags.IncludePayload {
+				result.PayloadBase64 = ""
+			}
+			return opendartFilingDocumentOutput{Result: result}, nil
+		}),
+	}
+	cmd.Flags().BoolVar(&flags.IncludePayload, "include-payload", flags.IncludePayload, "include base64 file payload in json or ndjson output")
+	return cmd
+}
+
 func newListEventsCommand(opts *Options) *cobra.Command {
 	flags := companyEventFlags{Limit: 50}
 	cmd := &cobra.Command{
@@ -680,6 +726,29 @@ func (o opendartFilingOutput) TableRows() ([]string, [][]string) {
 		rows = append(rows, []string{item.CorpCode, item.StockCode, item.CorpName, item.Report, item.ReceiptNo, item.ReceiptAt, item.Remark})
 	}
 	return []string{"corp_code", "stock_code", "corp_name", "report_nm", "rcept_no", "rcept_dt", "rm"}, rows
+}
+
+func (o opendartFilingDocumentOutput) JSONValue() any {
+	return o.Result
+}
+
+func (o opendartFilingDocumentOutput) NDJSONRows() any {
+	return []opendartprovider.FilingDocument{o.Result}
+}
+
+func (o opendartFilingDocumentOutput) CSVRows() any {
+	return []opendartprovider.FilingDocument{o.Result}
+}
+
+func (o opendartFilingDocumentOutput) TableRows() ([]string, [][]string) {
+	return []string{"provider", "operation", "rcept_no", "content_type", "size_bytes", "sha256"}, [][]string{{
+		string(o.Result.Provider),
+		string(o.Result.Operation),
+		o.Result.ReceiptNo,
+		o.Result.ContentType,
+		fmt.Sprint(o.Result.SizeBytes),
+		o.Result.SHA256,
+	}}
 }
 
 func (o companyEventsOutput) JSONValue() any {

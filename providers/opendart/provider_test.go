@@ -15,6 +15,8 @@ import (
 
 type fakeClient struct {
 	corpCodeBody    []byte
+	documentParams  opendartsdk.DocumentParams
+	documentBody    []byte
 	listParams      opendartsdk.ListParams
 	financialParams opendartsdk.FnlttSinglAcntAllParams
 	alotParams      opendartsdk.AlotMatterParams
@@ -47,7 +49,7 @@ type fakeClient struct {
 
 func TestServiceCatalogExposesCanonicalSupport(t *testing.T) {
 	catalog := ServiceCatalog()
-	require.Len(t, catalog, 29)
+	require.Len(t, catalog, 30)
 
 	byOperation := make(map[provider.OperationID]CatalogService, len(catalog))
 	for _, service := range catalog {
@@ -55,6 +57,7 @@ func TestServiceCatalogExposesCanonicalSupport(t *testing.T) {
 	}
 
 	require.Equal(t, "company_registry", byOperation[provider.OperationOpenDARTCorpCode].CanonicalSupport)
+	require.Equal(t, "raw_file/document", byOperation[provider.OperationOpenDARTDocumentRaw].CanonicalSupport)
 	require.Equal(t, "financials", byOperation[provider.OperationOpenDARTSinglAcntAll].CanonicalSupport)
 	require.Equal(t, "company_facts/audit_opinion", byOperation[provider.OperationOpenDARTAuditOpinion].CanonicalSupport)
 	require.Equal(t, "company_events/company_merger", byOperation[provider.OperationOpenDARTCmpMgDecsn].CanonicalSupport)
@@ -62,6 +65,15 @@ func TestServiceCatalogExposesCanonicalSupport(t *testing.T) {
 
 func (f *fakeClient) CorpCode(context.Context) (*opendartsdk.FileResponse, error) {
 	return &opendartsdk.FileResponse{ContentType: "application/zip", Body: f.corpCodeBody}, nil
+}
+
+func (f *fakeClient) DocumentRaw(_ context.Context, params opendartsdk.DocumentParams) (*opendartsdk.FileResponse, error) {
+	f.documentParams = params
+	body := f.documentBody
+	if len(body) == 0 {
+		body = []byte("document-bytes")
+	}
+	return &opendartsdk.FileResponse{ContentType: "application/zip", Body: body}, nil
 }
 
 func (f *fakeClient) List(_ context.Context, params opendartsdk.ListParams) (*opendartsdk.ListResponse, error) {
@@ -745,6 +757,24 @@ func TestOpenDARTProviderFetchesDividendFacts(t *testing.T) {
 	assert.Equal(t, "thstrm:현금배당금총액:보통주", result.Facts[0].Key)
 	assert.Equal(t, "9809437000000", result.Facts[0].ValueNumber)
 	assert.Equal(t, "00126380", result.Facts[0].ProviderCompanyIdentifierValue)
+}
+
+func TestOpenDARTProviderFetchesFilingDocument(t *testing.T) {
+	fake := &fakeClient{documentBody: []byte("zip-bytes")}
+	p := NewWithClient(fake)
+
+	result, err := p.FetchFilingDocument(context.Background(), FilingDocumentRequest{
+		ReceiptNo: "20260330000001",
+	})
+	require.NoError(t, err)
+	assert.Equal(t, "20260330000001", fake.documentParams.RceptNo)
+	assert.Equal(t, provider.ProviderOpenDART, result.Provider)
+	assert.Equal(t, provider.GroupOpenDARTDisclosure, result.Group)
+	assert.Equal(t, provider.OperationOpenDARTDocumentRaw, result.Operation)
+	assert.Equal(t, "application/zip", result.ContentType)
+	assert.Equal(t, 9, result.SizeBytes)
+	assert.NotEmpty(t, result.SHA256)
+	assert.Equal(t, "emlwLWJ5dGVz", result.PayloadBase64)
 }
 
 func TestOpenDARTProviderFetchesPeriodicFacts(t *testing.T) {

@@ -14,6 +14,7 @@ import (
 type client interface {
 	CorpCode(context.Context) (*opendartsdk.FileResponse, error)
 	List(context.Context, opendartsdk.ListParams) (*opendartsdk.ListResponse, error)
+	DocumentRaw(context.Context, opendartsdk.DocumentParams) (*opendartsdk.FileResponse, error)
 	FnlttSinglAcntAll(context.Context, opendartsdk.FnlttSinglAcntAllParams) (*opendartsdk.FnlttSinglAcntAllResponse, error)
 	AlotMatter(context.Context, opendartsdk.AlotMatterParams) (*opendartsdk.AlotMatterResponse, error)
 	TesstkAcqsDspsSttus(context.Context, opendartsdk.TesstkAcqsDspsSttusParams) (*opendartsdk.TesstkAcqsDspsSttusResponse, error)
