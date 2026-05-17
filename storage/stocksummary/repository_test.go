@@ -51,6 +51,14 @@ func TestRepositoryInspectBuildsStoredStockSummary(t *testing.T) {
 	require.Len(t, summary.Events, 1)
 	require.Equal(t, "company_merger", summary.Events[0].EventType)
 	require.Empty(t, summary.Missing)
+	require.Equal(t, "삼성전자", summary.Profile.Company.Name)
+	require.NotNil(t, summary.Profile.FinancialProfile)
+	require.Equal(t, "roe", summary.Profile.FinancialProfile.Metrics[0].Metric)
+	require.NotNil(t, summary.Profile.ValuationProfile)
+	require.Equal(t, int64(120000), *summary.Profile.ValuationProfile.Snapshots[0].PerBP)
+	require.NotNil(t, summary.Profile.ScreenCandidate)
+	require.Equal(t, "005930", summary.Profile.ScreenCandidate.Symbol)
+	require.Equal(t, "company_fact_v1", summary.Profile.CapitalPolicyProfile.Dividends[0].Source.SourceTable)
 }
 
 func TestRepositoryInspectMarksMissingOptionalSections(t *testing.T) {

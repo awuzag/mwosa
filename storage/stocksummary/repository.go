@@ -7,6 +7,7 @@ import (
 
 	"github.com/ev3rlit/mwosa/packages/financialscores"
 	"github.com/ev3rlit/mwosa/providers/core/financials"
+	"github.com/ev3rlit/mwosa/service/research"
 	"github.com/ev3rlit/mwosa/storage"
 	"github.com/ev3rlit/mwosa/storage/companyevent"
 	"github.com/ev3rlit/mwosa/storage/companyfact"
@@ -50,6 +51,7 @@ type Summary struct {
 	Facts       []companyfact.Fact             `json:"facts,omitempty"`
 	Events      []companyevent.Event           `json:"events,omitempty"`
 	Missing     []MissingSection               `json:"missing,omitempty"`
+	Profile     research.StockResearchProfile  `json:"research_profile,omitempty"`
 }
 
 type MissingSection struct {
@@ -145,6 +147,7 @@ func (r Repository) Inspect(ctx context.Context, query string, options Query) (S
 			out.Missing = append(out.Missing, MissingSection{Section: SectionEvents, Reason: "stored company events not found"})
 		}
 	}
+	out.Profile = buildResearchProfile(out)
 	return out, nil
 }
 
@@ -279,4 +282,199 @@ func Int64PtrString(value *int64) string {
 		return ""
 	}
 	return strconv.FormatInt(*value, 10)
+}
+
+func buildResearchProfile(summary Summary) research.StockResearchProfile {
+	profile := research.StockResearchProfile{
+		Sections: summary.Sections,
+		Company: research.CompanyIdentity{
+			CompanyID:   summary.Company.ID,
+			Name:        summary.Company.Name,
+			LegalName:   summary.Company.LegalName,
+			CountryCode: summary.Company.CountryCode,
+		},
+		Missing: researchMissing(summary.Missing),
+	}
+	if summary.Instrument.InstrumentID != 0 || summary.Instrument.Symbol != "" {
+		profile.Company.Instrument = &research.InstrumentIdentity{
+			InstrumentID: summary.Instrument.InstrumentID,
+			Market:       string(summary.Instrument.Market),
+			SecurityType: string(summary.Instrument.SecurityType),
+			Symbol:       summary.Instrument.Symbol,
+			Name:         summary.Instrument.Name,
+		}
+	}
+	if len(summary.Identifiers) > 0 {
+		profile.Company.Identifiers = researchIdentifiers(summary.Identifiers)
+	}
+	if len(summary.Metrics) > 0 {
+		profile.FinancialProfile = &research.FinancialProfile{Metrics: researchMetrics(summary.Metrics)}
+	}
+	if len(summary.Valuation) > 0 {
+		profile.ValuationProfile = &research.ValuationProfile{Snapshots: researchValuations(summary.Valuation)}
+	}
+	if len(summary.Dividends) > 0 {
+		profile.CapitalPolicyProfile = &research.CapitalPolicyProfile{Dividends: researchFacts(summary.Dividends, "company_fact_v1")}
+	}
+	if len(summary.Facts) > 0 {
+		profile.GovernanceProfile = &research.GovernanceProfile{Facts: researchFacts(summary.Facts, "company_fact_v1")}
+	}
+	if len(summary.Events) > 0 {
+		profile.DisclosureEventTimeline = &research.DisclosureEventTimeline{Events: researchEvents(summary.Events, "company_event_v1")}
+	}
+	candidate := researchScreenCandidate(summary)
+	if candidate != nil {
+		profile.ScreenCandidate = candidate
+	}
+	return profile
+}
+
+func researchIdentifiers(identifiers []companyidentity.Identifier) []research.CompanyIdentifier {
+	out := make([]research.CompanyIdentifier, 0, len(identifiers))
+	for _, identifier := range identifiers {
+		out = append(out, research.CompanyIdentifier{
+			Type:       identifier.IdentifierType,
+			Value:      identifier.IdentifierValue,
+			Primary:    identifier.Primary,
+			Confidence: identifier.Confidence,
+			Source: research.SourceRef{
+				Provider:  string(identifier.Provider),
+				Group:     string(identifier.Group),
+				Operation: string(identifier.Operation),
+			},
+		})
+	}
+	return out
+}
+
+func researchMetrics(metrics []financialmetric.Metric) []research.FinancialMetric {
+	out := make([]research.FinancialMetric, 0, len(metrics))
+	for _, metric := range metrics {
+		out = append(out, research.FinancialMetric{
+			Metric:             metric.Metric,
+			FiscalYear:         metric.FiscalYear,
+			FiscalPeriod:       string(metric.FiscalPeriod),
+			AsOfDate:           metric.AsOfDate,
+			ValueDecimal:       metric.ValueDecimal,
+			ValueBP:            metric.ValueBP,
+			ValueMinor:         metric.ValueMinor,
+			FormulaVersion:     metric.FormulaVersion,
+			UncomputableReason: metric.UncomputableReason,
+		})
+	}
+	return out
+}
+
+func researchValuations(snapshots []valuation.Snapshot) []research.ValuationSnapshot {
+	out := make([]research.ValuationSnapshot, 0, len(snapshots))
+	for _, snapshot := range snapshots {
+		out = append(out, research.ValuationSnapshot{
+			AsOfDate:            snapshot.AsOfDate,
+			SourcePriceDate:     snapshot.SourcePriceDate,
+			MarketCapMinor:      snapshot.MarketCapMinor,
+			ClosePriceMinor:     snapshot.ClosePriceMinor,
+			SharesOutstanding:   snapshot.SharesOutstanding,
+			PerBP:               snapshot.PerBP,
+			PbrBP:               snapshot.PbrBP,
+			PsrBP:               snapshot.PsrBP,
+			EpsMinor:            snapshot.EpsMinor,
+			BpsMinor:            snapshot.BpsMinor,
+			DividendYieldBP:     snapshot.DividendYieldBP,
+			MetricSourceVersion: snapshot.MetricSourceVersion,
+			Uncomputable:        snapshot.Uncomputable,
+		})
+	}
+	return out
+}
+
+func researchFacts(facts []companyfact.Fact, sourceTable string) []research.CompanyFact {
+	out := make([]research.CompanyFact, 0, len(facts))
+	for _, fact := range facts {
+		out = append(out, research.CompanyFact{
+			FactType:     fact.FactType,
+			FiscalYear:   fact.FiscalYear,
+			FactDate:     fact.FactDate,
+			Key:          fact.Key,
+			ValueText:    fact.ValueText,
+			ValueNumber:  fact.ValueNumber,
+			CurrencyCode: fact.CurrencyCode,
+			Source: research.SourceRef{
+				Provider:    string(fact.Provider),
+				Group:       string(fact.Group),
+				Operation:   string(fact.Operation),
+				ReportCode:  fact.ReportCode,
+				ReceiptNo:   fact.RceptNo,
+				SourceTable: sourceTable,
+			},
+		})
+	}
+	return out
+}
+
+func researchEvents(events []companyevent.Event, sourceTable string) []research.DisclosureEvent {
+	out := make([]research.DisclosureEvent, 0, len(events))
+	for _, event := range events {
+		out = append(out, research.DisclosureEvent{
+			EventType:   event.EventType,
+			EventDate:   event.EventDate,
+			RceptDt:     event.RceptDt,
+			Title:       event.Title,
+			AmountMinor: event.AmountMinor,
+			ValueText:   event.ValueText,
+			Source: research.SourceRef{
+				Provider:    string(event.Provider),
+				Group:       string(event.Group),
+				Operation:   string(event.Operation),
+				ReceiptNo:   event.RceptNo,
+				SourceTable: sourceTable,
+			},
+		})
+	}
+	return out
+}
+
+func researchMissing(missing []MissingSection) []research.MissingSection {
+	out := make([]research.MissingSection, 0, len(missing))
+	for _, section := range missing {
+		out = append(out, research.MissingSection{Section: section.Section, Reason: section.Reason})
+	}
+	return out
+}
+
+func researchScreenCandidate(summary Summary) *research.ScreenCandidate {
+	symbol := summary.Instrument.Symbol
+	if symbol == "" && len(summary.Metrics) == 0 && len(summary.Valuation) == 0 && len(summary.Facts) == 0 && len(summary.Events) == 0 {
+		return nil
+	}
+	candidate := research.ScreenCandidate{Symbol: symbol}
+	if len(summary.Metrics) > 0 {
+		candidate.Metrics = make(map[string]research.FinancialMetric, len(summary.Metrics))
+		for _, metric := range researchMetrics(summary.Metrics) {
+			candidate.Metrics[metric.Metric] = metric
+		}
+	}
+	if len(summary.Valuation) > 0 {
+		valuation := researchValuations(summary.Valuation)[0]
+		candidate.Valuation = &valuation
+	}
+	if len(summary.Facts) > 0 || len(summary.Dividends) > 0 {
+		facts := append(researchFacts(summary.Dividends, "company_fact_v1"), researchFacts(summary.Facts, "company_fact_v1")...)
+		candidate.Facts = make(map[string]research.CompanyFact, len(facts))
+		for _, fact := range facts {
+			candidate.Facts[researchFactKey(fact)] = fact
+		}
+	}
+	if len(summary.Events) > 0 {
+		candidate.Events = researchEvents(summary.Events, "company_event_v1")
+	}
+	return &candidate
+}
+
+func researchFactKey(fact research.CompanyFact) string {
+	factType := strings.TrimSpace(fact.FactType)
+	key := strings.TrimSpace(fact.Key)
+	if key == "" || key == factType {
+		return factType
+	}
+	return factType + "." + key
 }

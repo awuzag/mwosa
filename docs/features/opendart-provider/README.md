@@ -307,6 +307,16 @@ catalog 와 file response escape hatch 이며, 일반 workflow 의 중심 comman
 `company_events` 를 붙여 가격 모멘텀, 재무 품질, 가치 지표를 함께 screen 할 수
 있게 한다.
 
+현재 storage row 는 DDD aggregate 라기보다 canonical persistence row 에 가깝다.
+따라서 OpenDART API 응답 모양이나 Bun row 모양을 application aggregate 로 직접
+올리지 않고, `service/research` 의 `StockResearchProfile` 과 `ScreenCandidate`
+projection 으로 한 번 더 조립한다. `inspect stock` 은 기존 summary JSON 을
+유지하면서 `research_profile` 을 함께 제공해 provider-neutral read model 전환을
+점진적으로 시작한다.
+
+자세한 경계는 [Research Aggregate / Projection Boundary](../../architectures/research-aggregate/README.md)
+문서에 둔다.
+
 ## 현재 의존 순서
 
 저장된 canonical 데이터를 읽는 명령은 선행 sync/calc 가 필요하다.

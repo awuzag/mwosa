@@ -198,6 +198,12 @@ mwosa screen stocks \
 | `company_facts` | `company_fact_v1` |
 | `company_events` | `company_event_v1` |
 
+이 dataset 은 `service/research.ScreenCandidate` projection 을 공유한다. 즉
+strategy service 가 storage row shape 를 직접 도메인 모델로 삼는 대신, 가격
+row 에 붙일 재무/가치/이벤트 입력을 provider-neutral 후보 모델로 한 번 모은다.
+OpenDART 의 `rcept_no`, `reprt_code`, `fs_div` 같은 값은 계산 provenance 나 source
+reference 로 남기되 screen 조건의 중심 필드는 canonical metric 이름이어야 한다.
+
 전략 파일 예시는 다음처럼 둔다.
 
 ```yaml
