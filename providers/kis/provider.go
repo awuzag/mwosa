@@ -9,6 +9,7 @@ import (
 
 	kisclient "github.com/ev3rlit/mwosa/clients/kis"
 	provider "github.com/ev3rlit/mwosa/providers/core"
+	"github.com/ev3rlit/mwosa/providers/core/composition"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
 	"github.com/ev3rlit/mwosa/providers/core/instrument"
 	"github.com/ev3rlit/mwosa/providers/core/intradaybar"
@@ -36,6 +37,7 @@ type marketDataClient interface {
 	UseToken(kisclient.Token)
 	Price(context.Context, string) (kisclient.Price, error)
 	ETFETNPrice(context.Context, string) (kisclient.ETFETNPrice, error)
+	ETFComponentStockPrices(context.Context, string) (kisclient.ETFComponentStockPriceResult, error)
 	Daily(context.Context, string, ...kisclient.DailyOption) ([]kisclient.Bar, error)
 	Intraday(context.Context, string, ...kisclient.IntradayOption) ([]kisclient.IntradayBar, error)
 	Orderbook(context.Context, string) (kisclient.Orderbook, error)
@@ -114,7 +116,7 @@ func NewWithClient(client marketDataClient, accessTokenProvided bool, options ..
 		}
 	}
 	p.groups = []provider.GroupRoleProvider{
-		newDomesticStockQuotationGroup(p.fetchQuoteSnapshot, p.fetchDailyBars, p.fetchIntradayBars, p.fetchOrderbookSnapshot, p.listMarketTrades),
+		newDomesticStockQuotationGroup(p.fetchQuoteSnapshot, p.fetchDailyBars, p.fetchIntradayBars, p.fetchOrderbookSnapshot, p.listMarketTrades, p.listConstituents),
 		newDomesticStockInstrumentGroup(p.searchInstruments),
 	}
 	return p
@@ -404,6 +406,65 @@ func (p *Provider) listMarketTrades(ctx context.Context, input tradesrole.ListIn
 	}, nil
 }
 
+func (p *Provider) listConstituents(ctx context.Context, input composition.ListInput) (composition.ListResult, error) {
+	errb := oops.In("kis_adapter").With("role", provider.RoleComposition, "market", input.Market, "security_type", input.SecurityType, "symbol", input.Symbol, "limit", input.Limit)
+	if err := validateMarket(input.Market); err != nil {
+		return composition.ListResult{}, errb.Wrap(err)
+	}
+	symbol := strings.TrimSpace(input.Symbol)
+	if symbol == "" {
+		return composition.ListResult{}, errb.New("kis composition request requires symbol")
+	}
+	if input.SecurityType != provider.SecurityTypeETF {
+		return composition.ListResult{}, unsupportedSecurityTypeError(provider.RoleComposition, input.SecurityType)
+	}
+	if p.client == nil {
+		return composition.ListResult{}, errb.New("kis provider client is nil")
+	}
+	if err := p.ensureAccessToken(ctx); err != nil {
+		return composition.ListResult{}, errb.Wrap(err)
+	}
+
+	result, err := p.client.ETFComponentStockPrices(ctx, symbol)
+	if err != nil {
+		return composition.ListResult{}, errb.With("operation", provider.OperationKISETFComponentStockPrice).Wrapf(err, "fetch kis ETF component stock prices")
+	}
+	now := p.now().UTC()
+	observedAtMS := now.UnixMilli()
+	source := kisComponentSource()
+	subject := composition.InstrumentRef{
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeETF,
+		Symbol:       symbol,
+	}
+	members := make([]composition.CompositionMember, 0, len(result.Rows))
+	quotes := make([]composition.QuoteObservation, 0, len(result.Rows)+1)
+	if subjectQuote := quoteObservationFromHeader(result.Output1, subject, observedAtMS); subjectQuote.Price.Value != "" {
+		quotes = append(quotes, subjectQuote)
+	}
+	for _, row := range limitSlice(result.Rows, input.Limit) {
+		member, quote := compositionMemberFromKISComponentRow(row, observedAtMS)
+		members = append(members, member)
+		if quote.Price.Value != "" || quote.Volume.Value != "" {
+			quotes = append(quotes, quote)
+		}
+	}
+	return composition.ListResult{
+		Composition: composition.Composition{
+			Source:       source,
+			Subject:      subject,
+			AsOfDate:     now.In(koreaLocation()).Format("2006-01-02"),
+			ObservedAtMS: observedAtMS,
+			Members:      members,
+		},
+		QuoteObservations: quotes,
+		Provider:          p.Identity,
+		Group:             provider.GroupKISDomesticStockQuotation,
+		Operation:         provider.OperationKISETFComponentStockPrice,
+		TotalCount:        len(members),
+	}, nil
+}
+
 func (p *Provider) searchInstruments(ctx context.Context, input instrument.SearchInput) (instrument.SearchResult, error) {
 	errb := oops.In("kis_adapter").With("role", provider.RoleInstrument, "market", input.Market, "security_type", input.SecurityType, "query", input.Query)
 	if err := validateMarket(input.Market); err != nil {
@@ -580,6 +641,65 @@ func normalizeTimedTrade(trade kisclient.TimedTrade, symbol string, securityType
 	}
 }
 
+func compositionMemberFromKISComponentRow(row kisclient.ETFComponentStockPrice, observedAtMS int64) (composition.CompositionMember, composition.QuoteObservation) {
+	instrument := composition.InstrumentRef{
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeStock,
+		Symbol:       row.Symbol,
+		Name:         row.Name,
+	}
+	member := composition.CompositionMember{
+		Instrument: instrument,
+		Weight:     decimalValue(row.Weight),
+		Quantity:   decimalValue(row.Quantity),
+		Valuation:  moneyValue(row.ValuationAmount),
+	}
+	quote := composition.QuoteObservation{
+		Instrument:   instrument,
+		ObservedAtMS: observedAtMS,
+		Price:        moneyValue(row.Current),
+		Change:       moneyValue(row.PreviousChange),
+		ChangeRate:   decimalValue(row.PreviousChangeRate),
+		Volume:       decimalValue(row.Volume),
+	}
+	return member, quote
+}
+
+func quoteObservationFromHeader(header map[string]string, subject composition.InstrumentRef, observedAtMS int64) composition.QuoteObservation {
+	return composition.QuoteObservation{
+		Instrument:   subject,
+		ObservedAtMS: observedAtMS,
+		Price:        moneyValue(firstNonEmpty(header["stck_prpr"], header["prpr"])),
+		Change:       moneyValue(header["prdy_vrss"]),
+		ChangeRate:   decimalValue(header["prdy_ctrt"]),
+		Volume:       decimalValue(header["acml_vol"]),
+	}
+}
+
+func kisComponentSource() composition.SourceRef {
+	return composition.SourceRef{
+		Provider:  provider.ProviderKIS,
+		Group:     provider.GroupKISDomesticStockQuotation,
+		Operation: provider.OperationKISETFComponentStockPrice,
+	}
+}
+
+func moneyValue(value string) composition.MoneyValue {
+	value = strings.TrimSpace(value)
+	if value == "" {
+		return composition.MoneyValue{}
+	}
+	return composition.MoneyValue{Currency: "KRW", Value: value}
+}
+
+func decimalValue(value string) composition.DecimalValue {
+	return composition.DecimalValue{Value: strings.TrimSpace(value)}
+}
+
+func koreaLocation() *time.Location {
+	return time.FixedZone("Asia/Seoul", 9*60*60)
+}
+
 func instrumentFromProduct(product kisclient.Product, securityType provider.SecurityType) instrument.Instrument {
 	securityCode := firstNonEmpty(product.ShortProductNo, product.ProductNo)
 	return instrument.Instrument{
@@ -723,11 +843,12 @@ type domesticStockQuotationGroup struct {
 	intradayFetcher      intradaybar.Fetcher
 	orderbookSnapshotter orderbook.Snapshotter
 	tradesLister         tradesrole.Lister
+	compositionLister    composition.Lister
 }
 
 var _ provider.GroupRoleProvider = domesticStockQuotationGroup{}
 
-func newDomesticStockQuotationGroup(snapshot quote.SnapshotFunc, fetch dailybar.FetchFunc, fetchIntraday intradaybar.FetchFunc, snapshotOrderbook orderbook.SnapshotFunc, listTrades tradesrole.ListFunc) domesticStockQuotationGroup {
+func newDomesticStockQuotationGroup(snapshot quote.SnapshotFunc, fetch dailybar.FetchFunc, fetchIntraday intradaybar.FetchFunc, snapshotOrderbook orderbook.SnapshotFunc, listTrades tradesrole.ListFunc, listConstituents composition.ListFunc) domesticStockQuotationGroup {
 	return domesticStockQuotationGroup{
 		quoteSnapshotter: quote.NewSnapshot(
 			spec.Quote().
@@ -797,6 +918,25 @@ func newDomesticStockQuotationGroup(snapshot quote.SnapshotFunc, fetch dailybar.
 			Priority(90).
 			Limitations("recent same-day market trades only; account executions are intentionally out of scope").
 			MustBuild(),
+		compositionLister: composition.NewList(composition.Profile{
+			Markets:       []provider.Market{provider.MarketKRX},
+			SecurityTypes: []provider.SecurityType{provider.SecurityTypeETF},
+			Group:         provider.GroupKISDomesticStockQuotation,
+			Operations:    []provider.OperationID{provider.OperationKISETFComponentStockPrice},
+			AuthScope:     provider.CredentialScopeKIS,
+			Freshness:     provider.FreshnessDaily,
+			Compatibility: provider.Compatibility{
+				DataLatency:         provider.DataLatencyRealtime,
+				CurrentDaySupported: true,
+				Notes:               []string{"KIS ETF component stock price API is adapted into canonical composition members plus quote observations"},
+			},
+			RequiresAuth: true,
+			Priority:     90,
+			Limitations: []string{
+				"live read-through composition only; canonical composition storage is not implemented in this path",
+				"ETF only; ETN and ELW component rows are not registered",
+			},
+		}, listConstituents),
 	}
 }
 
@@ -827,6 +967,7 @@ func (g domesticStockQuotationGroup) RoleRegistrations() []provider.RoleRegistra
 		g.intradayFetcher.RoleRegistration(),
 		g.orderbookSnapshotter.RoleRegistration(),
 		g.tradesLister.RoleRegistration(),
+		g.compositionLister.RoleRegistration(),
 	}
 }
 

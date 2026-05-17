@@ -14,7 +14,7 @@ client 에 구현되어 있지 않고 실행/risk/portfolio 경계가 아직 정
 
 | provider id | group | capability | 비고 |
 | --- | --- | --- | --- |
-| `kis` | `domesticStockQuotation` | `quote_snapshot`, `daily_bar`, `intraday_bar`, `orderbook`, `trades` | 국내 주식/ETF/ETN 현재가, 일봉, 분봉, 10단계 호가, 시장 체결 조회 |
+| `kis` | `domesticStockQuotation` | `quote_snapshot`, `daily_bar`, `intraday_bar`, `orderbook`, `trades`, `composition` | 국내 주식/ETF/ETN 현재가, ETF 구성종목시세 기반 구성 종목 조회, 일봉, 분봉, 10단계 호가, 시장 체결 조회 |
 | `kis` | `domesticStockInstrument` | `instrument` | 상품/주식 기본정보 기반의 정확한 코드 조회 |
 
 KIS 고유 API 이름은 public CLI verb 로 노출하지 않고 provider profile 의
@@ -27,6 +27,7 @@ operation metadata 로만 남긴다.
 | `Token` | `/oauth2/tokenP` | 없음 | auth dependency | credential bootstrap | 내부 사용 |
 | `Price` | `/uapi/domestic-stock/v1/quotations/inquire-price` | 없음 | quote snapshot | `quote_snapshot` / `price` | 구현 |
 | `ETFETNPrice` | `/uapi/etfetn/v1/quotations/inquire-price` | 없음 | quote snapshot | `quote_snapshot` / `etfetnPrice` | 구현 |
+| `ETFComponentStockPrices` | `/uapi/etfetn/v1/quotations/inquire-component-stock-price` | 없음 | composition members + quote observation 후보 | `composition` / `etfComponentStockPrice` | 구현 |
 | `Daily` | `/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice` | 없음 | daily bar | `daily_bar` / `daily` | 구현 |
 | `Product` | `/uapi/domestic-stock/v1/quotations/search-info` | 없음 | instrument | `instrument` / `product` | 구현 |
 | `Stock` | `/uapi/domestic-stock/v1/quotations/search-stock-info` | 없음 | instrument | `instrument` / `stock` | 구현 |
@@ -51,6 +52,7 @@ mwosa get intraday 005930 --provider kis --security-type stock --at 141200 -o js
 mwosa get orderbook 005930 --provider kis --security-type stock -o json
 mwosa list trades 005930 --provider kis --security-type stock -o json
 mwosa list trades 005930 --provider kis --security-type stock --at 141200 -o json
+mwosa list constituents 069500 --provider kis -o json
 mwosa ensure daily 005930 --provider kis --security-type stock --from 2026-05-01 --to 2026-05-08 -o json
 mwosa inspect instrument 005930 --provider kis --security-type stock -o json
 mwosa list instruments 069500 --provider kis --security-type etf -o json
@@ -59,8 +61,11 @@ mwosa doctor provider kis -o json
 
 `kis` 일봉은 심볼 단위 조회다. `sync daily` 또는 `backfill daily` 처럼 provider
 전체 배치를 수집하는 command 는 현재 KIS adapter 의 범위가 아니다.
-분봉, 호가, 시장 체결 조회도 provider live/read-through 조회이며 현재 로컬
-canonical storage 에 저장하지 않는다. `--at` 은 `HHMMSS` 또는 `HH:MM:SS` 형식의
+분봉, 호가, 시장 체결 조회, 구성 종목 조회도 provider live/read-through 조회이며 현재 로컬
+canonical storage 에 저장하지 않는다. KIS `ETFComponentStockPrices` 응답은
+provider-native DTO 로만 다루고, adapter 에서 `Composition` aggregate 와
+`QuoteObservation` 후보로 분해한다. 기본 CLI 출력은 구성 종목 정보 중심이며 raw 나
+KIS 응답 구조를 노출하지 않는다. `--at` 은 `HHMMSS` 또는 `HH:MM:SS` 형식의
 범용 시간 anchor 로 받고, KIS adapter 내부에서 provider 요청 형식으로 바꾼다.
 
 ## 인증

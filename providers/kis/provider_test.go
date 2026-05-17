@@ -7,6 +7,7 @@ import (
 
 	kisclient "github.com/ev3rlit/mwosa/clients/kis"
 	provider "github.com/ev3rlit/mwosa/providers/core"
+	"github.com/ev3rlit/mwosa/providers/core/composition"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
 	"github.com/ev3rlit/mwosa/providers/core/instrument"
 	"github.com/ev3rlit/mwosa/providers/core/intradaybar"
@@ -21,7 +22,7 @@ func TestProviderRegistersReadOnlyKISRoles(t *testing.T) {
 
 	registrations := p.RoleRegistrations()
 
-	require.Len(t, registrations, 7)
+	require.Len(t, registrations, 8)
 	roles := map[provider.Role]int{}
 	for _, registration := range registrations {
 		require.Equal(t, provider.ProviderKIS, p.ProviderIdentity().ID)
@@ -34,6 +35,7 @@ func TestProviderRegistersReadOnlyKISRoles(t *testing.T) {
 	require.Equal(t, 1, roles[provider.RoleInstrument])
 	require.Equal(t, 1, roles[provider.RoleIntradayBar])
 	require.Equal(t, 1, roles[provider.RoleOrderbook])
+	require.Equal(t, 1, roles[provider.RoleComposition])
 	require.Equal(t, 1, roles[provider.RoleTrades])
 }
 
@@ -78,6 +80,47 @@ func TestFetchETFQuoteUsesETFETNPrice(t *testing.T) {
 	require.Equal(t, 1, client.etfetnCalls)
 	require.Equal(t, "069500", result.Symbol)
 	require.Equal(t, "10250", result.Price)
+}
+
+func TestListConstituentsSplitsCompositionAndQuoteObservations(t *testing.T) {
+	client := &fakeKISClient{
+		etfComponents: kisclient.ETFComponentStockPriceResult{
+			Rows: []kisclient.ETFComponentStockPrice{
+				{
+					Symbol:             "005930",
+					Name:               "삼성전자",
+					Current:            "75000",
+					PreviousChange:     "100",
+					PreviousChangeRate: "0.13",
+					Volume:             "123456",
+					Weight:             "28.15",
+					ValuationAmount:    "1942000000",
+					Quantity:           "25893",
+				},
+			},
+			Output1: map[string]string{"stck_prpr": "36090"},
+		},
+	}
+	p := NewWithClient(client, true)
+
+	result, err := p.listConstituents(context.Background(), composition.ListInput{
+		Market:       provider.MarketKRX,
+		SecurityType: provider.SecurityTypeETF,
+		Symbol:       "069500",
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, 1, client.etfComponentCalls)
+	require.Equal(t, provider.OperationKISETFComponentStockPrice, result.Operation)
+	require.Equal(t, "069500", result.Composition.Subject.Symbol)
+	require.Len(t, result.Composition.Members, 1)
+	require.Equal(t, "005930", result.Composition.Members[0].Instrument.Symbol)
+	require.Equal(t, "삼성전자", result.Composition.Members[0].Instrument.Name)
+	require.Equal(t, "28.15", result.Composition.Members[0].Weight.Value)
+	require.Equal(t, "1942000000", result.Composition.Members[0].Valuation.Value)
+	require.Len(t, result.QuoteObservations, 2)
+	require.Equal(t, "36090", result.QuoteObservations[0].Price.Value)
+	require.Equal(t, "75000", result.QuoteObservations[1].Price.Value)
 }
 
 func TestFetchQuoteUsesValidCachedTokenWithoutIssuingToken(t *testing.T) {
@@ -513,20 +556,22 @@ type fakeKISClient struct {
 	tokenCalls    int
 	useTokenCalls int
 
-	priceCalls      int
-	etfetnCalls     int
-	dailyCalls      int
-	intradayCalls   int
-	orderbookCalls  int
-	tradesCalls     int
-	timeTradesCalls int
-	productCalls    int
-	stockCalls      int
+	priceCalls        int
+	etfetnCalls       int
+	etfComponentCalls int
+	dailyCalls        int
+	intradayCalls     int
+	orderbookCalls    int
+	tradesCalls       int
+	timeTradesCalls   int
+	productCalls      int
+	stockCalls        int
 
 	price                   kisclient.Price
 	token                   kisclient.Token
 	usedToken               kisclient.Token
 	etfetnPrice             kisclient.ETFETNPrice
+	etfComponents           kisclient.ETFComponentStockPriceResult
 	bars                    []kisclient.Bar
 	intradayBars            []kisclient.IntradayBar
 	orderbook               kisclient.Orderbook
@@ -558,6 +603,11 @@ func (c *fakeKISClient) Price(context.Context, string) (kisclient.Price, error) 
 func (c *fakeKISClient) ETFETNPrice(context.Context, string) (kisclient.ETFETNPrice, error) {
 	c.etfetnCalls++
 	return c.etfetnPrice, nil
+}
+
+func (c *fakeKISClient) ETFComponentStockPrices(context.Context, string) (kisclient.ETFComponentStockPriceResult, error) {
+	c.etfComponentCalls++
+	return c.etfComponents, nil
 }
 
 func (c *fakeKISClient) Daily(_ context.Context, _ string, options ...kisclient.DailyOption) ([]kisclient.Bar, error) {

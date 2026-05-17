@@ -22,10 +22,15 @@ type tradesFlags struct {
 	Limit        int
 }
 
+type constituentsFlags struct {
+	Limit int
+}
+
 func registerMarketDataCommands(roots commandRoots, opts *Options) {
 	roots.Get.AddCommand(newGetIntradayCommand(opts))
 	roots.Get.AddCommand(newGetOrderbookCommand(opts))
 	roots.List.AddCommand(newListTradesCommand(opts))
+	roots.List.AddCommand(newListConstituentsCommand(opts))
 }
 
 func newGetIntradayCommand(opts *Options) *cobra.Command {
@@ -114,5 +119,32 @@ func newListTradesCommand(opts *Options) *cobra.Command {
 	cmd.Flags().StringVar(&flags.At, "at", flags.At, "provider-neutral time anchor in HHMMSS or HH:MM:SS form")
 	cmd.Flags().IntVar(&flags.Limit, "limit", flags.Limit, "maximum number of market trades to return")
 	mustRegisterFlagCompletion(cmd, "security-type", completeSecurityTypes)
+	return cmd
+}
+
+func newListConstituentsCommand(opts *Options) *cobra.Command {
+	flags := constituentsFlags{}
+	cmd := &cobra.Command{
+		Use:   "constituents <symbol>",
+		Short: "List composition constituents for a symbol",
+		Args:  cobra.ExactArgs(1),
+		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
+			runtime, err := newAppRuntime(opts, true)
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
+
+			return runtime.Handlers.Compositions.List(cmd.Context(), handler.ListConstituentsRequest{
+				ProviderID:     provider.ProviderID(opts.Provider),
+				PreferProvider: provider.ProviderID(opts.PreferProvider),
+				Market:         provider.Market(opts.Market),
+				SecurityType:   provider.SecurityTypeETF,
+				Symbol:         args[0],
+				Limit:          flags.Limit,
+			})
+		}),
+	}
+	cmd.Flags().IntVar(&flags.Limit, "limit", flags.Limit, "maximum number of constituents to return")
 	return cmd
 }

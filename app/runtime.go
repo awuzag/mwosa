@@ -8,6 +8,7 @@ import (
 	migrationcore "github.com/ev3rlit/mwosa/migration"
 	"github.com/ev3rlit/mwosa/providers/builtin"
 	provider "github.com/ev3rlit/mwosa/providers/core"
+	"github.com/ev3rlit/mwosa/providers/core/composition"
 	"github.com/ev3rlit/mwosa/providers/core/dailybar"
 	"github.com/ev3rlit/mwosa/providers/core/financials"
 	"github.com/ev3rlit/mwosa/providers/core/indexbar"
@@ -18,6 +19,7 @@ import (
 	"github.com/ev3rlit/mwosa/providers/core/trades"
 	kisprovider "github.com/ev3rlit/mwosa/providers/kis"
 	backtestservice "github.com/ev3rlit/mwosa/service/backtest"
+	compositionservice "github.com/ev3rlit/mwosa/service/composition"
 	"github.com/ev3rlit/mwosa/service/daily"
 	financialsservice "github.com/ev3rlit/mwosa/service/financials"
 	indexservice "github.com/ev3rlit/mwosa/service/index"
@@ -79,44 +81,47 @@ type IndexBarStorage struct {
 }
 
 type ProviderRuntime struct {
-	Registry    *provider.Registry
-	Router      *provider.Router
-	DailyBars   dailybar.Router
-	IndexBars   indexbar.Router
-	Financials  financials.Router
-	Quotes      quote.Router
-	Instruments instrument.Router
-	Intraday    intradaybar.Router
-	Orderbooks  orderbook.Router
-	Trades      trades.Router
+	Registry     *provider.Registry
+	Router       *provider.Router
+	Compositions composition.Router
+	DailyBars    dailybar.Router
+	IndexBars    indexbar.Router
+	Financials   financials.Router
+	Quotes       quote.Router
+	Instruments  instrument.Router
+	Intraday     intradaybar.Router
+	Orderbooks   orderbook.Router
+	Trades       trades.Router
 }
 
 type ServiceRuntime struct {
-	Backtest    backtestservice.Service
-	Daily       DailyServices
-	Index       IndexServices
-	Financials  financialsservice.Service
-	Instruments instrumentservice.Service
-	Intraday    intradayservice.Service
-	Orderbooks  orderbookservice.Service
-	Providers   providerservice.Service
-	Quotes      quoteservice.Service
-	Strategy    strategyservice.Service
-	Trades      tradesservice.Service
+	Backtest     backtestservice.Service
+	Compositions compositionservice.Service
+	Daily        DailyServices
+	Index        IndexServices
+	Financials   financialsservice.Service
+	Instruments  instrumentservice.Service
+	Intraday     intradayservice.Service
+	Orderbooks   orderbookservice.Service
+	Providers    providerservice.Service
+	Quotes       quoteservice.Service
+	Strategy     strategyservice.Service
+	Trades       tradesservice.Service
 }
 
 type Handlers struct {
-	Backtest    handler.Backtest
-	Daily       handler.Daily
-	Index       handler.Index
-	Financials  handler.Financials
-	Instruments handler.Instrument
-	Intraday    handler.Intraday
-	Migration   handler.Migration
-	Orderbooks  handler.Orderbook
-	Quotes      handler.Quote
-	Strategy    handler.Strategy
-	Trades      handler.Trades
+	Backtest     handler.Backtest
+	Compositions handler.Composition
+	Daily        handler.Daily
+	Index        handler.Index
+	Financials   handler.Financials
+	Instruments  handler.Instrument
+	Intraday     handler.Intraday
+	Migration    handler.Migration
+	Orderbooks   handler.Orderbook
+	Quotes       handler.Quote
+	Strategy     handler.Strategy
+	Trades       handler.Trades
 }
 
 type DailyServices struct {
@@ -223,16 +228,17 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 
 	coreRouter := provider.NewRouter(registry)
 	providerRuntime := ProviderRuntime{
-		Registry:    registry,
-		Router:      coreRouter,
-		DailyBars:   dailybar.NewRouter(coreRouter),
-		IndexBars:   indexbar.NewRouter(coreRouter),
-		Financials:  financials.NewRouter(coreRouter),
-		Quotes:      quote.NewRouter(coreRouter),
-		Instruments: instrument.NewRouter(coreRouter),
-		Intraday:    intradaybar.NewRouter(coreRouter),
-		Orderbooks:  orderbook.NewRouter(coreRouter),
-		Trades:      trades.NewRouter(coreRouter),
+		Registry:     registry,
+		Router:       coreRouter,
+		Compositions: composition.NewRouter(coreRouter),
+		DailyBars:    dailybar.NewRouter(coreRouter),
+		IndexBars:    indexbar.NewRouter(coreRouter),
+		Financials:   financials.NewRouter(coreRouter),
+		Quotes:       quote.NewRouter(coreRouter),
+		Instruments:  instrument.NewRouter(coreRouter),
+		Intraday:     intradaybar.NewRouter(coreRouter),
+		Orderbooks:   orderbook.NewRouter(coreRouter),
+		Trades:       trades.NewRouter(coreRouter),
 	}
 
 	dailyReader, err := daily.NewReadService(reader)
@@ -323,6 +329,14 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 			providerAuthDatabase.Close(),
 		)
 	}
+	compositionService, err := compositionservice.NewService(providerRuntime.Compositions)
+	if err != nil {
+		return nil, oops.Join(
+			errb.Wrapf(err, "create composition service"),
+			database.Close(),
+			providerAuthDatabase.Close(),
+		)
+	}
 	datasetReader, err := strategyservice.NewDailyBarDatasetReader(reader, opts.Market)
 	if err != nil {
 		return nil, oops.Join(
@@ -371,6 +385,7 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	intradayHandler := handler.NewIntraday(intradayService)
 	orderbookHandler := handler.NewOrderbook(orderbookService)
 	tradesHandler := handler.NewTrades(tradesService)
+	compositionHandler := handler.NewComposition(compositionService)
 	migrationHandler := handler.NewMigration(migrationRunner)
 
 	return &Runtime{
@@ -392,7 +407,8 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 		},
 		Providers: providerRuntime,
 		Services: ServiceRuntime{
-			Backtest: backtestService,
+			Backtest:     backtestService,
+			Compositions: compositionService,
 			Daily: DailyServices{
 				Reader:    dailyReader,
 				Collector: dailyCollector,
@@ -411,17 +427,18 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 			Trades:      tradesService,
 		},
 		Handlers: Handlers{
-			Backtest:    backtestHandler,
-			Daily:       dailyHandler,
-			Index:       indexHandler,
-			Financials:  financialsHandler,
-			Instruments: instrumentHandler,
-			Intraday:    intradayHandler,
-			Migration:   migrationHandler,
-			Orderbooks:  orderbookHandler,
-			Quotes:      quoteHandler,
-			Strategy:    strategyHandler,
-			Trades:      tradesHandler,
+			Backtest:     backtestHandler,
+			Compositions: compositionHandler,
+			Daily:        dailyHandler,
+			Index:        indexHandler,
+			Financials:   financialsHandler,
+			Instruments:  instrumentHandler,
+			Intraday:     intradayHandler,
+			Migration:    migrationHandler,
+			Orderbooks:   orderbookHandler,
+			Quotes:       quoteHandler,
+			Strategy:     strategyHandler,
+			Trades:       tradesHandler,
 		},
 	}, nil
 }

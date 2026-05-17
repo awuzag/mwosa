@@ -64,6 +64,7 @@ func TestMarketDataCommandsAreRegistered(t *testing.T) {
 	for _, args := range [][]string{
 		{"get", "intraday", "005930"},
 		{"get", "orderbook", "005930"},
+		{"list", "constituents", "069500"},
 		{"list", "trades", "005930"},
 	} {
 		found, _, err := cmd.Find(args)

@@ -80,7 +80,7 @@ provider 와 group 을 한 문자열로 합쳐 `datago/securitiesProductPrice` �
 | `datago` | `stockPrice` | `core` | `getStockPriceInfo` | `candles`, `instrument` | 금융위원회 주식시세정보 OpenAPI 다. |
 | `datago` | `krxListedInstrument` | `planned` | KRX상장종목정보 | `instrument` | 종목코드와 `crno` 같은 reference identifier 를 canonical instrument store 에 저장하는 source 로 둔다. |
 | `datago` | `corporateFinancial` | `planned` | 기업 재무 정보 | `fundamentals`, `financials` | `crno` 데이터 의존성을 가진다. |
-| `kis` | `domesticStockQuotation` | `core` | `price`, `daily`, `etfetnPrice`, `intraday`, `orderbook`, `trades`, `timeTrades` | `quote`, `candles`, `intraday_bar`, `orderbook`, `trades` | KIS client 의 국내 주식/ETF/ETN 현재가, 심볼 단위 일봉, 분봉, 10단계 호가, 시장 체결 조회를 연결한다. |
+| `kis` | `domesticStockQuotation` | `core` | `price`, `daily`, `etfetnPrice`, `etfComponentStockPrice`, `intraday`, `orderbook`, `trades`, `timeTrades` | `quote`, `candles`, `composition`, `intraday_bar`, `orderbook`, `trades` | KIS client 의 국내 주식/ETF/ETN 현재가, ETF 구성종목시세 기반 구성 종목 조회, 심볼 단위 일봉, 분봉, 10단계 호가, 시장 체결 조회를 연결한다. |
 | `kis` | `domesticStockInstrument` | `core` | `product`, `stock` | `instrument` | 상품기본조회와 주식기본조회 기반의 정확한 코드 조회를 연결한다. |
 | `krx` | `etpDailyTrade` | `planned` | KRX ETF/ETN/ELW 일별매매정보 | `candles`, `instrument` | KRX OpenAPI 승인 후 보조 후보로 둔다. |
 | `krx` | `stockDailyTrade` | `planned` | KRX 주식 일별매매정보 | `candles`, `instrument` | datago 와 중복되는 범위는 router 우선순위로 다룬다. |
@@ -167,6 +167,7 @@ provider 와 group 을 한 문자열로 합쳐 `datago/securitiesProductPrice` �
 | capability | 우선 provider | 확장 provider |
 | --- | --- | --- |
 | `quote` | `kis` | `kiwoom`, `yahoo-finance`, `alpha-vantage`, `polygon`, `finnhub`, `twelve-data` |
+| `composition` | `kis` | `krx`, `yahoo-finance`, `openfigi` |
 | `candles` | `kis`, `datago` | `krx`, `yahoo-finance`, `alpha-vantage`, `polygon`, `stooq`, `eodhd` |
 | `instrument` | `datago`, `krx`, `kis` | `openfigi`, `yahoo-finance`, `fmp` |
 | `intraday_bar` | `kis` | `kiwoom`, `polygon`, `twelve-data` |

@@ -55,6 +55,9 @@ const (
 	// OperationETFETNPrice is the SDK operation name for ETF/ETN price quotes.
 	OperationETFETNPrice = "etfetnPrice"
 
+	// OperationETFComponentStockPrice is the SDK operation name for ETF component stock prices.
+	OperationETFComponentStockPrice = "etfComponentStockPrice"
+
 	// DefaultCustomerType is the KIS customer type for individual customers.
 	DefaultCustomerType = "P"
 
@@ -70,6 +73,7 @@ const (
 	trIDDomesticStockProduct        = "CTPF1604R"
 	trIDDomesticStockInfo           = "CTPF1002R"
 	trIDETFETNPrice                 = "FHPST02400000"
+	trIDETFComponentStockPrice      = "FHKST121600C0"
 )
 
 type config struct {

@@ -134,7 +134,15 @@ func TestE2ERealOnlyInstrumentAndETFETN(t *testing.T) {
 		t.Fatalf("live ETF/ETN price symbol=%s returned empty current price: %+v", config.ETFSymbol, etf)
 	}
 
-	t.Logf("symbol=%s product=%s stock=%s etf_symbol=%s etf_current=%s", config.Symbol, product.Name, stock.Name, config.ETFSymbol, etf.Current)
+	components, err := client.ETFComponentStockPrices(ctx, config.ETFSymbol)
+	if err != nil {
+		t.Fatalf("live ETF component stock prices symbol=%s: %v", config.ETFSymbol, err)
+	}
+	if len(components.Rows) == 0 {
+		t.Fatalf("live ETF component stock prices symbol=%s returned no rows: %+v", config.ETFSymbol, components)
+	}
+
+	t.Logf("symbol=%s product=%s stock=%s etf_symbol=%s etf_current=%s etf_components=%d", config.Symbol, product.Name, stock.Name, config.ETFSymbol, etf.Current, len(components.Rows))
 }
 
 type liveConfig struct {
