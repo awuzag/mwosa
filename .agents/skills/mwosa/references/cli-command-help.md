@@ -19,10 +19,10 @@ MWOSA_HELP_REPO_ROOT=/path/to/mwosa skills/mwosa/references/generate-cli-command
 ## Captured Help
 
 ```text
-mwosa v0.1.1-0.20260516075554-e5495e4b0a6a
+mwosa v0.1.1-0.20260517111516-3945bfb9ca77
 schema dev
-commit e5495e4b0a6a6a8978ab2422a653b9022ac1727e
-built 2026-05-16T07:55:54Z
+commit 3945bfb9ca776068d42c37bfd9992269c745bc56
+built 2026-05-17T11:15:16Z
 go go1.25.6
 Investment research CLI for provider-backed market data
 
@@ -1175,13 +1175,14 @@ Usage:
   mwosa list [command]
 
 Available Commands:
-  backtest    List backtest resources
-  evaluations List saved backtest evaluations
-  instruments Search stored instruments, falling back to provider search
-  krx-apis    List KRX OPEN API services known to mwosa
-  providers   List configured and available providers
-  strategies  List saved screening strategies
-  trades      List recent market trade prints for a symbol
+  backtest     List backtest resources
+  constituents List composition constituents for a symbol
+  evaluations  List saved backtest evaluations
+  instruments  Search stored instruments, falling back to provider search
+  krx-apis     List KRX OPEN API services known to mwosa
+  providers    List configured and available providers
+  strategies   List saved screening strategies
+  trades       List recent market trade prints for a symbol
 
 Flags:
   -h, --help   help for list
@@ -1247,6 +1248,25 @@ Usage:
 
 Flags:
   -h, --help   help for strategies
+
+Global Flags:
+      --config string            config file path
+      --database string          local SQLite database path
+      --market string            market id (default "krx")
+  -o, --output output            output format: table, json, ndjson, csv (default table)
+      --prefer-provider string   prefer a provider when multiple candidates match
+      --provider string          force a provider by id
+
+
+### mwosa list constituents --help
+List composition constituents for a symbol
+
+Usage:
+  mwosa list constituents <symbol> [flags]
+
+Flags:
+  -h, --help        help for constituents
+      --limit int   maximum number of constituents to return
 
 Global Flags:
       --config string            config file path
