@@ -38,11 +38,12 @@ type providerDoctorResult struct {
 }
 
 type providerDoctorProvider struct {
-	ID      string                `json:"id"`
-	Enabled bool                  `json:"enabled"`
-	Status  string                `json:"status"`
-	Fields  []providerDoctorField `json:"fields"`
-	Issues  []providerDoctorIssue `json:"issues"`
+	ID               string                           `json:"id"`
+	Enabled          bool                             `json:"enabled"`
+	Status           string                           `json:"status"`
+	Fields           []providerDoctorField            `json:"fields"`
+	Issues           []providerDoctorIssue            `json:"issues"`
+	OperationCatalog *providerOperationCatalogSummary `json:"operation_catalog,omitempty"`
 }
 
 type providerDoctorField struct {
@@ -57,6 +58,13 @@ type providerDoctorIssue struct {
 	Severity string `json:"severity"`
 	Path     string `json:"path,omitempty"`
 	Message  string `json:"message"`
+}
+
+type providerOperationCatalogSummary struct {
+	Command          string   `json:"command"`
+	KnownOperations  int      `json:"known_operations"`
+	Categories       []string `json:"categories"`
+	CanonicalSupport []string `json:"canonical_support"`
 }
 
 func registerProviderCommands(roots commandRoots, opts *Options) {
@@ -102,9 +110,11 @@ func newInspectProviderCommand(opts *Options) *cobra.Command {
 			if err != nil {
 				return nil, err
 			}
+			inspected := doctorProvider(builder, opts.ProviderConfig)
+			inspected.OperationCatalog = providerOperationCatalog(builder.ID())
 			return providerDoctorResult{
 				ConfigFile: opts.ConfigState.ConfigPath,
-				Providers:  []providerDoctorProvider{doctorProvider(builder, opts.ProviderConfig)},
+				Providers:  []providerDoctorProvider{inspected},
 			}, nil
 		}),
 	}
@@ -411,6 +421,26 @@ func doctorProvider(builder provider.ProviderBuilder, config provider.Config) pr
 		}
 	}
 	return result
+}
+
+func providerOperationCatalog(id provider.ProviderID) *providerOperationCatalogSummary {
+	switch id {
+	case provider.ProviderOpenDART:
+		return &providerOperationCatalogSummary{
+			Command:         "mwosa list provider-apis opendart",
+			KnownOperations: 29,
+			Categories:      []string{"disclosure", "financial", "periodic_report", "material_event"},
+			CanonicalSupport: []string{
+				"company_registry",
+				"filings",
+				"financials",
+				"company_facts/*",
+				"company_events/*",
+			},
+		}
+	default:
+		return nil
+	}
 }
 
 func providerEnabled(config provider.Config, id provider.ProviderID) bool {

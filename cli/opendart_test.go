@@ -37,6 +37,38 @@ func TestDoctorProviderOpenDARTReportsMissingAuthWithoutSecret(t *testing.T) {
 	}
 }
 
+func TestInspectProviderOpenDARTIncludesOperationCatalogSummary(t *testing.T) {
+	t.Setenv("OPENDART_API_KEY", "")
+	t.Setenv("MWOSA_OPENDART_API_KEY", "")
+
+	var out bytes.Buffer
+	cmd := NewRootCommand(BuildInfo{})
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	if err := executeForTest(t, context.Background(), cmd,
+		"--config", filepath.Join(t.TempDir(), "config.json"),
+		"--output", "json",
+		"inspect", "provider", "opendart",
+	); err != nil {
+		t.Fatalf("inspect provider opendart: %v\n%s", err, out.String())
+	}
+	for _, want := range []string{
+		`"id": "opendart"`,
+		`"operation_catalog"`,
+		`"command": "mwosa list provider-apis opendart"`,
+		`"known_operations": 29`,
+		`"company_facts/*"`,
+		`"company_events/*"`,
+	} {
+		if !strings.Contains(out.String(), want) {
+			t.Fatalf("inspect provider output missing %q in:\n%s", want, out.String())
+		}
+	}
+	if strings.Contains(out.String(), "test-key") {
+		t.Fatalf("inspect provider output exposed secret:\n%s", out.String())
+	}
+}
+
 func TestSyncAndSearchOpenDARTCompanies(t *testing.T) {
 	server := httptest.NewServer(http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
 		if r.URL.Path != "/api/corpCode.xml" {
