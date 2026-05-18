@@ -1,6 +1,6 @@
 ---
 name: mwosa
-description: Use when helping with installed mwosa CLI workflows, especially Datago ETF daily collection, canonical SQLite data, jq-based ETF screening, and saved screening strategies.
+description: Use when helping with installed mwosa CLI workflows, especially provider setup, OpenDART company and financial research, Datago ETF daily collection, canonical SQLite data, jq-based ETF screening, and saved screening strategies.
 ---
 
 # mwosa
@@ -9,7 +9,98 @@ description: Use when helping with installed mwosa CLI workflows, especially Dat
 
 - Prefer the installed `mwosa` CLI for user-facing commands.
 - When you need the complete installed command surface, read `references/cli-command-help.md`; it is generated from `mwosa --help` plus subcommand help.
+- Do not edit `references/cli-command-help.md` by hand. Regenerate it only when the CLI binary changes.
 - Keep stdout machine-readable for `json`, `ndjson`, `csv`, and `jq` pipelines. Put progress, diagnostics, and explanations on stderr or in chat.
+
+## Provider command surface
+
+Use provider-generic commands first, then specialize with `--provider` or a provider id. Known providers include:
+
+| Provider | Primary use |
+| --- | --- |
+| `datago` | KRX daily market data such as ETF/ETN/ELW bars |
+| `krx` | KRX Open API snapshots and instrument master data |
+| `kis` | Korea Investment & Securities market-data endpoints |
+| `opendart` | Listed companies, filings, financial statements, facts, dividends, and material events |
+
+Common provider commands:
+
+```bash
+mwosa list providers -o table
+mwosa login provider <provider>
+mwosa doctor provider <provider> -o json
+mwosa inspect provider <provider> -o table
+mwosa list provider-apis <provider> -o table
+```
+
+Use provider raw commands only for debugging, API coverage checks, or when the user explicitly asks for source payloads:
+
+```bash
+mwosa get provider-raw <provider> <operation> -o json
+mwosa get provider-raw-snapshots --provider <provider> -o json
+```
+
+Never print API keys or credential values. Prefer `-o json` for automation and `-o table` for human inspection.
+
+## OpenDART stock research workflow
+
+Use OpenDART when the user asks about Korean listed-company fundamentals, filings, financial statements, disclosure facts, dividends, or material events. Prefer this order:
+
+```bash
+mwosa login provider opendart
+mwosa doctor provider opendart -o json
+mwosa sync companies --provider opendart --listed-only -o json
+mwosa search companies 005930 --provider opendart -o table
+mwosa get company-identifiers 005930 -o table
+```
+
+Collect annual financial data before calculating metrics:
+
+```bash
+mwosa sync financials statements 005930 \
+  --provider opendart \
+  --from 2023 \
+  --to 2025 \
+  --period annual \
+  -o json
+
+mwosa sync financials facts 005930 \
+  --provider opendart \
+  --from 2023 \
+  --to 2025 \
+  -o json
+
+mwosa calc financials metrics 005930 \
+  --window 3y \
+  --period annual \
+  -o json
+```
+
+Use the human-facing stock report after collection:
+
+```bash
+mwosa inspect stock 005930 -o table
+mwosa inspect stock 005930 --section all -o table
+```
+
+`inspect stock` is the preferred human-readable summary. It should present overview, investment metrics, financial summary, trends, statement tables, dividends, risk, and missing values as purpose-specific tables. Missing or unavailable values should appear naturally in those tables, not as a long debug dump.
+
+Use detailed commands when the user asks for raw rows or a specific data family:
+
+```bash
+mwosa get financials statements 005930 -o table
+mwosa get financials facts 005930 -o json
+mwosa get financials dividends 005930 -o table
+mwosa get financials metrics 005930 -o table
+mwosa get financials valuation 005930 -o table
+mwosa get financials health 005930 -o table
+mwosa list filings 005930 --provider opendart -o table
+mwosa get filing <rcept-no> --provider opendart -o json
+mwosa sync events 005930 --provider opendart -o json
+mwosa list events 005930 -o table
+```
+
+Do not invent valuation or market-cap data when the local database has no compatible price point. In that case, explain that valuation metrics require price or market-cap data from another provider such as KIS or another market-data source.
 
 ## ETF daily collection
 
@@ -40,7 +131,7 @@ mwosa get daily 069500 \
 If provider auth is suspect, inspect or validate the provider without printing secrets:
 
 ```bash
-mwosa provider doctor datago -o json
+mwosa doctor provider datago -o json
 ```
 
 ## Current jq screening surface
@@ -166,6 +257,8 @@ For CSV output from one-off screens, prefer `-o csv` only when rows are flat. If
 ## How to answer users
 
 - If the user asks for a command, give the installed `mwosa` command first.
+- If the user asks about providers, start with `list providers`, `doctor provider`, and `inspect provider`; use `list provider-apis` for provider-native coverage.
+- If the user asks about OpenDART, lead with the company and financial workflow, then mention raw/detail commands only if needed.
 - If the user asks how jq screening works, explain canonical SQLite strategy screens through installed `create/screen strategy`.
 - Keep Korean explanations concise and command-first.
 - When producing candidate files for review, create both machine-friendly JSON and small human-openable CSV when the output could be large.
