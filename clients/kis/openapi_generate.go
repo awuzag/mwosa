@@ -1,3 +1,3 @@
 package kis
 
-//go:generate go run ./internal/codegen/kisopenapi
+//go:generate go run ./internal/codegen/kisopenapi -include-all-catalog

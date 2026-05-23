@@ -1,0 +1,406 @@
+{
+  "components": {
+    "schemas": {
+      "MktfundsResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "msg1": {
+            "description": "응답메세지",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답메세지",
+              "propertyLength": "80",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "msg_cd": {
+            "description": "응답코드",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답코드",
+              "propertyLength": "8",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "output": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "amt_tnrt": {
+                  "description": "금액회전율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "금액회전율",
+                    "propertyLength": "84",
+                    "propertyOrder": "004.009",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "bntp_amt": {
+                  "description": "채권형금액",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 억원",
+                    "name": "채권형금액",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.015",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "bsop_date": {
+                  "description": "영업일자",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "영업일자",
+                    "propertyLength": "8",
+                    "propertyOrder": "004.001",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "bstp_nmix_prdy_vrss": {
+                  "description": "업종지수전일대비",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "업종지수전일대비",
+                    "propertyLength": "112",
+                    "propertyOrder": "004.003",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "bstp_nmix_prpr": {
+                  "description": "업종지수현재가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "업종지수현재가",
+                    "propertyLength": "112",
+                    "propertyOrder": "004.002",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "crdt_loan_rmnd": {
+                  "description": "신용융자잔고",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 억원",
+                    "name": "신용융자잔고",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.011",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "cust_dpmn_amt": {
+                  "description": "고객예탁금금액",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 억원",
+                    "name": "고객예탁금금액",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.007",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "cust_dpmn_amt_prdy_vrss": {
+                  "description": "고객예탁금금액전일대비",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "고객예탁금금액전일대비",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.008",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "futs_tfam_amt": {
+                  "description": "선물예수금금액",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 억원",
+                    "name": "선물예수금금액",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.012",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "hts_avls": {
+                  "description": "HTS시가총액",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 백만원",
+                    "name": "HTS시가총액",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.006",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "mmf_amt": {
+                  "description": "MMF금액",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 억원",
+                    "name": "MMF금액",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.016",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "mxtp_amt": {
+                  "description": "혼합형금액",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 억원",
+                    "name": "혼합형금액",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.014",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_ctrt": {
+                  "description": "전일대비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일대비율",
+                    "propertyLength": "82",
+                    "propertyOrder": "004.005",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_vrss_sign": {
+                  "description": "전일대비부호",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "1. 상한 2. 상승 3. 보합 4. 하한 5. 하락",
+                    "name": "전일대비부호",
+                    "propertyLength": "1",
+                    "propertyOrder": "004.004",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "secu_lend_amt": {
+                  "description": "담보대출잔고금액",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 억원",
+                    "name": "담보대출잔고금액",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.017",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "sttp_amt": {
+                  "description": "주식형금액",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 억원",
+                    "name": "주식형금액",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.013",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "uncl_amt": {
+                  "description": "미수금액",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 억원",
+                    "name": "미수금액",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.010",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                }
+              },
+              "required": [
+                "bsop_date",
+                "bstp_nmix_prpr",
+                "bstp_nmix_prdy_vrss",
+                "prdy_vrss_sign",
+                "prdy_ctrt",
+                "hts_avls",
+                "cust_dpmn_amt",
+                "cust_dpmn_amt_prdy_vrss",
+                "amt_tnrt",
+                "uncl_amt",
+                "crdt_loan_rmnd",
+                "futs_tfam_amt",
+                "sttp_amt",
+                "mxtp_amt",
+                "bntp_amt",
+                "mmf_amt",
+                "secu_lend_amt"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "rt_cd": {
+            "description": "성공 실패 여부",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "성공 실패 여부",
+              "propertyLength": "1",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        },
+        "required": [
+          "rt_cd",
+          "msg_cd",
+          "msg1",
+          "output"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "KISOAuth": {
+        "bearerFormat": "KIS OAuth access token",
+        "description": "Issued by KIS /oauth2/tokenP and injected by the handwritten runtime.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "KIS Domestic Stock OpenAPI - mktfunds",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/uapi/domestic-stock/v1/quotations/mktfunds": {
+      "get": {
+        "description": "국내 증시자금 종합 API입니다. \n한국투자 HTS(eFriend Plus) \u0026gt; [0470] 증시자금 종합 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. (단위: 억원)\n\n※ 해당자료는 금융투자협회의 자료를 제공하고 있으며, 오류와 지연이 발생할 수 있습니다.\n※ 위 정보에 의한 투자판단의 최종책임은 정보이용자에게 있으며, 당사와 한국금융투자협회는 어떠한 법적인 책임도 지지 않사오니 투자에 참고로만 이용하시기 바랍니다.",
+        "operationId": "mktfunds",
+        "parameters": [
+          {
+            "description": "",
+            "in": "query",
+            "name": "FID_INPUT_DATE_1",
+            "required": true,
+            "schema": {
+              "description": "입력날짜1",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "",
+                "name": "입력날짜1",
+                "propertyLength": "10",
+                "propertyOrder": "001",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "",
+              "name": "입력날짜1",
+              "propertyLength": "10",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MktfundsResponse"
+                }
+              }
+            },
+            "description": "KIS business response envelope"
+          }
+        },
+        "security": [
+          {
+            "KISOAuth": []
+          }
+        ],
+        "summary": "국내 증시자금 종합 [국내주식-193]",
+        "tags": [
+          "Analysis"
+        ],
+        "x-kis": {
+          "accessUrl": "/uapi/domestic-stock/v1/quotations/mktfunds",
+          "apiId": "b8c4fb5f-c3ef-4f6c-bfab-5471f43fb0ae",
+          "apiName": "국내 증시자금 종합 [국내주식-193]",
+          "apiSummary": "국내 증시자금 종합 API입니다. \r\n한국투자 HTS(eFriend Plus) \u0026gt; [0470] 증시자금 종합 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. (단위: 억원)\r\n\r\n※ 해당자료는 금융투자협회의 자료를 제공하고 있으며, 오류와 지연이 발생할 수 있습니다.\r\n※ 위 정보에 의한 투자판단의 최종책임은 정보이용자에게 있으며, 당사와 한국금융투자협회는 어떠한 법적인 책임도 지지 않사오니 투자에 참고로만 이용하시기 바랍니다.",
+          "catalogSchemaVersion": 1,
+          "collectionId": "4e29f215-0a20-4396-95d4-5d99ad9a2c3d",
+          "collectionName": "[국내주식] 시세분석",
+          "group": "analysis",
+          "lastModifiedDate": "2026-04-10T20:53:20+09:00",
+          "oauth": true,
+          "realDomain": "https://openapi.koreainvestment.com:9443",
+          "realTrId": "FHKST649100C0",
+          "roleCandidate": "market_scan",
+          "securityType": "oauth2-access-token",
+          "serviceGroup": "Analysis",
+          "source": {
+            "categoryApi": "https://apiportal.koreainvestment.com/api/apis/public/api-list/{collectionId}",
+            "detailApi": "https://apiportal.koreainvestment.com/api/apis/public/detail?accessUrl={accessUrl}",
+            "detailPageTemplate": "https://apiportal.koreainvestment.com/apiservice-apiservice?{accessUrl}",
+            "portal": "https://apiportal.koreainvestment.com/apiservice-category"
+          },
+          "sourceDetailUrl": "https://apiportal.koreainvestment.com/apiservice-apiservice?/uapi/domestic-stock/v1/quotations/mktfunds",
+          "supportsReal": true,
+          "supportsVirtual": false,
+          "virtualDomain": "미지원",
+          "virtualTrId": "모의투자 미지원"
+        }
+      }
+    }
+  }
+}

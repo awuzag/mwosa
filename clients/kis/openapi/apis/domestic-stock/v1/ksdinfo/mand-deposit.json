@@ -1,0 +1,336 @@
+{
+  "components": {
+    "schemas": {
+      "MandDepositResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "msg1": {
+            "description": "응답메세지",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답메세지",
+              "propertyLength": "80",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "msg_cd": {
+            "description": "응답코드",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답코드",
+              "propertyLength": "8",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "output1": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "depo_date": {
+                  "description": "예치일",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "예치일",
+                    "propertyLength": "23",
+                    "propertyOrder": "004.004",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "depo_reason": {
+                  "description": "사유",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "사유",
+                    "propertyLength": "10",
+                    "propertyOrder": "004.005",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "isin_name": {
+                  "description": "종목명",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "종목명",
+                    "propertyLength": "40",
+                    "propertyOrder": "004.002",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "sht_cd": {
+                  "description": "종목코드",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "종목코드",
+                    "propertyLength": "9",
+                    "propertyOrder": "004.001",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "stk_qty": {
+                  "description": "주식수",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식수",
+                    "propertyLength": "12",
+                    "propertyOrder": "004.003",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "tot_issue_qty_per_rate": {
+                  "description": "총발행주식수대비비율(%)",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "총발행주식수대비비율(%)",
+                    "propertyLength": "52",
+                    "propertyOrder": "004.006",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                }
+              },
+              "required": [
+                "sht_cd",
+                "isin_name",
+                "stk_qty",
+                "depo_date",
+                "depo_reason",
+                "tot_issue_qty_per_rate"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "rt_cd": {
+            "description": "성공 실패 여부",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "성공 실패 여부",
+              "propertyLength": "1",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        },
+        "required": [
+          "rt_cd",
+          "msg_cd",
+          "msg1",
+          "output1"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "KISOAuth": {
+        "bearerFormat": "KIS OAuth access token",
+        "description": "Issued by KIS /oauth2/tokenP and injected by the handwritten runtime.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "KIS Domestic Stock OpenAPI - mand-deposit",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/uapi/domestic-stock/v1/ksdinfo/mand-deposit": {
+      "get": {
+        "description": "예탁원정보(의무예치일정) API입니다. \n한국투자 HTS(eFriend Plus) \u0026gt; [0758] 의무예치 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n※ 예탁원에서 제공한 자료이므로 정보용으로만 사용하시기 바랍니다.",
+        "operationId": "mand-deposit",
+        "parameters": [
+          {
+            "description": "~ 일자",
+            "in": "query",
+            "name": "T_DT",
+            "required": true,
+            "schema": {
+              "description": "조회일자To",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "~ 일자",
+                "name": "조회일자To",
+                "propertyLength": "8",
+                "propertyOrder": "001",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "~ 일자",
+              "name": "조회일자To",
+              "propertyLength": "8",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "공백: 전체,  특정종목 조회시 : 종목코드",
+            "in": "query",
+            "name": "SHT_CD",
+            "required": true,
+            "schema": {
+              "description": "종목코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공백: 전체,  특정종목 조회시 : 종목코드",
+                "name": "종목코드",
+                "propertyLength": "9",
+                "propertyOrder": "002",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공백: 전체,  특정종목 조회시 : 종목코드",
+              "name": "종목코드",
+              "propertyLength": "9",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "일자 ~",
+            "in": "query",
+            "name": "F_DT",
+            "required": true,
+            "schema": {
+              "description": "조회일자From",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "일자 ~",
+                "name": "조회일자From",
+                "propertyLength": "8",
+                "propertyOrder": "003",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "일자 ~",
+              "name": "조회일자From",
+              "propertyLength": "8",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "공백",
+            "in": "query",
+            "name": "CTS",
+            "required": true,
+            "schema": {
+              "description": "CTS",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공백",
+                "name": "CTS",
+                "propertyLength": "17",
+                "propertyOrder": "004",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공백",
+              "name": "CTS",
+              "propertyLength": "17",
+              "propertyOrder": "004",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MandDepositResponse"
+                }
+              }
+            },
+            "description": "KIS business response envelope"
+          }
+        },
+        "security": [
+          {
+            "KISOAuth": []
+          }
+        ],
+        "summary": "예탁원정보(의무예치일정)[국내주식-153]",
+        "tags": [
+          "Instrument"
+        ],
+        "x-kis": {
+          "accessUrl": "/uapi/domestic-stock/v1/ksdinfo/mand-deposit",
+          "apiId": "b742d5ef-6d97-4e75-ae25-52daf2f08021",
+          "apiName": "예탁원정보(의무예치일정)[국내주식-153]",
+          "apiSummary": "예탁원정보(의무예치일정) API입니다. \r\n한국투자 HTS(eFriend Plus) \u0026gt; [0758] 의무예치 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\r\n\r\n※ 예탁원에서 제공한 자료이므로 정보용으로만 사용하시기 바랍니다.",
+          "catalogSchemaVersion": 1,
+          "collectionId": "996ddbef-140c-46da-9bfb-b1cdc1d9b81b",
+          "collectionName": "[국내주식] 종목정보",
+          "group": "instrument",
+          "lastModifiedDate": "2026-04-10T21:12:33+09:00",
+          "oauth": true,
+          "realDomain": "https://openapi.koreainvestment.com:9443",
+          "realTrId": "HHKDB669110C0",
+          "roleCandidate": "instrument",
+          "securityType": "oauth2-access-token",
+          "serviceGroup": "Instrument",
+          "source": {
+            "categoryApi": "https://apiportal.koreainvestment.com/api/apis/public/api-list/{collectionId}",
+            "detailApi": "https://apiportal.koreainvestment.com/api/apis/public/detail?accessUrl={accessUrl}",
+            "detailPageTemplate": "https://apiportal.koreainvestment.com/apiservice-apiservice?{accessUrl}",
+            "portal": "https://apiportal.koreainvestment.com/apiservice-category"
+          },
+          "sourceDetailUrl": "https://apiportal.koreainvestment.com/apiservice-apiservice?/uapi/domestic-stock/v1/ksdinfo/mand-deposit",
+          "supportsReal": true,
+          "supportsVirtual": false,
+          "virtualDomain": "미지원",
+          "virtualTrId": "모의투자 미지원"
+        }
+      }
+    }
+  }
+}

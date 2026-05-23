@@ -13,104 +13,944 @@ type OperationMetadata struct {
 }
 
 const (
-	OperationInquirePrice                     = "inquire-price"
-	EndpointInquirePrice                      = "/uapi/domestic-stock/v1/quotations/inquire-price"
-	GroupInquirePrice                         = "quote"
-	ServiceGroupInquirePrice                  = "Quote"
-	RealTRIDInquirePrice                      = "FHKST01010100"
-	VirtualTRIDInquirePrice                   = "FHKST01010100"
-	SupportsVirtualInquirePrice               = true
-	OperationInquireCcnl                      = "inquire-ccnl"
-	EndpointInquireCcnl                       = "/uapi/domestic-stock/v1/quotations/inquire-ccnl"
-	GroupInquireCcnl                          = "quote"
-	ServiceGroupInquireCcnl                   = "Quote"
-	RealTRIDInquireCcnl                       = "FHKST01010300"
-	VirtualTRIDInquireCcnl                    = "FHKST01010300"
-	SupportsVirtualInquireCcnl                = true
-	OperationInquireDailyPrice                = "inquire-daily-price"
-	EndpointInquireDailyPrice                 = "/uapi/domestic-stock/v1/quotations/inquire-daily-price"
-	GroupInquireDailyPrice                    = "quote"
-	ServiceGroupInquireDailyPrice             = "Quote"
-	RealTRIDInquireDailyPrice                 = "FHKST01010400"
-	VirtualTRIDInquireDailyPrice              = "FHKST01010400"
-	SupportsVirtualInquireDailyPrice          = true
-	OperationInquireAskingPriceExpCcn         = "inquire-asking-price-exp-ccn"
-	EndpointInquireAskingPriceExpCcn          = "/uapi/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn"
-	GroupInquireAskingPriceExpCcn             = "quote"
-	ServiceGroupInquireAskingPriceExpCcn      = "Quote"
-	RealTRIDInquireAskingPriceExpCcn          = "FHKST01010200"
-	VirtualTRIDInquireAskingPriceExpCcn       = "FHKST01010200"
-	SupportsVirtualInquireAskingPriceExpCcn   = true
-	OperationInquireInvestor                  = "inquire-investor"
-	EndpointInquireInvestor                   = "/uapi/domestic-stock/v1/quotations/inquire-investor"
-	GroupInquireInvestor                      = "quote"
-	ServiceGroupInquireInvestor               = "Quote"
-	RealTRIDInquireInvestor                   = "FHKST01010900"
-	VirtualTRIDInquireInvestor                = "FHKST01010900"
-	SupportsVirtualInquireInvestor            = true
-	OperationInquireMember                    = "inquire-member"
-	EndpointInquireMember                     = "/uapi/domestic-stock/v1/quotations/inquire-member"
-	GroupInquireMember                        = "quote"
-	ServiceGroupInquireMember                 = "Quote"
-	RealTRIDInquireMember                     = "FHKST01010600"
-	VirtualTRIDInquireMember                  = "FHKST01010600"
-	SupportsVirtualInquireMember              = true
-	OperationInquireDailyItemChartPrice       = "inquire-daily-itemchartprice"
-	EndpointInquireDailyItemChartPrice        = "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice"
-	GroupInquireDailyItemChartPrice           = "quote"
-	ServiceGroupInquireDailyItemChartPrice    = "Quote"
-	RealTRIDInquireDailyItemChartPrice        = "FHKST03010100"
-	VirtualTRIDInquireDailyItemChartPrice     = "FHKST03010100"
-	SupportsVirtualInquireDailyItemChartPrice = true
-	OperationInquireTimeItemChartPrice        = "inquire-time-itemchartprice"
-	EndpointInquireTimeItemChartPrice         = "/uapi/domestic-stock/v1/quotations/inquire-time-itemchartprice"
-	GroupInquireTimeItemChartPrice            = "quote"
-	ServiceGroupInquireTimeItemChartPrice     = "Quote"
-	RealTRIDInquireTimeItemChartPrice         = "FHKST03010200"
-	VirtualTRIDInquireTimeItemChartPrice      = "FHKST03010200"
-	SupportsVirtualInquireTimeItemChartPrice  = true
-	OperationInquireTimeItemConclusion        = "inquire-time-itemconclusion"
-	EndpointInquireTimeItemConclusion         = "/uapi/domestic-stock/v1/quotations/inquire-time-itemconclusion"
-	GroupInquireTimeItemConclusion            = "quote"
-	ServiceGroupInquireTimeItemConclusion     = "Quote"
-	RealTRIDInquireTimeItemConclusion         = "FHPST01060000"
-	VirtualTRIDInquireTimeItemConclusion      = "FHPST01060000"
-	SupportsVirtualInquireTimeItemConclusion  = true
-	OperationVolumeRank                       = "volume-rank"
-	EndpointVolumeRank                        = "/uapi/domestic-stock/v1/quotations/volume-rank"
-	GroupVolumeRank                           = "ranking"
-	ServiceGroupVolumeRank                    = "Ranking"
-	RealTRIDVolumeRank                        = "FHPST01710000"
-	VirtualTRIDVolumeRank                     = "모의투자 미지원"
-	SupportsVirtualVolumeRank                 = false
-	OperationFluctuation                      = "fluctuation"
-	EndpointFluctuation                       = "/uapi/domestic-stock/v1/ranking/fluctuation"
-	GroupFluctuation                          = "ranking"
-	ServiceGroupFluctuation                   = "Ranking"
-	RealTRIDFluctuation                       = "FHPST01700000"
-	VirtualTRIDFluctuation                    = "모의투자 미지원"
-	SupportsVirtualFluctuation                = false
-	OperationMarketCap                        = "market-cap"
-	EndpointMarketCap                         = "/uapi/domestic-stock/v1/ranking/market-cap"
-	GroupMarketCap                            = "ranking"
-	ServiceGroupMarketCap                     = "Ranking"
-	RealTRIDMarketCap                         = "FHPST01740000"
-	VirtualTRIDMarketCap                      = "모의투자 미지원"
-	SupportsVirtualMarketCap                  = false
-	OperationMarketValue                      = "market-value"
-	EndpointMarketValue                       = "/uapi/domestic-stock/v1/ranking/market-value"
-	GroupMarketValue                          = "ranking"
-	ServiceGroupMarketValue                   = "Ranking"
-	RealTRIDMarketValue                       = "FHPST01790000"
-	VirtualTRIDMarketValue                    = "모의투자 미지원"
-	SupportsVirtualMarketValue                = false
-	OperationVolumePower                      = "volume-power"
-	EndpointVolumePower                       = "/uapi/domestic-stock/v1/ranking/volume-power"
-	GroupVolumePower                          = "ranking"
-	ServiceGroupVolumePower                   = "Ranking"
-	RealTRIDVolumePower                       = "FHPST01680000"
-	VirtualTRIDVolumePower                    = "모의투자 미지원"
-	SupportsVirtualVolumePower                = false
+	OperationInquirePrice                        = "inquire-price"
+	EndpointInquirePrice                         = "/uapi/domestic-stock/v1/quotations/inquire-price"
+	GroupInquirePrice                            = "quote"
+	ServiceGroupInquirePrice                     = "Quote"
+	RealTRIDInquirePrice                         = "FHKST01010100"
+	VirtualTRIDInquirePrice                      = "FHKST01010100"
+	SupportsVirtualInquirePrice                  = true
+	OperationInquirePrice2                       = "inquire-price-2"
+	EndpointInquirePrice2                        = "/uapi/domestic-stock/v1/quotations/inquire-price-2"
+	GroupInquirePrice2                           = "quote"
+	ServiceGroupInquirePrice2                    = "Quote"
+	RealTRIDInquirePrice2                        = "FHPST01010000"
+	VirtualTRIDInquirePrice2                     = "모의투자 미지원"
+	SupportsVirtualInquirePrice2                 = false
+	OperationInquireCcnl                         = "inquire-ccnl"
+	EndpointInquireCcnl                          = "/uapi/domestic-stock/v1/quotations/inquire-ccnl"
+	GroupInquireCcnl                             = "quote"
+	ServiceGroupInquireCcnl                      = "Quote"
+	RealTRIDInquireCcnl                          = "FHKST01010300"
+	VirtualTRIDInquireCcnl                       = "FHKST01010300"
+	SupportsVirtualInquireCcnl                   = true
+	OperationInquireDailyPrice                   = "inquire-daily-price"
+	EndpointInquireDailyPrice                    = "/uapi/domestic-stock/v1/quotations/inquire-daily-price"
+	GroupInquireDailyPrice                       = "quote"
+	ServiceGroupInquireDailyPrice                = "Quote"
+	RealTRIDInquireDailyPrice                    = "FHKST01010400"
+	VirtualTRIDInquireDailyPrice                 = "FHKST01010400"
+	SupportsVirtualInquireDailyPrice             = true
+	OperationInquireAskingPriceExpCcn            = "inquire-asking-price-exp-ccn"
+	EndpointInquireAskingPriceExpCcn             = "/uapi/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn"
+	GroupInquireAskingPriceExpCcn                = "quote"
+	ServiceGroupInquireAskingPriceExpCcn         = "Quote"
+	RealTRIDInquireAskingPriceExpCcn             = "FHKST01010200"
+	VirtualTRIDInquireAskingPriceExpCcn          = "FHKST01010200"
+	SupportsVirtualInquireAskingPriceExpCcn      = true
+	OperationInquireInvestor                     = "inquire-investor"
+	EndpointInquireInvestor                      = "/uapi/domestic-stock/v1/quotations/inquire-investor"
+	GroupInquireInvestor                         = "quote"
+	ServiceGroupInquireInvestor                  = "Quote"
+	RealTRIDInquireInvestor                      = "FHKST01010900"
+	VirtualTRIDInquireInvestor                   = "FHKST01010900"
+	SupportsVirtualInquireInvestor               = true
+	OperationInquireMember                       = "inquire-member"
+	EndpointInquireMember                        = "/uapi/domestic-stock/v1/quotations/inquire-member"
+	GroupInquireMember                           = "quote"
+	ServiceGroupInquireMember                    = "Quote"
+	RealTRIDInquireMember                        = "FHKST01010600"
+	VirtualTRIDInquireMember                     = "FHKST01010600"
+	SupportsVirtualInquireMember                 = true
+	OperationInquireDailyItemChartPrice          = "inquire-daily-itemchartprice"
+	EndpointInquireDailyItemChartPrice           = "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice"
+	GroupInquireDailyItemChartPrice              = "quote"
+	ServiceGroupInquireDailyItemChartPrice       = "Quote"
+	RealTRIDInquireDailyItemChartPrice           = "FHKST03010100"
+	VirtualTRIDInquireDailyItemChartPrice        = "FHKST03010100"
+	SupportsVirtualInquireDailyItemChartPrice    = true
+	OperationInquireTimeItemChartPrice           = "inquire-time-itemchartprice"
+	EndpointInquireTimeItemChartPrice            = "/uapi/domestic-stock/v1/quotations/inquire-time-itemchartprice"
+	GroupInquireTimeItemChartPrice               = "quote"
+	ServiceGroupInquireTimeItemChartPrice        = "Quote"
+	RealTRIDInquireTimeItemChartPrice            = "FHKST03010200"
+	VirtualTRIDInquireTimeItemChartPrice         = "FHKST03010200"
+	SupportsVirtualInquireTimeItemChartPrice     = true
+	OperationInquireTimeDailychartprice          = "inquire-time-dailychartprice"
+	EndpointInquireTimeDailychartprice           = "/uapi/domestic-stock/v1/quotations/inquire-time-dailychartprice"
+	GroupInquireTimeDailychartprice              = "quote"
+	ServiceGroupInquireTimeDailychartprice       = "Quote"
+	RealTRIDInquireTimeDailychartprice           = "FHKST03010230"
+	VirtualTRIDInquireTimeDailychartprice        = "모의투자 미지원"
+	SupportsVirtualInquireTimeDailychartprice    = false
+	OperationInquireTimeItemConclusion           = "inquire-time-itemconclusion"
+	EndpointInquireTimeItemConclusion            = "/uapi/domestic-stock/v1/quotations/inquire-time-itemconclusion"
+	GroupInquireTimeItemConclusion               = "quote"
+	ServiceGroupInquireTimeItemConclusion        = "Quote"
+	RealTRIDInquireTimeItemConclusion            = "FHPST01060000"
+	VirtualTRIDInquireTimeItemConclusion         = "FHPST01060000"
+	SupportsVirtualInquireTimeItemConclusion     = true
+	OperationInquireDailyOvertimeprice           = "inquire-daily-overtimeprice"
+	EndpointInquireDailyOvertimeprice            = "/uapi/domestic-stock/v1/quotations/inquire-daily-overtimeprice"
+	GroupInquireDailyOvertimeprice               = "quote"
+	ServiceGroupInquireDailyOvertimeprice        = "Quote"
+	RealTRIDInquireDailyOvertimeprice            = "FHPST02320000"
+	VirtualTRIDInquireDailyOvertimeprice         = "FHPST02320000"
+	SupportsVirtualInquireDailyOvertimeprice     = true
+	OperationInquireTimeOvertimeconclusion       = "inquire-time-overtimeconclusion"
+	EndpointInquireTimeOvertimeconclusion        = "/uapi/domestic-stock/v1/quotations/inquire-time-overtimeconclusion"
+	GroupInquireTimeOvertimeconclusion           = "quote"
+	ServiceGroupInquireTimeOvertimeconclusion    = "Quote"
+	RealTRIDInquireTimeOvertimeconclusion        = "FHPST02310000"
+	VirtualTRIDInquireTimeOvertimeconclusion     = "FHPST02310000"
+	SupportsVirtualInquireTimeOvertimeconclusion = true
+	OperationInquireOvertimePrice                = "inquire-overtime-price"
+	EndpointInquireOvertimePrice                 = "/uapi/domestic-stock/v1/quotations/inquire-overtime-price"
+	GroupInquireOvertimePrice                    = "quote"
+	ServiceGroupInquireOvertimePrice             = "Quote"
+	RealTRIDInquireOvertimePrice                 = "FHPST02300000"
+	VirtualTRIDInquireOvertimePrice              = "모의투자 미지원"
+	SupportsVirtualInquireOvertimePrice          = false
+	OperationInquireOvertimeAskingPrice          = "inquire-overtime-asking-price"
+	EndpointInquireOvertimeAskingPrice           = "/uapi/domestic-stock/v1/quotations/inquire-overtime-asking-price"
+	GroupInquireOvertimeAskingPrice              = "quote"
+	ServiceGroupInquireOvertimeAskingPrice       = "Quote"
+	RealTRIDInquireOvertimeAskingPrice           = "FHPST02300400"
+	VirtualTRIDInquireOvertimeAskingPrice        = "모의투자 미지원"
+	SupportsVirtualInquireOvertimeAskingPrice    = false
+	OperationExpClosingPrice                     = "exp-closing-price"
+	EndpointExpClosingPrice                      = "/uapi/domestic-stock/v1/quotations/exp-closing-price"
+	GroupExpClosingPrice                         = "quote"
+	ServiceGroupExpClosingPrice                  = "Quote"
+	RealTRIDExpClosingPrice                      = "FHKST117300C0"
+	VirtualTRIDExpClosingPrice                   = "모의투자 미지원"
+	SupportsVirtualExpClosingPrice               = false
+	OperationETFETNQuotationsInquirePrice        = "etfetn-quotations-inquire-price"
+	EndpointETFETNQuotationsInquirePrice         = "/uapi/etfetn/v1/quotations/inquire-price"
+	GroupETFETNQuotationsInquirePrice            = "quote"
+	ServiceGroupETFETNQuotationsInquirePrice     = "Quote"
+	RealTRIDETFETNQuotationsInquirePrice         = "FHPST02400000"
+	VirtualTRIDETFETNQuotationsInquirePrice      = "모의투자 미지원"
+	SupportsVirtualETFETNQuotationsInquirePrice  = false
+	OperationInquireComponentStockPrice          = "inquire-component-stock-price"
+	EndpointInquireComponentStockPrice           = "/uapi/etfetn/v1/quotations/inquire-component-stock-price"
+	GroupInquireComponentStockPrice              = "quote"
+	ServiceGroupInquireComponentStockPrice       = "Quote"
+	RealTRIDInquireComponentStockPrice           = "FHKST121600C0"
+	VirtualTRIDInquireComponentStockPrice        = "모의투자 미지원"
+	SupportsVirtualInquireComponentStockPrice    = false
+	OperationNavComparisonTrend                  = "nav-comparison-trend"
+	EndpointNavComparisonTrend                   = "/uapi/etfetn/v1/quotations/nav-comparison-trend"
+	GroupNavComparisonTrend                      = "quote"
+	ServiceGroupNavComparisonTrend               = "Quote"
+	RealTRIDNavComparisonTrend                   = "FHPST02440000"
+	VirtualTRIDNavComparisonTrend                = "모의투자 미지원"
+	SupportsVirtualNavComparisonTrend            = false
+	OperationNavComparisonDailyTrend             = "nav-comparison-daily-trend"
+	EndpointNavComparisonDailyTrend              = "/uapi/etfetn/v1/quotations/nav-comparison-daily-trend"
+	GroupNavComparisonDailyTrend                 = "quote"
+	ServiceGroupNavComparisonDailyTrend          = "Quote"
+	RealTRIDNavComparisonDailyTrend              = "FHPST02440200"
+	VirtualTRIDNavComparisonDailyTrend           = "모의투자 미지원"
+	SupportsVirtualNavComparisonDailyTrend       = false
+	OperationNavComparisonTimeTrend              = "nav-comparison-time-trend"
+	EndpointNavComparisonTimeTrend               = "/uapi/etfetn/v1/quotations/nav-comparison-time-trend"
+	GroupNavComparisonTimeTrend                  = "quote"
+	ServiceGroupNavComparisonTimeTrend           = "Quote"
+	RealTRIDNavComparisonTimeTrend               = "FHPST02440100"
+	VirtualTRIDNavComparisonTimeTrend            = "모의투자 미지원"
+	SupportsVirtualNavComparisonTimeTrend        = false
+	OperationInquireELWPrice                     = "inquire-elw-price"
+	EndpointInquireELWPrice                      = "/uapi/domestic-stock/v1/quotations/inquire-elw-price"
+	GroupInquireELWPrice                         = "elw-quote"
+	ServiceGroupInquireELWPrice                  = "ELWQuote"
+	RealTRIDInquireELWPrice                      = "FHKEW15010000"
+	VirtualTRIDInquireELWPrice                   = "FHKEW15010000"
+	SupportsVirtualInquireELWPrice               = true
+	OperationNewlyListed                         = "newly-listed"
+	EndpointNewlyListed                          = "/uapi/elw/v1/quotations/newly-listed"
+	GroupNewlyListed                             = "elw-quote"
+	ServiceGroupNewlyListed                      = "ELWQuote"
+	RealTRIDNewlyListed                          = "FHKEW154800C0"
+	VirtualTRIDNewlyListed                       = "모의투자 미지원"
+	SupportsVirtualNewlyListed                   = false
+	OperationSensitivity                         = "sensitivity"
+	EndpointSensitivity                          = "/uapi/elw/v1/ranking/sensitivity"
+	GroupSensitivity                             = "elw-quote"
+	ServiceGroupSensitivity                      = "ELWQuote"
+	RealTRIDSensitivity                          = "FHPEW02850000"
+	VirtualTRIDSensitivity                       = "모의투자 미지원"
+	SupportsVirtualSensitivity                   = false
+	OperationUdrlAssetPrice                      = "udrl-asset-price"
+	EndpointUdrlAssetPrice                       = "/uapi/elw/v1/quotations/udrl-asset-price"
+	GroupUdrlAssetPrice                          = "elw-quote"
+	ServiceGroupUdrlAssetPrice                   = "ELWQuote"
+	RealTRIDUdrlAssetPrice                       = "FHKEW154101C0"
+	VirtualTRIDUdrlAssetPrice                    = "모의투자 미지원"
+	SupportsVirtualUdrlAssetPrice                = false
+	OperationCondSearch                          = "cond-search"
+	EndpointCondSearch                           = "/uapi/elw/v1/quotations/cond-search"
+	GroupCondSearch                              = "elw-quote"
+	ServiceGroupCondSearch                       = "ELWQuote"
+	RealTRIDCondSearch                           = "FHKEW15100000"
+	VirtualTRIDCondSearch                        = "모의투자 미지원"
+	SupportsVirtualCondSearch                    = false
+	OperationQuickChange                         = "quick-change"
+	EndpointQuickChange                          = "/uapi/elw/v1/ranking/quick-change"
+	GroupQuickChange                             = "elw-quote"
+	ServiceGroupQuickChange                      = "ELWQuote"
+	RealTRIDQuickChange                          = "FHPEW02870000"
+	VirtualTRIDQuickChange                       = "모의투자 미지원"
+	SupportsVirtualQuickChange                   = false
+	OperationUdrlAssetList                       = "udrl-asset-list"
+	EndpointUdrlAssetList                        = "/uapi/elw/v1/quotations/udrl-asset-list"
+	GroupUdrlAssetList                           = "elw-quote"
+	ServiceGroupUdrlAssetList                    = "ELWQuote"
+	RealTRIDUdrlAssetList                        = "FHKEW154100C0"
+	VirtualTRIDUdrlAssetList                     = "모의투자 미지원"
+	SupportsVirtualUdrlAssetList                 = false
+	OperationCompareStocks                       = "compare-stocks"
+	EndpointCompareStocks                        = "/uapi/elw/v1/quotations/compare-stocks"
+	GroupCompareStocks                           = "elw-quote"
+	ServiceGroupCompareStocks                    = "ELWQuote"
+	RealTRIDCompareStocks                        = "FHKEW151701C0"
+	VirtualTRIDCompareStocks                     = "모의투자 미지원"
+	SupportsVirtualCompareStocks                 = false
+	OperationLpTradeTrend                        = "lp-trade-trend"
+	EndpointLpTradeTrend                         = "/uapi/elw/v1/quotations/lp-trade-trend"
+	GroupLpTradeTrend                            = "elw-quote"
+	ServiceGroupLpTradeTrend                     = "ELWQuote"
+	RealTRIDLpTradeTrend                         = "FHPEW03760000"
+	VirtualTRIDLpTradeTrend                      = ""
+	SupportsVirtualLpTradeTrend                  = false
+	OperationIndicatorTrendCcnl                  = "indicator-trend-ccnl"
+	EndpointIndicatorTrendCcnl                   = "/uapi/elw/v1/quotations/indicator-trend-ccnl"
+	GroupIndicatorTrendCcnl                      = "elw-quote"
+	ServiceGroupIndicatorTrendCcnl               = "ELWQuote"
+	RealTRIDIndicatorTrendCcnl                   = "FHPEW02740100"
+	VirtualTRIDIndicatorTrendCcnl                = "모의투자 미지원"
+	SupportsVirtualIndicatorTrendCcnl            = false
+	OperationIndicatorTrendMinute                = "indicator-trend-minute"
+	EndpointIndicatorTrendMinute                 = "/uapi/elw/v1/quotations/indicator-trend-minute"
+	GroupIndicatorTrendMinute                    = "elw-quote"
+	ServiceGroupIndicatorTrendMinute             = "ELWQuote"
+	RealTRIDIndicatorTrendMinute                 = "FHPEW02740300"
+	VirtualTRIDIndicatorTrendMinute              = "모의투자 미지원"
+	SupportsVirtualIndicatorTrendMinute          = false
+	OperationIndicatorTrendDaily                 = "indicator-trend-daily"
+	EndpointIndicatorTrendDaily                  = "/uapi/elw/v1/quotations/indicator-trend-daily"
+	GroupIndicatorTrendDaily                     = "elw-quote"
+	ServiceGroupIndicatorTrendDaily              = "ELWQuote"
+	RealTRIDIndicatorTrendDaily                  = "FHPEW02740200"
+	VirtualTRIDIndicatorTrendDaily               = "모의투자 미지원"
+	SupportsVirtualIndicatorTrendDaily           = false
+	OperationVolatilityTrendTick                 = "volatility-trend-tick"
+	EndpointVolatilityTrendTick                  = "/uapi/elw/v1/quotations/volatility-trend-tick"
+	GroupVolatilityTrendTick                     = "elw-quote"
+	ServiceGroupVolatilityTrendTick              = "ELWQuote"
+	RealTRIDVolatilityTrendTick                  = "FHPEW02840400"
+	VirtualTRIDVolatilityTrendTick               = "모의투자 미지원"
+	SupportsVirtualVolatilityTrendTick           = false
+	OperationVolatilityTrendCcnl                 = "volatility-trend-ccnl"
+	EndpointVolatilityTrendCcnl                  = "/uapi/elw/v1/quotations/volatility-trend-ccnl"
+	GroupVolatilityTrendCcnl                     = "elw-quote"
+	ServiceGroupVolatilityTrendCcnl              = "ELWQuote"
+	RealTRIDVolatilityTrendCcnl                  = "FHPEW02840100"
+	VirtualTRIDVolatilityTrendCcnl               = "모의투자 미지원"
+	SupportsVirtualVolatilityTrendCcnl           = false
+	OperationVolatilityTrendDaily                = "volatility-trend-daily"
+	EndpointVolatilityTrendDaily                 = "/uapi/elw/v1/quotations/volatility-trend-daily"
+	GroupVolatilityTrendDaily                    = "elw-quote"
+	ServiceGroupVolatilityTrendDaily             = "ELWQuote"
+	RealTRIDVolatilityTrendDaily                 = "FHPEW02840200"
+	VirtualTRIDVolatilityTrendDaily              = "모의투자 미지원"
+	SupportsVirtualVolatilityTrendDaily          = false
+	OperationSensitivityTrendCcnl                = "sensitivity-trend-ccnl"
+	EndpointSensitivityTrendCcnl                 = "/uapi/elw/v1/quotations/sensitivity-trend-ccnl"
+	GroupSensitivityTrendCcnl                    = "elw-quote"
+	ServiceGroupSensitivityTrendCcnl             = "ELWQuote"
+	RealTRIDSensitivityTrendCcnl                 = "FHPEW02830100"
+	VirtualTRIDSensitivityTrendCcnl              = "모의투자 미지원"
+	SupportsVirtualSensitivityTrendCcnl          = false
+	OperationVolatilityTrendMinute               = "volatility-trend-minute"
+	EndpointVolatilityTrendMinute                = "/uapi/elw/v1/quotations/volatility-trend-minute"
+	GroupVolatilityTrendMinute                   = "elw-quote"
+	ServiceGroupVolatilityTrendMinute            = "ELWQuote"
+	RealTRIDVolatilityTrendMinute                = "FHPEW02840300"
+	VirtualTRIDVolatilityTrendMinute             = "모의투자 미지원"
+	SupportsVirtualVolatilityTrendMinute         = false
+	OperationSensitivityTrendDaily               = "sensitivity-trend-daily"
+	EndpointSensitivityTrendDaily                = "/uapi/elw/v1/quotations/sensitivity-trend-daily"
+	GroupSensitivityTrendDaily                   = "elw-quote"
+	ServiceGroupSensitivityTrendDaily            = "ELWQuote"
+	RealTRIDSensitivityTrendDaily                = "FHPEW02830200"
+	VirtualTRIDSensitivityTrendDaily             = "모의투자 미지원"
+	SupportsVirtualSensitivityTrendDaily         = false
+	OperationExpirationStocks                    = "expiration-stocks"
+	EndpointExpirationStocks                     = "/uapi/elw/v1/quotations/expiration-stocks"
+	GroupExpirationStocks                        = "elw-quote"
+	ServiceGroupExpirationStocks                 = "ELWQuote"
+	RealTRIDExpirationStocks                     = "FHKEW154700C0"
+	VirtualTRIDExpirationStocks                  = "모의투자 미지원"
+	SupportsVirtualExpirationStocks              = false
+	OperationIndicator                           = "indicator"
+	EndpointIndicator                            = "/uapi/elw/v1/ranking/indicator"
+	GroupIndicator                               = "elw-quote"
+	ServiceGroupIndicator                        = "ELWQuote"
+	RealTRIDIndicator                            = "FHPEW02790000"
+	VirtualTRIDIndicator                         = "모의투자 미지원"
+	SupportsVirtualIndicator                     = false
+	OperationUpdownRate                          = "updown-rate"
+	EndpointUpdownRate                           = "/uapi/elw/v1/ranking/updown-rate"
+	GroupUpdownRate                              = "elw-quote"
+	ServiceGroupUpdownRate                       = "ELWQuote"
+	RealTRIDUpdownRate                           = "FHPEW02770000"
+	VirtualTRIDUpdownRate                        = "모의투자 미지원"
+	SupportsVirtualUpdownRate                    = false
+	OperationELWRankingVolumeRank                = "elw-ranking-volume-rank"
+	EndpointELWRankingVolumeRank                 = "/uapi/elw/v1/ranking/volume-rank"
+	GroupELWRankingVolumeRank                    = "elw-quote"
+	ServiceGroupELWRankingVolumeRank             = "ELWQuote"
+	RealTRIDELWRankingVolumeRank                 = "FHPEW02780000"
+	VirtualTRIDELWRankingVolumeRank              = "모의투자 미지원"
+	SupportsVirtualELWRankingVolumeRank          = false
+	OperationInquireIndexPrice                   = "inquire-index-price"
+	EndpointInquireIndexPrice                    = "/uapi/domestic-stock/v1/quotations/inquire-index-price"
+	GroupInquireIndexPrice                       = "market"
+	ServiceGroupInquireIndexPrice                = "Market"
+	RealTRIDInquireIndexPrice                    = "FHPUP02100000"
+	VirtualTRIDInquireIndexPrice                 = "모의투자 미지원"
+	SupportsVirtualInquireIndexPrice             = false
+	OperationInquireIndexDailyPrice              = "inquire-index-daily-price"
+	EndpointInquireIndexDailyPrice               = "/uapi/domestic-stock/v1/quotations/inquire-index-daily-price"
+	GroupInquireIndexDailyPrice                  = "market"
+	ServiceGroupInquireIndexDailyPrice           = "Market"
+	RealTRIDInquireIndexDailyPrice               = "FHPUP02120000"
+	VirtualTRIDInquireIndexDailyPrice            = "모의투자 미지원"
+	SupportsVirtualInquireIndexDailyPrice        = false
+	OperationInquireIndexTickprice               = "inquire-index-tickprice"
+	EndpointInquireIndexTickprice                = "/uapi/domestic-stock/v1/quotations/inquire-index-tickprice"
+	GroupInquireIndexTickprice                   = "market"
+	ServiceGroupInquireIndexTickprice            = "Market"
+	RealTRIDInquireIndexTickprice                = "FHPUP02110100"
+	VirtualTRIDInquireIndexTickprice             = "모의투자 미지원"
+	SupportsVirtualInquireIndexTickprice         = false
+	OperationInquireIndexTimeprice               = "inquire-index-timeprice"
+	EndpointInquireIndexTimeprice                = "/uapi/domestic-stock/v1/quotations/inquire-index-timeprice"
+	GroupInquireIndexTimeprice                   = "market"
+	ServiceGroupInquireIndexTimeprice            = "Market"
+	RealTRIDInquireIndexTimeprice                = "FHPUP02110200"
+	VirtualTRIDInquireIndexTimeprice             = "모의투자 미지원"
+	SupportsVirtualInquireIndexTimeprice         = false
+	OperationInquireTimeIndexchartprice          = "inquire-time-indexchartprice"
+	EndpointInquireTimeIndexchartprice           = "/uapi/domestic-stock/v1/quotations/inquire-time-indexchartprice"
+	GroupInquireTimeIndexchartprice              = "market"
+	ServiceGroupInquireTimeIndexchartprice       = "Market"
+	RealTRIDInquireTimeIndexchartprice           = "FHKUP03500200"
+	VirtualTRIDInquireTimeIndexchartprice        = "모의투자 미지원"
+	SupportsVirtualInquireTimeIndexchartprice    = false
+	OperationInquireDailyIndexchartprice         = "inquire-daily-indexchartprice"
+	EndpointInquireDailyIndexchartprice          = "/uapi/domestic-stock/v1/quotations/inquire-daily-indexchartprice"
+	GroupInquireDailyIndexchartprice             = "market"
+	ServiceGroupInquireDailyIndexchartprice      = "Market"
+	RealTRIDInquireDailyIndexchartprice          = "FHKUP03500100"
+	VirtualTRIDInquireDailyIndexchartprice       = "FHKUP03500100"
+	SupportsVirtualInquireDailyIndexchartprice   = true
+	OperationInquireIndexCategoryPrice           = "inquire-index-category-price"
+	EndpointInquireIndexCategoryPrice            = "/uapi/domestic-stock/v1/quotations/inquire-index-category-price"
+	GroupInquireIndexCategoryPrice               = "market"
+	ServiceGroupInquireIndexCategoryPrice        = "Market"
+	RealTRIDInquireIndexCategoryPrice            = "FHPUP02140000"
+	VirtualTRIDInquireIndexCategoryPrice         = "모의투자 미지원"
+	SupportsVirtualInquireIndexCategoryPrice     = false
+	OperationExpIndexTrend                       = "exp-index-trend"
+	EndpointExpIndexTrend                        = "/uapi/domestic-stock/v1/quotations/exp-index-trend"
+	GroupExpIndexTrend                           = "market"
+	ServiceGroupExpIndexTrend                    = "Market"
+	RealTRIDExpIndexTrend                        = "FHPST01840000"
+	VirtualTRIDExpIndexTrend                     = "모의투자 미지원"
+	SupportsVirtualExpIndexTrend                 = false
+	OperationExpTotalIndex                       = "exp-total-index"
+	EndpointExpTotalIndex                        = "/uapi/domestic-stock/v1/quotations/exp-total-index"
+	GroupExpTotalIndex                           = "market"
+	ServiceGroupExpTotalIndex                    = "Market"
+	RealTRIDExpTotalIndex                        = "FHKUP11750000"
+	VirtualTRIDExpTotalIndex                     = "모의투자 미지원"
+	SupportsVirtualExpTotalIndex                 = false
+	OperationInquireViStatus                     = "inquire-vi-status"
+	EndpointInquireViStatus                      = "/uapi/domestic-stock/v1/quotations/inquire-vi-status"
+	GroupInquireViStatus                         = "market"
+	ServiceGroupInquireViStatus                  = "Market"
+	RealTRIDInquireViStatus                      = "FHPST01390000"
+	VirtualTRIDInquireViStatus                   = "모의투자 미지원"
+	SupportsVirtualInquireViStatus               = false
+	OperationCompInterest                        = "comp-interest"
+	EndpointCompInterest                         = "/uapi/domestic-stock/v1/quotations/comp-interest"
+	GroupCompInterest                            = "market"
+	ServiceGroupCompInterest                     = "Market"
+	RealTRIDCompInterest                         = "FHPST07020000"
+	VirtualTRIDCompInterest                      = "모의투자 미지원"
+	SupportsVirtualCompInterest                  = false
+	OperationNewsTitle                           = "news-title"
+	EndpointNewsTitle                            = "/uapi/domestic-stock/v1/quotations/news-title"
+	GroupNewsTitle                               = "market"
+	ServiceGroupNewsTitle                        = "Market"
+	RealTRIDNewsTitle                            = "FHKST01011800"
+	VirtualTRIDNewsTitle                         = "모의투자 미지원"
+	SupportsVirtualNewsTitle                     = false
+	OperationChkHoliday                          = "chk-holiday"
+	EndpointChkHoliday                           = "/uapi/domestic-stock/v1/quotations/chk-holiday"
+	GroupChkHoliday                              = "market"
+	ServiceGroupChkHoliday                       = "Market"
+	RealTRIDChkHoliday                           = "CTCA0903R"
+	VirtualTRIDChkHoliday                        = "모의투자 미지원"
+	SupportsVirtualChkHoliday                    = false
+	OperationMarketTime                          = "market-time"
+	EndpointMarketTime                           = "/uapi/domestic-stock/v1/quotations/market-time"
+	GroupMarketTime                              = "market"
+	ServiceGroupMarketTime                       = "Market"
+	RealTRIDMarketTime                           = "HHMCM000002C0"
+	VirtualTRIDMarketTime                        = "모의투자 미지원"
+	SupportsVirtualMarketTime                    = false
+	OperationSearchInfo                          = "search-info"
+	EndpointSearchInfo                           = "/uapi/domestic-stock/v1/quotations/search-info"
+	GroupSearchInfo                              = "instrument"
+	ServiceGroupSearchInfo                       = "Instrument"
+	RealTRIDSearchInfo                           = "CTPF1604R"
+	VirtualTRIDSearchInfo                        = "모의투자 미지원"
+	SupportsVirtualSearchInfo                    = false
+	OperationSearchStockInfo                     = "search-stock-info"
+	EndpointSearchStockInfo                      = "/uapi/domestic-stock/v1/quotations/search-stock-info"
+	GroupSearchStockInfo                         = "instrument"
+	ServiceGroupSearchStockInfo                  = "Instrument"
+	RealTRIDSearchStockInfo                      = "CTPF1002R"
+	VirtualTRIDSearchStockInfo                   = "모의투자 미지원"
+	SupportsVirtualSearchStockInfo               = false
+	OperationBalanceSheet                        = "balance-sheet"
+	EndpointBalanceSheet                         = "/uapi/domestic-stock/v1/finance/balance-sheet"
+	GroupBalanceSheet                            = "instrument"
+	ServiceGroupBalanceSheet                     = "Instrument"
+	RealTRIDBalanceSheet                         = "FHKST66430100"
+	VirtualTRIDBalanceSheet                      = "모의투자 미지원"
+	SupportsVirtualBalanceSheet                  = false
+	OperationIncomeStatement                     = "income-statement"
+	EndpointIncomeStatement                      = "/uapi/domestic-stock/v1/finance/income-statement"
+	GroupIncomeStatement                         = "instrument"
+	ServiceGroupIncomeStatement                  = "Instrument"
+	RealTRIDIncomeStatement                      = "FHKST66430200"
+	VirtualTRIDIncomeStatement                   = "모의투자 미지원"
+	SupportsVirtualIncomeStatement               = false
+	OperationFinancialRatio                      = "financial-ratio"
+	EndpointFinancialRatio                       = "/uapi/domestic-stock/v1/finance/financial-ratio"
+	GroupFinancialRatio                          = "instrument"
+	ServiceGroupFinancialRatio                   = "Instrument"
+	RealTRIDFinancialRatio                       = "FHKST66430300"
+	VirtualTRIDFinancialRatio                    = "모의투자 미지원"
+	SupportsVirtualFinancialRatio                = false
+	OperationProfitRatio                         = "profit-ratio"
+	EndpointProfitRatio                          = "/uapi/domestic-stock/v1/finance/profit-ratio"
+	GroupProfitRatio                             = "instrument"
+	ServiceGroupProfitRatio                      = "Instrument"
+	RealTRIDProfitRatio                          = "FHKST66430400"
+	VirtualTRIDProfitRatio                       = "모의투자 미지원"
+	SupportsVirtualProfitRatio                   = false
+	OperationOtherMajorRatios                    = "other-major-ratios"
+	EndpointOtherMajorRatios                     = "/uapi/domestic-stock/v1/finance/other-major-ratios"
+	GroupOtherMajorRatios                        = "instrument"
+	ServiceGroupOtherMajorRatios                 = "Instrument"
+	RealTRIDOtherMajorRatios                     = "FHKST66430500"
+	VirtualTRIDOtherMajorRatios                  = "모의투자 미지원"
+	SupportsVirtualOtherMajorRatios              = false
+	OperationStabilityRatio                      = "stability-ratio"
+	EndpointStabilityRatio                       = "/uapi/domestic-stock/v1/finance/stability-ratio"
+	GroupStabilityRatio                          = "instrument"
+	ServiceGroupStabilityRatio                   = "Instrument"
+	RealTRIDStabilityRatio                       = "FHKST66430600"
+	VirtualTRIDStabilityRatio                    = "모의투자 미지원"
+	SupportsVirtualStabilityRatio                = false
+	OperationGrowthRatio                         = "growth-ratio"
+	EndpointGrowthRatio                          = "/uapi/domestic-stock/v1/finance/growth-ratio"
+	GroupGrowthRatio                             = "instrument"
+	ServiceGroupGrowthRatio                      = "Instrument"
+	RealTRIDGrowthRatio                          = "FHKST66430800"
+	VirtualTRIDGrowthRatio                       = "모의투자 미지원"
+	SupportsVirtualGrowthRatio                   = false
+	OperationCreditByCompany                     = "credit-by-company"
+	EndpointCreditByCompany                      = "/uapi/domestic-stock/v1/quotations/credit-by-company"
+	GroupCreditByCompany                         = "instrument"
+	ServiceGroupCreditByCompany                  = "Instrument"
+	RealTRIDCreditByCompany                      = "FHPST04770000"
+	VirtualTRIDCreditByCompany                   = "모의투자 미지원"
+	SupportsVirtualCreditByCompany               = false
+	OperationDividend                            = "dividend"
+	EndpointDividend                             = "/uapi/domestic-stock/v1/ksdinfo/dividend"
+	GroupDividend                                = "instrument"
+	ServiceGroupDividend                         = "Instrument"
+	RealTRIDDividend                             = "HHKDB669102C0"
+	VirtualTRIDDividend                          = "모의투자 미지원"
+	SupportsVirtualDividend                      = false
+	OperationPurreq                              = "purreq"
+	EndpointPurreq                               = "/uapi/domestic-stock/v1/ksdinfo/purreq"
+	GroupPurreq                                  = "instrument"
+	ServiceGroupPurreq                           = "Instrument"
+	RealTRIDPurreq                               = "HHKDB669103C0"
+	VirtualTRIDPurreq                            = "모의투자 미지원"
+	SupportsVirtualPurreq                        = false
+	OperationMergerSplit                         = "merger-split"
+	EndpointMergerSplit                          = "/uapi/domestic-stock/v1/ksdinfo/merger-split"
+	GroupMergerSplit                             = "instrument"
+	ServiceGroupMergerSplit                      = "Instrument"
+	RealTRIDMergerSplit                          = "HHKDB669104C0"
+	VirtualTRIDMergerSplit                       = "모의투자 미지원"
+	SupportsVirtualMergerSplit                   = false
+	OperationRevSplit                            = "rev-split"
+	EndpointRevSplit                             = "/uapi/domestic-stock/v1/ksdinfo/rev-split"
+	GroupRevSplit                                = "instrument"
+	ServiceGroupRevSplit                         = "Instrument"
+	RealTRIDRevSplit                             = "HHKDB669105C0"
+	VirtualTRIDRevSplit                          = "모의투자 미지원"
+	SupportsVirtualRevSplit                      = false
+	OperationCapDcrs                             = "cap-dcrs"
+	EndpointCapDcrs                              = "/uapi/domestic-stock/v1/ksdinfo/cap-dcrs"
+	GroupCapDcrs                                 = "instrument"
+	ServiceGroupCapDcrs                          = "Instrument"
+	RealTRIDCapDcrs                              = "HHKDB669106C0"
+	VirtualTRIDCapDcrs                           = "모의투자 미지원"
+	SupportsVirtualCapDcrs                       = false
+	OperationListInfo                            = "list-info"
+	EndpointListInfo                             = "/uapi/domestic-stock/v1/ksdinfo/list-info"
+	GroupListInfo                                = "instrument"
+	ServiceGroupListInfo                         = "Instrument"
+	RealTRIDListInfo                             = "HHKDB669107C0"
+	VirtualTRIDListInfo                          = "모의투자 미지원"
+	SupportsVirtualListInfo                      = false
+	OperationPubOffer                            = "pub-offer"
+	EndpointPubOffer                             = "/uapi/domestic-stock/v1/ksdinfo/pub-offer"
+	GroupPubOffer                                = "instrument"
+	ServiceGroupPubOffer                         = "Instrument"
+	RealTRIDPubOffer                             = "HHKDB669108C0"
+	VirtualTRIDPubOffer                          = "모의투자 미지원"
+	SupportsVirtualPubOffer                      = false
+	OperationForfeit                             = "forfeit"
+	EndpointForfeit                              = "/uapi/domestic-stock/v1/ksdinfo/forfeit"
+	GroupForfeit                                 = "instrument"
+	ServiceGroupForfeit                          = "Instrument"
+	RealTRIDForfeit                              = "HHKDB669109C0"
+	VirtualTRIDForfeit                           = "모의투자 미지원"
+	SupportsVirtualForfeit                       = false
+	OperationMandDeposit                         = "mand-deposit"
+	EndpointMandDeposit                          = "/uapi/domestic-stock/v1/ksdinfo/mand-deposit"
+	GroupMandDeposit                             = "instrument"
+	ServiceGroupMandDeposit                      = "Instrument"
+	RealTRIDMandDeposit                          = "HHKDB669110C0"
+	VirtualTRIDMandDeposit                       = "모의투자 미지원"
+	SupportsVirtualMandDeposit                   = false
+	OperationPaidinCapin                         = "paidin-capin"
+	EndpointPaidinCapin                          = "/uapi/domestic-stock/v1/ksdinfo/paidin-capin"
+	GroupPaidinCapin                             = "instrument"
+	ServiceGroupPaidinCapin                      = "Instrument"
+	RealTRIDPaidinCapin                          = "HHKDB669100C0"
+	VirtualTRIDPaidinCapin                       = "모의투자 미지원"
+	SupportsVirtualPaidinCapin                   = false
+	OperationBonusIssue                          = "bonus-issue"
+	EndpointBonusIssue                           = "/uapi/domestic-stock/v1/ksdinfo/bonus-issue"
+	GroupBonusIssue                              = "instrument"
+	ServiceGroupBonusIssue                       = "Instrument"
+	RealTRIDBonusIssue                           = "HHKDB669101C0"
+	VirtualTRIDBonusIssue                        = "모의투자 미지원"
+	SupportsVirtualBonusIssue                    = false
+	OperationSharehldMeet                        = "sharehld-meet"
+	EndpointSharehldMeet                         = "/uapi/domestic-stock/v1/ksdinfo/sharehld-meet"
+	GroupSharehldMeet                            = "instrument"
+	ServiceGroupSharehldMeet                     = "Instrument"
+	RealTRIDSharehldMeet                         = "HHKDB669111C0"
+	VirtualTRIDSharehldMeet                      = "모의투자 미지원"
+	SupportsVirtualSharehldMeet                  = false
+	OperationEstimatePerform                     = "estimate-perform"
+	EndpointEstimatePerform                      = "/uapi/domestic-stock/v1/quotations/estimate-perform"
+	GroupEstimatePerform                         = "instrument"
+	ServiceGroupEstimatePerform                  = "Instrument"
+	RealTRIDEstimatePerform                      = "HHKST668300C0"
+	VirtualTRIDEstimatePerform                   = "모의투자 미지원"
+	SupportsVirtualEstimatePerform               = false
+	OperationLendableByCompany                   = "lendable-by-company"
+	EndpointLendableByCompany                    = "/uapi/domestic-stock/v1/quotations/lendable-by-company"
+	GroupLendableByCompany                       = "instrument"
+	ServiceGroupLendableByCompany                = "Instrument"
+	RealTRIDLendableByCompany                    = "CTSC2702R"
+	VirtualTRIDLendableByCompany                 = "모의투자 미지원"
+	SupportsVirtualLendableByCompany             = false
+	OperationInvestOpinion                       = "invest-opinion"
+	EndpointInvestOpinion                        = "/uapi/domestic-stock/v1/quotations/invest-opinion"
+	GroupInvestOpinion                           = "instrument"
+	ServiceGroupInvestOpinion                    = "Instrument"
+	RealTRIDInvestOpinion                        = "FHKST663300C0"
+	VirtualTRIDInvestOpinion                     = "모의투자 미지원"
+	SupportsVirtualInvestOpinion                 = false
+	OperationInvestOpbysec                       = "invest-opbysec"
+	EndpointInvestOpbysec                        = "/uapi/domestic-stock/v1/quotations/invest-opbysec"
+	GroupInvestOpbysec                           = "instrument"
+	ServiceGroupInvestOpbysec                    = "Instrument"
+	RealTRIDInvestOpbysec                        = "FHKST663400C0"
+	VirtualTRIDInvestOpbysec                     = "모의투자 미지원"
+	SupportsVirtualInvestOpbysec                 = false
+	OperationPsearchTitle                        = "psearch-title"
+	EndpointPsearchTitle                         = "/uapi/domestic-stock/v1/quotations/psearch-title"
+	GroupPsearchTitle                            = "analysis"
+	ServiceGroupPsearchTitle                     = "Analysis"
+	RealTRIDPsearchTitle                         = "HHKST03900300"
+	VirtualTRIDPsearchTitle                      = "모의투자 미지원"
+	SupportsVirtualPsearchTitle                  = false
+	OperationPsearchResult                       = "psearch-result"
+	EndpointPsearchResult                        = "/uapi/domestic-stock/v1/quotations/psearch-result"
+	GroupPsearchResult                           = "analysis"
+	ServiceGroupPsearchResult                    = "Analysis"
+	RealTRIDPsearchResult                        = "HHKST03900400"
+	VirtualTRIDPsearchResult                     = "모의투자 미지원"
+	SupportsVirtualPsearchResult                 = false
+	OperationIntstockGrouplist                   = "intstock-grouplist"
+	EndpointIntstockGrouplist                    = "/uapi/domestic-stock/v1/quotations/intstock-grouplist"
+	GroupIntstockGrouplist                       = "analysis"
+	ServiceGroupIntstockGrouplist                = "Analysis"
+	RealTRIDIntstockGrouplist                    = "HHKCM113004C7"
+	VirtualTRIDIntstockGrouplist                 = "모의투자 미지원"
+	SupportsVirtualIntstockGrouplist             = false
+	OperationIntstockMultprice                   = "intstock-multprice"
+	EndpointIntstockMultprice                    = "/uapi/domestic-stock/v1/quotations/intstock-multprice"
+	GroupIntstockMultprice                       = "analysis"
+	ServiceGroupIntstockMultprice                = "Analysis"
+	RealTRIDIntstockMultprice                    = "FHKST11300006"
+	VirtualTRIDIntstockMultprice                 = "모의투자 미지원"
+	SupportsVirtualIntstockMultprice             = false
+	OperationIntstockStocklistByGroup            = "intstock-stocklist-by-group"
+	EndpointIntstockStocklistByGroup             = "/uapi/domestic-stock/v1/quotations/intstock-stocklist-by-group"
+	GroupIntstockStocklistByGroup                = "analysis"
+	ServiceGroupIntstockStocklistByGroup         = "Analysis"
+	RealTRIDIntstockStocklistByGroup             = "HHKCM113004C6"
+	VirtualTRIDIntstockStocklistByGroup          = "모의투자 미지원"
+	SupportsVirtualIntstockStocklistByGroup      = false
+	OperationForeignInstitutionTotal             = "foreign-institution-total"
+	EndpointForeignInstitutionTotal              = "/uapi/domestic-stock/v1/quotations/foreign-institution-total"
+	GroupForeignInstitutionTotal                 = "analysis"
+	ServiceGroupForeignInstitutionTotal          = "Analysis"
+	RealTRIDForeignInstitutionTotal              = "FHPTJ04400000"
+	VirtualTRIDForeignInstitutionTotal           = "모의투자 미지원"
+	SupportsVirtualForeignInstitutionTotal       = false
+	OperationFrgnmemTradeEstimate                = "frgnmem-trade-estimate"
+	EndpointFrgnmemTradeEstimate                 = "/uapi/domestic-stock/v1/quotations/frgnmem-trade-estimate"
+	GroupFrgnmemTradeEstimate                    = "analysis"
+	ServiceGroupFrgnmemTradeEstimate             = "Analysis"
+	RealTRIDFrgnmemTradeEstimate                 = "FHKST644100C0"
+	VirtualTRIDFrgnmemTradeEstimate              = "모의투자 미지원"
+	SupportsVirtualFrgnmemTradeEstimate          = false
+	OperationInvestorTradeByStockDaily           = "investor-trade-by-stock-daily"
+	EndpointInvestorTradeByStockDaily            = "/uapi/domestic-stock/v1/quotations/investor-trade-by-stock-daily"
+	GroupInvestorTradeByStockDaily               = "analysis"
+	ServiceGroupInvestorTradeByStockDaily        = "Analysis"
+	RealTRIDInvestorTradeByStockDaily            = "FHPTJ04160001"
+	VirtualTRIDInvestorTradeByStockDaily         = "모의투자 미지원"
+	SupportsVirtualInvestorTradeByStockDaily     = false
+	OperationInquireInvestorTimeByMarket         = "inquire-investor-time-by-market"
+	EndpointInquireInvestorTimeByMarket          = "/uapi/domestic-stock/v1/quotations/inquire-investor-time-by-market"
+	GroupInquireInvestorTimeByMarket             = "analysis"
+	ServiceGroupInquireInvestorTimeByMarket      = "Analysis"
+	RealTRIDInquireInvestorTimeByMarket          = "FHPTJ04030000"
+	VirtualTRIDInquireInvestorTimeByMarket       = "모의투자 미지원"
+	SupportsVirtualInquireInvestorTimeByMarket   = false
+	OperationInquireInvestorDailyByMarket        = "inquire-investor-daily-by-market"
+	EndpointInquireInvestorDailyByMarket         = "/uapi/domestic-stock/v1/quotations/inquire-investor-daily-by-market"
+	GroupInquireInvestorDailyByMarket            = "analysis"
+	ServiceGroupInquireInvestorDailyByMarket     = "Analysis"
+	RealTRIDInquireInvestorDailyByMarket         = "FHPTJ04040000"
+	VirtualTRIDInquireInvestorDailyByMarket      = "모의투자 미지원"
+	SupportsVirtualInquireInvestorDailyByMarket  = false
+	OperationFrgnmemPchsTrend                    = "frgnmem-pchs-trend"
+	EndpointFrgnmemPchsTrend                     = "/uapi/domestic-stock/v1/quotations/frgnmem-pchs-trend"
+	GroupFrgnmemPchsTrend                        = "analysis"
+	ServiceGroupFrgnmemPchsTrend                 = "Analysis"
+	RealTRIDFrgnmemPchsTrend                     = "FHKST644400C0"
+	VirtualTRIDFrgnmemPchsTrend                  = "모의투자 미지원"
+	SupportsVirtualFrgnmemPchsTrend              = false
+	OperationFrgnmemTradeTrend                   = "frgnmem-trade-trend"
+	EndpointFrgnmemTradeTrend                    = "/uapi/domestic-stock/v1/quotations/frgnmem-trade-trend"
+	GroupFrgnmemTradeTrend                       = "analysis"
+	ServiceGroupFrgnmemTradeTrend                = "Analysis"
+	RealTRIDFrgnmemTradeTrend                    = "FHPST04320000"
+	VirtualTRIDFrgnmemTradeTrend                 = "모의투자 미지원"
+	SupportsVirtualFrgnmemTradeTrend             = false
+	OperationInquireMemberDaily                  = "inquire-member-daily"
+	EndpointInquireMemberDaily                   = "/uapi/domestic-stock/v1/quotations/inquire-member-daily"
+	GroupInquireMemberDaily                      = "analysis"
+	ServiceGroupInquireMemberDaily               = "Analysis"
+	RealTRIDInquireMemberDaily                   = "FHPST04540000"
+	VirtualTRIDInquireMemberDaily                = "모의투자 미지원"
+	SupportsVirtualInquireMemberDaily            = false
+	OperationProgramTradeByStock                 = "program-trade-by-stock"
+	EndpointProgramTradeByStock                  = "/uapi/domestic-stock/v1/quotations/program-trade-by-stock"
+	GroupProgramTradeByStock                     = "analysis"
+	ServiceGroupProgramTradeByStock              = "Analysis"
+	RealTRIDProgramTradeByStock                  = "FHPPG04650101"
+	VirtualTRIDProgramTradeByStock               = "모의투자 미지원"
+	SupportsVirtualProgramTradeByStock           = false
+	OperationProgramTradeByStockDaily            = "program-trade-by-stock-daily"
+	EndpointProgramTradeByStockDaily             = "/uapi/domestic-stock/v1/quotations/program-trade-by-stock-daily"
+	GroupProgramTradeByStockDaily                = "analysis"
+	ServiceGroupProgramTradeByStockDaily         = "Analysis"
+	RealTRIDProgramTradeByStockDaily             = "FHPPG04650201"
+	VirtualTRIDProgramTradeByStockDaily          = "모의투자 미지원"
+	SupportsVirtualProgramTradeByStockDaily      = false
+	OperationInvestorTrendEstimate               = "investor-trend-estimate"
+	EndpointInvestorTrendEstimate                = "/uapi/domestic-stock/v1/quotations/investor-trend-estimate"
+	GroupInvestorTrendEstimate                   = "analysis"
+	ServiceGroupInvestorTrendEstimate            = "Analysis"
+	RealTRIDInvestorTrendEstimate                = "HHPTJ04160200"
+	VirtualTRIDInvestorTrendEstimate             = "모의투자 미지원"
+	SupportsVirtualInvestorTrendEstimate         = false
+	OperationInquireDailyTradeVolume             = "inquire-daily-trade-volume"
+	EndpointInquireDailyTradeVolume              = "/uapi/domestic-stock/v1/quotations/inquire-daily-trade-volume"
+	GroupInquireDailyTradeVolume                 = "analysis"
+	ServiceGroupInquireDailyTradeVolume          = "Analysis"
+	RealTRIDInquireDailyTradeVolume              = "FHKST03010800"
+	VirtualTRIDInquireDailyTradeVolume           = "모의투자 미지원"
+	SupportsVirtualInquireDailyTradeVolume       = false
+	OperationCompProgramTradeToday               = "comp-program-trade-today"
+	EndpointCompProgramTradeToday                = "/uapi/domestic-stock/v1/quotations/comp-program-trade-today"
+	GroupCompProgramTradeToday                   = "analysis"
+	ServiceGroupCompProgramTradeToday            = "Analysis"
+	RealTRIDCompProgramTradeToday                = "FHPPG04600101"
+	VirtualTRIDCompProgramTradeToday             = "모의투자 미지원"
+	SupportsVirtualCompProgramTradeToday         = false
+	OperationCompProgramTradeDaily               = "comp-program-trade-daily"
+	EndpointCompProgramTradeDaily                = "/uapi/domestic-stock/v1/quotations/comp-program-trade-daily"
+	GroupCompProgramTradeDaily                   = "analysis"
+	ServiceGroupCompProgramTradeDaily            = "Analysis"
+	RealTRIDCompProgramTradeDaily                = "FHPPG04600001"
+	VirtualTRIDCompProgramTradeDaily             = "모의투자 미지원"
+	SupportsVirtualCompProgramTradeDaily         = false
+	OperationInvestorProgramTradeToday           = "investor-program-trade-today"
+	EndpointInvestorProgramTradeToday            = "/uapi/domestic-stock/v1/quotations/investor-program-trade-today"
+	GroupInvestorProgramTradeToday               = "analysis"
+	ServiceGroupInvestorProgramTradeToday        = "Analysis"
+	RealTRIDInvestorProgramTradeToday            = "HHPPG046600C1"
+	VirtualTRIDInvestorProgramTradeToday         = "모의투자 미지원"
+	SupportsVirtualInvestorProgramTradeToday     = false
+	OperationDailyCreditBalance                  = "daily-credit-balance"
+	EndpointDailyCreditBalance                   = "/uapi/domestic-stock/v1/quotations/daily-credit-balance"
+	GroupDailyCreditBalance                      = "analysis"
+	ServiceGroupDailyCreditBalance               = "Analysis"
+	RealTRIDDailyCreditBalance                   = "FHPST04760000"
+	VirtualTRIDDailyCreditBalance                = "모의투자 미지원"
+	SupportsVirtualDailyCreditBalance            = false
+	OperationExpPriceTrend                       = "exp-price-trend"
+	EndpointExpPriceTrend                        = "/uapi/domestic-stock/v1/quotations/exp-price-trend"
+	GroupExpPriceTrend                           = "analysis"
+	ServiceGroupExpPriceTrend                    = "Analysis"
+	RealTRIDExpPriceTrend                        = "FHPST01810000"
+	VirtualTRIDExpPriceTrend                     = "모의투자 미지원"
+	SupportsVirtualExpPriceTrend                 = false
+	OperationDailyShortSale                      = "daily-short-sale"
+	EndpointDailyShortSale                       = "/uapi/domestic-stock/v1/quotations/daily-short-sale"
+	GroupDailyShortSale                          = "analysis"
+	ServiceGroupDailyShortSale                   = "Analysis"
+	RealTRIDDailyShortSale                       = "FHPST04830000"
+	VirtualTRIDDailyShortSale                    = "모의투자 미지원"
+	SupportsVirtualDailyShortSale                = false
+	OperationOvertimeExpTransFluct               = "overtime-exp-trans-fluct"
+	EndpointOvertimeExpTransFluct                = "/uapi/domestic-stock/v1/ranking/overtime-exp-trans-fluct"
+	GroupOvertimeExpTransFluct                   = "analysis"
+	ServiceGroupOvertimeExpTransFluct            = "Analysis"
+	RealTRIDOvertimeExpTransFluct                = "FHKST11860000"
+	VirtualTRIDOvertimeExpTransFluct             = "모의투자 미지원"
+	SupportsVirtualOvertimeExpTransFluct         = false
+	OperationTradprtByamt                        = "tradprt-byamt"
+	EndpointTradprtByamt                         = "/uapi/domestic-stock/v1/quotations/tradprt-byamt"
+	GroupTradprtByamt                            = "analysis"
+	ServiceGroupTradprtByamt                     = "Analysis"
+	RealTRIDTradprtByamt                         = "FHKST111900C0"
+	VirtualTRIDTradprtByamt                      = "모의투자 미지원"
+	SupportsVirtualTradprtByamt                  = false
+	OperationMktfunds                            = "mktfunds"
+	EndpointMktfunds                             = "/uapi/domestic-stock/v1/quotations/mktfunds"
+	GroupMktfunds                                = "analysis"
+	ServiceGroupMktfunds                         = "Analysis"
+	RealTRIDMktfunds                             = "FHKST649100C0"
+	VirtualTRIDMktfunds                          = "모의투자 미지원"
+	SupportsVirtualMktfunds                      = false
+	OperationDailyLoanTrans                      = "daily-loan-trans"
+	EndpointDailyLoanTrans                       = "/uapi/domestic-stock/v1/quotations/daily-loan-trans"
+	GroupDailyLoanTrans                          = "analysis"
+	ServiceGroupDailyLoanTrans                   = "Analysis"
+	RealTRIDDailyLoanTrans                       = "HHPST074500C0"
+	VirtualTRIDDailyLoanTrans                    = "모의투자 미지원"
+	SupportsVirtualDailyLoanTrans                = false
+	OperationCaptureUplowprice                   = "capture-uplowprice"
+	EndpointCaptureUplowprice                    = "/uapi/domestic-stock/v1/quotations/capture-uplowprice"
+	GroupCaptureUplowprice                       = "analysis"
+	ServiceGroupCaptureUplowprice                = "Analysis"
+	RealTRIDCaptureUplowprice                    = "FHKST130000C0"
+	VirtualTRIDCaptureUplowprice                 = "모의투자 미지원"
+	SupportsVirtualCaptureUplowprice             = false
+	OperationPbarTratio                          = "pbar-tratio"
+	EndpointPbarTratio                           = "/uapi/domestic-stock/v1/quotations/pbar-tratio"
+	GroupPbarTratio                              = "analysis"
+	ServiceGroupPbarTratio                       = "Analysis"
+	RealTRIDPbarTratio                           = "FHPST01130000"
+	VirtualTRIDPbarTratio                        = "모의투자 미지원"
+	SupportsVirtualPbarTratio                    = false
+	OperationVolumeRank                          = "volume-rank"
+	EndpointVolumeRank                           = "/uapi/domestic-stock/v1/quotations/volume-rank"
+	GroupVolumeRank                              = "ranking"
+	ServiceGroupVolumeRank                       = "Ranking"
+	RealTRIDVolumeRank                           = "FHPST01710000"
+	VirtualTRIDVolumeRank                        = "모의투자 미지원"
+	SupportsVirtualVolumeRank                    = false
+	OperationFluctuation                         = "fluctuation"
+	EndpointFluctuation                          = "/uapi/domestic-stock/v1/ranking/fluctuation"
+	GroupFluctuation                             = "ranking"
+	ServiceGroupFluctuation                      = "Ranking"
+	RealTRIDFluctuation                          = "FHPST01700000"
+	VirtualTRIDFluctuation                       = "모의투자 미지원"
+	SupportsVirtualFluctuation                   = false
+	OperationQuoteBalance                        = "quote-balance"
+	EndpointQuoteBalance                         = "/uapi/domestic-stock/v1/ranking/quote-balance"
+	GroupQuoteBalance                            = "ranking"
+	ServiceGroupQuoteBalance                     = "Ranking"
+	RealTRIDQuoteBalance                         = "FHPST01720000"
+	VirtualTRIDQuoteBalance                      = "모의투자 미지원"
+	SupportsVirtualQuoteBalance                  = false
+	OperationProfitAssetIndex                    = "profit-asset-index"
+	EndpointProfitAssetIndex                     = "/uapi/domestic-stock/v1/ranking/profit-asset-index"
+	GroupProfitAssetIndex                        = "ranking"
+	ServiceGroupProfitAssetIndex                 = "Ranking"
+	RealTRIDProfitAssetIndex                     = "FHPST01730000"
+	VirtualTRIDProfitAssetIndex                  = "모의투자 미지원"
+	SupportsVirtualProfitAssetIndex              = false
+	OperationMarketCap                           = "market-cap"
+	EndpointMarketCap                            = "/uapi/domestic-stock/v1/ranking/market-cap"
+	GroupMarketCap                               = "ranking"
+	ServiceGroupMarketCap                        = "Ranking"
+	RealTRIDMarketCap                            = "FHPST01740000"
+	VirtualTRIDMarketCap                         = "모의투자 미지원"
+	SupportsVirtualMarketCap                     = false
+	OperationFinanceRatio                        = "finance-ratio"
+	EndpointFinanceRatio                         = "/uapi/domestic-stock/v1/ranking/finance-ratio"
+	GroupFinanceRatio                            = "ranking"
+	ServiceGroupFinanceRatio                     = "Ranking"
+	RealTRIDFinanceRatio                         = "FHPST01750000"
+	VirtualTRIDFinanceRatio                      = "모의투자 미지원"
+	SupportsVirtualFinanceRatio                  = false
+	OperationAfterHourBalance                    = "after-hour-balance"
+	EndpointAfterHourBalance                     = "/uapi/domestic-stock/v1/ranking/after-hour-balance"
+	GroupAfterHourBalance                        = "ranking"
+	ServiceGroupAfterHourBalance                 = "Ranking"
+	RealTRIDAfterHourBalance                     = "FHPST01760000"
+	VirtualTRIDAfterHourBalance                  = "모의투자 미지원"
+	SupportsVirtualAfterHourBalance              = false
+	OperationPreferDisparateRatio                = "prefer-disparate-ratio"
+	EndpointPreferDisparateRatio                 = "/uapi/domestic-stock/v1/ranking/prefer-disparate-ratio"
+	GroupPreferDisparateRatio                    = "ranking"
+	ServiceGroupPreferDisparateRatio             = "Ranking"
+	RealTRIDPreferDisparateRatio                 = "FHPST01770000"
+	VirtualTRIDPreferDisparateRatio              = "모의투자 미지원"
+	SupportsVirtualPreferDisparateRatio          = false
+	OperationDisparity                           = "disparity"
+	EndpointDisparity                            = "/uapi/domestic-stock/v1/ranking/disparity"
+	GroupDisparity                               = "ranking"
+	ServiceGroupDisparity                        = "Ranking"
+	RealTRIDDisparity                            = "FHPST01780000"
+	VirtualTRIDDisparity                         = "모의투자 미지원"
+	SupportsVirtualDisparity                     = false
+	OperationMarketValue                         = "market-value"
+	EndpointMarketValue                          = "/uapi/domestic-stock/v1/ranking/market-value"
+	GroupMarketValue                             = "ranking"
+	ServiceGroupMarketValue                      = "Ranking"
+	RealTRIDMarketValue                          = "FHPST01790000"
+	VirtualTRIDMarketValue                       = "모의투자 미지원"
+	SupportsVirtualMarketValue                   = false
+	OperationVolumePower                         = "volume-power"
+	EndpointVolumePower                          = "/uapi/domestic-stock/v1/ranking/volume-power"
+	GroupVolumePower                             = "ranking"
+	ServiceGroupVolumePower                      = "Ranking"
+	RealTRIDVolumePower                          = "FHPST01680000"
+	VirtualTRIDVolumePower                       = "모의투자 미지원"
+	SupportsVirtualVolumePower                   = false
+	OperationTopInterestStock                    = "top-interest-stock"
+	EndpointTopInterestStock                     = "/uapi/domestic-stock/v1/ranking/top-interest-stock"
+	GroupTopInterestStock                        = "ranking"
+	ServiceGroupTopInterestStock                 = "Ranking"
+	RealTRIDTopInterestStock                     = "FHPST01800000"
+	VirtualTRIDTopInterestStock                  = "모의투자 미지원"
+	SupportsVirtualTopInterestStock              = false
+	OperationExpTransUpdown                      = "exp-trans-updown"
+	EndpointExpTransUpdown                       = "/uapi/domestic-stock/v1/ranking/exp-trans-updown"
+	GroupExpTransUpdown                          = "ranking"
+	ServiceGroupExpTransUpdown                   = "Ranking"
+	RealTRIDExpTransUpdown                       = "FHPST01820000"
+	VirtualTRIDExpTransUpdown                    = "모의투자 미지원"
+	SupportsVirtualExpTransUpdown                = false
+	OperationTradedByCompany                     = "traded-by-company"
+	EndpointTradedByCompany                      = "/uapi/domestic-stock/v1/ranking/traded-by-company"
+	GroupTradedByCompany                         = "ranking"
+	ServiceGroupTradedByCompany                  = "Ranking"
+	RealTRIDTradedByCompany                      = "FHPST01860000"
+	VirtualTRIDTradedByCompany                   = "모의투자 미지원"
+	SupportsVirtualTradedByCompany               = false
+	OperationNearNewHighlow                      = "near-new-highlow"
+	EndpointNearNewHighlow                       = "/uapi/domestic-stock/v1/ranking/near-new-highlow"
+	GroupNearNewHighlow                          = "ranking"
+	ServiceGroupNearNewHighlow                   = "Ranking"
+	RealTRIDNearNewHighlow                       = "FHPST01870000"
+	VirtualTRIDNearNewHighlow                    = "모의투자 미지원"
+	SupportsVirtualNearNewHighlow                = false
+	OperationDividendRate                        = "dividend-rate"
+	EndpointDividendRate                         = "/uapi/domestic-stock/v1/ranking/dividend-rate"
+	GroupDividendRate                            = "ranking"
+	ServiceGroupDividendRate                     = "Ranking"
+	RealTRIDDividendRate                         = "HHKDB13470100"
+	VirtualTRIDDividendRate                      = "모의투자 미지원"
+	SupportsVirtualDividendRate                  = false
+	OperationBulkTransNum                        = "bulk-trans-num"
+	EndpointBulkTransNum                         = "/uapi/domestic-stock/v1/ranking/bulk-trans-num"
+	GroupBulkTransNum                            = "ranking"
+	ServiceGroupBulkTransNum                     = "Ranking"
+	RealTRIDBulkTransNum                         = "FHKST190900C0"
+	VirtualTRIDBulkTransNum                      = "모의투자 미지원"
+	SupportsVirtualBulkTransNum                  = false
+	OperationCreditBalance                       = "credit-balance"
+	EndpointCreditBalance                        = "/uapi/domestic-stock/v1/ranking/credit-balance"
+	GroupCreditBalance                           = "ranking"
+	ServiceGroupCreditBalance                    = "Ranking"
+	RealTRIDCreditBalance                        = "FHKST17010000"
+	VirtualTRIDCreditBalance                     = "모의투자 미지원"
+	SupportsVirtualCreditBalance                 = false
+	OperationShortSale                           = "short-sale"
+	EndpointShortSale                            = "/uapi/domestic-stock/v1/ranking/short-sale"
+	GroupShortSale                               = "ranking"
+	ServiceGroupShortSale                        = "Ranking"
+	RealTRIDShortSale                            = "FHPST04820000"
+	VirtualTRIDShortSale                         = "모의투자 미지원"
+	SupportsVirtualShortSale                     = false
+	OperationOvertimeFluctuation                 = "overtime-fluctuation"
+	EndpointOvertimeFluctuation                  = "/uapi/domestic-stock/v1/ranking/overtime-fluctuation"
+	GroupOvertimeFluctuation                     = "ranking"
+	ServiceGroupOvertimeFluctuation              = "Ranking"
+	RealTRIDOvertimeFluctuation                  = "FHPST02340000"
+	VirtualTRIDOvertimeFluctuation               = "모의투자 미지원"
+	SupportsVirtualOvertimeFluctuation           = false
+	OperationOvertimeVolume                      = "overtime-volume"
+	EndpointOvertimeVolume                       = "/uapi/domestic-stock/v1/ranking/overtime-volume"
+	GroupOvertimeVolume                          = "ranking"
+	ServiceGroupOvertimeVolume                   = "Ranking"
+	RealTRIDOvertimeVolume                       = "FHPST02350000"
+	VirtualTRIDOvertimeVolume                    = "모의투자 미지원"
+	SupportsVirtualOvertimeVolume                = false
+	OperationHtsTopView                          = "hts-top-view"
+	EndpointHtsTopView                           = "/uapi/domestic-stock/v1/ranking/hts-top-view"
+	GroupHtsTopView                              = "ranking"
+	ServiceGroupHtsTopView                       = "Ranking"
+	RealTRIDHtsTopView                           = "HHMCM000100C0"
+	VirtualTRIDHtsTopView                        = "모의투자 미지원"
+	SupportsVirtualHtsTopView                    = false
 )
 
 var operationMetadata = map[string]OperationMetadata{
@@ -122,6 +962,15 @@ var operationMetadata = map[string]OperationMetadata{
 		RealTRID:        RealTRIDInquirePrice,
 		VirtualTRID:     VirtualTRIDInquirePrice,
 		SupportsVirtual: SupportsVirtualInquirePrice,
+	},
+	OperationInquirePrice2: {
+		OperationID:     OperationInquirePrice2,
+		Endpoint:        EndpointInquirePrice2,
+		Group:           GroupInquirePrice2,
+		ServiceGroup:    ServiceGroupInquirePrice2,
+		RealTRID:        RealTRIDInquirePrice2,
+		VirtualTRID:     VirtualTRIDInquirePrice2,
+		SupportsVirtual: SupportsVirtualInquirePrice2,
 	},
 	OperationInquireCcnl: {
 		OperationID:     OperationInquireCcnl,
@@ -186,6 +1035,15 @@ var operationMetadata = map[string]OperationMetadata{
 		VirtualTRID:     VirtualTRIDInquireTimeItemChartPrice,
 		SupportsVirtual: SupportsVirtualInquireTimeItemChartPrice,
 	},
+	OperationInquireTimeDailychartprice: {
+		OperationID:     OperationInquireTimeDailychartprice,
+		Endpoint:        EndpointInquireTimeDailychartprice,
+		Group:           GroupInquireTimeDailychartprice,
+		ServiceGroup:    ServiceGroupInquireTimeDailychartprice,
+		RealTRID:        RealTRIDInquireTimeDailychartprice,
+		VirtualTRID:     VirtualTRIDInquireTimeDailychartprice,
+		SupportsVirtual: SupportsVirtualInquireTimeDailychartprice,
+	},
 	OperationInquireTimeItemConclusion: {
 		OperationID:     OperationInquireTimeItemConclusion,
 		Endpoint:        EndpointInquireTimeItemConclusion,
@@ -194,6 +1052,915 @@ var operationMetadata = map[string]OperationMetadata{
 		RealTRID:        RealTRIDInquireTimeItemConclusion,
 		VirtualTRID:     VirtualTRIDInquireTimeItemConclusion,
 		SupportsVirtual: SupportsVirtualInquireTimeItemConclusion,
+	},
+	OperationInquireDailyOvertimeprice: {
+		OperationID:     OperationInquireDailyOvertimeprice,
+		Endpoint:        EndpointInquireDailyOvertimeprice,
+		Group:           GroupInquireDailyOvertimeprice,
+		ServiceGroup:    ServiceGroupInquireDailyOvertimeprice,
+		RealTRID:        RealTRIDInquireDailyOvertimeprice,
+		VirtualTRID:     VirtualTRIDInquireDailyOvertimeprice,
+		SupportsVirtual: SupportsVirtualInquireDailyOvertimeprice,
+	},
+	OperationInquireTimeOvertimeconclusion: {
+		OperationID:     OperationInquireTimeOvertimeconclusion,
+		Endpoint:        EndpointInquireTimeOvertimeconclusion,
+		Group:           GroupInquireTimeOvertimeconclusion,
+		ServiceGroup:    ServiceGroupInquireTimeOvertimeconclusion,
+		RealTRID:        RealTRIDInquireTimeOvertimeconclusion,
+		VirtualTRID:     VirtualTRIDInquireTimeOvertimeconclusion,
+		SupportsVirtual: SupportsVirtualInquireTimeOvertimeconclusion,
+	},
+	OperationInquireOvertimePrice: {
+		OperationID:     OperationInquireOvertimePrice,
+		Endpoint:        EndpointInquireOvertimePrice,
+		Group:           GroupInquireOvertimePrice,
+		ServiceGroup:    ServiceGroupInquireOvertimePrice,
+		RealTRID:        RealTRIDInquireOvertimePrice,
+		VirtualTRID:     VirtualTRIDInquireOvertimePrice,
+		SupportsVirtual: SupportsVirtualInquireOvertimePrice,
+	},
+	OperationInquireOvertimeAskingPrice: {
+		OperationID:     OperationInquireOvertimeAskingPrice,
+		Endpoint:        EndpointInquireOvertimeAskingPrice,
+		Group:           GroupInquireOvertimeAskingPrice,
+		ServiceGroup:    ServiceGroupInquireOvertimeAskingPrice,
+		RealTRID:        RealTRIDInquireOvertimeAskingPrice,
+		VirtualTRID:     VirtualTRIDInquireOvertimeAskingPrice,
+		SupportsVirtual: SupportsVirtualInquireOvertimeAskingPrice,
+	},
+	OperationExpClosingPrice: {
+		OperationID:     OperationExpClosingPrice,
+		Endpoint:        EndpointExpClosingPrice,
+		Group:           GroupExpClosingPrice,
+		ServiceGroup:    ServiceGroupExpClosingPrice,
+		RealTRID:        RealTRIDExpClosingPrice,
+		VirtualTRID:     VirtualTRIDExpClosingPrice,
+		SupportsVirtual: SupportsVirtualExpClosingPrice,
+	},
+	OperationETFETNQuotationsInquirePrice: {
+		OperationID:     OperationETFETNQuotationsInquirePrice,
+		Endpoint:        EndpointETFETNQuotationsInquirePrice,
+		Group:           GroupETFETNQuotationsInquirePrice,
+		ServiceGroup:    ServiceGroupETFETNQuotationsInquirePrice,
+		RealTRID:        RealTRIDETFETNQuotationsInquirePrice,
+		VirtualTRID:     VirtualTRIDETFETNQuotationsInquirePrice,
+		SupportsVirtual: SupportsVirtualETFETNQuotationsInquirePrice,
+	},
+	OperationInquireComponentStockPrice: {
+		OperationID:     OperationInquireComponentStockPrice,
+		Endpoint:        EndpointInquireComponentStockPrice,
+		Group:           GroupInquireComponentStockPrice,
+		ServiceGroup:    ServiceGroupInquireComponentStockPrice,
+		RealTRID:        RealTRIDInquireComponentStockPrice,
+		VirtualTRID:     VirtualTRIDInquireComponentStockPrice,
+		SupportsVirtual: SupportsVirtualInquireComponentStockPrice,
+	},
+	OperationNavComparisonTrend: {
+		OperationID:     OperationNavComparisonTrend,
+		Endpoint:        EndpointNavComparisonTrend,
+		Group:           GroupNavComparisonTrend,
+		ServiceGroup:    ServiceGroupNavComparisonTrend,
+		RealTRID:        RealTRIDNavComparisonTrend,
+		VirtualTRID:     VirtualTRIDNavComparisonTrend,
+		SupportsVirtual: SupportsVirtualNavComparisonTrend,
+	},
+	OperationNavComparisonDailyTrend: {
+		OperationID:     OperationNavComparisonDailyTrend,
+		Endpoint:        EndpointNavComparisonDailyTrend,
+		Group:           GroupNavComparisonDailyTrend,
+		ServiceGroup:    ServiceGroupNavComparisonDailyTrend,
+		RealTRID:        RealTRIDNavComparisonDailyTrend,
+		VirtualTRID:     VirtualTRIDNavComparisonDailyTrend,
+		SupportsVirtual: SupportsVirtualNavComparisonDailyTrend,
+	},
+	OperationNavComparisonTimeTrend: {
+		OperationID:     OperationNavComparisonTimeTrend,
+		Endpoint:        EndpointNavComparisonTimeTrend,
+		Group:           GroupNavComparisonTimeTrend,
+		ServiceGroup:    ServiceGroupNavComparisonTimeTrend,
+		RealTRID:        RealTRIDNavComparisonTimeTrend,
+		VirtualTRID:     VirtualTRIDNavComparisonTimeTrend,
+		SupportsVirtual: SupportsVirtualNavComparisonTimeTrend,
+	},
+	OperationInquireELWPrice: {
+		OperationID:     OperationInquireELWPrice,
+		Endpoint:        EndpointInquireELWPrice,
+		Group:           GroupInquireELWPrice,
+		ServiceGroup:    ServiceGroupInquireELWPrice,
+		RealTRID:        RealTRIDInquireELWPrice,
+		VirtualTRID:     VirtualTRIDInquireELWPrice,
+		SupportsVirtual: SupportsVirtualInquireELWPrice,
+	},
+	OperationNewlyListed: {
+		OperationID:     OperationNewlyListed,
+		Endpoint:        EndpointNewlyListed,
+		Group:           GroupNewlyListed,
+		ServiceGroup:    ServiceGroupNewlyListed,
+		RealTRID:        RealTRIDNewlyListed,
+		VirtualTRID:     VirtualTRIDNewlyListed,
+		SupportsVirtual: SupportsVirtualNewlyListed,
+	},
+	OperationSensitivity: {
+		OperationID:     OperationSensitivity,
+		Endpoint:        EndpointSensitivity,
+		Group:           GroupSensitivity,
+		ServiceGroup:    ServiceGroupSensitivity,
+		RealTRID:        RealTRIDSensitivity,
+		VirtualTRID:     VirtualTRIDSensitivity,
+		SupportsVirtual: SupportsVirtualSensitivity,
+	},
+	OperationUdrlAssetPrice: {
+		OperationID:     OperationUdrlAssetPrice,
+		Endpoint:        EndpointUdrlAssetPrice,
+		Group:           GroupUdrlAssetPrice,
+		ServiceGroup:    ServiceGroupUdrlAssetPrice,
+		RealTRID:        RealTRIDUdrlAssetPrice,
+		VirtualTRID:     VirtualTRIDUdrlAssetPrice,
+		SupportsVirtual: SupportsVirtualUdrlAssetPrice,
+	},
+	OperationCondSearch: {
+		OperationID:     OperationCondSearch,
+		Endpoint:        EndpointCondSearch,
+		Group:           GroupCondSearch,
+		ServiceGroup:    ServiceGroupCondSearch,
+		RealTRID:        RealTRIDCondSearch,
+		VirtualTRID:     VirtualTRIDCondSearch,
+		SupportsVirtual: SupportsVirtualCondSearch,
+	},
+	OperationQuickChange: {
+		OperationID:     OperationQuickChange,
+		Endpoint:        EndpointQuickChange,
+		Group:           GroupQuickChange,
+		ServiceGroup:    ServiceGroupQuickChange,
+		RealTRID:        RealTRIDQuickChange,
+		VirtualTRID:     VirtualTRIDQuickChange,
+		SupportsVirtual: SupportsVirtualQuickChange,
+	},
+	OperationUdrlAssetList: {
+		OperationID:     OperationUdrlAssetList,
+		Endpoint:        EndpointUdrlAssetList,
+		Group:           GroupUdrlAssetList,
+		ServiceGroup:    ServiceGroupUdrlAssetList,
+		RealTRID:        RealTRIDUdrlAssetList,
+		VirtualTRID:     VirtualTRIDUdrlAssetList,
+		SupportsVirtual: SupportsVirtualUdrlAssetList,
+	},
+	OperationCompareStocks: {
+		OperationID:     OperationCompareStocks,
+		Endpoint:        EndpointCompareStocks,
+		Group:           GroupCompareStocks,
+		ServiceGroup:    ServiceGroupCompareStocks,
+		RealTRID:        RealTRIDCompareStocks,
+		VirtualTRID:     VirtualTRIDCompareStocks,
+		SupportsVirtual: SupportsVirtualCompareStocks,
+	},
+	OperationLpTradeTrend: {
+		OperationID:     OperationLpTradeTrend,
+		Endpoint:        EndpointLpTradeTrend,
+		Group:           GroupLpTradeTrend,
+		ServiceGroup:    ServiceGroupLpTradeTrend,
+		RealTRID:        RealTRIDLpTradeTrend,
+		VirtualTRID:     VirtualTRIDLpTradeTrend,
+		SupportsVirtual: SupportsVirtualLpTradeTrend,
+	},
+	OperationIndicatorTrendCcnl: {
+		OperationID:     OperationIndicatorTrendCcnl,
+		Endpoint:        EndpointIndicatorTrendCcnl,
+		Group:           GroupIndicatorTrendCcnl,
+		ServiceGroup:    ServiceGroupIndicatorTrendCcnl,
+		RealTRID:        RealTRIDIndicatorTrendCcnl,
+		VirtualTRID:     VirtualTRIDIndicatorTrendCcnl,
+		SupportsVirtual: SupportsVirtualIndicatorTrendCcnl,
+	},
+	OperationIndicatorTrendMinute: {
+		OperationID:     OperationIndicatorTrendMinute,
+		Endpoint:        EndpointIndicatorTrendMinute,
+		Group:           GroupIndicatorTrendMinute,
+		ServiceGroup:    ServiceGroupIndicatorTrendMinute,
+		RealTRID:        RealTRIDIndicatorTrendMinute,
+		VirtualTRID:     VirtualTRIDIndicatorTrendMinute,
+		SupportsVirtual: SupportsVirtualIndicatorTrendMinute,
+	},
+	OperationIndicatorTrendDaily: {
+		OperationID:     OperationIndicatorTrendDaily,
+		Endpoint:        EndpointIndicatorTrendDaily,
+		Group:           GroupIndicatorTrendDaily,
+		ServiceGroup:    ServiceGroupIndicatorTrendDaily,
+		RealTRID:        RealTRIDIndicatorTrendDaily,
+		VirtualTRID:     VirtualTRIDIndicatorTrendDaily,
+		SupportsVirtual: SupportsVirtualIndicatorTrendDaily,
+	},
+	OperationVolatilityTrendTick: {
+		OperationID:     OperationVolatilityTrendTick,
+		Endpoint:        EndpointVolatilityTrendTick,
+		Group:           GroupVolatilityTrendTick,
+		ServiceGroup:    ServiceGroupVolatilityTrendTick,
+		RealTRID:        RealTRIDVolatilityTrendTick,
+		VirtualTRID:     VirtualTRIDVolatilityTrendTick,
+		SupportsVirtual: SupportsVirtualVolatilityTrendTick,
+	},
+	OperationVolatilityTrendCcnl: {
+		OperationID:     OperationVolatilityTrendCcnl,
+		Endpoint:        EndpointVolatilityTrendCcnl,
+		Group:           GroupVolatilityTrendCcnl,
+		ServiceGroup:    ServiceGroupVolatilityTrendCcnl,
+		RealTRID:        RealTRIDVolatilityTrendCcnl,
+		VirtualTRID:     VirtualTRIDVolatilityTrendCcnl,
+		SupportsVirtual: SupportsVirtualVolatilityTrendCcnl,
+	},
+	OperationVolatilityTrendDaily: {
+		OperationID:     OperationVolatilityTrendDaily,
+		Endpoint:        EndpointVolatilityTrendDaily,
+		Group:           GroupVolatilityTrendDaily,
+		ServiceGroup:    ServiceGroupVolatilityTrendDaily,
+		RealTRID:        RealTRIDVolatilityTrendDaily,
+		VirtualTRID:     VirtualTRIDVolatilityTrendDaily,
+		SupportsVirtual: SupportsVirtualVolatilityTrendDaily,
+	},
+	OperationSensitivityTrendCcnl: {
+		OperationID:     OperationSensitivityTrendCcnl,
+		Endpoint:        EndpointSensitivityTrendCcnl,
+		Group:           GroupSensitivityTrendCcnl,
+		ServiceGroup:    ServiceGroupSensitivityTrendCcnl,
+		RealTRID:        RealTRIDSensitivityTrendCcnl,
+		VirtualTRID:     VirtualTRIDSensitivityTrendCcnl,
+		SupportsVirtual: SupportsVirtualSensitivityTrendCcnl,
+	},
+	OperationVolatilityTrendMinute: {
+		OperationID:     OperationVolatilityTrendMinute,
+		Endpoint:        EndpointVolatilityTrendMinute,
+		Group:           GroupVolatilityTrendMinute,
+		ServiceGroup:    ServiceGroupVolatilityTrendMinute,
+		RealTRID:        RealTRIDVolatilityTrendMinute,
+		VirtualTRID:     VirtualTRIDVolatilityTrendMinute,
+		SupportsVirtual: SupportsVirtualVolatilityTrendMinute,
+	},
+	OperationSensitivityTrendDaily: {
+		OperationID:     OperationSensitivityTrendDaily,
+		Endpoint:        EndpointSensitivityTrendDaily,
+		Group:           GroupSensitivityTrendDaily,
+		ServiceGroup:    ServiceGroupSensitivityTrendDaily,
+		RealTRID:        RealTRIDSensitivityTrendDaily,
+		VirtualTRID:     VirtualTRIDSensitivityTrendDaily,
+		SupportsVirtual: SupportsVirtualSensitivityTrendDaily,
+	},
+	OperationExpirationStocks: {
+		OperationID:     OperationExpirationStocks,
+		Endpoint:        EndpointExpirationStocks,
+		Group:           GroupExpirationStocks,
+		ServiceGroup:    ServiceGroupExpirationStocks,
+		RealTRID:        RealTRIDExpirationStocks,
+		VirtualTRID:     VirtualTRIDExpirationStocks,
+		SupportsVirtual: SupportsVirtualExpirationStocks,
+	},
+	OperationIndicator: {
+		OperationID:     OperationIndicator,
+		Endpoint:        EndpointIndicator,
+		Group:           GroupIndicator,
+		ServiceGroup:    ServiceGroupIndicator,
+		RealTRID:        RealTRIDIndicator,
+		VirtualTRID:     VirtualTRIDIndicator,
+		SupportsVirtual: SupportsVirtualIndicator,
+	},
+	OperationUpdownRate: {
+		OperationID:     OperationUpdownRate,
+		Endpoint:        EndpointUpdownRate,
+		Group:           GroupUpdownRate,
+		ServiceGroup:    ServiceGroupUpdownRate,
+		RealTRID:        RealTRIDUpdownRate,
+		VirtualTRID:     VirtualTRIDUpdownRate,
+		SupportsVirtual: SupportsVirtualUpdownRate,
+	},
+	OperationELWRankingVolumeRank: {
+		OperationID:     OperationELWRankingVolumeRank,
+		Endpoint:        EndpointELWRankingVolumeRank,
+		Group:           GroupELWRankingVolumeRank,
+		ServiceGroup:    ServiceGroupELWRankingVolumeRank,
+		RealTRID:        RealTRIDELWRankingVolumeRank,
+		VirtualTRID:     VirtualTRIDELWRankingVolumeRank,
+		SupportsVirtual: SupportsVirtualELWRankingVolumeRank,
+	},
+	OperationInquireIndexPrice: {
+		OperationID:     OperationInquireIndexPrice,
+		Endpoint:        EndpointInquireIndexPrice,
+		Group:           GroupInquireIndexPrice,
+		ServiceGroup:    ServiceGroupInquireIndexPrice,
+		RealTRID:        RealTRIDInquireIndexPrice,
+		VirtualTRID:     VirtualTRIDInquireIndexPrice,
+		SupportsVirtual: SupportsVirtualInquireIndexPrice,
+	},
+	OperationInquireIndexDailyPrice: {
+		OperationID:     OperationInquireIndexDailyPrice,
+		Endpoint:        EndpointInquireIndexDailyPrice,
+		Group:           GroupInquireIndexDailyPrice,
+		ServiceGroup:    ServiceGroupInquireIndexDailyPrice,
+		RealTRID:        RealTRIDInquireIndexDailyPrice,
+		VirtualTRID:     VirtualTRIDInquireIndexDailyPrice,
+		SupportsVirtual: SupportsVirtualInquireIndexDailyPrice,
+	},
+	OperationInquireIndexTickprice: {
+		OperationID:     OperationInquireIndexTickprice,
+		Endpoint:        EndpointInquireIndexTickprice,
+		Group:           GroupInquireIndexTickprice,
+		ServiceGroup:    ServiceGroupInquireIndexTickprice,
+		RealTRID:        RealTRIDInquireIndexTickprice,
+		VirtualTRID:     VirtualTRIDInquireIndexTickprice,
+		SupportsVirtual: SupportsVirtualInquireIndexTickprice,
+	},
+	OperationInquireIndexTimeprice: {
+		OperationID:     OperationInquireIndexTimeprice,
+		Endpoint:        EndpointInquireIndexTimeprice,
+		Group:           GroupInquireIndexTimeprice,
+		ServiceGroup:    ServiceGroupInquireIndexTimeprice,
+		RealTRID:        RealTRIDInquireIndexTimeprice,
+		VirtualTRID:     VirtualTRIDInquireIndexTimeprice,
+		SupportsVirtual: SupportsVirtualInquireIndexTimeprice,
+	},
+	OperationInquireTimeIndexchartprice: {
+		OperationID:     OperationInquireTimeIndexchartprice,
+		Endpoint:        EndpointInquireTimeIndexchartprice,
+		Group:           GroupInquireTimeIndexchartprice,
+		ServiceGroup:    ServiceGroupInquireTimeIndexchartprice,
+		RealTRID:        RealTRIDInquireTimeIndexchartprice,
+		VirtualTRID:     VirtualTRIDInquireTimeIndexchartprice,
+		SupportsVirtual: SupportsVirtualInquireTimeIndexchartprice,
+	},
+	OperationInquireDailyIndexchartprice: {
+		OperationID:     OperationInquireDailyIndexchartprice,
+		Endpoint:        EndpointInquireDailyIndexchartprice,
+		Group:           GroupInquireDailyIndexchartprice,
+		ServiceGroup:    ServiceGroupInquireDailyIndexchartprice,
+		RealTRID:        RealTRIDInquireDailyIndexchartprice,
+		VirtualTRID:     VirtualTRIDInquireDailyIndexchartprice,
+		SupportsVirtual: SupportsVirtualInquireDailyIndexchartprice,
+	},
+	OperationInquireIndexCategoryPrice: {
+		OperationID:     OperationInquireIndexCategoryPrice,
+		Endpoint:        EndpointInquireIndexCategoryPrice,
+		Group:           GroupInquireIndexCategoryPrice,
+		ServiceGroup:    ServiceGroupInquireIndexCategoryPrice,
+		RealTRID:        RealTRIDInquireIndexCategoryPrice,
+		VirtualTRID:     VirtualTRIDInquireIndexCategoryPrice,
+		SupportsVirtual: SupportsVirtualInquireIndexCategoryPrice,
+	},
+	OperationExpIndexTrend: {
+		OperationID:     OperationExpIndexTrend,
+		Endpoint:        EndpointExpIndexTrend,
+		Group:           GroupExpIndexTrend,
+		ServiceGroup:    ServiceGroupExpIndexTrend,
+		RealTRID:        RealTRIDExpIndexTrend,
+		VirtualTRID:     VirtualTRIDExpIndexTrend,
+		SupportsVirtual: SupportsVirtualExpIndexTrend,
+	},
+	OperationExpTotalIndex: {
+		OperationID:     OperationExpTotalIndex,
+		Endpoint:        EndpointExpTotalIndex,
+		Group:           GroupExpTotalIndex,
+		ServiceGroup:    ServiceGroupExpTotalIndex,
+		RealTRID:        RealTRIDExpTotalIndex,
+		VirtualTRID:     VirtualTRIDExpTotalIndex,
+		SupportsVirtual: SupportsVirtualExpTotalIndex,
+	},
+	OperationInquireViStatus: {
+		OperationID:     OperationInquireViStatus,
+		Endpoint:        EndpointInquireViStatus,
+		Group:           GroupInquireViStatus,
+		ServiceGroup:    ServiceGroupInquireViStatus,
+		RealTRID:        RealTRIDInquireViStatus,
+		VirtualTRID:     VirtualTRIDInquireViStatus,
+		SupportsVirtual: SupportsVirtualInquireViStatus,
+	},
+	OperationCompInterest: {
+		OperationID:     OperationCompInterest,
+		Endpoint:        EndpointCompInterest,
+		Group:           GroupCompInterest,
+		ServiceGroup:    ServiceGroupCompInterest,
+		RealTRID:        RealTRIDCompInterest,
+		VirtualTRID:     VirtualTRIDCompInterest,
+		SupportsVirtual: SupportsVirtualCompInterest,
+	},
+	OperationNewsTitle: {
+		OperationID:     OperationNewsTitle,
+		Endpoint:        EndpointNewsTitle,
+		Group:           GroupNewsTitle,
+		ServiceGroup:    ServiceGroupNewsTitle,
+		RealTRID:        RealTRIDNewsTitle,
+		VirtualTRID:     VirtualTRIDNewsTitle,
+		SupportsVirtual: SupportsVirtualNewsTitle,
+	},
+	OperationChkHoliday: {
+		OperationID:     OperationChkHoliday,
+		Endpoint:        EndpointChkHoliday,
+		Group:           GroupChkHoliday,
+		ServiceGroup:    ServiceGroupChkHoliday,
+		RealTRID:        RealTRIDChkHoliday,
+		VirtualTRID:     VirtualTRIDChkHoliday,
+		SupportsVirtual: SupportsVirtualChkHoliday,
+	},
+	OperationMarketTime: {
+		OperationID:     OperationMarketTime,
+		Endpoint:        EndpointMarketTime,
+		Group:           GroupMarketTime,
+		ServiceGroup:    ServiceGroupMarketTime,
+		RealTRID:        RealTRIDMarketTime,
+		VirtualTRID:     VirtualTRIDMarketTime,
+		SupportsVirtual: SupportsVirtualMarketTime,
+	},
+	OperationSearchInfo: {
+		OperationID:     OperationSearchInfo,
+		Endpoint:        EndpointSearchInfo,
+		Group:           GroupSearchInfo,
+		ServiceGroup:    ServiceGroupSearchInfo,
+		RealTRID:        RealTRIDSearchInfo,
+		VirtualTRID:     VirtualTRIDSearchInfo,
+		SupportsVirtual: SupportsVirtualSearchInfo,
+	},
+	OperationSearchStockInfo: {
+		OperationID:     OperationSearchStockInfo,
+		Endpoint:        EndpointSearchStockInfo,
+		Group:           GroupSearchStockInfo,
+		ServiceGroup:    ServiceGroupSearchStockInfo,
+		RealTRID:        RealTRIDSearchStockInfo,
+		VirtualTRID:     VirtualTRIDSearchStockInfo,
+		SupportsVirtual: SupportsVirtualSearchStockInfo,
+	},
+	OperationBalanceSheet: {
+		OperationID:     OperationBalanceSheet,
+		Endpoint:        EndpointBalanceSheet,
+		Group:           GroupBalanceSheet,
+		ServiceGroup:    ServiceGroupBalanceSheet,
+		RealTRID:        RealTRIDBalanceSheet,
+		VirtualTRID:     VirtualTRIDBalanceSheet,
+		SupportsVirtual: SupportsVirtualBalanceSheet,
+	},
+	OperationIncomeStatement: {
+		OperationID:     OperationIncomeStatement,
+		Endpoint:        EndpointIncomeStatement,
+		Group:           GroupIncomeStatement,
+		ServiceGroup:    ServiceGroupIncomeStatement,
+		RealTRID:        RealTRIDIncomeStatement,
+		VirtualTRID:     VirtualTRIDIncomeStatement,
+		SupportsVirtual: SupportsVirtualIncomeStatement,
+	},
+	OperationFinancialRatio: {
+		OperationID:     OperationFinancialRatio,
+		Endpoint:        EndpointFinancialRatio,
+		Group:           GroupFinancialRatio,
+		ServiceGroup:    ServiceGroupFinancialRatio,
+		RealTRID:        RealTRIDFinancialRatio,
+		VirtualTRID:     VirtualTRIDFinancialRatio,
+		SupportsVirtual: SupportsVirtualFinancialRatio,
+	},
+	OperationProfitRatio: {
+		OperationID:     OperationProfitRatio,
+		Endpoint:        EndpointProfitRatio,
+		Group:           GroupProfitRatio,
+		ServiceGroup:    ServiceGroupProfitRatio,
+		RealTRID:        RealTRIDProfitRatio,
+		VirtualTRID:     VirtualTRIDProfitRatio,
+		SupportsVirtual: SupportsVirtualProfitRatio,
+	},
+	OperationOtherMajorRatios: {
+		OperationID:     OperationOtherMajorRatios,
+		Endpoint:        EndpointOtherMajorRatios,
+		Group:           GroupOtherMajorRatios,
+		ServiceGroup:    ServiceGroupOtherMajorRatios,
+		RealTRID:        RealTRIDOtherMajorRatios,
+		VirtualTRID:     VirtualTRIDOtherMajorRatios,
+		SupportsVirtual: SupportsVirtualOtherMajorRatios,
+	},
+	OperationStabilityRatio: {
+		OperationID:     OperationStabilityRatio,
+		Endpoint:        EndpointStabilityRatio,
+		Group:           GroupStabilityRatio,
+		ServiceGroup:    ServiceGroupStabilityRatio,
+		RealTRID:        RealTRIDStabilityRatio,
+		VirtualTRID:     VirtualTRIDStabilityRatio,
+		SupportsVirtual: SupportsVirtualStabilityRatio,
+	},
+	OperationGrowthRatio: {
+		OperationID:     OperationGrowthRatio,
+		Endpoint:        EndpointGrowthRatio,
+		Group:           GroupGrowthRatio,
+		ServiceGroup:    ServiceGroupGrowthRatio,
+		RealTRID:        RealTRIDGrowthRatio,
+		VirtualTRID:     VirtualTRIDGrowthRatio,
+		SupportsVirtual: SupportsVirtualGrowthRatio,
+	},
+	OperationCreditByCompany: {
+		OperationID:     OperationCreditByCompany,
+		Endpoint:        EndpointCreditByCompany,
+		Group:           GroupCreditByCompany,
+		ServiceGroup:    ServiceGroupCreditByCompany,
+		RealTRID:        RealTRIDCreditByCompany,
+		VirtualTRID:     VirtualTRIDCreditByCompany,
+		SupportsVirtual: SupportsVirtualCreditByCompany,
+	},
+	OperationDividend: {
+		OperationID:     OperationDividend,
+		Endpoint:        EndpointDividend,
+		Group:           GroupDividend,
+		ServiceGroup:    ServiceGroupDividend,
+		RealTRID:        RealTRIDDividend,
+		VirtualTRID:     VirtualTRIDDividend,
+		SupportsVirtual: SupportsVirtualDividend,
+	},
+	OperationPurreq: {
+		OperationID:     OperationPurreq,
+		Endpoint:        EndpointPurreq,
+		Group:           GroupPurreq,
+		ServiceGroup:    ServiceGroupPurreq,
+		RealTRID:        RealTRIDPurreq,
+		VirtualTRID:     VirtualTRIDPurreq,
+		SupportsVirtual: SupportsVirtualPurreq,
+	},
+	OperationMergerSplit: {
+		OperationID:     OperationMergerSplit,
+		Endpoint:        EndpointMergerSplit,
+		Group:           GroupMergerSplit,
+		ServiceGroup:    ServiceGroupMergerSplit,
+		RealTRID:        RealTRIDMergerSplit,
+		VirtualTRID:     VirtualTRIDMergerSplit,
+		SupportsVirtual: SupportsVirtualMergerSplit,
+	},
+	OperationRevSplit: {
+		OperationID:     OperationRevSplit,
+		Endpoint:        EndpointRevSplit,
+		Group:           GroupRevSplit,
+		ServiceGroup:    ServiceGroupRevSplit,
+		RealTRID:        RealTRIDRevSplit,
+		VirtualTRID:     VirtualTRIDRevSplit,
+		SupportsVirtual: SupportsVirtualRevSplit,
+	},
+	OperationCapDcrs: {
+		OperationID:     OperationCapDcrs,
+		Endpoint:        EndpointCapDcrs,
+		Group:           GroupCapDcrs,
+		ServiceGroup:    ServiceGroupCapDcrs,
+		RealTRID:        RealTRIDCapDcrs,
+		VirtualTRID:     VirtualTRIDCapDcrs,
+		SupportsVirtual: SupportsVirtualCapDcrs,
+	},
+	OperationListInfo: {
+		OperationID:     OperationListInfo,
+		Endpoint:        EndpointListInfo,
+		Group:           GroupListInfo,
+		ServiceGroup:    ServiceGroupListInfo,
+		RealTRID:        RealTRIDListInfo,
+		VirtualTRID:     VirtualTRIDListInfo,
+		SupportsVirtual: SupportsVirtualListInfo,
+	},
+	OperationPubOffer: {
+		OperationID:     OperationPubOffer,
+		Endpoint:        EndpointPubOffer,
+		Group:           GroupPubOffer,
+		ServiceGroup:    ServiceGroupPubOffer,
+		RealTRID:        RealTRIDPubOffer,
+		VirtualTRID:     VirtualTRIDPubOffer,
+		SupportsVirtual: SupportsVirtualPubOffer,
+	},
+	OperationForfeit: {
+		OperationID:     OperationForfeit,
+		Endpoint:        EndpointForfeit,
+		Group:           GroupForfeit,
+		ServiceGroup:    ServiceGroupForfeit,
+		RealTRID:        RealTRIDForfeit,
+		VirtualTRID:     VirtualTRIDForfeit,
+		SupportsVirtual: SupportsVirtualForfeit,
+	},
+	OperationMandDeposit: {
+		OperationID:     OperationMandDeposit,
+		Endpoint:        EndpointMandDeposit,
+		Group:           GroupMandDeposit,
+		ServiceGroup:    ServiceGroupMandDeposit,
+		RealTRID:        RealTRIDMandDeposit,
+		VirtualTRID:     VirtualTRIDMandDeposit,
+		SupportsVirtual: SupportsVirtualMandDeposit,
+	},
+	OperationPaidinCapin: {
+		OperationID:     OperationPaidinCapin,
+		Endpoint:        EndpointPaidinCapin,
+		Group:           GroupPaidinCapin,
+		ServiceGroup:    ServiceGroupPaidinCapin,
+		RealTRID:        RealTRIDPaidinCapin,
+		VirtualTRID:     VirtualTRIDPaidinCapin,
+		SupportsVirtual: SupportsVirtualPaidinCapin,
+	},
+	OperationBonusIssue: {
+		OperationID:     OperationBonusIssue,
+		Endpoint:        EndpointBonusIssue,
+		Group:           GroupBonusIssue,
+		ServiceGroup:    ServiceGroupBonusIssue,
+		RealTRID:        RealTRIDBonusIssue,
+		VirtualTRID:     VirtualTRIDBonusIssue,
+		SupportsVirtual: SupportsVirtualBonusIssue,
+	},
+	OperationSharehldMeet: {
+		OperationID:     OperationSharehldMeet,
+		Endpoint:        EndpointSharehldMeet,
+		Group:           GroupSharehldMeet,
+		ServiceGroup:    ServiceGroupSharehldMeet,
+		RealTRID:        RealTRIDSharehldMeet,
+		VirtualTRID:     VirtualTRIDSharehldMeet,
+		SupportsVirtual: SupportsVirtualSharehldMeet,
+	},
+	OperationEstimatePerform: {
+		OperationID:     OperationEstimatePerform,
+		Endpoint:        EndpointEstimatePerform,
+		Group:           GroupEstimatePerform,
+		ServiceGroup:    ServiceGroupEstimatePerform,
+		RealTRID:        RealTRIDEstimatePerform,
+		VirtualTRID:     VirtualTRIDEstimatePerform,
+		SupportsVirtual: SupportsVirtualEstimatePerform,
+	},
+	OperationLendableByCompany: {
+		OperationID:     OperationLendableByCompany,
+		Endpoint:        EndpointLendableByCompany,
+		Group:           GroupLendableByCompany,
+		ServiceGroup:    ServiceGroupLendableByCompany,
+		RealTRID:        RealTRIDLendableByCompany,
+		VirtualTRID:     VirtualTRIDLendableByCompany,
+		SupportsVirtual: SupportsVirtualLendableByCompany,
+	},
+	OperationInvestOpinion: {
+		OperationID:     OperationInvestOpinion,
+		Endpoint:        EndpointInvestOpinion,
+		Group:           GroupInvestOpinion,
+		ServiceGroup:    ServiceGroupInvestOpinion,
+		RealTRID:        RealTRIDInvestOpinion,
+		VirtualTRID:     VirtualTRIDInvestOpinion,
+		SupportsVirtual: SupportsVirtualInvestOpinion,
+	},
+	OperationInvestOpbysec: {
+		OperationID:     OperationInvestOpbysec,
+		Endpoint:        EndpointInvestOpbysec,
+		Group:           GroupInvestOpbysec,
+		ServiceGroup:    ServiceGroupInvestOpbysec,
+		RealTRID:        RealTRIDInvestOpbysec,
+		VirtualTRID:     VirtualTRIDInvestOpbysec,
+		SupportsVirtual: SupportsVirtualInvestOpbysec,
+	},
+	OperationPsearchTitle: {
+		OperationID:     OperationPsearchTitle,
+		Endpoint:        EndpointPsearchTitle,
+		Group:           GroupPsearchTitle,
+		ServiceGroup:    ServiceGroupPsearchTitle,
+		RealTRID:        RealTRIDPsearchTitle,
+		VirtualTRID:     VirtualTRIDPsearchTitle,
+		SupportsVirtual: SupportsVirtualPsearchTitle,
+	},
+	OperationPsearchResult: {
+		OperationID:     OperationPsearchResult,
+		Endpoint:        EndpointPsearchResult,
+		Group:           GroupPsearchResult,
+		ServiceGroup:    ServiceGroupPsearchResult,
+		RealTRID:        RealTRIDPsearchResult,
+		VirtualTRID:     VirtualTRIDPsearchResult,
+		SupportsVirtual: SupportsVirtualPsearchResult,
+	},
+	OperationIntstockGrouplist: {
+		OperationID:     OperationIntstockGrouplist,
+		Endpoint:        EndpointIntstockGrouplist,
+		Group:           GroupIntstockGrouplist,
+		ServiceGroup:    ServiceGroupIntstockGrouplist,
+		RealTRID:        RealTRIDIntstockGrouplist,
+		VirtualTRID:     VirtualTRIDIntstockGrouplist,
+		SupportsVirtual: SupportsVirtualIntstockGrouplist,
+	},
+	OperationIntstockMultprice: {
+		OperationID:     OperationIntstockMultprice,
+		Endpoint:        EndpointIntstockMultprice,
+		Group:           GroupIntstockMultprice,
+		ServiceGroup:    ServiceGroupIntstockMultprice,
+		RealTRID:        RealTRIDIntstockMultprice,
+		VirtualTRID:     VirtualTRIDIntstockMultprice,
+		SupportsVirtual: SupportsVirtualIntstockMultprice,
+	},
+	OperationIntstockStocklistByGroup: {
+		OperationID:     OperationIntstockStocklistByGroup,
+		Endpoint:        EndpointIntstockStocklistByGroup,
+		Group:           GroupIntstockStocklistByGroup,
+		ServiceGroup:    ServiceGroupIntstockStocklistByGroup,
+		RealTRID:        RealTRIDIntstockStocklistByGroup,
+		VirtualTRID:     VirtualTRIDIntstockStocklistByGroup,
+		SupportsVirtual: SupportsVirtualIntstockStocklistByGroup,
+	},
+	OperationForeignInstitutionTotal: {
+		OperationID:     OperationForeignInstitutionTotal,
+		Endpoint:        EndpointForeignInstitutionTotal,
+		Group:           GroupForeignInstitutionTotal,
+		ServiceGroup:    ServiceGroupForeignInstitutionTotal,
+		RealTRID:        RealTRIDForeignInstitutionTotal,
+		VirtualTRID:     VirtualTRIDForeignInstitutionTotal,
+		SupportsVirtual: SupportsVirtualForeignInstitutionTotal,
+	},
+	OperationFrgnmemTradeEstimate: {
+		OperationID:     OperationFrgnmemTradeEstimate,
+		Endpoint:        EndpointFrgnmemTradeEstimate,
+		Group:           GroupFrgnmemTradeEstimate,
+		ServiceGroup:    ServiceGroupFrgnmemTradeEstimate,
+		RealTRID:        RealTRIDFrgnmemTradeEstimate,
+		VirtualTRID:     VirtualTRIDFrgnmemTradeEstimate,
+		SupportsVirtual: SupportsVirtualFrgnmemTradeEstimate,
+	},
+	OperationInvestorTradeByStockDaily: {
+		OperationID:     OperationInvestorTradeByStockDaily,
+		Endpoint:        EndpointInvestorTradeByStockDaily,
+		Group:           GroupInvestorTradeByStockDaily,
+		ServiceGroup:    ServiceGroupInvestorTradeByStockDaily,
+		RealTRID:        RealTRIDInvestorTradeByStockDaily,
+		VirtualTRID:     VirtualTRIDInvestorTradeByStockDaily,
+		SupportsVirtual: SupportsVirtualInvestorTradeByStockDaily,
+	},
+	OperationInquireInvestorTimeByMarket: {
+		OperationID:     OperationInquireInvestorTimeByMarket,
+		Endpoint:        EndpointInquireInvestorTimeByMarket,
+		Group:           GroupInquireInvestorTimeByMarket,
+		ServiceGroup:    ServiceGroupInquireInvestorTimeByMarket,
+		RealTRID:        RealTRIDInquireInvestorTimeByMarket,
+		VirtualTRID:     VirtualTRIDInquireInvestorTimeByMarket,
+		SupportsVirtual: SupportsVirtualInquireInvestorTimeByMarket,
+	},
+	OperationInquireInvestorDailyByMarket: {
+		OperationID:     OperationInquireInvestorDailyByMarket,
+		Endpoint:        EndpointInquireInvestorDailyByMarket,
+		Group:           GroupInquireInvestorDailyByMarket,
+		ServiceGroup:    ServiceGroupInquireInvestorDailyByMarket,
+		RealTRID:        RealTRIDInquireInvestorDailyByMarket,
+		VirtualTRID:     VirtualTRIDInquireInvestorDailyByMarket,
+		SupportsVirtual: SupportsVirtualInquireInvestorDailyByMarket,
+	},
+	OperationFrgnmemPchsTrend: {
+		OperationID:     OperationFrgnmemPchsTrend,
+		Endpoint:        EndpointFrgnmemPchsTrend,
+		Group:           GroupFrgnmemPchsTrend,
+		ServiceGroup:    ServiceGroupFrgnmemPchsTrend,
+		RealTRID:        RealTRIDFrgnmemPchsTrend,
+		VirtualTRID:     VirtualTRIDFrgnmemPchsTrend,
+		SupportsVirtual: SupportsVirtualFrgnmemPchsTrend,
+	},
+	OperationFrgnmemTradeTrend: {
+		OperationID:     OperationFrgnmemTradeTrend,
+		Endpoint:        EndpointFrgnmemTradeTrend,
+		Group:           GroupFrgnmemTradeTrend,
+		ServiceGroup:    ServiceGroupFrgnmemTradeTrend,
+		RealTRID:        RealTRIDFrgnmemTradeTrend,
+		VirtualTRID:     VirtualTRIDFrgnmemTradeTrend,
+		SupportsVirtual: SupportsVirtualFrgnmemTradeTrend,
+	},
+	OperationInquireMemberDaily: {
+		OperationID:     OperationInquireMemberDaily,
+		Endpoint:        EndpointInquireMemberDaily,
+		Group:           GroupInquireMemberDaily,
+		ServiceGroup:    ServiceGroupInquireMemberDaily,
+		RealTRID:        RealTRIDInquireMemberDaily,
+		VirtualTRID:     VirtualTRIDInquireMemberDaily,
+		SupportsVirtual: SupportsVirtualInquireMemberDaily,
+	},
+	OperationProgramTradeByStock: {
+		OperationID:     OperationProgramTradeByStock,
+		Endpoint:        EndpointProgramTradeByStock,
+		Group:           GroupProgramTradeByStock,
+		ServiceGroup:    ServiceGroupProgramTradeByStock,
+		RealTRID:        RealTRIDProgramTradeByStock,
+		VirtualTRID:     VirtualTRIDProgramTradeByStock,
+		SupportsVirtual: SupportsVirtualProgramTradeByStock,
+	},
+	OperationProgramTradeByStockDaily: {
+		OperationID:     OperationProgramTradeByStockDaily,
+		Endpoint:        EndpointProgramTradeByStockDaily,
+		Group:           GroupProgramTradeByStockDaily,
+		ServiceGroup:    ServiceGroupProgramTradeByStockDaily,
+		RealTRID:        RealTRIDProgramTradeByStockDaily,
+		VirtualTRID:     VirtualTRIDProgramTradeByStockDaily,
+		SupportsVirtual: SupportsVirtualProgramTradeByStockDaily,
+	},
+	OperationInvestorTrendEstimate: {
+		OperationID:     OperationInvestorTrendEstimate,
+		Endpoint:        EndpointInvestorTrendEstimate,
+		Group:           GroupInvestorTrendEstimate,
+		ServiceGroup:    ServiceGroupInvestorTrendEstimate,
+		RealTRID:        RealTRIDInvestorTrendEstimate,
+		VirtualTRID:     VirtualTRIDInvestorTrendEstimate,
+		SupportsVirtual: SupportsVirtualInvestorTrendEstimate,
+	},
+	OperationInquireDailyTradeVolume: {
+		OperationID:     OperationInquireDailyTradeVolume,
+		Endpoint:        EndpointInquireDailyTradeVolume,
+		Group:           GroupInquireDailyTradeVolume,
+		ServiceGroup:    ServiceGroupInquireDailyTradeVolume,
+		RealTRID:        RealTRIDInquireDailyTradeVolume,
+		VirtualTRID:     VirtualTRIDInquireDailyTradeVolume,
+		SupportsVirtual: SupportsVirtualInquireDailyTradeVolume,
+	},
+	OperationCompProgramTradeToday: {
+		OperationID:     OperationCompProgramTradeToday,
+		Endpoint:        EndpointCompProgramTradeToday,
+		Group:           GroupCompProgramTradeToday,
+		ServiceGroup:    ServiceGroupCompProgramTradeToday,
+		RealTRID:        RealTRIDCompProgramTradeToday,
+		VirtualTRID:     VirtualTRIDCompProgramTradeToday,
+		SupportsVirtual: SupportsVirtualCompProgramTradeToday,
+	},
+	OperationCompProgramTradeDaily: {
+		OperationID:     OperationCompProgramTradeDaily,
+		Endpoint:        EndpointCompProgramTradeDaily,
+		Group:           GroupCompProgramTradeDaily,
+		ServiceGroup:    ServiceGroupCompProgramTradeDaily,
+		RealTRID:        RealTRIDCompProgramTradeDaily,
+		VirtualTRID:     VirtualTRIDCompProgramTradeDaily,
+		SupportsVirtual: SupportsVirtualCompProgramTradeDaily,
+	},
+	OperationInvestorProgramTradeToday: {
+		OperationID:     OperationInvestorProgramTradeToday,
+		Endpoint:        EndpointInvestorProgramTradeToday,
+		Group:           GroupInvestorProgramTradeToday,
+		ServiceGroup:    ServiceGroupInvestorProgramTradeToday,
+		RealTRID:        RealTRIDInvestorProgramTradeToday,
+		VirtualTRID:     VirtualTRIDInvestorProgramTradeToday,
+		SupportsVirtual: SupportsVirtualInvestorProgramTradeToday,
+	},
+	OperationDailyCreditBalance: {
+		OperationID:     OperationDailyCreditBalance,
+		Endpoint:        EndpointDailyCreditBalance,
+		Group:           GroupDailyCreditBalance,
+		ServiceGroup:    ServiceGroupDailyCreditBalance,
+		RealTRID:        RealTRIDDailyCreditBalance,
+		VirtualTRID:     VirtualTRIDDailyCreditBalance,
+		SupportsVirtual: SupportsVirtualDailyCreditBalance,
+	},
+	OperationExpPriceTrend: {
+		OperationID:     OperationExpPriceTrend,
+		Endpoint:        EndpointExpPriceTrend,
+		Group:           GroupExpPriceTrend,
+		ServiceGroup:    ServiceGroupExpPriceTrend,
+		RealTRID:        RealTRIDExpPriceTrend,
+		VirtualTRID:     VirtualTRIDExpPriceTrend,
+		SupportsVirtual: SupportsVirtualExpPriceTrend,
+	},
+	OperationDailyShortSale: {
+		OperationID:     OperationDailyShortSale,
+		Endpoint:        EndpointDailyShortSale,
+		Group:           GroupDailyShortSale,
+		ServiceGroup:    ServiceGroupDailyShortSale,
+		RealTRID:        RealTRIDDailyShortSale,
+		VirtualTRID:     VirtualTRIDDailyShortSale,
+		SupportsVirtual: SupportsVirtualDailyShortSale,
+	},
+	OperationOvertimeExpTransFluct: {
+		OperationID:     OperationOvertimeExpTransFluct,
+		Endpoint:        EndpointOvertimeExpTransFluct,
+		Group:           GroupOvertimeExpTransFluct,
+		ServiceGroup:    ServiceGroupOvertimeExpTransFluct,
+		RealTRID:        RealTRIDOvertimeExpTransFluct,
+		VirtualTRID:     VirtualTRIDOvertimeExpTransFluct,
+		SupportsVirtual: SupportsVirtualOvertimeExpTransFluct,
+	},
+	OperationTradprtByamt: {
+		OperationID:     OperationTradprtByamt,
+		Endpoint:        EndpointTradprtByamt,
+		Group:           GroupTradprtByamt,
+		ServiceGroup:    ServiceGroupTradprtByamt,
+		RealTRID:        RealTRIDTradprtByamt,
+		VirtualTRID:     VirtualTRIDTradprtByamt,
+		SupportsVirtual: SupportsVirtualTradprtByamt,
+	},
+	OperationMktfunds: {
+		OperationID:     OperationMktfunds,
+		Endpoint:        EndpointMktfunds,
+		Group:           GroupMktfunds,
+		ServiceGroup:    ServiceGroupMktfunds,
+		RealTRID:        RealTRIDMktfunds,
+		VirtualTRID:     VirtualTRIDMktfunds,
+		SupportsVirtual: SupportsVirtualMktfunds,
+	},
+	OperationDailyLoanTrans: {
+		OperationID:     OperationDailyLoanTrans,
+		Endpoint:        EndpointDailyLoanTrans,
+		Group:           GroupDailyLoanTrans,
+		ServiceGroup:    ServiceGroupDailyLoanTrans,
+		RealTRID:        RealTRIDDailyLoanTrans,
+		VirtualTRID:     VirtualTRIDDailyLoanTrans,
+		SupportsVirtual: SupportsVirtualDailyLoanTrans,
+	},
+	OperationCaptureUplowprice: {
+		OperationID:     OperationCaptureUplowprice,
+		Endpoint:        EndpointCaptureUplowprice,
+		Group:           GroupCaptureUplowprice,
+		ServiceGroup:    ServiceGroupCaptureUplowprice,
+		RealTRID:        RealTRIDCaptureUplowprice,
+		VirtualTRID:     VirtualTRIDCaptureUplowprice,
+		SupportsVirtual: SupportsVirtualCaptureUplowprice,
+	},
+	OperationPbarTratio: {
+		OperationID:     OperationPbarTratio,
+		Endpoint:        EndpointPbarTratio,
+		Group:           GroupPbarTratio,
+		ServiceGroup:    ServiceGroupPbarTratio,
+		RealTRID:        RealTRIDPbarTratio,
+		VirtualTRID:     VirtualTRIDPbarTratio,
+		SupportsVirtual: SupportsVirtualPbarTratio,
 	},
 	OperationVolumeRank: {
 		OperationID:     OperationVolumeRank,
@@ -213,6 +1980,24 @@ var operationMetadata = map[string]OperationMetadata{
 		VirtualTRID:     VirtualTRIDFluctuation,
 		SupportsVirtual: SupportsVirtualFluctuation,
 	},
+	OperationQuoteBalance: {
+		OperationID:     OperationQuoteBalance,
+		Endpoint:        EndpointQuoteBalance,
+		Group:           GroupQuoteBalance,
+		ServiceGroup:    ServiceGroupQuoteBalance,
+		RealTRID:        RealTRIDQuoteBalance,
+		VirtualTRID:     VirtualTRIDQuoteBalance,
+		SupportsVirtual: SupportsVirtualQuoteBalance,
+	},
+	OperationProfitAssetIndex: {
+		OperationID:     OperationProfitAssetIndex,
+		Endpoint:        EndpointProfitAssetIndex,
+		Group:           GroupProfitAssetIndex,
+		ServiceGroup:    ServiceGroupProfitAssetIndex,
+		RealTRID:        RealTRIDProfitAssetIndex,
+		VirtualTRID:     VirtualTRIDProfitAssetIndex,
+		SupportsVirtual: SupportsVirtualProfitAssetIndex,
+	},
 	OperationMarketCap: {
 		OperationID:     OperationMarketCap,
 		Endpoint:        EndpointMarketCap,
@@ -221,6 +2006,42 @@ var operationMetadata = map[string]OperationMetadata{
 		RealTRID:        RealTRIDMarketCap,
 		VirtualTRID:     VirtualTRIDMarketCap,
 		SupportsVirtual: SupportsVirtualMarketCap,
+	},
+	OperationFinanceRatio: {
+		OperationID:     OperationFinanceRatio,
+		Endpoint:        EndpointFinanceRatio,
+		Group:           GroupFinanceRatio,
+		ServiceGroup:    ServiceGroupFinanceRatio,
+		RealTRID:        RealTRIDFinanceRatio,
+		VirtualTRID:     VirtualTRIDFinanceRatio,
+		SupportsVirtual: SupportsVirtualFinanceRatio,
+	},
+	OperationAfterHourBalance: {
+		OperationID:     OperationAfterHourBalance,
+		Endpoint:        EndpointAfterHourBalance,
+		Group:           GroupAfterHourBalance,
+		ServiceGroup:    ServiceGroupAfterHourBalance,
+		RealTRID:        RealTRIDAfterHourBalance,
+		VirtualTRID:     VirtualTRIDAfterHourBalance,
+		SupportsVirtual: SupportsVirtualAfterHourBalance,
+	},
+	OperationPreferDisparateRatio: {
+		OperationID:     OperationPreferDisparateRatio,
+		Endpoint:        EndpointPreferDisparateRatio,
+		Group:           GroupPreferDisparateRatio,
+		ServiceGroup:    ServiceGroupPreferDisparateRatio,
+		RealTRID:        RealTRIDPreferDisparateRatio,
+		VirtualTRID:     VirtualTRIDPreferDisparateRatio,
+		SupportsVirtual: SupportsVirtualPreferDisparateRatio,
+	},
+	OperationDisparity: {
+		OperationID:     OperationDisparity,
+		Endpoint:        EndpointDisparity,
+		Group:           GroupDisparity,
+		ServiceGroup:    ServiceGroupDisparity,
+		RealTRID:        RealTRIDDisparity,
+		VirtualTRID:     VirtualTRIDDisparity,
+		SupportsVirtual: SupportsVirtualDisparity,
 	},
 	OperationMarketValue: {
 		OperationID:     OperationMarketValue,
@@ -239,6 +2060,105 @@ var operationMetadata = map[string]OperationMetadata{
 		RealTRID:        RealTRIDVolumePower,
 		VirtualTRID:     VirtualTRIDVolumePower,
 		SupportsVirtual: SupportsVirtualVolumePower,
+	},
+	OperationTopInterestStock: {
+		OperationID:     OperationTopInterestStock,
+		Endpoint:        EndpointTopInterestStock,
+		Group:           GroupTopInterestStock,
+		ServiceGroup:    ServiceGroupTopInterestStock,
+		RealTRID:        RealTRIDTopInterestStock,
+		VirtualTRID:     VirtualTRIDTopInterestStock,
+		SupportsVirtual: SupportsVirtualTopInterestStock,
+	},
+	OperationExpTransUpdown: {
+		OperationID:     OperationExpTransUpdown,
+		Endpoint:        EndpointExpTransUpdown,
+		Group:           GroupExpTransUpdown,
+		ServiceGroup:    ServiceGroupExpTransUpdown,
+		RealTRID:        RealTRIDExpTransUpdown,
+		VirtualTRID:     VirtualTRIDExpTransUpdown,
+		SupportsVirtual: SupportsVirtualExpTransUpdown,
+	},
+	OperationTradedByCompany: {
+		OperationID:     OperationTradedByCompany,
+		Endpoint:        EndpointTradedByCompany,
+		Group:           GroupTradedByCompany,
+		ServiceGroup:    ServiceGroupTradedByCompany,
+		RealTRID:        RealTRIDTradedByCompany,
+		VirtualTRID:     VirtualTRIDTradedByCompany,
+		SupportsVirtual: SupportsVirtualTradedByCompany,
+	},
+	OperationNearNewHighlow: {
+		OperationID:     OperationNearNewHighlow,
+		Endpoint:        EndpointNearNewHighlow,
+		Group:           GroupNearNewHighlow,
+		ServiceGroup:    ServiceGroupNearNewHighlow,
+		RealTRID:        RealTRIDNearNewHighlow,
+		VirtualTRID:     VirtualTRIDNearNewHighlow,
+		SupportsVirtual: SupportsVirtualNearNewHighlow,
+	},
+	OperationDividendRate: {
+		OperationID:     OperationDividendRate,
+		Endpoint:        EndpointDividendRate,
+		Group:           GroupDividendRate,
+		ServiceGroup:    ServiceGroupDividendRate,
+		RealTRID:        RealTRIDDividendRate,
+		VirtualTRID:     VirtualTRIDDividendRate,
+		SupportsVirtual: SupportsVirtualDividendRate,
+	},
+	OperationBulkTransNum: {
+		OperationID:     OperationBulkTransNum,
+		Endpoint:        EndpointBulkTransNum,
+		Group:           GroupBulkTransNum,
+		ServiceGroup:    ServiceGroupBulkTransNum,
+		RealTRID:        RealTRIDBulkTransNum,
+		VirtualTRID:     VirtualTRIDBulkTransNum,
+		SupportsVirtual: SupportsVirtualBulkTransNum,
+	},
+	OperationCreditBalance: {
+		OperationID:     OperationCreditBalance,
+		Endpoint:        EndpointCreditBalance,
+		Group:           GroupCreditBalance,
+		ServiceGroup:    ServiceGroupCreditBalance,
+		RealTRID:        RealTRIDCreditBalance,
+		VirtualTRID:     VirtualTRIDCreditBalance,
+		SupportsVirtual: SupportsVirtualCreditBalance,
+	},
+	OperationShortSale: {
+		OperationID:     OperationShortSale,
+		Endpoint:        EndpointShortSale,
+		Group:           GroupShortSale,
+		ServiceGroup:    ServiceGroupShortSale,
+		RealTRID:        RealTRIDShortSale,
+		VirtualTRID:     VirtualTRIDShortSale,
+		SupportsVirtual: SupportsVirtualShortSale,
+	},
+	OperationOvertimeFluctuation: {
+		OperationID:     OperationOvertimeFluctuation,
+		Endpoint:        EndpointOvertimeFluctuation,
+		Group:           GroupOvertimeFluctuation,
+		ServiceGroup:    ServiceGroupOvertimeFluctuation,
+		RealTRID:        RealTRIDOvertimeFluctuation,
+		VirtualTRID:     VirtualTRIDOvertimeFluctuation,
+		SupportsVirtual: SupportsVirtualOvertimeFluctuation,
+	},
+	OperationOvertimeVolume: {
+		OperationID:     OperationOvertimeVolume,
+		Endpoint:        EndpointOvertimeVolume,
+		Group:           GroupOvertimeVolume,
+		ServiceGroup:    ServiceGroupOvertimeVolume,
+		RealTRID:        RealTRIDOvertimeVolume,
+		VirtualTRID:     VirtualTRIDOvertimeVolume,
+		SupportsVirtual: SupportsVirtualOvertimeVolume,
+	},
+	OperationHtsTopView: {
+		OperationID:     OperationHtsTopView,
+		Endpoint:        EndpointHtsTopView,
+		Group:           GroupHtsTopView,
+		ServiceGroup:    ServiceGroupHtsTopView,
+		RealTRID:        RealTRIDHtsTopView,
+		VirtualTRID:     VirtualTRIDHtsTopView,
+		SupportsVirtual: SupportsVirtualHtsTopView,
 	},
 }
 

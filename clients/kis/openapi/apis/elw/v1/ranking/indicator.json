@@ -1,0 +1,630 @@
+{
+  "components": {
+    "schemas": {
+      "IndicatorResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "msg1": {
+            "description": "응답메세지",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답메세지",
+              "propertyLength": "80",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "msg_cd": {
+            "description": "응답코드",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답코드",
+              "propertyLength": "8",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "output1": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "acml_vol": {
+                  "description": "누적거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "누적거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.007",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "acpr": {
+                  "description": "행사가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "행사가",
+                    "propertyLength": "112",
+                    "propertyOrder": "004.010",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "elw_ko_barrier": {
+                  "description": "조기종료발생기준가격",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "조기종료발생기준가격",
+                    "propertyLength": "112",
+                    "propertyOrder": "004.013",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "elw_kor_isnm": {
+                  "description": "ELW한글종목명",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "ELW한글종목명",
+                    "propertyLength": "40",
+                    "propertyOrder": "004.002",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "elw_prpr": {
+                  "description": "ELW현재가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "ELW현재가",
+                    "propertyLength": "10",
+                    "propertyOrder": "004.003",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "elw_shrn_iscd": {
+                  "description": "ELW단축종목코드",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "ELW단축종목코드",
+                    "propertyLength": "9",
+                    "propertyOrder": "004.001",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "invl_val": {
+                  "description": "내재가치값",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "내재가치값",
+                    "propertyLength": "132",
+                    "propertyOrder": "004.012",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "lvrg_val": {
+                  "description": "레버리지값",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "레버리지값",
+                    "propertyLength": "114",
+                    "propertyOrder": "004.009",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_ctrt": {
+                  "description": "전일대비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일대비율",
+                    "propertyLength": "82",
+                    "propertyOrder": "004.006",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_vrss": {
+                  "description": "전일대비",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일대비",
+                    "propertyLength": "10",
+                    "propertyOrder": "004.004",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_vrss_sign": {
+                  "description": "전일대비부호",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일대비부호",
+                    "propertyLength": "1",
+                    "propertyOrder": "004.005",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "stck_cnvr_rate": {
+                  "description": "주식전환비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식전환비율",
+                    "propertyLength": "136",
+                    "propertyOrder": "004.008",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "tmvl_val": {
+                  "description": "시간가치값",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "시간가치값",
+                    "propertyLength": "132",
+                    "propertyOrder": "004.011",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                }
+              },
+              "required": [
+                "elw_shrn_iscd",
+                "elw_kor_isnm",
+                "elw_prpr",
+                "prdy_vrss",
+                "prdy_vrss_sign",
+                "prdy_ctrt",
+                "acml_vol",
+                "stck_cnvr_rate",
+                "lvrg_val",
+                "acpr",
+                "tmvl_val",
+                "invl_val",
+                "elw_ko_barrier"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "rt_cd": {
+            "description": "성공 실패 여부",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "성공 실패 여부",
+              "propertyLength": "1",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        },
+        "required": [
+          "rt_cd",
+          "msg_cd",
+          "msg1",
+          "output1"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "KISOAuth": {
+        "bearerFormat": "KIS OAuth access token",
+        "description": "Issued by KIS /oauth2/tokenP and injected by the handwritten runtime.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "KIS Domestic Stock OpenAPI - indicator",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/uapi/elw/v1/ranking/indicator": {
+      "get": {
+        "description": "ELW 지표순위 API입니다. \n한국투자 HTS(eFriend Plus) \u0026gt; [0279] ELW 지표순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
+        "operationId": "indicator",
+        "parameters": [
+          {
+            "description": "시장구분코드 (W)",
+            "in": "query",
+            "name": "FID_COND_MRKT_DIV_CODE",
+            "required": true,
+            "schema": {
+              "description": "조건시장분류코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "시장구분코드 (W)",
+                "name": "조건시장분류코드",
+                "propertyLength": "2",
+                "propertyOrder": "001",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "시장구분코드 (W)",
+              "name": "조건시장분류코드",
+              "propertyLength": "2",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "Unique key(20279)",
+            "in": "query",
+            "name": "FID_COND_SCR_DIV_CODE",
+            "required": true,
+            "schema": {
+              "description": "조건화면분류코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "Unique key(20279)",
+                "name": "조건화면분류코드",
+                "propertyLength": "5",
+                "propertyOrder": "002",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "Unique key(20279)",
+              "name": "조건화면분류코드",
+              "propertyLength": "5",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "'000000(전체), 2001(코스피200)\n, 3003(코스닥150), 005930(삼성전자) '",
+            "in": "query",
+            "name": "FID_UNAS_INPUT_ISCD",
+            "required": true,
+            "schema": {
+              "description": "기초자산입력종목코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "'000000(전체), 2001(코스피200)\n, 3003(코스닥150), 005930(삼성전자) '",
+                "name": "기초자산입력종목코드",
+                "propertyLength": "12",
+                "propertyOrder": "003",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "'000000(전체), 2001(코스피200)\n, 3003(코스닥150), 005930(삼성전자) '",
+              "name": "기초자산입력종목코드",
+              "propertyLength": "12",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "'00000(전체), 00003(한국투자증권)\n, 00017(KB증권), 00005(미래에셋주식회사)'",
+            "in": "query",
+            "name": "FID_INPUT_ISCD",
+            "required": true,
+            "schema": {
+              "description": "발행사",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "'00000(전체), 00003(한국투자증권)\n, 00017(KB증권), 00005(미래에셋주식회사)'",
+                "name": "발행사",
+                "propertyLength": "12",
+                "propertyOrder": "004",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "'00000(전체), 00003(한국투자증권)\n, 00017(KB증권), 00005(미래에셋주식회사)'",
+              "name": "발행사",
+              "propertyLength": "12",
+              "propertyOrder": "004",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "0(전체), 1(콜), 2(풋)",
+            "in": "query",
+            "name": "FID_DIV_CLS_CODE",
+            "required": true,
+            "schema": {
+              "description": "콜풋구분코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "0(전체), 1(콜), 2(풋)",
+                "name": "콜풋구분코드",
+                "propertyLength": "2",
+                "propertyOrder": "005",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "0(전체), 1(콜), 2(풋)",
+              "name": "콜풋구분코드",
+              "propertyLength": "2",
+              "propertyOrder": "005",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "FID_INPUT_PRICE_1",
+            "required": true,
+            "schema": {
+              "description": "가격(이상)",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "",
+                "name": "가격(이상)",
+                "propertyLength": "12",
+                "propertyOrder": "006",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "",
+              "name": "가격(이상)",
+              "propertyLength": "12",
+              "propertyOrder": "006",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "FID_INPUT_PRICE_2",
+            "required": true,
+            "schema": {
+              "description": "가격(이하)",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "",
+                "name": "가격(이하)",
+                "propertyLength": "12",
+                "propertyOrder": "007",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "",
+              "name": "가격(이하)",
+              "propertyLength": "12",
+              "propertyOrder": "007",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "FID_INPUT_VOL_1",
+            "required": true,
+            "schema": {
+              "description": "거래량(이상)",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "",
+                "name": "거래량(이상)",
+                "propertyLength": "18",
+                "propertyOrder": "008",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "",
+              "name": "거래량(이상)",
+              "propertyLength": "18",
+              "propertyOrder": "008",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "FID_INPUT_VOL_2",
+            "required": true,
+            "schema": {
+              "description": "거래량(이하)",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "",
+                "name": "거래량(이하)",
+                "propertyLength": "18",
+                "propertyOrder": "009",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "",
+              "name": "거래량(이하)",
+              "propertyLength": "18",
+              "propertyOrder": "009",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "0(전환비율), 1(레버리지), 2(행사가 ), 3(내재가치), 4(시간가치)",
+            "in": "query",
+            "name": "FID_RANK_SORT_CLS_CODE",
+            "required": true,
+            "schema": {
+              "description": "순위정렬구분코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "0(전환비율), 1(레버리지), 2(행사가 ), 3(내재가치), 4(시간가치)",
+                "name": "순위정렬구분코드",
+                "propertyLength": "2",
+                "propertyOrder": "010",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "0(전환비율), 1(레버리지), 2(행사가 ), 3(내재가치), 4(시간가치)",
+              "name": "순위정렬구분코드",
+              "propertyLength": "2",
+              "propertyOrder": "010",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "0(전체), 1(일반), 2(조기종료)",
+            "in": "query",
+            "name": "FID_BLNG_CLS_CODE",
+            "required": true,
+            "schema": {
+              "description": "결재방법",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "0(전체), 1(일반), 2(조기종료)",
+                "name": "결재방법",
+                "propertyLength": "2",
+                "propertyOrder": "011",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "0(전체), 1(일반), 2(조기종료)",
+              "name": "결재방법",
+              "propertyLength": "2",
+              "propertyOrder": "011",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/IndicatorResponse"
+                }
+              }
+            },
+            "description": "KIS business response envelope"
+          }
+        },
+        "security": [
+          {
+            "KISOAuth": []
+          }
+        ],
+        "summary": "ELW 지표순위[국내주식-169]",
+        "tags": [
+          "ELWQuote"
+        ],
+        "x-kis": {
+          "accessUrl": "/uapi/elw/v1/ranking/indicator",
+          "apiId": "8869c0c3-efd8-461b-ba87-5ab468afeea2",
+          "apiName": "ELW 지표순위[국내주식-169]",
+          "apiSummary": "ELW 지표순위 API입니다. \r\n한국투자 HTS(eFriend Plus) \u0026gt; [0279] ELW 지표순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
+          "catalogSchemaVersion": 1,
+          "collectionId": "31ee18d0-526f-4d7c-81ba-160cd0396092",
+          "collectionName": "[국내주식] ELW 시세",
+          "group": "elw-quote",
+          "lastModifiedDate": "2025-05-07T09:30:18+09:00",
+          "oauth": true,
+          "realDomain": "https://openapi.koreainvestment.com:9443",
+          "realTrId": "FHPEW02790000",
+          "roleCandidate": "read_only",
+          "securityType": "oauth2-access-token",
+          "serviceGroup": "ELWQuote",
+          "source": {
+            "categoryApi": "https://apiportal.koreainvestment.com/api/apis/public/api-list/{collectionId}",
+            "detailApi": "https://apiportal.koreainvestment.com/api/apis/public/detail?accessUrl={accessUrl}",
+            "detailPageTemplate": "https://apiportal.koreainvestment.com/apiservice-apiservice?{accessUrl}",
+            "portal": "https://apiportal.koreainvestment.com/apiservice-category"
+          },
+          "sourceDetailUrl": "https://apiportal.koreainvestment.com/apiservice-apiservice?/uapi/elw/v1/ranking/indicator",
+          "supportsReal": true,
+          "supportsVirtual": false,
+          "virtualDomain": "모의투자 미지원",
+          "virtualTrId": "모의투자 미지원"
+        }
+      }
+    }
+  }
+}

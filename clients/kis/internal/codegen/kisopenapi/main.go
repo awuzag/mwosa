@@ -135,6 +135,7 @@ func main() {
 	openAPIOut := flag.String("openapi-out", "openapi", "OpenAPI output directory")
 	rawAPIOut := flag.String("rawapi-out", "internal/generated/rawapi", "generated rawapi output directory")
 	publicOut := flag.String("public-out", ".", "generated public package output directory")
+	includeAllCatalog := flag.Bool("include-all-catalog", false, "include every supported catalog API, not only override/group selections")
 	flag.Parse()
 
 	data, err := os.ReadFile(*catalogPath)
@@ -147,7 +148,7 @@ func main() {
 		fatalf("decode catalog: %v", err)
 	}
 
-	configs, err := loadOperationConfigs(source, *overridesDir)
+	configs, err := loadOperationConfigs(source, *overridesDir, *includeAllCatalog)
 	if err != nil {
 		fatalf("load overrides: %v", err)
 	}
@@ -166,7 +167,7 @@ func main() {
 	}
 }
 
-func loadOperationConfigs(source catalog, overridesDir string) ([]operationConfig, error) {
+func loadOperationConfigs(source catalog, overridesDir string, includeAllCatalog bool) ([]operationConfig, error) {
 	sdkNames, err := readYAML[sdkNamesFile](filepath.Join(overridesDir, "sdk-names.yaml"))
 	if err != nil {
 		return nil, err
@@ -213,6 +214,9 @@ func loadOperationConfigs(source catalog, overridesDir string) ([]operationConfi
 			if hasAccessOverride {
 				operationID = overrideKey
 			}
+			if includeAllCatalog && !hasAccessOverride && defaultIDCounts[operationID] > 1 {
+				operationID = operationIDFromAccessURLWithNamespace(api.AccessURL)
+			}
 			override := sdkNames.Operations[operationID]
 			if override.AccessURL != "" && override.AccessURL != api.AccessURL {
 				continue
@@ -222,14 +226,17 @@ func loadOperationConfigs(source catalog, overridesDir string) ([]operationConfi
 			selectedByGroup := groupByOperation[operationID] != "" && sourceCategoryMatches
 			selectedByOverride := override.Enabled != nil && *override.Enabled
 			disabledByOverride := override.Enabled != nil && !*override.Enabled
-			if disabledByOverride || (!selectedByOverride && !selectedByGroup) {
+			if disabledByOverride || (!includeAllCatalog && !selectedByOverride && !selectedByGroup) {
 				continue
 			}
-			if !hasAccessOverride && defaultIDCounts[operationID] > 1 {
+			if !includeAllCatalog && !hasAccessOverride && defaultIDCounts[operationID] > 1 {
 				return nil, fmt.Errorf("operation %s matches multiple catalog APIs; set access_url in overrides/sdk-names.yaml", operationID)
 			}
 			if reason := exclusionReason(collection, api); reason != "" {
-				return nil, fmt.Errorf("operation %s is excluded from generation: %s (access_url=%s)", operationID, reason, api.AccessURL)
+				if selectedByOverride || selectedByGroup {
+					return nil, fmt.Errorf("operation %s is excluded from generation: %s (access_url=%s)", operationID, reason, api.AccessURL)
+				}
+				continue
 			}
 
 			defaultGroup := defaultServiceGroup(collection.Name)
@@ -1196,6 +1203,33 @@ func operationIDFromAccessURL(accessURL string) string {
 	return parts[len(parts)-1]
 }
 
+func operationIDFromAccessURLWithNamespace(accessURL string) string {
+	parts := strings.Split(strings.Trim(accessURL, "/"), "/")
+	if len(parts) == 0 {
+		return ""
+	}
+	namespace := parts[0]
+	if namespace == "uapi" && len(parts) > 1 {
+		namespace = parts[1]
+	}
+	parent := ""
+	if len(parts) > 1 {
+		parent = parts[len(parts)-2]
+	}
+	return strings.Join(nonEmptyStrings(namespace, parent, parts[len(parts)-1]), "-")
+}
+
+func nonEmptyStrings(values ...string) []string {
+	out := make([]string, 0, len(values))
+	for _, value := range values {
+		value = strings.TrimSpace(value)
+		if value != "" {
+			out = append(out, value)
+		}
+	}
+	return out
+}
+
 func defaultSplitPath(accessURL string) string {
 	path := strings.TrimPrefix(strings.Trim(accessURL, "/"), "uapi/")
 	return "apis/" + path + ".json"
@@ -1203,7 +1237,6 @@ func defaultSplitPath(accessURL string) string {
 
 func exclusionReason(collection catalogCollection, api catalogAPI) string {
 	collectionName := cleanText(collection.Name)
-	apiName := cleanText(api.Name)
 	accessURL := strings.ToLower(api.AccessURL)
 	if strings.Contains(collectionName, "실시간시세") || strings.Contains(accessURL, "websocket") || strings.Contains(accessURL, "websocket") {
 		return "WebSocket/real-time API is out of scope"
@@ -1213,11 +1246,6 @@ func exclusionReason(collection catalogCollection, api catalogAPI) string {
 	}
 	if strings.EqualFold(api.HTTPMethod, "POST") {
 		return "non-read API method is out of scope"
-	}
-	for _, keyword := range []string{"주문", "계좌", "잔고", "매수", "매도", "정정", "취소", "손익", "예수금"} {
-		if strings.Contains(apiName, keyword) {
-			return "order/account-like API is out of scope"
-		}
 	}
 	return ""
 }
@@ -1235,7 +1263,7 @@ func defaultServiceGroup(collectionName string) string {
 	case "[국내주식] 업종/기타":
 		return "market"
 	case "[국내주식] ELW 시세":
-		return "elwQuote"
+		return "elw-quote"
 	default:
 		return ""
 	}
@@ -1272,6 +1300,14 @@ func goName(s string) string {
 		}
 		lower := strings.ToLower(part)
 		switch lower {
+		case "etf":
+			b.WriteString("ETF")
+		case "etn":
+			b.WriteString("ETN")
+		case "etfetn":
+			b.WriteString("ETFETN")
+		case "elw":
+			b.WriteString("ELW")
 		case "id":
 			b.WriteString("ID")
 		case "iscd":
@@ -1343,6 +1379,12 @@ func responseRootName(name string) string {
 func snakeName(s string) string {
 	var b strings.Builder
 	for i, r := range s {
+		if !(unicode.IsLetter(r) || unicode.IsDigit(r)) {
+			if b.Len() > 0 && !strings.HasSuffix(b.String(), "_") {
+				b.WriteByte('_')
+			}
+			continue
+		}
 		if unicode.IsUpper(r) {
 			if i > 0 {
 				b.WriteByte('_')

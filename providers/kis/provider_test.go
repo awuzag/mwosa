@@ -510,23 +510,25 @@ func TestRegistryRoutesNewKISMarketDataRoles(t *testing.T) {
 
 func TestSearchStockInstrumentCombinesProductAndStock(t *testing.T) {
 	client := &fakeKISClient{
-		product: kisclient.Product{
-			ProductNo:         "005930",
-			Name:              "Samsung Electronics",
-			StandardProductNo: "KR7005930003",
-			ProductTypeCode:   "300",
-			ProductClassCode:  "STK",
-		},
-		stock: kisclient.Stock{
-			ProductNo:           "005930",
-			ProductTypeCode:     "300",
-			StandardProductNo:   "KR7005930003",
-			Name:                "Samsung Electronics",
-			MarketIDCode:        "STK",
-			SecurityGroupIDCode: "ST",
-			ListedShares:        "5969782550",
-			IndustryName:        "Semiconductors",
-		},
+		product: kisclient.SearchInfoResponse{Output: kisclient.SearchInfoOutput{
+			Pdno:         "005930",
+			PrdtName:     "Samsung Electronics",
+			StdPdno:      "KR7005930003",
+			PrdtTypeCd:   "300",
+			PrdtClsfCd:   "STK",
+			PrdtAbrvName: "Samsung Electronics",
+			ShtnPdno:     "005930",
+		}},
+		stock: kisclient.SearchStockInfoResponse{Output: kisclient.SearchStockInfoOutput{
+			Pdno:              "005930",
+			PrdtTypeCd:        "300",
+			StdPdno:           "KR7005930003",
+			PrdtName:          "Samsung Electronics",
+			MketIDCd:          "STK",
+			SctyGrpIDCd:       "ST",
+			LstgStqt:          "5969782550",
+			StdIdstClsfCdName: "Semiconductors",
+		}},
 	}
 	p := NewWithClient(client, true)
 
@@ -590,8 +592,8 @@ type fakeKISClient struct {
 	orderbook               kisclient.InquireAskingPriceExpCcnResponse
 	trades                  []kisclient.InquireCcnlOutputItem
 	timedTrade              kisclient.InquireTimeItemConclusionOutput2
-	product                 kisclient.Product
-	stock                   kisclient.Stock
+	product                 kisclient.SearchInfoResponse
+	stock                   kisclient.SearchStockInfoResponse
 	lastTimeTradesInputHour string
 }
 
@@ -671,13 +673,13 @@ type fakeKISInstrumentService struct {
 	client *fakeKISClient
 }
 
-func (s fakeKISInstrumentService) Product(context.Context, string, ...kisclient.InstrumentOption) (kisclient.Product, error) {
+func (s fakeKISInstrumentService) Product(context.Context, kisclient.SearchInfoRequest) (kisclient.SearchInfoResponse, error) {
 	c := s.client
 	c.productCalls++
 	return c.product, nil
 }
 
-func (s fakeKISInstrumentService) Stock(context.Context, string, ...kisclient.InstrumentOption) (kisclient.Stock, error) {
+func (s fakeKISInstrumentService) Stock(context.Context, kisclient.SearchStockInfoRequest) (kisclient.SearchStockInfoResponse, error) {
 	c := s.client
 	c.stockCalls++
 	return c.stock, nil

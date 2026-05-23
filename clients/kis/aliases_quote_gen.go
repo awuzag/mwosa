@@ -13,6 +13,15 @@ type InquirePriceResponse = rawapi.InquirePriceResponse
 // InquirePriceOutput aliases rawapi.InquirePriceOutput.
 type InquirePriceOutput = rawapi.InquirePriceOutput
 
+// InquirePrice2Request aliases rawapi.InquirePrice2Request.
+type InquirePrice2Request = rawapi.InquirePrice2Request
+
+// InquirePrice2Response aliases rawapi.InquirePrice2Response.
+type InquirePrice2Response = rawapi.InquirePrice2Response
+
+// InquirePrice2Output aliases rawapi.InquirePrice2Output.
+type InquirePrice2Output = rawapi.InquirePrice2Output
+
 // InquireCcnlRequest aliases rawapi.InquireCcnlRequest.
 type InquireCcnlRequest = rawapi.InquireCcnlRequest
 
@@ -82,6 +91,18 @@ type InquireTimeItemChartPriceOutput1 = rawapi.InquireTimeItemChartPriceOutput1
 // InquireTimeItemChartPriceOutput2Item aliases rawapi.InquireTimeItemChartPriceOutput2Item.
 type InquireTimeItemChartPriceOutput2Item = rawapi.InquireTimeItemChartPriceOutput2Item
 
+// InquireTimeDailychartpriceRequest aliases rawapi.InquireTimeDailychartpriceRequest.
+type InquireTimeDailychartpriceRequest = rawapi.InquireTimeDailychartpriceRequest
+
+// InquireTimeDailychartpriceResponse aliases rawapi.InquireTimeDailychartpriceResponse.
+type InquireTimeDailychartpriceResponse = rawapi.InquireTimeDailychartpriceResponse
+
+// InquireTimeDailychartpriceOutput1 aliases rawapi.InquireTimeDailychartpriceOutput1.
+type InquireTimeDailychartpriceOutput1 = rawapi.InquireTimeDailychartpriceOutput1
+
+// InquireTimeDailychartpriceOutput2Item aliases rawapi.InquireTimeDailychartpriceOutput2Item.
+type InquireTimeDailychartpriceOutput2Item = rawapi.InquireTimeDailychartpriceOutput2Item
+
 // InquireTimeItemConclusionRequest aliases rawapi.InquireTimeItemConclusionRequest.
 type InquireTimeItemConclusionRequest = rawapi.InquireTimeItemConclusionRequest
 
@@ -93,3 +114,105 @@ type InquireTimeItemConclusionOutput1 = rawapi.InquireTimeItemConclusionOutput1
 
 // InquireTimeItemConclusionOutput2 aliases rawapi.InquireTimeItemConclusionOutput2.
 type InquireTimeItemConclusionOutput2 = rawapi.InquireTimeItemConclusionOutput2
+
+// InquireDailyOvertimepriceRequest aliases rawapi.InquireDailyOvertimepriceRequest.
+type InquireDailyOvertimepriceRequest = rawapi.InquireDailyOvertimepriceRequest
+
+// InquireDailyOvertimepriceResponse aliases rawapi.InquireDailyOvertimepriceResponse.
+type InquireDailyOvertimepriceResponse = rawapi.InquireDailyOvertimepriceResponse
+
+// InquireDailyOvertimepriceOutput1 aliases rawapi.InquireDailyOvertimepriceOutput1.
+type InquireDailyOvertimepriceOutput1 = rawapi.InquireDailyOvertimepriceOutput1
+
+// InquireDailyOvertimepriceOutput2Item aliases rawapi.InquireDailyOvertimepriceOutput2Item.
+type InquireDailyOvertimepriceOutput2Item = rawapi.InquireDailyOvertimepriceOutput2Item
+
+// InquireTimeOvertimeconclusionRequest aliases rawapi.InquireTimeOvertimeconclusionRequest.
+type InquireTimeOvertimeconclusionRequest = rawapi.InquireTimeOvertimeconclusionRequest
+
+// InquireTimeOvertimeconclusionResponse aliases rawapi.InquireTimeOvertimeconclusionResponse.
+type InquireTimeOvertimeconclusionResponse = rawapi.InquireTimeOvertimeconclusionResponse
+
+// InquireTimeOvertimeconclusionOutput1 aliases rawapi.InquireTimeOvertimeconclusionOutput1.
+type InquireTimeOvertimeconclusionOutput1 = rawapi.InquireTimeOvertimeconclusionOutput1
+
+// InquireTimeOvertimeconclusionOutput2Item aliases rawapi.InquireTimeOvertimeconclusionOutput2Item.
+type InquireTimeOvertimeconclusionOutput2Item = rawapi.InquireTimeOvertimeconclusionOutput2Item
+
+// InquireOvertimePriceRequest aliases rawapi.InquireOvertimePriceRequest.
+type InquireOvertimePriceRequest = rawapi.InquireOvertimePriceRequest
+
+// InquireOvertimePriceResponse aliases rawapi.InquireOvertimePriceResponse.
+type InquireOvertimePriceResponse = rawapi.InquireOvertimePriceResponse
+
+// InquireOvertimePriceOutput aliases rawapi.InquireOvertimePriceOutput.
+type InquireOvertimePriceOutput = rawapi.InquireOvertimePriceOutput
+
+// InquireOvertimeAskingPriceRequest aliases rawapi.InquireOvertimeAskingPriceRequest.
+type InquireOvertimeAskingPriceRequest = rawapi.InquireOvertimeAskingPriceRequest
+
+// InquireOvertimeAskingPriceResponse aliases rawapi.InquireOvertimeAskingPriceResponse.
+type InquireOvertimeAskingPriceResponse = rawapi.InquireOvertimeAskingPriceResponse
+
+// InquireOvertimeAskingPriceOutput1 aliases rawapi.InquireOvertimeAskingPriceOutput1.
+type InquireOvertimeAskingPriceOutput1 = rawapi.InquireOvertimeAskingPriceOutput1
+
+// ExpClosingPriceRequest aliases rawapi.ExpClosingPriceRequest.
+type ExpClosingPriceRequest = rawapi.ExpClosingPriceRequest
+
+// ExpClosingPriceResponse aliases rawapi.ExpClosingPriceResponse.
+type ExpClosingPriceResponse = rawapi.ExpClosingPriceResponse
+
+// ExpClosingPriceOutput1Item aliases rawapi.ExpClosingPriceOutput1Item.
+type ExpClosingPriceOutput1Item = rawapi.ExpClosingPriceOutput1Item
+
+// ETFETNQuotationsInquirePriceRequest aliases rawapi.ETFETNQuotationsInquirePriceRequest.
+type ETFETNQuotationsInquirePriceRequest = rawapi.ETFETNQuotationsInquirePriceRequest
+
+// ETFETNQuotationsInquirePriceResponse aliases rawapi.ETFETNQuotationsInquirePriceResponse.
+type ETFETNQuotationsInquirePriceResponse = rawapi.ETFETNQuotationsInquirePriceResponse
+
+// ETFETNQuotationsInquirePriceOutput aliases rawapi.ETFETNQuotationsInquirePriceOutput.
+type ETFETNQuotationsInquirePriceOutput = rawapi.ETFETNQuotationsInquirePriceOutput
+
+// InquireComponentStockPriceRequest aliases rawapi.InquireComponentStockPriceRequest.
+type InquireComponentStockPriceRequest = rawapi.InquireComponentStockPriceRequest
+
+// InquireComponentStockPriceResponse aliases rawapi.InquireComponentStockPriceResponse.
+type InquireComponentStockPriceResponse = rawapi.InquireComponentStockPriceResponse
+
+// InquireComponentStockPriceOutput1 aliases rawapi.InquireComponentStockPriceOutput1.
+type InquireComponentStockPriceOutput1 = rawapi.InquireComponentStockPriceOutput1
+
+// InquireComponentStockPriceOutput2Item aliases rawapi.InquireComponentStockPriceOutput2Item.
+type InquireComponentStockPriceOutput2Item = rawapi.InquireComponentStockPriceOutput2Item
+
+// NavComparisonTrendRequest aliases rawapi.NavComparisonTrendRequest.
+type NavComparisonTrendRequest = rawapi.NavComparisonTrendRequest
+
+// NavComparisonTrendResponse aliases rawapi.NavComparisonTrendResponse.
+type NavComparisonTrendResponse = rawapi.NavComparisonTrendResponse
+
+// NavComparisonTrendOutput1 aliases rawapi.NavComparisonTrendOutput1.
+type NavComparisonTrendOutput1 = rawapi.NavComparisonTrendOutput1
+
+// NavComparisonTrendOutput2 aliases rawapi.NavComparisonTrendOutput2.
+type NavComparisonTrendOutput2 = rawapi.NavComparisonTrendOutput2
+
+// NavComparisonDailyTrendRequest aliases rawapi.NavComparisonDailyTrendRequest.
+type NavComparisonDailyTrendRequest = rawapi.NavComparisonDailyTrendRequest
+
+// NavComparisonDailyTrendResponse aliases rawapi.NavComparisonDailyTrendResponse.
+type NavComparisonDailyTrendResponse = rawapi.NavComparisonDailyTrendResponse
+
+// NavComparisonDailyTrendOutputItem aliases rawapi.NavComparisonDailyTrendOutputItem.
+type NavComparisonDailyTrendOutputItem = rawapi.NavComparisonDailyTrendOutputItem
+
+// NavComparisonTimeTrendRequest aliases rawapi.NavComparisonTimeTrendRequest.
+type NavComparisonTimeTrendRequest = rawapi.NavComparisonTimeTrendRequest
+
+// NavComparisonTimeTrendResponse aliases rawapi.NavComparisonTimeTrendResponse.
+type NavComparisonTimeTrendResponse = rawapi.NavComparisonTimeTrendResponse
+
+// NavComparisonTimeTrendOutputItem aliases rawapi.NavComparisonTimeTrendOutputItem.
+type NavComparisonTimeTrendOutputItem = rawapi.NavComparisonTimeTrendOutputItem

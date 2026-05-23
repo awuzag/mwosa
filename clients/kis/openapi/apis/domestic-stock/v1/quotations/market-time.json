@@ -1,0 +1,265 @@
+{
+  "components": {
+    "schemas": {
+      "MarketTimeResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "msg1": {
+            "description": "응답메세지",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답메세지",
+              "propertyLength": "80",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "msg_cd": {
+            "description": "응답코드",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답코드",
+              "propertyLength": "8",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "output1": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "date1": {
+                  "description": "영업일1",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "영업일1",
+                    "propertyLength": "8",
+                    "propertyOrder": "004.001",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "date2": {
+                  "description": "영업일2",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "영업일2",
+                    "propertyLength": "8",
+                    "propertyOrder": "004.002",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "date3": {
+                  "description": "영업일3",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "영업일 당일",
+                    "name": "영업일3",
+                    "propertyLength": "8",
+                    "propertyOrder": "004.003",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "date4": {
+                  "description": "영업일4",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "영업일4",
+                    "propertyLength": "8",
+                    "propertyOrder": "004.004",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "date5": {
+                  "description": "영업일5",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "영업일5",
+                    "propertyLength": "8",
+                    "propertyOrder": "004.005",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "e_time": {
+                  "description": "장마감시간",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "장마감시간",
+                    "propertyLength": "6",
+                    "propertyOrder": "004.009",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "s_time": {
+                  "description": "장시작시간",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "장시작시간",
+                    "propertyLength": "6",
+                    "propertyOrder": "004.008",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "time": {
+                  "description": "현재시간",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "현재시간",
+                    "propertyLength": "6",
+                    "propertyOrder": "004.007",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "today": {
+                  "description": "오늘일자",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "오늘일자",
+                    "propertyLength": "8",
+                    "propertyOrder": "004.006",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                }
+              },
+              "required": [
+                "date1",
+                "date2",
+                "date3",
+                "date4",
+                "date5",
+                "today",
+                "time",
+                "s_time",
+                "e_time"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "rt_cd": {
+            "description": "성공 실패 여부",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "성공 실패 여부",
+              "propertyLength": "1",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        },
+        "required": [
+          "rt_cd",
+          "msg_cd",
+          "msg1",
+          "output1"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "KISOAuth": {
+        "bearerFormat": "KIS OAuth access token",
+        "description": "Issued by KIS /oauth2/tokenP and injected by the handwritten runtime.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "KIS Domestic Stock OpenAPI - market-time",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/uapi/domestic-stock/v1/quotations/market-time": {
+      "get": {
+        "description": "국내선물 영업일조회 API입니다.\n한국투자 HTS(eFriend Plus) \u0026gt; [1938] 시가총액순위 화면 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\nAPI호출 시 body 혹은 params로 입력하는 사항이 없습니다.",
+        "operationId": "market-time",
+        "parameters": [],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/MarketTimeResponse"
+                }
+              }
+            },
+            "description": "KIS business response envelope"
+          }
+        },
+        "security": [
+          {
+            "KISOAuth": []
+          }
+        ],
+        "summary": "국내선물 영업일조회 [국내주식-160]",
+        "tags": [
+          "Market"
+        ],
+        "x-kis": {
+          "accessUrl": "/uapi/domestic-stock/v1/quotations/market-time",
+          "apiId": "8eab76ff-a534-4d31-afe1-0fef1ff46682",
+          "apiName": "국내선물 영업일조회 [국내주식-160]",
+          "apiSummary": "국내선물 영업일조회 API입니다.\r\n한국투자 HTS(eFriend Plus) \u0026gt; [1938] 시가총액순위 화면 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\r\nAPI호출 시 body 혹은 params로 입력하는 사항이 없습니다.",
+          "catalogSchemaVersion": 1,
+          "collectionId": "409bcd22-e5f5-40df-a839-372691060ce5",
+          "collectionName": "[국내주식] 업종/기타",
+          "group": "market",
+          "lastModifiedDate": "2026-04-16T18:47:47+09:00",
+          "oauth": true,
+          "realDomain": "https://openapi.koreainvestment.com:9443",
+          "realTrId": "HHMCM000002C0",
+          "roleCandidate": "intraday_bar",
+          "securityType": "oauth2-access-token",
+          "serviceGroup": "Market",
+          "source": {
+            "categoryApi": "https://apiportal.koreainvestment.com/api/apis/public/api-list/{collectionId}",
+            "detailApi": "https://apiportal.koreainvestment.com/api/apis/public/detail?accessUrl={accessUrl}",
+            "detailPageTemplate": "https://apiportal.koreainvestment.com/apiservice-apiservice?{accessUrl}",
+            "portal": "https://apiportal.koreainvestment.com/apiservice-category"
+          },
+          "sourceDetailUrl": "https://apiportal.koreainvestment.com/apiservice-apiservice?/uapi/domestic-stock/v1/quotations/market-time",
+          "supportsReal": true,
+          "supportsVirtual": false,
+          "virtualDomain": "미지원",
+          "virtualTrId": "모의투자 미지원"
+        }
+      }
+    }
+  }
+}

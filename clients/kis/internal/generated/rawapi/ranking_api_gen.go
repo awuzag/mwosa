@@ -60,6 +60,62 @@ func Fluctuation(ctx context.Context, executor Executor, input FluctuationReques
 	return result, err
 }
 
+// QuoteBalance calls the KIS raw API.
+//
+// KIS API: 국내주식 호가잔량 순위[국내주식-089]
+// Summary: 국내주식 호가잔량 순위 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0172] 호가잔량 순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: quote-balance
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/quote-balance
+// TR ID: FHPST01720000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+func QuoteBalance(ctx context.Context, executor Executor, input QuoteBalanceRequest) (QuoteBalanceResponse, error) {
+	if executor == nil {
+		return QuoteBalanceResponse{}, ErrRuntimeRequired
+	}
+	var result QuoteBalanceResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupQuoteBalance,
+		Operation:   OperationQuoteBalance,
+		Method:      "GET",
+		Path:        EndpointQuoteBalance,
+		RealTRID:    RealTRIDQuoteBalance,
+		VirtualTRID: VirtualTRIDQuoteBalance,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// ProfitAssetIndex calls the KIS raw API.
+//
+// KIS API: 국내주식 수익자산지표 순위[v1_국내주식-090]
+// Summary: 국내주식 수익자산지표 순위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0173] 수익자산지표 순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: profit-asset-index
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/profit-asset-index
+// TR ID: FHPST01730000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+func ProfitAssetIndex(ctx context.Context, executor Executor, input ProfitAssetIndexRequest) (ProfitAssetIndexResponse, error) {
+	if executor == nil {
+		return ProfitAssetIndexResponse{}, ErrRuntimeRequired
+	}
+	var result ProfitAssetIndexResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupProfitAssetIndex,
+		Operation:   OperationProfitAssetIndex,
+		Method:      "GET",
+		Path:        EndpointProfitAssetIndex,
+		RealTRID:    RealTRIDProfitAssetIndex,
+		VirtualTRID: VirtualTRIDProfitAssetIndex,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
 // MarketCap calls the KIS raw API.
 //
 // KIS API: 국내주식 시가총액 상위[v1_국내주식-091]
@@ -83,6 +139,118 @@ func MarketCap(ctx context.Context, executor Executor, input MarketCapRequest) (
 		Path:        EndpointMarketCap,
 		RealTRID:    RealTRIDMarketCap,
 		VirtualTRID: VirtualTRIDMarketCap,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// FinanceRatio calls the KIS raw API.
+//
+// KIS API: 국내주식 재무비율 순위[v1_국내주식-092]
+// Summary: 국내주식 재무비율 순위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0175] 재무비율순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: finance-ratio
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/finance-ratio
+// TR ID: FHPST01750000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+func FinanceRatio(ctx context.Context, executor Executor, input FinanceRatioRequest) (FinanceRatioResponse, error) {
+	if executor == nil {
+		return FinanceRatioResponse{}, ErrRuntimeRequired
+	}
+	var result FinanceRatioResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupFinanceRatio,
+		Operation:   OperationFinanceRatio,
+		Method:      "GET",
+		Path:        EndpointFinanceRatio,
+		RealTRID:    RealTRIDFinanceRatio,
+		VirtualTRID: VirtualTRIDFinanceRatio,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// AfterHourBalance calls the KIS raw API.
+//
+// KIS API: 국내주식 시간외잔량 순위[v1_국내주식-093]
+// Summary: 국내주식 시간외잔량 순위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0176] 시간외잔량 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: after-hour-balance
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/after-hour-balance
+// TR ID: FHPST01760000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+func AfterHourBalance(ctx context.Context, executor Executor, input AfterHourBalanceRequest) (AfterHourBalanceResponse, error) {
+	if executor == nil {
+		return AfterHourBalanceResponse{}, ErrRuntimeRequired
+	}
+	var result AfterHourBalanceResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupAfterHourBalance,
+		Operation:   OperationAfterHourBalance,
+		Method:      "GET",
+		Path:        EndpointAfterHourBalance,
+		RealTRID:    RealTRIDAfterHourBalance,
+		VirtualTRID: VirtualTRIDAfterHourBalance,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// PreferDisparateRatio calls the KIS raw API.
+//
+// KIS API: 국내주식 우선주/괴리율 상위[v1_국내주식-094]
+// Summary: 국내주식 우선주/괴리율 상위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0177] 우선주/괴리율 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: prefer-disparate-ratio
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/prefer-disparate-ratio
+// TR ID: FHPST01770000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+func PreferDisparateRatio(ctx context.Context, executor Executor, input PreferDisparateRatioRequest) (PreferDisparateRatioResponse, error) {
+	if executor == nil {
+		return PreferDisparateRatioResponse{}, ErrRuntimeRequired
+	}
+	var result PreferDisparateRatioResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupPreferDisparateRatio,
+		Operation:   OperationPreferDisparateRatio,
+		Method:      "GET",
+		Path:        EndpointPreferDisparateRatio,
+		RealTRID:    RealTRIDPreferDisparateRatio,
+		VirtualTRID: VirtualTRIDPreferDisparateRatio,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// Disparity calls the KIS raw API.
+//
+// KIS API: 국내주식 이격도 순위[v1_국내주식-095]
+// Summary: 국내주식 이격도 순위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0178] 이격도 순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: disparity
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/disparity
+// TR ID: FHPST01780000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+func Disparity(ctx context.Context, executor Executor, input DisparityRequest) (DisparityResponse, error) {
+	if executor == nil {
+		return DisparityResponse{}, ErrRuntimeRequired
+	}
+	var result DisparityResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupDisparity,
+		Operation:   OperationDisparity,
+		Method:      "GET",
+		Path:        EndpointDisparity,
+		RealTRID:    RealTRIDDisparity,
+		VirtualTRID: VirtualTRIDDisparity,
 		Query:       input.query(),
 	}, &result)
 	return result, err
@@ -139,6 +307,314 @@ func VolumePower(ctx context.Context, executor Executor, input VolumePowerReques
 		Path:        EndpointVolumePower,
 		RealTRID:    RealTRIDVolumePower,
 		VirtualTRID: VirtualTRIDVolumePower,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// TopInterestStock calls the KIS raw API.
+//
+// KIS API: 국내주식 관심종목등록 상위[v1_국내주식-102]
+// Summary: 국내주식 관심종목등록 상위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0180] 관심종목등록상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: top-interest-stock
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/top-interest-stock
+// TR ID: FHPST01800000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+func TopInterestStock(ctx context.Context, executor Executor, input TopInterestStockRequest) (TopInterestStockResponse, error) {
+	if executor == nil {
+		return TopInterestStockResponse{}, ErrRuntimeRequired
+	}
+	var result TopInterestStockResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupTopInterestStock,
+		Operation:   OperationTopInterestStock,
+		Method:      "GET",
+		Path:        EndpointTopInterestStock,
+		RealTRID:    RealTRIDTopInterestStock,
+		VirtualTRID: VirtualTRIDTopInterestStock,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// ExpTransUpdown calls the KIS raw API.
+//
+// KIS API: 국내주식 예상체결 상승/하락상위[v1_국내주식-103]
+// Summary: 국내주식 예상체결 상승/하락상위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0182] 예상체결 상승/하락상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: exp-trans-updown
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/exp-trans-updown
+// TR ID: FHPST01820000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+func ExpTransUpdown(ctx context.Context, executor Executor, input ExpTransUpdownRequest) (ExpTransUpdownResponse, error) {
+	if executor == nil {
+		return ExpTransUpdownResponse{}, ErrRuntimeRequired
+	}
+	var result ExpTransUpdownResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupExpTransUpdown,
+		Operation:   OperationExpTransUpdown,
+		Method:      "GET",
+		Path:        EndpointExpTransUpdown,
+		RealTRID:    RealTRIDExpTransUpdown,
+		VirtualTRID: VirtualTRIDExpTransUpdown,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// TradedByCompany calls the KIS raw API.
+//
+// KIS API: 국내주식 당사매매종목 상위[v1_국내주식-104]
+// Summary: 국내주식 당사매매종목 상위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0186] 당사매매종목 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: traded-by-company
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/traded-by-company
+// TR ID: FHPST01860000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+func TradedByCompany(ctx context.Context, executor Executor, input TradedByCompanyRequest) (TradedByCompanyResponse, error) {
+	if executor == nil {
+		return TradedByCompanyResponse{}, ErrRuntimeRequired
+	}
+	var result TradedByCompanyResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupTradedByCompany,
+		Operation:   OperationTradedByCompany,
+		Method:      "GET",
+		Path:        EndpointTradedByCompany,
+		RealTRID:    RealTRIDTradedByCompany,
+		VirtualTRID: VirtualTRIDTradedByCompany,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// NearNewHighlow calls the KIS raw API.
+//
+// KIS API: 국내주식 신고/신저근접종목 상위[v1_국내주식-105]
+// Summary: 국내주식 신고/신저근접종목 상위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0187] 신고/신저 근접종목 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: near-new-highlow
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/near-new-highlow
+// TR ID: FHPST01870000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+func NearNewHighlow(ctx context.Context, executor Executor, input NearNewHighlowRequest) (NearNewHighlowResponse, error) {
+	if executor == nil {
+		return NearNewHighlowResponse{}, ErrRuntimeRequired
+	}
+	var result NearNewHighlowResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupNearNewHighlow,
+		Operation:   OperationNearNewHighlow,
+		Method:      "GET",
+		Path:        EndpointNearNewHighlow,
+		RealTRID:    RealTRIDNearNewHighlow,
+		VirtualTRID: VirtualTRIDNearNewHighlow,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// DividendRate calls the KIS raw API.
+//
+// KIS API: 국내주식 배당률 상위[국내주식-106]
+// Summary: 국내주식 배당률 상위 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0188] 배당률 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: dividend-rate
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/dividend-rate
+// TR ID: HHKDB13470100
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+func DividendRate(ctx context.Context, executor Executor, input DividendRateRequest) (DividendRateResponse, error) {
+	if executor == nil {
+		return DividendRateResponse{}, ErrRuntimeRequired
+	}
+	var result DividendRateResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupDividendRate,
+		Operation:   OperationDividendRate,
+		Method:      "GET",
+		Path:        EndpointDividendRate,
+		RealTRID:    RealTRIDDividendRate,
+		VirtualTRID: VirtualTRIDDividendRate,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// BulkTransNum calls the KIS raw API.
+//
+// KIS API: 국내주식 대량체결건수 상위[국내주식-107]
+// Summary: 국내주식 대량체결건수 상위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0169] 대량체결건수 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: bulk-trans-num
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/bulk-trans-num
+// TR ID: FHKST190900C0
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+func BulkTransNum(ctx context.Context, executor Executor, input BulkTransNumRequest) (BulkTransNumResponse, error) {
+	if executor == nil {
+		return BulkTransNumResponse{}, ErrRuntimeRequired
+	}
+	var result BulkTransNumResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupBulkTransNum,
+		Operation:   OperationBulkTransNum,
+		Method:      "GET",
+		Path:        EndpointBulkTransNum,
+		RealTRID:    RealTRIDBulkTransNum,
+		VirtualTRID: VirtualTRIDBulkTransNum,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// CreditBalance calls the KIS raw API.
+//
+// KIS API: 국내주식 신용잔고 상위[국내주식-109]
+// Summary: 국내주식 신용잔고 상위 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0475] 신용잔고 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: credit-balance
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/credit-balance
+// TR ID: FHKST17010000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+func CreditBalance(ctx context.Context, executor Executor, input CreditBalanceRequest) (CreditBalanceResponse, error) {
+	if executor == nil {
+		return CreditBalanceResponse{}, ErrRuntimeRequired
+	}
+	var result CreditBalanceResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupCreditBalance,
+		Operation:   OperationCreditBalance,
+		Method:      "GET",
+		Path:        EndpointCreditBalance,
+		RealTRID:    RealTRIDCreditBalance,
+		VirtualTRID: VirtualTRIDCreditBalance,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// ShortSale calls the KIS raw API.
+//
+// KIS API: 국내주식 공매도 상위종목[국내주식-133]
+// Summary: 공매도 상위종목 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0482] 공매도 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: short-sale
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/short-sale
+// TR ID: FHPST04820000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+func ShortSale(ctx context.Context, executor Executor, input ShortSaleRequest) (ShortSaleResponse, error) {
+	if executor == nil {
+		return ShortSaleResponse{}, ErrRuntimeRequired
+	}
+	var result ShortSaleResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupShortSale,
+		Operation:   OperationShortSale,
+		Method:      "GET",
+		Path:        EndpointShortSale,
+		RealTRID:    RealTRIDShortSale,
+		VirtualTRID: VirtualTRIDShortSale,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// OvertimeFluctuation calls the KIS raw API.
+//
+// KIS API: 국내주식 시간외등락율순위 [국내주식-138]
+// Summary: 국내주식 시간외등락율순위 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0234] 시간외 등락률순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.
+// Operation ID: overtime-fluctuation
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/overtime-fluctuation
+// TR ID: FHPST02340000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+func OvertimeFluctuation(ctx context.Context, executor Executor, input OvertimeFluctuationRequest) (OvertimeFluctuationResponse, error) {
+	if executor == nil {
+		return OvertimeFluctuationResponse{}, ErrRuntimeRequired
+	}
+	var result OvertimeFluctuationResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupOvertimeFluctuation,
+		Operation:   OperationOvertimeFluctuation,
+		Method:      "GET",
+		Path:        EndpointOvertimeFluctuation,
+		RealTRID:    RealTRIDOvertimeFluctuation,
+		VirtualTRID: VirtualTRIDOvertimeFluctuation,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// OvertimeVolume calls the KIS raw API.
+//
+// KIS API: 국내주식 시간외거래량순위 [국내주식-139]
+// Summary: 국내주식 시간외거래량순위 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0235] 시간외 거래량순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.
+// Operation ID: overtime-volume
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/overtime-volume
+// TR ID: FHPST02350000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+func OvertimeVolume(ctx context.Context, executor Executor, input OvertimeVolumeRequest) (OvertimeVolumeResponse, error) {
+	if executor == nil {
+		return OvertimeVolumeResponse{}, ErrRuntimeRequired
+	}
+	var result OvertimeVolumeResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupOvertimeVolume,
+		Operation:   OperationOvertimeVolume,
+		Method:      "GET",
+		Path:        EndpointOvertimeVolume,
+		RealTRID:    RealTRIDOvertimeVolume,
+		VirtualTRID: VirtualTRIDOvertimeVolume,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// HtsTopView calls the KIS raw API.
+//
+// KIS API: HTS조회상위20종목 [국내주식-214]
+// Summary: HTS조회상위20종목 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0158] 조회종목상위 화면의 "종목명", "종목코드" 표시 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: hts-top-view
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/hts-top-view
+// TR ID: HHMCM000100C0
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+func HtsTopView(ctx context.Context, executor Executor, input HtsTopViewRequest) (HtsTopViewResponse, error) {
+	if executor == nil {
+		return HtsTopViewResponse{}, ErrRuntimeRequired
+	}
+	var result HtsTopViewResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupHtsTopView,
+		Operation:   OperationHtsTopView,
+		Method:      "GET",
+		Path:        EndpointHtsTopView,
+		RealTRID:    RealTRIDHtsTopView,
+		VirtualTRID: VirtualTRIDHtsTopView,
 		Query:       input.query(),
 	}, &result)
 	return result, err

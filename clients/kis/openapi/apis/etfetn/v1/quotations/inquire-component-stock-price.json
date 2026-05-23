@@ -1,0 +1,667 @@
+{
+  "components": {
+    "schemas": {
+      "InquireComponentStockPriceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "msg1": {
+            "description": "응답메세지",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답메세지",
+              "propertyLength": "80",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "msg_cd": {
+            "description": "응답코드",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답코드",
+              "propertyLength": "8",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "output1": {
+            "additionalProperties": false,
+            "properties": {
+              "etf_cnfg_issu_avls": {
+                "description": "ETF구성종목시가총액",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "ETF구성종목시가총액",
+                  "propertyLength": "18",
+                  "propertyOrder": "004.005",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "etf_cnfg_issu_cnt": {
+                "description": "ETF 구성 종목 수",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "ETF 구성 종목 수",
+                  "propertyLength": "18",
+                  "propertyOrder": "004.016",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "etf_cu_unit_scrt_cnt": {
+                "description": "ETF CU 단위 증권 수",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "ETF CU 단위 증권 수",
+                  "propertyLength": "18",
+                  "propertyOrder": "004.015",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "etf_ntas_ttam": {
+                "description": "ETF 순자산 총액",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "ETF 순자산 총액",
+                  "propertyLength": "22",
+                  "propertyOrder": "004.010",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "hprc_nav": {
+                "description": "NAV고가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "NAV고가",
+                  "propertyLength": "112",
+                  "propertyOrder": "004.013",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "lprc_nav": {
+                "description": "NAV저가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "NAV저가",
+                  "propertyLength": "112",
+                  "propertyOrder": "004.014",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "nav": {
+                "description": "NAV",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "NAV",
+                  "propertyLength": "112",
+                  "propertyOrder": "004.006",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "nav_prdy_ctrt": {
+                "description": "NAV 전일 대비율",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "NAV 전일 대비율",
+                  "propertyLength": "84",
+                  "propertyOrder": "004.009",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "nav_prdy_vrss": {
+                "description": "NAV 전일 대비",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "NAV 전일 대비",
+                  "propertyLength": "112",
+                  "propertyOrder": "004.008",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "nav_prdy_vrss_sign": {
+                "description": "NAV 전일 대비 부호",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "NAV 전일 대비 부호",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.007",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "oprc_nav": {
+                "description": "NAV시가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "NAV시가",
+                  "propertyLength": "112",
+                  "propertyOrder": "004.012",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "prdy_clpr_nav": {
+                "description": "NAV전일종가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "NAV전일종가",
+                  "propertyLength": "112",
+                  "propertyOrder": "004.011",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "prdy_ctrt": {
+                "description": "전일 대비율",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "전일 대비율",
+                  "propertyLength": "82",
+                  "propertyOrder": "004.004",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "prdy_vrss": {
+                "description": "전일 대비",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "전일 대비",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.002",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "prdy_vrss_sign": {
+                "description": "전일 대비 부호",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "전일 대비 부호",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.003",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "stck_prpr": {
+                "description": "주식 현재가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "주식 현재가",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.001",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              }
+            },
+            "required": [
+              "stck_prpr",
+              "prdy_vrss",
+              "prdy_vrss_sign",
+              "prdy_ctrt",
+              "etf_cnfg_issu_avls",
+              "nav",
+              "nav_prdy_vrss_sign",
+              "nav_prdy_vrss",
+              "nav_prdy_ctrt",
+              "etf_ntas_ttam",
+              "prdy_clpr_nav",
+              "oprc_nav",
+              "hprc_nav",
+              "lprc_nav",
+              "etf_cu_unit_scrt_cnt",
+              "etf_cnfg_issu_cnt"
+            ],
+            "type": "object"
+          },
+          "output2": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "acml_tr_pbmn": {
+                  "description": "누적 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "누적 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.008",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "acml_vol": {
+                  "description": "누적 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "누적 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.007",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etf_cnfg_issu_avls": {
+                  "description": "ETF구성종목시가총액",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "ETF구성종목시가총액",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.013",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etf_cnfg_issu_rlim": {
+                  "description": "ETF구성종목비중",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "ETF구성종목비중",
+                    "propertyLength": "72",
+                    "propertyOrder": "005.014",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etf_vltn_amt": {
+                  "description": "ETF구성종목내평가금액",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "ETF구성종목내평가금액",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.015",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "hts_avls": {
+                  "description": "HTS 시가총액",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "HTS 시가총액",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.012",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "hts_kor_isnm": {
+                  "description": "HTS 한글 종목명",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "HTS 한글 종목명",
+                    "propertyLength": "40",
+                    "propertyOrder": "005.002",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_ctrt": {
+                  "description": "전일 대비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일 대비율",
+                    "propertyLength": "82",
+                    "propertyOrder": "005.006",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_vrss": {
+                  "description": "전일 대비",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일 대비",
+                    "propertyLength": "10",
+                    "propertyOrder": "005.004",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_vrss_sign": {
+                  "description": "전일 대비 부호",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일 대비 부호",
+                    "propertyLength": "1",
+                    "propertyOrder": "005.005",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_vrss_vol": {
+                  "description": "전일 대비 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일 대비 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.010",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "stck_prpr": {
+                  "description": "주식 현재가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식 현재가",
+                    "propertyLength": "10",
+                    "propertyOrder": "005.003",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "stck_shrn_iscd": {
+                  "description": "주식 단축 종목코드",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식 단축 종목코드",
+                    "propertyLength": "9",
+                    "propertyOrder": "005.001",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "tday_rsfl_rate": {
+                  "description": "당일 등락 비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "당일 등락 비율",
+                    "propertyLength": "52",
+                    "propertyOrder": "005.009",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "tr_pbmn_tnrt": {
+                  "description": "거래대금회전율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "거래대금회전율",
+                    "propertyLength": "82",
+                    "propertyOrder": "005.011",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                }
+              },
+              "required": [
+                "stck_shrn_iscd",
+                "hts_kor_isnm",
+                "stck_prpr",
+                "prdy_vrss",
+                "prdy_vrss_sign",
+                "prdy_ctrt",
+                "acml_vol",
+                "acml_tr_pbmn",
+                "tday_rsfl_rate",
+                "prdy_vrss_vol",
+                "tr_pbmn_tnrt",
+                "hts_avls",
+                "etf_cnfg_issu_avls",
+                "etf_cnfg_issu_rlim",
+                "etf_vltn_amt"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "rt_cd": {
+            "description": "성공 실패 여부",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "성공 실패 여부",
+              "propertyLength": "1",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        },
+        "required": [
+          "rt_cd",
+          "msg_cd",
+          "msg1",
+          "output1",
+          "output2"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "KISOAuth": {
+        "bearerFormat": "KIS OAuth access token",
+        "description": "Issued by KIS /oauth2/tokenP and injected by the handwritten runtime.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "KIS Domestic Stock OpenAPI - inquire-component-stock-price",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/uapi/etfetn/v1/quotations/inquire-component-stock-price": {
+      "get": {
+        "description": "ETF 구성종목시세 API입니다. \n한국투자 HTS(eFriend Plus) \u0026gt; [0245] ETF/ETN 구성종목시세 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
+        "operationId": "inquire-component-stock-price",
+        "parameters": [
+          {
+            "description": "시장구분코드 (J)",
+            "in": "query",
+            "name": "FID_COND_MRKT_DIV_CODE",
+            "required": true,
+            "schema": {
+              "description": "조건시장분류코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "시장구분코드 (J)",
+                "name": "조건시장분류코드",
+                "propertyLength": "2",
+                "propertyOrder": "001",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "시장구분코드 (J)",
+              "name": "조건시장분류코드",
+              "propertyLength": "2",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "종목코드",
+            "in": "query",
+            "name": "FID_INPUT_ISCD",
+            "required": true,
+            "schema": {
+              "description": "입력종목코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "종목코드",
+                "name": "입력종목코드",
+                "propertyLength": "12",
+                "propertyOrder": "002",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "종목코드",
+              "name": "입력종목코드",
+              "propertyLength": "12",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "Unique key( 11216 )",
+            "in": "query",
+            "name": "FID_COND_SCR_DIV_CODE",
+            "required": true,
+            "schema": {
+              "description": "조건화면분류코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "Unique key( 11216 )",
+                "name": "조건화면분류코드",
+                "propertyLength": "5",
+                "propertyOrder": "003",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "Unique key( 11216 )",
+              "name": "조건화면분류코드",
+              "propertyLength": "5",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InquireComponentStockPriceResponse"
+                }
+              }
+            },
+            "description": "KIS business response envelope"
+          }
+        },
+        "security": [
+          {
+            "KISOAuth": []
+          }
+        ],
+        "summary": "ETF 구성종목시세[국내주식-073]",
+        "tags": [
+          "Quote"
+        ],
+        "x-kis": {
+          "accessUrl": "/uapi/etfetn/v1/quotations/inquire-component-stock-price",
+          "apiId": "3871dd9b-e9a5-471b-a0ce-d9ceb207ac5b",
+          "apiName": "ETF 구성종목시세[국내주식-073]",
+          "apiSummary": "ETF 구성종목시세 API입니다. \r\n한국투자 HTS(eFriend Plus) \u0026gt; [0245] ETF/ETN 구성종목시세 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
+          "catalogSchemaVersion": 1,
+          "collectionId": "1031d032-6747-414b-bdf2-fd419c0c98ce",
+          "collectionName": "[국내주식] 기본시세",
+          "group": "quote",
+          "lastModifiedDate": "2026-04-10T21:14:12+09:00",
+          "oauth": true,
+          "realDomain": "https://openapi.koreainvestment.com:9443",
+          "realTrId": "FHKST121600C0",
+          "roleCandidate": "read_only",
+          "securityType": "oauth2-access-token",
+          "serviceGroup": "Quote",
+          "source": {
+            "categoryApi": "https://apiportal.koreainvestment.com/api/apis/public/api-list/{collectionId}",
+            "detailApi": "https://apiportal.koreainvestment.com/api/apis/public/detail?accessUrl={accessUrl}",
+            "detailPageTemplate": "https://apiportal.koreainvestment.com/apiservice-apiservice?{accessUrl}",
+            "portal": "https://apiportal.koreainvestment.com/apiservice-category"
+          },
+          "sourceDetailUrl": "https://apiportal.koreainvestment.com/apiservice-apiservice?/uapi/etfetn/v1/quotations/inquire-component-stock-price",
+          "supportsReal": true,
+          "supportsVirtual": false,
+          "virtualDomain": "모의투자 미지원",
+          "virtualTrId": "모의투자 미지원"
+        }
+      }
+    }
+  }
+}

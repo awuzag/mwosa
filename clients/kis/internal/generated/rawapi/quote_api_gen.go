@@ -32,6 +32,34 @@ func InquirePrice(ctx context.Context, executor Executor, input InquirePriceRequ
 	return result, err
 }
 
+// InquirePrice2 calls the KIS raw API.
+//
+// KIS API: 주식현재가 시세2[v1_국내주식-054]
+// Summary: 주식현재가 시세2 API입니다.
+// Operation ID: inquire-price-2
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/inquire-price-2
+// TR ID: FHPST01010000
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: read_only
+func InquirePrice2(ctx context.Context, executor Executor, input InquirePrice2Request) (InquirePrice2Response, error) {
+	if executor == nil {
+		return InquirePrice2Response{}, ErrRuntimeRequired
+	}
+	var result InquirePrice2Response
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupInquirePrice2,
+		Operation:   OperationInquirePrice2,
+		Method:      "GET",
+		Path:        EndpointInquirePrice2,
+		RealTRID:    RealTRIDInquirePrice2,
+		VirtualTRID: VirtualTRIDInquirePrice2,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
 // InquireCcnl calls the KIS raw API.
 //
 // KIS API: 주식현재가 체결[v1_국내주식-009]
@@ -228,6 +256,34 @@ func InquireTimeItemChartPrice(ctx context.Context, executor Executor, input Inq
 	return result, err
 }
 
+// InquireTimeDailychartprice calls the KIS raw API.
+//
+// KIS API: 주식일별분봉조회 [국내주식-213]
+// Summary: 주식일별분봉조회 API입니다.   실전계좌의 경우, 한 번의 호출에 최대 120건까지 확인 가능하며,  FID_INPUT_DATE_1, FID_INPUT_HOUR_1 이용하여 과거일자 분봉조회 가능합니다.  ※ 과거 분봉 조회 시, 당사 서버에서 보관하고 있는 만큼의 데이터만 확인이 가능합니다. (최대 1년 분봉 보관)
+// Operation ID: inquire-time-dailychartprice
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/inquire-time-dailychartprice
+// TR ID: FHKST03010230
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: daily_bar
+func InquireTimeDailychartprice(ctx context.Context, executor Executor, input InquireTimeDailychartpriceRequest) (InquireTimeDailychartpriceResponse, error) {
+	if executor == nil {
+		return InquireTimeDailychartpriceResponse{}, ErrRuntimeRequired
+	}
+	var result InquireTimeDailychartpriceResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupInquireTimeDailychartprice,
+		Operation:   OperationInquireTimeDailychartprice,
+		Method:      "GET",
+		Path:        EndpointInquireTimeDailychartprice,
+		RealTRID:    RealTRIDInquireTimeDailychartprice,
+		VirtualTRID: VirtualTRIDInquireTimeDailychartprice,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
 // InquireTimeItemConclusion calls the KIS raw API.
 //
 // KIS API: 주식현재가 당일시간대별체결[v1_국내주식-023]
@@ -251,6 +307,286 @@ func InquireTimeItemConclusion(ctx context.Context, executor Executor, input Inq
 		Path:        EndpointInquireTimeItemConclusion,
 		RealTRID:    RealTRIDInquireTimeItemConclusion,
 		VirtualTRID: VirtualTRIDInquireTimeItemConclusion,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// InquireDailyOvertimeprice calls the KIS raw API.
+//
+// KIS API: 주식현재가 시간외일자별주가[v1_국내주식-026]
+// Summary: 주식현재가 시간외일자별주가 API입니다.  (최근일 30건만 조회 가능) 한국투자 HTS(eFriend Plus) &gt; [0232] 시간외 일자별주가의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: inquire-daily-overtimeprice
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/inquire-daily-overtimeprice
+// TR ID: FHPST02320000
+// Virtual TR ID: FHPST02320000
+// Group: quote
+// Service group: Quote
+// Role hint: intraday_bar
+func InquireDailyOvertimeprice(ctx context.Context, executor Executor, input InquireDailyOvertimepriceRequest) (InquireDailyOvertimepriceResponse, error) {
+	if executor == nil {
+		return InquireDailyOvertimepriceResponse{}, ErrRuntimeRequired
+	}
+	var result InquireDailyOvertimepriceResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupInquireDailyOvertimeprice,
+		Operation:   OperationInquireDailyOvertimeprice,
+		Method:      "GET",
+		Path:        EndpointInquireDailyOvertimeprice,
+		RealTRID:    RealTRIDInquireDailyOvertimeprice,
+		VirtualTRID: VirtualTRIDInquireDailyOvertimeprice,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// InquireTimeOvertimeconclusion calls the KIS raw API.
+//
+// KIS API: 주식현재가 시간외시간별체결[v1_국내주식-025]
+// Summary: 주식현재가 시간외시간별체결 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0231] 시간외 시간별체결의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: inquire-time-overtimeconclusion
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/inquire-time-overtimeconclusion
+// TR ID: FHPST02310000
+// Virtual TR ID: FHPST02310000
+// Group: quote
+// Service group: Quote
+// Role hint: intraday_bar
+func InquireTimeOvertimeconclusion(ctx context.Context, executor Executor, input InquireTimeOvertimeconclusionRequest) (InquireTimeOvertimeconclusionResponse, error) {
+	if executor == nil {
+		return InquireTimeOvertimeconclusionResponse{}, ErrRuntimeRequired
+	}
+	var result InquireTimeOvertimeconclusionResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupInquireTimeOvertimeconclusion,
+		Operation:   OperationInquireTimeOvertimeconclusion,
+		Method:      "GET",
+		Path:        EndpointInquireTimeOvertimeconclusion,
+		RealTRID:    RealTRIDInquireTimeOvertimeconclusion,
+		VirtualTRID: VirtualTRIDInquireTimeOvertimeconclusion,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// InquireOvertimePrice calls the KIS raw API.
+//
+// KIS API: 국내주식 시간외현재가[국내주식-076]
+// Summary: 국내주식 시간외현재가 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0230] 시간외 현재가 화면의 좌측 상단기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: inquire-overtime-price
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/inquire-overtime-price
+// TR ID: FHPST02300000
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: intraday_bar
+func InquireOvertimePrice(ctx context.Context, executor Executor, input InquireOvertimePriceRequest) (InquireOvertimePriceResponse, error) {
+	if executor == nil {
+		return InquireOvertimePriceResponse{}, ErrRuntimeRequired
+	}
+	var result InquireOvertimePriceResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupInquireOvertimePrice,
+		Operation:   OperationInquireOvertimePrice,
+		Method:      "GET",
+		Path:        EndpointInquireOvertimePrice,
+		RealTRID:    RealTRIDInquireOvertimePrice,
+		VirtualTRID: VirtualTRIDInquireOvertimePrice,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// InquireOvertimeAskingPrice calls the KIS raw API.
+//
+// KIS API: 국내주식 시간외호가[국내주식-077]
+// Summary: 국내주식 시간외호가 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0230] 시간외 현재가 화면의 '호가' 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: inquire-overtime-asking-price
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/inquire-overtime-asking-price
+// TR ID: FHPST02300400
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: intraday_bar
+func InquireOvertimeAskingPrice(ctx context.Context, executor Executor, input InquireOvertimeAskingPriceRequest) (InquireOvertimeAskingPriceResponse, error) {
+	if executor == nil {
+		return InquireOvertimeAskingPriceResponse{}, ErrRuntimeRequired
+	}
+	var result InquireOvertimeAskingPriceResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupInquireOvertimeAskingPrice,
+		Operation:   OperationInquireOvertimeAskingPrice,
+		Method:      "GET",
+		Path:        EndpointInquireOvertimeAskingPrice,
+		RealTRID:    RealTRIDInquireOvertimeAskingPrice,
+		VirtualTRID: VirtualTRIDInquireOvertimeAskingPrice,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// ExpClosingPrice calls the KIS raw API.
+//
+// KIS API: 국내주식 장마감 예상체결가[국내주식-120]
+// Summary: 국내주식 장마감 예상체결가 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0183] 장마감 예상체결가 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: exp-closing-price
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/exp-closing-price
+// TR ID: FHKST117300C0
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: read_only
+func ExpClosingPrice(ctx context.Context, executor Executor, input ExpClosingPriceRequest) (ExpClosingPriceResponse, error) {
+	if executor == nil {
+		return ExpClosingPriceResponse{}, ErrRuntimeRequired
+	}
+	var result ExpClosingPriceResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupExpClosingPrice,
+		Operation:   OperationExpClosingPrice,
+		Method:      "GET",
+		Path:        EndpointExpClosingPrice,
+		RealTRID:    RealTRIDExpClosingPrice,
+		VirtualTRID: VirtualTRIDExpClosingPrice,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// ETFETNQuotationsInquirePrice calls the KIS raw API.
+//
+// KIS API: ETF/ETN 현재가[v1_국내주식-068]
+// Summary: ETF/ETN 현재가 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0240] ETF/ETN 현재가 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: etfetn-quotations-inquire-price
+// Endpoint: GET /uapi/etfetn/v1/quotations/inquire-price
+// TR ID: FHPST02400000
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: read_only
+func ETFETNQuotationsInquirePrice(ctx context.Context, executor Executor, input ETFETNQuotationsInquirePriceRequest) (ETFETNQuotationsInquirePriceResponse, error) {
+	if executor == nil {
+		return ETFETNQuotationsInquirePriceResponse{}, ErrRuntimeRequired
+	}
+	var result ETFETNQuotationsInquirePriceResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupETFETNQuotationsInquirePrice,
+		Operation:   OperationETFETNQuotationsInquirePrice,
+		Method:      "GET",
+		Path:        EndpointETFETNQuotationsInquirePrice,
+		RealTRID:    RealTRIDETFETNQuotationsInquirePrice,
+		VirtualTRID: VirtualTRIDETFETNQuotationsInquirePrice,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// InquireComponentStockPrice calls the KIS raw API.
+//
+// KIS API: ETF 구성종목시세[국내주식-073]
+// Summary: ETF 구성종목시세 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0245] ETF/ETN 구성종목시세 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: inquire-component-stock-price
+// Endpoint: GET /uapi/etfetn/v1/quotations/inquire-component-stock-price
+// TR ID: FHKST121600C0
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: read_only
+func InquireComponentStockPrice(ctx context.Context, executor Executor, input InquireComponentStockPriceRequest) (InquireComponentStockPriceResponse, error) {
+	if executor == nil {
+		return InquireComponentStockPriceResponse{}, ErrRuntimeRequired
+	}
+	var result InquireComponentStockPriceResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupInquireComponentStockPrice,
+		Operation:   OperationInquireComponentStockPrice,
+		Method:      "GET",
+		Path:        EndpointInquireComponentStockPrice,
+		RealTRID:    RealTRIDInquireComponentStockPrice,
+		VirtualTRID: VirtualTRIDInquireComponentStockPrice,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// NavComparisonTrend calls the KIS raw API.
+//
+// KIS API: NAV 비교추이(종목)[v1_국내주식-069]
+// Summary: NAV 비교추이(종목) API입니다. 한국투자 HTS(eFriend Plus) &gt; [0244] ETF/ETN 비교추이(NAV/IIV) 좌측 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: nav-comparison-trend
+// Endpoint: GET /uapi/etfetn/v1/quotations/nav-comparison-trend
+// TR ID: FHPST02440000
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: read_only
+func NavComparisonTrend(ctx context.Context, executor Executor, input NavComparisonTrendRequest) (NavComparisonTrendResponse, error) {
+	if executor == nil {
+		return NavComparisonTrendResponse{}, ErrRuntimeRequired
+	}
+	var result NavComparisonTrendResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupNavComparisonTrend,
+		Operation:   OperationNavComparisonTrend,
+		Method:      "GET",
+		Path:        EndpointNavComparisonTrend,
+		RealTRID:    RealTRIDNavComparisonTrend,
+		VirtualTRID: VirtualTRIDNavComparisonTrend,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// NavComparisonDailyTrend calls the KIS raw API.
+//
+// KIS API: NAV 비교추이(일)[v1_국내주식-071]
+// Summary: NAV 비교추이(일) API입니다. 한국투자 HTS(eFriend Plus) &gt; [0244] ETF/ETN 비교추이(NAV/IIV) 좌측 화면 "일별" 비교추이 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 실전계좌의 경우, 한 번의 호출에 최대 100건까지 확인 가능합니다.
+// Operation ID: nav-comparison-daily-trend
+// Endpoint: GET /uapi/etfetn/v1/quotations/nav-comparison-daily-trend
+// TR ID: FHPST02440200
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: read_only
+func NavComparisonDailyTrend(ctx context.Context, executor Executor, input NavComparisonDailyTrendRequest) (NavComparisonDailyTrendResponse, error) {
+	if executor == nil {
+		return NavComparisonDailyTrendResponse{}, ErrRuntimeRequired
+	}
+	var result NavComparisonDailyTrendResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupNavComparisonDailyTrend,
+		Operation:   OperationNavComparisonDailyTrend,
+		Method:      "GET",
+		Path:        EndpointNavComparisonDailyTrend,
+		RealTRID:    RealTRIDNavComparisonDailyTrend,
+		VirtualTRID: VirtualTRIDNavComparisonDailyTrend,
+		Query:       input.query(),
+	}, &result)
+	return result, err
+}
+
+// NavComparisonTimeTrend calls the KIS raw API.
+//
+// KIS API: NAV 비교추이(분)[v1_국내주식-070]
+// Summary: NAV 비교추이(분) API입니다. 한국투자 HTS(eFriend Plus) &gt; [0244] ETF/ETN 비교추이(NAV/IIV) 좌측 화면 "분별" 비교추이 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 실전계좌의 경우, 한 번의 호출에 최근 30건까지 확인 가능합니다.
+// Operation ID: nav-comparison-time-trend
+// Endpoint: GET /uapi/etfetn/v1/quotations/nav-comparison-time-trend
+// TR ID: FHPST02440100
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: intraday_bar
+func NavComparisonTimeTrend(ctx context.Context, executor Executor, input NavComparisonTimeTrendRequest) (NavComparisonTimeTrendResponse, error) {
+	if executor == nil {
+		return NavComparisonTimeTrendResponse{}, ErrRuntimeRequired
+	}
+	var result NavComparisonTimeTrendResponse
+	err := executor.ExecuteKIS(ctx, Request{
+		Group:       GroupNavComparisonTimeTrend,
+		Operation:   OperationNavComparisonTimeTrend,
+		Method:      "GET",
+		Path:        EndpointNavComparisonTimeTrend,
+		RealTRID:    RealTRIDNavComparisonTimeTrend,
+		VirtualTRID: VirtualTRIDNavComparisonTimeTrend,
 		Query:       input.query(),
 	}, &result)
 	return result, err

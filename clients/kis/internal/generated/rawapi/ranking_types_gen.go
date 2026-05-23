@@ -740,6 +740,638 @@ func (r *FluctuationResponse) KISStatus() Status {
 	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
 }
 
+// QuoteBalanceRequest is the request for the KIS API.
+//
+// KIS API: 국내주식 호가잔량 순위[국내주식-089]
+// Summary: 국내주식 호가잔량 순위 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0172] 호가잔량 순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: quote-balance
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/quote-balance
+// TR ID: FHPST01720000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type QuoteBalanceRequest struct {
+	// FidVolCnt maps fid_vol_cnt.
+	//
+	// KIS field: 거래량 수
+	// Property code: fid_vol_cnt
+	// Required: true
+	// Length: 12
+	// Order: 001
+	// Description: 입력값 없을때 전체 (거래량 ~)
+	FidVolCnt string `json:"fid_vol_cnt"`
+	// FidCondMrktDivCode maps fid_cond_mrkt_div_code.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: fid_cond_mrkt_div_code
+	// Required: true
+	// Length: 2
+	// Order: 002
+	// Description: 시장구분코드 (J:KRX, NX:NXT)
+	FidCondMrktDivCode string `json:"fid_cond_mrkt_div_code"`
+	// FidCondScrDivCode maps fid_cond_scr_div_code.
+	//
+	// KIS field: 조건 화면 분류 코드
+	// Property code: fid_cond_scr_div_code
+	// Required: true
+	// Length: 5
+	// Order: 003
+	// Description: Unique key( 20172 )
+	FidCondScrDivCode string `json:"fid_cond_scr_div_code"`
+	// FidInputISCD maps fid_input_iscd.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: fid_input_iscd
+	// Required: true
+	// Length: 12
+	// Order: 004
+	// Description: 0000(전체) 코스피(0001), 코스닥(1001), 코스피200(2001)
+	FidInputISCD string `json:"fid_input_iscd"`
+	// FidRankSortClsCode maps fid_rank_sort_cls_code.
+	//
+	// KIS field: 순위 정렬 구분 코드
+	// Property code: fid_rank_sort_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 005
+	// Description: 0: 순매수잔량순, 1:순매도잔량순, 2:매수비율순, 3:매도비율순
+	FidRankSortClsCode string `json:"fid_rank_sort_cls_code"`
+	// FidDivClsCode maps fid_div_cls_code.
+	//
+	// KIS field: 분류 구분 코드
+	// Property code: fid_div_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 006
+	// Description: 0:전체
+	FidDivClsCode string `json:"fid_div_cls_code"`
+	// FidTrgtClsCode maps fid_trgt_cls_code.
+	//
+	// KIS field: 대상 구분 코드
+	// Property code: fid_trgt_cls_code
+	// Required: true
+	// Length: 32
+	// Order: 007
+	// Description: 0:전체
+	FidTrgtClsCode string `json:"fid_trgt_cls_code"`
+	// FidTrgtExlsClsCode maps fid_trgt_exls_cls_code.
+	//
+	// KIS field: 대상 제외 구분 코드
+	// Property code: fid_trgt_exls_cls_code
+	// Required: true
+	// Length: 32
+	// Order: 008
+	// Description: 0:전체
+	FidTrgtExlsClsCode string `json:"fid_trgt_exls_cls_code"`
+	// FidInputPrice1 maps fid_input_price_1.
+	//
+	// KIS field: 입력 가격1
+	// Property code: fid_input_price_1
+	// Required: true
+	// Length: 12
+	// Order: 009
+	// Description: 입력값 없을때 전체 (가격 ~)
+	FidInputPrice1 string `json:"fid_input_price_1"`
+	// FidInputPrice2 maps fid_input_price_2.
+	//
+	// KIS field: 입력 가격2
+	// Property code: fid_input_price_2
+	// Required: true
+	// Length: 12
+	// Order: 010
+	// Description: 입력값 없을때 전체 (~ 가격)
+	FidInputPrice2 string `json:"fid_input_price_2"`
+}
+
+func (r QuoteBalanceRequest) query() map[string]string {
+	return map[string]string{
+		"fid_vol_cnt":            r.FidVolCnt,
+		"fid_cond_mrkt_div_code": r.FidCondMrktDivCode,
+		"fid_cond_scr_div_code":  r.FidCondScrDivCode,
+		"fid_input_iscd":         r.FidInputISCD,
+		"fid_rank_sort_cls_code": r.FidRankSortClsCode,
+		"fid_div_cls_code":       r.FidDivClsCode,
+		"fid_trgt_cls_code":      r.FidTrgtClsCode,
+		"fid_trgt_exls_cls_code": r.FidTrgtExlsClsCode,
+		"fid_input_price_1":      r.FidInputPrice1,
+		"fid_input_price_2":      r.FidInputPrice2,
+	}
+}
+
+// QuoteBalanceResponse is the response for the KIS API.
+//
+// KIS API: 국내주식 호가잔량 순위[국내주식-089]
+// Summary: 국내주식 호가잔량 순위 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0172] 호가잔량 순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: quote-balance
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/quote-balance
+// TR ID: FHPST01720000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type QuoteBalanceResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output maps output.
+	//
+	// KIS field: 응답상세
+	// Property code: output
+	// Required: true
+	// Length:
+	// Order: 004
+	// Description: array
+	Output []QuoteBalanceOutputItem `json:"output"`
+}
+
+// QuoteBalanceOutputItem is a KIS response object.
+type QuoteBalanceOutputItem struct {
+	// MkscShrnISCD maps mksc_shrn_iscd.
+	//
+	// KIS field: 유가증권 단축 종목코드
+	// Property code: mksc_shrn_iscd
+	// Required: true
+	// Length: 9
+	// Order: 004.001
+	MkscShrnISCD string `json:"mksc_shrn_iscd"`
+	// DataRank maps data_rank.
+	//
+	// KIS field: 데이터 순위
+	// Property code: data_rank
+	// Required: true
+	// Length: 10
+	// Order: 004.002
+	DataRank string `json:"data_rank"`
+	// HtsKorIsnm maps hts_kor_isnm.
+	//
+	// KIS field: HTS 한글 종목명
+	// Property code: hts_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 004.003
+	HtsKorIsnm string `json:"hts_kor_isnm"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.004
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.005
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.006
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.007
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.008
+	AcmlVol string `json:"acml_vol"`
+	// TotalAskpRsqn maps total_askp_rsqn.
+	//
+	// KIS field: 총 매도호가 잔량
+	// Property code: total_askp_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 004.009
+	TotalAskpRsqn string `json:"total_askp_rsqn"`
+	// TotalBidpRsqn maps total_bidp_rsqn.
+	//
+	// KIS field: 총 매수호가 잔량
+	// Property code: total_bidp_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 004.010
+	TotalBidpRsqn string `json:"total_bidp_rsqn"`
+	// TotalNtslBidpRsqn maps total_ntsl_bidp_rsqn.
+	//
+	// KIS field: 총 순 매수호가 잔량
+	// Property code: total_ntsl_bidp_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 004.011
+	TotalNtslBidpRsqn string `json:"total_ntsl_bidp_rsqn"`
+	// ShnuRsqnRate maps shnu_rsqn_rate.
+	//
+	// KIS field: 매수 잔량 비율
+	// Property code: shnu_rsqn_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.012
+	ShnuRsqnRate string `json:"shnu_rsqn_rate"`
+	// SelnRsqnRate maps seln_rsqn_rate.
+	//
+	// KIS field: 매도 잔량 비율
+	// Property code: seln_rsqn_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.013
+	SelnRsqnRate string `json:"seln_rsqn_rate"`
+}
+
+func (r *QuoteBalanceResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// ProfitAssetIndexRequest is the request for the KIS API.
+//
+// KIS API: 국내주식 수익자산지표 순위[v1_국내주식-090]
+// Summary: 국내주식 수익자산지표 순위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0173] 수익자산지표 순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: profit-asset-index
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/profit-asset-index
+// TR ID: FHPST01730000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type ProfitAssetIndexRequest struct {
+	// FidCondMrktDivCode maps fid_cond_mrkt_div_code.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: fid_cond_mrkt_div_code
+	// Required: true
+	// Length: 2
+	// Order: 001
+	// Description: 시장구분코드 (J:KRX, NX:NXT)
+	FidCondMrktDivCode string `json:"fid_cond_mrkt_div_code"`
+	// FidTrgtClsCode maps fid_trgt_cls_code.
+	//
+	// KIS field: 대상 구분 코드
+	// Property code: fid_trgt_cls_code
+	// Required: true
+	// Length: 32
+	// Order: 002
+	// Description: 0:전체
+	FidTrgtClsCode string `json:"fid_trgt_cls_code"`
+	// FidCondScrDivCode maps fid_cond_scr_div_code.
+	//
+	// KIS field: 조건 화면 분류 코드
+	// Property code: fid_cond_scr_div_code
+	// Required: true
+	// Length: 5
+	// Order: 003
+	// Description: Unique key( 20173 )
+	FidCondScrDivCode string `json:"fid_cond_scr_div_code"`
+	// FidInputISCD maps fid_input_iscd.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: fid_input_iscd
+	// Required: true
+	// Length: 12
+	// Order: 004
+	// Description: 0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200
+	FidInputISCD string `json:"fid_input_iscd"`
+	// FidDivClsCode maps fid_div_cls_code.
+	//
+	// KIS field: 분류 구분 코드
+	// Property code: fid_div_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 005
+	// Description: 0:전체
+	FidDivClsCode string `json:"fid_div_cls_code"`
+	// FidInputPrice1 maps fid_input_price_1.
+	//
+	// KIS field: 입력 가격1
+	// Property code: fid_input_price_1
+	// Required: true
+	// Length: 12
+	// Order: 006
+	// Description: 입력값 없을때 전체 (가격 ~)
+	FidInputPrice1 string `json:"fid_input_price_1"`
+	// FidInputPrice2 maps fid_input_price_2.
+	//
+	// KIS field: 입력 가격2
+	// Property code: fid_input_price_2
+	// Required: true
+	// Length: 12
+	// Order: 007
+	// Description: 입력값 없을때 전체 (~ 가격)
+	FidInputPrice2 string `json:"fid_input_price_2"`
+	// FidVolCnt maps fid_vol_cnt.
+	//
+	// KIS field: 거래량 수
+	// Property code: fid_vol_cnt
+	// Required: true
+	// Length: 12
+	// Order: 008
+	// Description: 입력값 없을때 전체 (거래량 ~)
+	FidVolCnt string `json:"fid_vol_cnt"`
+	// FidInputOption1 maps fid_input_option_1.
+	//
+	// KIS field: 입력 옵션1
+	// Property code: fid_input_option_1
+	// Required: true
+	// Length: 10
+	// Order: 009
+	// Description: 회계연도 (2023)
+	FidInputOption1 string `json:"fid_input_option_1"`
+	// FidInputOption2 maps fid_input_option_2.
+	//
+	// KIS field: 입력 옵션2
+	// Property code: fid_input_option_2
+	// Required: true
+	// Length: 10
+	// Order: 010
+	// Description: 0: 1/4분기 , 1: 반기, 2: 3/4분기, 3: 결산
+	FidInputOption2 string `json:"fid_input_option_2"`
+	// FidRankSortClsCode maps fid_rank_sort_cls_code.
+	//
+	// KIS field: 순위 정렬 구분 코드
+	// Property code: fid_rank_sort_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 011
+	// Description: 0:매출이익 1:영업이익 2:경상이익 3:당기순이익 4:자산총계 5:부채총계 6:자본총계
+	FidRankSortClsCode string `json:"fid_rank_sort_cls_code"`
+	// FidBlngClsCode maps fid_blng_cls_code.
+	//
+	// KIS field: 소속 구분 코드
+	// Property code: fid_blng_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 012
+	// Description: 0:전체
+	FidBlngClsCode string `json:"fid_blng_cls_code"`
+	// FidTrgtExlsClsCode maps fid_trgt_exls_cls_code.
+	//
+	// KIS field: 대상 제외 구분 코드
+	// Property code: fid_trgt_exls_cls_code
+	// Required: true
+	// Length: 32
+	// Order: 013
+	// Description: 0:전체
+	FidTrgtExlsClsCode string `json:"fid_trgt_exls_cls_code"`
+}
+
+func (r ProfitAssetIndexRequest) query() map[string]string {
+	return map[string]string{
+		"fid_cond_mrkt_div_code": r.FidCondMrktDivCode,
+		"fid_trgt_cls_code":      r.FidTrgtClsCode,
+		"fid_cond_scr_div_code":  r.FidCondScrDivCode,
+		"fid_input_iscd":         r.FidInputISCD,
+		"fid_div_cls_code":       r.FidDivClsCode,
+		"fid_input_price_1":      r.FidInputPrice1,
+		"fid_input_price_2":      r.FidInputPrice2,
+		"fid_vol_cnt":            r.FidVolCnt,
+		"fid_input_option_1":     r.FidInputOption1,
+		"fid_input_option_2":     r.FidInputOption2,
+		"fid_rank_sort_cls_code": r.FidRankSortClsCode,
+		"fid_blng_cls_code":      r.FidBlngClsCode,
+		"fid_trgt_exls_cls_code": r.FidTrgtExlsClsCode,
+	}
+}
+
+// ProfitAssetIndexResponse is the response for the KIS API.
+//
+// KIS API: 국내주식 수익자산지표 순위[v1_국내주식-090]
+// Summary: 국내주식 수익자산지표 순위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0173] 수익자산지표 순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: profit-asset-index
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/profit-asset-index
+// TR ID: FHPST01730000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type ProfitAssetIndexResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output maps output.
+	//
+	// KIS field: 응답상세
+	// Property code: output
+	// Required: true
+	// Length:
+	// Order: 004
+	// Description: array
+	Output []ProfitAssetIndexOutputItem `json:"output"`
+}
+
+// ProfitAssetIndexOutputItem is a KIS response object.
+type ProfitAssetIndexOutputItem struct {
+	// DataRank maps data_rank.
+	//
+	// KIS field: 데이터 순위
+	// Property code: data_rank
+	// Required: true
+	// Length: 10
+	// Order: 004.001
+	DataRank string `json:"data_rank"`
+	// HtsKorIsnm maps hts_kor_isnm.
+	//
+	// KIS field: HTS 한글 종목명
+	// Property code: hts_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 004.002
+	HtsKorIsnm string `json:"hts_kor_isnm"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.003
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// MkscShrnISCD maps mksc_shrn_iscd.
+	//
+	// KIS field: 유가증권 단축 종목코드
+	// Property code: mksc_shrn_iscd
+	// Required: true
+	// Length: 9
+	// Order: 004.004
+	MkscShrnISCD string `json:"mksc_shrn_iscd"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.005
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.006
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.007
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.008
+	AcmlVol string `json:"acml_vol"`
+	// SaleTotlPrfi maps sale_totl_prfi.
+	//
+	// KIS field: 매출 총 이익
+	// Property code: sale_totl_prfi
+	// Required: true
+	// Length: 182
+	// Order: 004.009
+	SaleTotlPrfi string `json:"sale_totl_prfi"`
+	// BsopPrti maps bsop_prti.
+	//
+	// KIS field: 영업 이익
+	// Property code: bsop_prti
+	// Required: true
+	// Length: 182
+	// Order: 004.010
+	BsopPrti string `json:"bsop_prti"`
+	// OpPrfi maps op_prfi.
+	//
+	// KIS field: 경상 이익
+	// Property code: op_prfi
+	// Required: true
+	// Length: 182
+	// Order: 004.011
+	OpPrfi string `json:"op_prfi"`
+	// ThtrNtin maps thtr_ntin.
+	//
+	// KIS field: 당기순이익
+	// Property code: thtr_ntin
+	// Required: true
+	// Length: 102
+	// Order: 004.012
+	ThtrNtin string `json:"thtr_ntin"`
+	// TotalAset maps total_aset.
+	//
+	// KIS field: 자산총계
+	// Property code: total_aset
+	// Required: true
+	// Length: 102
+	// Order: 004.013
+	TotalAset string `json:"total_aset"`
+	// TotalLblt maps total_lblt.
+	//
+	// KIS field: 부채총계
+	// Property code: total_lblt
+	// Required: true
+	// Length: 102
+	// Order: 004.014
+	TotalLblt string `json:"total_lblt"`
+	// TotalCptl maps total_cptl.
+	//
+	// KIS field: 자본총계
+	// Property code: total_cptl
+	// Required: true
+	// Length: 102
+	// Order: 004.015
+	TotalCptl string `json:"total_cptl"`
+	// StacMonth maps stac_month.
+	//
+	// KIS field: 결산 월
+	// Property code: stac_month
+	// Required: true
+	// Length: 2
+	// Order: 004.016
+	StacMonth string `json:"stac_month"`
+	// StacMonthClsCode maps stac_month_cls_code.
+	//
+	// KIS field: 결산 월 구분 코드
+	// Property code: stac_month_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 004.017
+	StacMonthClsCode string `json:"stac_month_cls_code"`
+	// IqryCsnu maps iqry_csnu.
+	//
+	// KIS field: 조회 건수
+	// Property code: iqry_csnu
+	// Required: true
+	// Length: 10
+	// Order: 004.018
+	IqryCsnu string `json:"iqry_csnu"`
+}
+
+func (r *ProfitAssetIndexResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
 // MarketCapRequest is the request for the KIS API.
 //
 // KIS API: 국내주식 시가총액 상위[v1_국내주식-091]
@@ -989,6 +1621,1288 @@ type MarketCapOutputItem struct {
 }
 
 func (r *MarketCapResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// FinanceRatioRequest is the request for the KIS API.
+//
+// KIS API: 국내주식 재무비율 순위[v1_국내주식-092]
+// Summary: 국내주식 재무비율 순위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0175] 재무비율순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: finance-ratio
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/finance-ratio
+// TR ID: FHPST01750000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type FinanceRatioRequest struct {
+	// FidTrgtClsCode maps fid_trgt_cls_code.
+	//
+	// KIS field: 대상 구분 코드
+	// Property code: fid_trgt_cls_code
+	// Required: true
+	// Length: 32
+	// Order: 001
+	// Description: 0 : 전체
+	FidTrgtClsCode string `json:"fid_trgt_cls_code"`
+	// FidCondMrktDivCode maps fid_cond_mrkt_div_code.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: fid_cond_mrkt_div_code
+	// Required: true
+	// Length: 2
+	// Order: 002
+	// Description: 시장구분코드 (J:KRX, NX:NXT)
+	FidCondMrktDivCode string `json:"fid_cond_mrkt_div_code"`
+	// FidCondScrDivCode maps fid_cond_scr_div_code.
+	//
+	// KIS field: 조건 화면 분류 코드
+	// Property code: fid_cond_scr_div_code
+	// Required: true
+	// Length: 5
+	// Order: 003
+	// Description: Unique key( 20175 )
+	FidCondScrDivCode string `json:"fid_cond_scr_div_code"`
+	// FidInputISCD maps fid_input_iscd.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: fid_input_iscd
+	// Required: true
+	// Length: 12
+	// Order: 004
+	// Description: 0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200
+	FidInputISCD string `json:"fid_input_iscd"`
+	// FidDivClsCode maps fid_div_cls_code.
+	//
+	// KIS field: 분류 구분 코드
+	// Property code: fid_div_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 005
+	// Description: 0 : 전체
+	FidDivClsCode string `json:"fid_div_cls_code"`
+	// FidInputPrice1 maps fid_input_price_1.
+	//
+	// KIS field: 입력 가격1
+	// Property code: fid_input_price_1
+	// Required: true
+	// Length: 12
+	// Order: 006
+	// Description: 입력값 없을때 전체 (가격 ~)
+	FidInputPrice1 string `json:"fid_input_price_1"`
+	// FidInputPrice2 maps fid_input_price_2.
+	//
+	// KIS field: 입력 가격2
+	// Property code: fid_input_price_2
+	// Required: true
+	// Length: 12
+	// Order: 007
+	// Description: 입력값 없을때 전체 (~ 가격)
+	FidInputPrice2 string `json:"fid_input_price_2"`
+	// FidVolCnt maps fid_vol_cnt.
+	//
+	// KIS field: 거래량 수
+	// Property code: fid_vol_cnt
+	// Required: true
+	// Length: 12
+	// Order: 008
+	// Description: 입력값 없을때 전체 (거래량 ~)
+	FidVolCnt string `json:"fid_vol_cnt"`
+	// FidInputOption1 maps fid_input_option_1.
+	//
+	// KIS field: 입력 옵션1
+	// Property code: fid_input_option_1
+	// Required: true
+	// Length: 10
+	// Order: 009
+	// Description: 회계년도 입력 (ex 2023)
+	FidInputOption1 string `json:"fid_input_option_1"`
+	// FidInputOption2 maps fid_input_option_2.
+	//
+	// KIS field: 입력 옵션2
+	// Property code: fid_input_option_2
+	// Required: true
+	// Length: 10
+	// Order: 010
+	// Description: 0: 1/4분기 , 1: 반기, 2: 3/4분기, 3: 결산
+	FidInputOption2 string `json:"fid_input_option_2"`
+	// FidRankSortClsCode maps fid_rank_sort_cls_code.
+	//
+	// KIS field: 순위 정렬 구분 코드
+	// Property code: fid_rank_sort_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 011
+	// Description: 7: 수익성 분석, 11 : 안정성 분석, 15: 성장성 분석, 20: 활동성 분석
+	FidRankSortClsCode string `json:"fid_rank_sort_cls_code"`
+	// FidBlngClsCode maps fid_blng_cls_code.
+	//
+	// KIS field: 소속 구분 코드
+	// Property code: fid_blng_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 012
+	// Description: 0
+	FidBlngClsCode string `json:"fid_blng_cls_code"`
+	// FidTrgtExlsClsCode maps fid_trgt_exls_cls_code.
+	//
+	// KIS field: 대상 제외 구분 코드
+	// Property code: fid_trgt_exls_cls_code
+	// Required: true
+	// Length: 32
+	// Order: 013
+	// Description: 0 : 전체
+	FidTrgtExlsClsCode string `json:"fid_trgt_exls_cls_code"`
+}
+
+func (r FinanceRatioRequest) query() map[string]string {
+	return map[string]string{
+		"fid_trgt_cls_code":      r.FidTrgtClsCode,
+		"fid_cond_mrkt_div_code": r.FidCondMrktDivCode,
+		"fid_cond_scr_div_code":  r.FidCondScrDivCode,
+		"fid_input_iscd":         r.FidInputISCD,
+		"fid_div_cls_code":       r.FidDivClsCode,
+		"fid_input_price_1":      r.FidInputPrice1,
+		"fid_input_price_2":      r.FidInputPrice2,
+		"fid_vol_cnt":            r.FidVolCnt,
+		"fid_input_option_1":     r.FidInputOption1,
+		"fid_input_option_2":     r.FidInputOption2,
+		"fid_rank_sort_cls_code": r.FidRankSortClsCode,
+		"fid_blng_cls_code":      r.FidBlngClsCode,
+		"fid_trgt_exls_cls_code": r.FidTrgtExlsClsCode,
+	}
+}
+
+// FinanceRatioResponse is the response for the KIS API.
+//
+// KIS API: 국내주식 재무비율 순위[v1_국내주식-092]
+// Summary: 국내주식 재무비율 순위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0175] 재무비율순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: finance-ratio
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/finance-ratio
+// TR ID: FHPST01750000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type FinanceRatioResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output maps output.
+	//
+	// KIS field: 응답상세
+	// Property code: output
+	// Required: true
+	// Length:
+	// Order: 004
+	// Description: array
+	Output []FinanceRatioOutputItem `json:"output"`
+}
+
+// FinanceRatioOutputItem is a KIS response object.
+type FinanceRatioOutputItem struct {
+	// DataRank maps data_rank.
+	//
+	// KIS field: 데이터 순위
+	// Property code: data_rank
+	// Required: true
+	// Length: 10
+	// Order: 004.001
+	DataRank string `json:"data_rank"`
+	// HtsKorIsnm maps hts_kor_isnm.
+	//
+	// KIS field: HTS 한글 종목명
+	// Property code: hts_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 004.002
+	HtsKorIsnm string `json:"hts_kor_isnm"`
+	// MkscShrnISCD maps mksc_shrn_iscd.
+	//
+	// KIS field: 유가증권 단축 종목코드
+	// Property code: mksc_shrn_iscd
+	// Required: true
+	// Length: 9
+	// Order: 004.003
+	MkscShrnISCD string `json:"mksc_shrn_iscd"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.004
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.005
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.006
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.007
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.008
+	AcmlVol string `json:"acml_vol"`
+	// CptlOpPrfi maps cptl_op_prfi.
+	//
+	// KIS field: 총자본경상이익율
+	// Property code: cptl_op_prfi
+	// Required: true
+	// Length: 92
+	// Order: 004.009
+	CptlOpPrfi string `json:"cptl_op_prfi"`
+	// CptlNtinRate maps cptl_ntin_rate.
+	//
+	// KIS field: 총자본 순이익율
+	// Property code: cptl_ntin_rate
+	// Required: true
+	// Length: 92
+	// Order: 004.010
+	CptlNtinRate string `json:"cptl_ntin_rate"`
+	// SaleTotlRate maps sale_totl_rate.
+	//
+	// KIS field: 매출액 총이익율
+	// Property code: sale_totl_rate
+	// Required: true
+	// Length: 92
+	// Order: 004.011
+	SaleTotlRate string `json:"sale_totl_rate"`
+	// SaleNtinRate maps sale_ntin_rate.
+	//
+	// KIS field: 매출액 순이익율
+	// Property code: sale_ntin_rate
+	// Required: true
+	// Length: 92
+	// Order: 004.012
+	SaleNtinRate string `json:"sale_ntin_rate"`
+	// Bis maps bis.
+	//
+	// KIS field: 자기자본비율
+	// Property code: bis
+	// Required: true
+	// Length: 92
+	// Order: 004.013
+	Bis string `json:"bis"`
+	// LbltRate maps lblt_rate.
+	//
+	// KIS field: 부채 비율
+	// Property code: lblt_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.014
+	LbltRate string `json:"lblt_rate"`
+	// BramDepn maps bram_depn.
+	//
+	// KIS field: 차입금 의존도
+	// Property code: bram_depn
+	// Required: true
+	// Length: 92
+	// Order: 004.015
+	BramDepn string `json:"bram_depn"`
+	// RsrvRate maps rsrv_rate.
+	//
+	// KIS field: 유보 비율
+	// Property code: rsrv_rate
+	// Required: true
+	// Length: 124
+	// Order: 004.016
+	RsrvRate string `json:"rsrv_rate"`
+	// Grs maps grs.
+	//
+	// KIS field: 매출액 증가율
+	// Property code: grs
+	// Required: true
+	// Length: 124
+	// Order: 004.017
+	Grs string `json:"grs"`
+	// OpPrfiInrt maps op_prfi_inrt.
+	//
+	// KIS field: 경상 이익 증가율
+	// Property code: op_prfi_inrt
+	// Required: true
+	// Length: 124
+	// Order: 004.018
+	OpPrfiInrt string `json:"op_prfi_inrt"`
+	// BsopPrfiInrt maps bsop_prfi_inrt.
+	//
+	// KIS field: 영업 이익 증가율
+	// Property code: bsop_prfi_inrt
+	// Required: true
+	// Length: 124
+	// Order: 004.019
+	BsopPrfiInrt string `json:"bsop_prfi_inrt"`
+	// NtinInrt maps ntin_inrt.
+	//
+	// KIS field: 순이익 증가율
+	// Property code: ntin_inrt
+	// Required: true
+	// Length: 124
+	// Order: 004.020
+	NtinInrt string `json:"ntin_inrt"`
+	// EqutInrt maps equt_inrt.
+	//
+	// KIS field: 자기자본 증가율
+	// Property code: equt_inrt
+	// Required: true
+	// Length: 92
+	// Order: 004.021
+	EqutInrt string `json:"equt_inrt"`
+	// CptlTnrt maps cptl_tnrt.
+	//
+	// KIS field: 총자본회전율
+	// Property code: cptl_tnrt
+	// Required: true
+	// Length: 92
+	// Order: 004.022
+	CptlTnrt string `json:"cptl_tnrt"`
+	// SaleBondTnrt maps sale_bond_tnrt.
+	//
+	// KIS field: 매출 채권 회전율
+	// Property code: sale_bond_tnrt
+	// Required: true
+	// Length: 92
+	// Order: 004.023
+	SaleBondTnrt string `json:"sale_bond_tnrt"`
+	// TotlAsetInrt maps totl_aset_inrt.
+	//
+	// KIS field: 총자산 증가율
+	// Property code: totl_aset_inrt
+	// Required: true
+	// Length: 92
+	// Order: 004.024
+	TotlAsetInrt string `json:"totl_aset_inrt"`
+	// StacMonth maps stac_month.
+	//
+	// KIS field: 결산 월
+	// Property code: stac_month
+	// Required: true
+	// Length: 2
+	// Order: 004.025
+	StacMonth string `json:"stac_month"`
+	// StacMonthClsCode maps stac_month_cls_code.
+	//
+	// KIS field: 결산 월 구분 코드
+	// Property code: stac_month_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 004.026
+	StacMonthClsCode string `json:"stac_month_cls_code"`
+	// IqryCsnu maps iqry_csnu.
+	//
+	// KIS field: 조회 건수
+	// Property code: iqry_csnu
+	// Required: true
+	// Length: 10
+	// Order: 004.027
+	IqryCsnu string `json:"iqry_csnu"`
+}
+
+func (r *FinanceRatioResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// AfterHourBalanceRequest is the request for the KIS API.
+//
+// KIS API: 국내주식 시간외잔량 순위[v1_국내주식-093]
+// Summary: 국내주식 시간외잔량 순위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0176] 시간외잔량 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: after-hour-balance
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/after-hour-balance
+// TR ID: FHPST01760000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type AfterHourBalanceRequest struct {
+	// FidInputPrice1 maps fid_input_price_1.
+	//
+	// KIS field: 입력 가격1
+	// Property code: fid_input_price_1
+	// Required: true
+	// Length: 12
+	// Order: 001
+	// Description: 입력값 없을때 전체 (가격 ~)
+	FidInputPrice1 string `json:"fid_input_price_1"`
+	// FidCondMrktDivCode maps fid_cond_mrkt_div_code.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: fid_cond_mrkt_div_code
+	// Required: true
+	// Length: 2
+	// Order: 002
+	// Description: 시장구분코드 (주식 J)
+	FidCondMrktDivCode string `json:"fid_cond_mrkt_div_code"`
+	// FidCondScrDivCode maps fid_cond_scr_div_code.
+	//
+	// KIS field: 조건 화면 분류 코드
+	// Property code: fid_cond_scr_div_code
+	// Required: true
+	// Length: 5
+	// Order: 003
+	// Description: Unique key( 20176 )
+	FidCondScrDivCode string `json:"fid_cond_scr_div_code"`
+	// FidRankSortClsCode maps fid_rank_sort_cls_code.
+	//
+	// KIS field: 순위 정렬 구분 코드
+	// Property code: fid_rank_sort_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 004
+	// Description: 1: 장전 시간외, 2: 장후 시간외, 3:매도잔량, 4:매수잔량
+	FidRankSortClsCode string `json:"fid_rank_sort_cls_code"`
+	// FidDivClsCode maps fid_div_cls_code.
+	//
+	// KIS field: 분류 구분 코드
+	// Property code: fid_div_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 005
+	// Description: 0 : 전체
+	FidDivClsCode string `json:"fid_div_cls_code"`
+	// FidInputISCD maps fid_input_iscd.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: fid_input_iscd
+	// Required: true
+	// Length: 12
+	// Order: 006
+	// Description: 0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200
+	FidInputISCD string `json:"fid_input_iscd"`
+	// FidTrgtExlsClsCode maps fid_trgt_exls_cls_code.
+	//
+	// KIS field: 대상 제외 구분 코드
+	// Property code: fid_trgt_exls_cls_code
+	// Required: true
+	// Length: 32
+	// Order: 007
+	// Description: 0 : 전체
+	FidTrgtExlsClsCode string `json:"fid_trgt_exls_cls_code"`
+	// FidTrgtClsCode maps fid_trgt_cls_code.
+	//
+	// KIS field: 대상 구분 코드
+	// Property code: fid_trgt_cls_code
+	// Required: true
+	// Length: 32
+	// Order: 008
+	// Description: 0 : 전체
+	FidTrgtClsCode string `json:"fid_trgt_cls_code"`
+	// FidVolCnt maps fid_vol_cnt.
+	//
+	// KIS field: 거래량 수
+	// Property code: fid_vol_cnt
+	// Required: true
+	// Length: 12
+	// Order: 009
+	// Description: 입력값 없을때 전체 (거래량 ~)
+	FidVolCnt string `json:"fid_vol_cnt"`
+	// FidInputPrice2 maps fid_input_price_2.
+	//
+	// KIS field: 입력 가격2
+	// Property code: fid_input_price_2
+	// Required: true
+	// Length: 12
+	// Order: 010
+	// Description: 입력값 없을때 전체 (~ 가격)
+	FidInputPrice2 string `json:"fid_input_price_2"`
+}
+
+func (r AfterHourBalanceRequest) query() map[string]string {
+	return map[string]string{
+		"fid_input_price_1":      r.FidInputPrice1,
+		"fid_cond_mrkt_div_code": r.FidCondMrktDivCode,
+		"fid_cond_scr_div_code":  r.FidCondScrDivCode,
+		"fid_rank_sort_cls_code": r.FidRankSortClsCode,
+		"fid_div_cls_code":       r.FidDivClsCode,
+		"fid_input_iscd":         r.FidInputISCD,
+		"fid_trgt_exls_cls_code": r.FidTrgtExlsClsCode,
+		"fid_trgt_cls_code":      r.FidTrgtClsCode,
+		"fid_vol_cnt":            r.FidVolCnt,
+		"fid_input_price_2":      r.FidInputPrice2,
+	}
+}
+
+// AfterHourBalanceResponse is the response for the KIS API.
+//
+// KIS API: 국내주식 시간외잔량 순위[v1_국내주식-093]
+// Summary: 국내주식 시간외잔량 순위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0176] 시간외잔량 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: after-hour-balance
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/after-hour-balance
+// TR ID: FHPST01760000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type AfterHourBalanceResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output maps output.
+	//
+	// KIS field: 응답상세
+	// Property code: output
+	// Required: true
+	// Length:
+	// Order: 004
+	// Description: array
+	Output []AfterHourBalanceOutputItem `json:"output"`
+}
+
+// AfterHourBalanceOutputItem is a KIS response object.
+type AfterHourBalanceOutputItem struct {
+	// StckShrnISCD maps stck_shrn_iscd.
+	//
+	// KIS field: 주식 단축 종목코드
+	// Property code: stck_shrn_iscd
+	// Required: true
+	// Length: 9
+	// Order: 004.001
+	StckShrnISCD string `json:"stck_shrn_iscd"`
+	// DataRank maps data_rank.
+	//
+	// KIS field: 데이터 순위
+	// Property code: data_rank
+	// Required: true
+	// Length: 10
+	// Order: 004.002
+	DataRank string `json:"data_rank"`
+	// HtsKorIsnm maps hts_kor_isnm.
+	//
+	// KIS field: HTS 한글 종목명
+	// Property code: hts_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 004.003
+	HtsKorIsnm string `json:"hts_kor_isnm"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.004
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.005
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.006
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.007
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// OvtmTotalAskpRsqn maps ovtm_total_askp_rsqn.
+	//
+	// KIS field: 시간외 총 매도호가 잔량
+	// Property code: ovtm_total_askp_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 004.008
+	OvtmTotalAskpRsqn string `json:"ovtm_total_askp_rsqn"`
+	// OvtmTotalBidpRsqn maps ovtm_total_bidp_rsqn.
+	//
+	// KIS field: 시간외 총 매수호가 잔량
+	// Property code: ovtm_total_bidp_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 004.009
+	OvtmTotalBidpRsqn string `json:"ovtm_total_bidp_rsqn"`
+	// MkobOtcpVol maps mkob_otcp_vol.
+	//
+	// KIS field: 장개시전 시간외종가 거래량
+	// Property code: mkob_otcp_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.010
+	MkobOtcpVol string `json:"mkob_otcp_vol"`
+	// MkfaOtcpVol maps mkfa_otcp_vol.
+	//
+	// KIS field: 장종료후 시간외종가 거래량
+	// Property code: mkfa_otcp_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.011
+	MkfaOtcpVol string `json:"mkfa_otcp_vol"`
+}
+
+func (r *AfterHourBalanceResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// PreferDisparateRatioRequest is the request for the KIS API.
+//
+// KIS API: 국내주식 우선주/괴리율 상위[v1_국내주식-094]
+// Summary: 국내주식 우선주/괴리율 상위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0177] 우선주/괴리율 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: prefer-disparate-ratio
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/prefer-disparate-ratio
+// TR ID: FHPST01770000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type PreferDisparateRatioRequest struct {
+	// FidVolCnt maps fid_vol_cnt.
+	//
+	// KIS field: 거래량 수
+	// Property code: fid_vol_cnt
+	// Required: true
+	// Length: 12
+	// Order: 001
+	// Description: 입력값 없을때 전체 (거래량 ~)
+	FidVolCnt string `json:"fid_vol_cnt"`
+	// FidCondMrktDivCode maps fid_cond_mrkt_div_code.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: fid_cond_mrkt_div_code
+	// Required: true
+	// Length: 2
+	// Order: 002
+	// Description: 시장구분코드 (J:KRX, NX:NXT)
+	FidCondMrktDivCode string `json:"fid_cond_mrkt_div_code"`
+	// FidCondScrDivCode maps fid_cond_scr_div_code.
+	//
+	// KIS field: 조건 화면 분류 코드
+	// Property code: fid_cond_scr_div_code
+	// Required: true
+	// Length: 5
+	// Order: 003
+	// Description: Unique key( 20177 )
+	FidCondScrDivCode string `json:"fid_cond_scr_div_code"`
+	// FidDivClsCode maps fid_div_cls_code.
+	//
+	// KIS field: 분류 구분 코드
+	// Property code: fid_div_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 004
+	// Description: 0: 전체
+	FidDivClsCode string `json:"fid_div_cls_code"`
+	// FidInputISCD maps fid_input_iscd.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: fid_input_iscd
+	// Required: true
+	// Length: 12
+	// Order: 005
+	// Description: 0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200
+	FidInputISCD string `json:"fid_input_iscd"`
+	// FidTrgtClsCode maps fid_trgt_cls_code.
+	//
+	// KIS field: 대상 구분 코드
+	// Property code: fid_trgt_cls_code
+	// Required: true
+	// Length: 32
+	// Order: 006
+	// Description: 0 : 전체
+	FidTrgtClsCode string `json:"fid_trgt_cls_code"`
+	// FidTrgtExlsClsCode maps fid_trgt_exls_cls_code.
+	//
+	// KIS field: 대상 제외 구분 코드
+	// Property code: fid_trgt_exls_cls_code
+	// Required: true
+	// Length: 32
+	// Order: 007
+	// Description: 0 : 전체
+	FidTrgtExlsClsCode string `json:"fid_trgt_exls_cls_code"`
+	// FidInputPrice1 maps fid_input_price_1.
+	//
+	// KIS field: 입력 가격1
+	// Property code: fid_input_price_1
+	// Required: true
+	// Length: 12
+	// Order: 008
+	// Description: 입력값 없을때 전체 (가격 ~)
+	FidInputPrice1 string `json:"fid_input_price_1"`
+	// FidInputPrice2 maps fid_input_price_2.
+	//
+	// KIS field: 입력 가격2
+	// Property code: fid_input_price_2
+	// Required: true
+	// Length: 12
+	// Order: 009
+	// Description: 입력값 없을때 전체 (~ 가격)
+	FidInputPrice2 string `json:"fid_input_price_2"`
+}
+
+func (r PreferDisparateRatioRequest) query() map[string]string {
+	return map[string]string{
+		"fid_vol_cnt":            r.FidVolCnt,
+		"fid_cond_mrkt_div_code": r.FidCondMrktDivCode,
+		"fid_cond_scr_div_code":  r.FidCondScrDivCode,
+		"fid_div_cls_code":       r.FidDivClsCode,
+		"fid_input_iscd":         r.FidInputISCD,
+		"fid_trgt_cls_code":      r.FidTrgtClsCode,
+		"fid_trgt_exls_cls_code": r.FidTrgtExlsClsCode,
+		"fid_input_price_1":      r.FidInputPrice1,
+		"fid_input_price_2":      r.FidInputPrice2,
+	}
+}
+
+// PreferDisparateRatioResponse is the response for the KIS API.
+//
+// KIS API: 국내주식 우선주/괴리율 상위[v1_국내주식-094]
+// Summary: 국내주식 우선주/괴리율 상위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0177] 우선주/괴리율 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: prefer-disparate-ratio
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/prefer-disparate-ratio
+// TR ID: FHPST01770000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type PreferDisparateRatioResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output maps output.
+	//
+	// KIS field: 응답상세
+	// Property code: output
+	// Required: true
+	// Length:
+	// Order: 004
+	// Description: array
+	Output []PreferDisparateRatioOutputItem `json:"output"`
+}
+
+// PreferDisparateRatioOutputItem is a KIS response object.
+type PreferDisparateRatioOutputItem struct {
+	// MkscShrnISCD maps mksc_shrn_iscd.
+	//
+	// KIS field: 유가증권 단축 종목코드
+	// Property code: mksc_shrn_iscd
+	// Required: true
+	// Length: 9
+	// Order: 004.001
+	MkscShrnISCD string `json:"mksc_shrn_iscd"`
+	// DataRank maps data_rank.
+	//
+	// KIS field: 데이터 순위
+	// Property code: data_rank
+	// Required: true
+	// Length: 10
+	// Order: 004.002
+	DataRank string `json:"data_rank"`
+	// HtsKorIsnm maps hts_kor_isnm.
+	//
+	// KIS field: HTS 한글 종목명
+	// Property code: hts_kor_isnm
+	// Required: true
+	// Length: 10
+	// Order: 004.003
+	HtsKorIsnm string `json:"hts_kor_isnm"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.004
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.005
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 10
+	// Order: 004.006
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 10
+	// Order: 004.007
+	AcmlVol string `json:"acml_vol"`
+	// PrstISCD maps prst_iscd.
+	//
+	// KIS field: 우선주 종목코드
+	// Property code: prst_iscd
+	// Required: true
+	// Length: 10
+	// Order: 004.008
+	PrstISCD string `json:"prst_iscd"`
+	// PrstKorIsnm maps prst_kor_isnm.
+	//
+	// KIS field: 우선주 한글 종목명
+	// Property code: prst_kor_isnm
+	// Required: true
+	// Length: 10
+	// Order: 004.009
+	PrstKorIsnm string `json:"prst_kor_isnm"`
+	// PrstPrpr maps prst_prpr.
+	//
+	// KIS field: 우선주 현재가
+	// Property code: prst_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.010
+	PrstPrpr string `json:"prst_prpr"`
+	// PrstPrdyVrss maps prst_prdy_vrss.
+	//
+	// KIS field: 우선주 전일대비
+	// Property code: prst_prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.011
+	PrstPrdyVrss string `json:"prst_prdy_vrss"`
+	// PrstPrdyVrssSign maps prst_prdy_vrss_sign.
+	//
+	// KIS field: 우선주 전일 대비 부호
+	// Property code: prst_prdy_vrss_sign
+	// Required: true
+	// Length: 10
+	// Order: 004.012
+	PrstPrdyVrssSign string `json:"prst_prdy_vrss_sign"`
+	// PrstAcmlVol maps prst_acml_vol.
+	//
+	// KIS field: 우선주 누적 거래량
+	// Property code: prst_acml_vol
+	// Required: true
+	// Length: 40
+	// Order: 004.013
+	PrstAcmlVol string `json:"prst_acml_vol"`
+	// DiffPrpr maps diff_prpr.
+	//
+	// KIS field: 차이 현재가
+	// Property code: diff_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.014
+	DiffPrpr string `json:"diff_prpr"`
+	// Dprt maps dprt.
+	//
+	// KIS field: 괴리율
+	// Property code: dprt
+	// Required: true
+	// Length: 10
+	// Order: 004.015
+	Dprt string `json:"dprt"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 1
+	// Order: 004.016
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// PrstPrdyCtrt maps prst_prdy_ctrt.
+	//
+	// KIS field: 우선주 전일 대비율
+	// Property code: prst_prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.017
+	PrstPrdyCtrt string `json:"prst_prdy_ctrt"`
+}
+
+func (r *PreferDisparateRatioResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// DisparityRequest is the request for the KIS API.
+//
+// KIS API: 국내주식 이격도 순위[v1_국내주식-095]
+// Summary: 국내주식 이격도 순위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0178] 이격도 순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: disparity
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/disparity
+// TR ID: FHPST01780000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type DisparityRequest struct {
+	// FidInputPrice2 maps fid_input_price_2.
+	//
+	// KIS field: 입력 가격2
+	// Property code: fid_input_price_2
+	// Required: true
+	// Length: 12
+	// Order: 001
+	// Description: 입력값 없을때 전체 (~ 가격)
+	FidInputPrice2 string `json:"fid_input_price_2"`
+	// FidCondMrktDivCode maps fid_cond_mrkt_div_code.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: fid_cond_mrkt_div_code
+	// Required: true
+	// Length: 2
+	// Order: 002
+	// Description: 시장구분코드 (J:KRX, NX:NXT)
+	FidCondMrktDivCode string `json:"fid_cond_mrkt_div_code"`
+	// FidCondScrDivCode maps fid_cond_scr_div_code.
+	//
+	// KIS field: 조건 화면 분류 코드
+	// Property code: fid_cond_scr_div_code
+	// Required: true
+	// Length: 5
+	// Order: 003
+	// Description: Unique key( 20178 )
+	FidCondScrDivCode string `json:"fid_cond_scr_div_code"`
+	// FidDivClsCode maps fid_div_cls_code.
+	//
+	// KIS field: 분류 구분 코드
+	// Property code: fid_div_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 004
+	// Description: 0: 전체, 1:관리종목, 2:투자주의, 3:투자경고, 4:투자위험예고, 5:투자위험, 6:보톧주, 7:우선주
+	FidDivClsCode string `json:"fid_div_cls_code"`
+	// FidRankSortClsCode maps fid_rank_sort_cls_code.
+	//
+	// KIS field: 순위 정렬 구분 코드
+	// Property code: fid_rank_sort_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 005
+	// Description: 0: 이격도상위순, 1:이격도하위순
+	FidRankSortClsCode string `json:"fid_rank_sort_cls_code"`
+	// FidHourClsCode maps fid_hour_cls_code.
+	//
+	// KIS field: 시간 구분 코드
+	// Property code: fid_hour_cls_code
+	// Required: true
+	// Length: 5
+	// Order: 006
+	// Description: 5:이격도5, 10:이격도10, 20:이격도20, 60:이격도60, 120:이격도120
+	FidHourClsCode string `json:"fid_hour_cls_code"`
+	// FidInputISCD maps fid_input_iscd.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: fid_input_iscd
+	// Required: true
+	// Length: 12
+	// Order: 007
+	// Description: 0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200
+	FidInputISCD string `json:"fid_input_iscd"`
+	// FidTrgtClsCode maps fid_trgt_cls_code.
+	//
+	// KIS field: 대상 구분 코드
+	// Property code: fid_trgt_cls_code
+	// Required: true
+	// Length: 32
+	// Order: 008
+	// Description: 0 : 전체
+	FidTrgtClsCode string `json:"fid_trgt_cls_code"`
+	// FidTrgtExlsClsCode maps fid_trgt_exls_cls_code.
+	//
+	// KIS field: 대상 제외 구분 코드
+	// Property code: fid_trgt_exls_cls_code
+	// Required: true
+	// Length: 32
+	// Order: 009
+	// Description: 0 : 전체
+	FidTrgtExlsClsCode string `json:"fid_trgt_exls_cls_code"`
+	// FidInputPrice1 maps fid_input_price_1.
+	//
+	// KIS field: 입력 가격1
+	// Property code: fid_input_price_1
+	// Required: true
+	// Length: 12
+	// Order: 010
+	// Description: 입력값 없을때 전체 (가격 ~)
+	FidInputPrice1 string `json:"fid_input_price_1"`
+	// FidVolCnt maps fid_vol_cnt.
+	//
+	// KIS field: 거래량 수
+	// Property code: fid_vol_cnt
+	// Required: true
+	// Length: 12
+	// Order: 011
+	// Description: 입력값 없을때 전체 (거래량 ~)
+	FidVolCnt string `json:"fid_vol_cnt"`
+}
+
+func (r DisparityRequest) query() map[string]string {
+	return map[string]string{
+		"fid_input_price_2":      r.FidInputPrice2,
+		"fid_cond_mrkt_div_code": r.FidCondMrktDivCode,
+		"fid_cond_scr_div_code":  r.FidCondScrDivCode,
+		"fid_div_cls_code":       r.FidDivClsCode,
+		"fid_rank_sort_cls_code": r.FidRankSortClsCode,
+		"fid_hour_cls_code":      r.FidHourClsCode,
+		"fid_input_iscd":         r.FidInputISCD,
+		"fid_trgt_cls_code":      r.FidTrgtClsCode,
+		"fid_trgt_exls_cls_code": r.FidTrgtExlsClsCode,
+		"fid_input_price_1":      r.FidInputPrice1,
+		"fid_vol_cnt":            r.FidVolCnt,
+	}
+}
+
+// DisparityResponse is the response for the KIS API.
+//
+// KIS API: 국내주식 이격도 순위[v1_국내주식-095]
+// Summary: 국내주식 이격도 순위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0178] 이격도 순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: disparity
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/disparity
+// TR ID: FHPST01780000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type DisparityResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output maps output.
+	//
+	// KIS field: 응답상세
+	// Property code: output
+	// Required: true
+	// Length:
+	// Order: 004
+	// Description: array
+	Output []DisparityOutputItem `json:"output"`
+}
+
+// DisparityOutputItem is a KIS response object.
+type DisparityOutputItem struct {
+	// MkscShrnISCD maps mksc_shrn_iscd.
+	//
+	// KIS field: 유가증권 단축 종목코드
+	// Property code: mksc_shrn_iscd
+	// Required: true
+	// Length: 9
+	// Order: 004.001
+	MkscShrnISCD string `json:"mksc_shrn_iscd"`
+	// DataRank maps data_rank.
+	//
+	// KIS field: 데이터 순위
+	// Property code: data_rank
+	// Required: true
+	// Length: 10
+	// Order: 004.002
+	DataRank string `json:"data_rank"`
+	// HtsKorIsnm maps hts_kor_isnm.
+	//
+	// KIS field: HTS 한글 종목명
+	// Property code: hts_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 004.003
+	HtsKorIsnm string `json:"hts_kor_isnm"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.004
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.005
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.006
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.007
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.008
+	AcmlVol string `json:"acml_vol"`
+	// D5Dsrt maps d5_dsrt.
+	//
+	// KIS field: 5일 이격도
+	// Property code: d5_dsrt
+	// Required: true
+	// Length: 112
+	// Order: 004.009
+	D5Dsrt string `json:"d5_dsrt"`
+	// D10Dsrt maps d10_dsrt.
+	//
+	// KIS field: 10일 이격도
+	// Property code: d10_dsrt
+	// Required: true
+	// Length: 112
+	// Order: 004.010
+	D10Dsrt string `json:"d10_dsrt"`
+	// D20Dsrt maps d20_dsrt.
+	//
+	// KIS field: 20일 이격도
+	// Property code: d20_dsrt
+	// Required: true
+	// Length: 112
+	// Order: 004.011
+	D20Dsrt string `json:"d20_dsrt"`
+	// D60Dsrt maps d60_dsrt.
+	//
+	// KIS field: 60일 이격도
+	// Property code: d60_dsrt
+	// Required: true
+	// Length: 112
+	// Order: 004.012
+	D60Dsrt string `json:"d60_dsrt"`
+	// D120Dsrt maps d120_dsrt.
+	//
+	// KIS field: 120일 이격도
+	// Property code: d120_dsrt
+	// Required: true
+	// Length: 112
+	// Order: 004.013
+	D120Dsrt string `json:"d120_dsrt"`
+}
+
+func (r *DisparityResponse) KISStatus() Status {
 	if r == nil {
 		return Status{}
 	}
@@ -1611,6 +3525,3118 @@ type VolumePowerOutputItem struct {
 }
 
 func (r *VolumePowerResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// TopInterestStockRequest is the request for the KIS API.
+//
+// KIS API: 국내주식 관심종목등록 상위[v1_국내주식-102]
+// Summary: 국내주식 관심종목등록 상위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0180] 관심종목등록상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: top-interest-stock
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/top-interest-stock
+// TR ID: FHPST01800000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type TopInterestStockRequest struct {
+	// FidInputISCD2 maps fid_input_iscd_2.
+	//
+	// KIS field: 입력 필수값2
+	// Property code: fid_input_iscd_2
+	// Required: true
+	// Length: 12
+	// Order: 001
+	// Description: 000000 : 필수입력값
+	FidInputISCD2 string `json:"fid_input_iscd_2"`
+	// FidCondMrktDivCode maps fid_cond_mrkt_div_code.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: fid_cond_mrkt_div_code
+	// Required: true
+	// Length: 2
+	// Order: 002
+	// Description: 시장구분코드 (J:KRX, NX:NXT)
+	FidCondMrktDivCode string `json:"fid_cond_mrkt_div_code"`
+	// FidCondScrDivCode maps fid_cond_scr_div_code.
+	//
+	// KIS field: 조건 화면 분류 코드
+	// Property code: fid_cond_scr_div_code
+	// Required: true
+	// Length: 5
+	// Order: 003
+	// Description: Unique key(20180)
+	FidCondScrDivCode string `json:"fid_cond_scr_div_code"`
+	// FidInputISCD maps fid_input_iscd.
+	//
+	// KIS field: 업종 코드
+	// Property code: fid_input_iscd
+	// Required: true
+	// Length: 12
+	// Order: 004
+	// Description: 0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200
+	FidInputISCD string `json:"fid_input_iscd"`
+	// FidTrgtClsCode maps fid_trgt_cls_code.
+	//
+	// KIS field: 대상 구분 코드
+	// Property code: fid_trgt_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 005
+	// Description: 0 : 전체
+	FidTrgtClsCode string `json:"fid_trgt_cls_code"`
+	// FidTrgtExlsClsCode maps fid_trgt_exls_cls_code.
+	//
+	// KIS field: 대상 제외 구분 코드
+	// Property code: fid_trgt_exls_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 006
+	// Description: 0 : 전체
+	FidTrgtExlsClsCode string `json:"fid_trgt_exls_cls_code"`
+	// FidInputPrice1 maps fid_input_price_1.
+	//
+	// KIS field: 입력 가격1
+	// Property code: fid_input_price_1
+	// Required: true
+	// Length: 2
+	// Order: 007
+	// Description: 입력값 없을때 전체 (가격 ~)
+	FidInputPrice1 string `json:"fid_input_price_1"`
+	// FidInputPrice2 maps fid_input_price_2.
+	//
+	// KIS field: 입력 가격2
+	// Property code: fid_input_price_2
+	// Required: true
+	// Length: 2
+	// Order: 008
+	// Description: 입력값 없을때 전체 (~ 가격)
+	FidInputPrice2 string `json:"fid_input_price_2"`
+	// FidVolCnt maps fid_vol_cnt.
+	//
+	// KIS field: 거래량 수
+	// Property code: fid_vol_cnt
+	// Required: true
+	// Length: 12
+	// Order: 009
+	// Description: 입력값 없을때 전체 (거래량 ~)
+	FidVolCnt string `json:"fid_vol_cnt"`
+	// FidDivClsCode maps fid_div_cls_code.
+	//
+	// KIS field: 분류 구분 코드
+	// Property code: fid_div_cls_code
+	// Required: true
+	// Length: 12
+	// Order: 010
+	// Description: 0: 전체 1: 관리종목 2: 투자주의 3: 투자경고 4: 투자위험예고 5: 투자위험 6: 보통주 7: 우선주
+	FidDivClsCode string `json:"fid_div_cls_code"`
+	// FidInputCnt1 maps fid_input_cnt_1.
+	//
+	// KIS field: 순위 입력값
+	// Property code: fid_input_cnt_1
+	// Required: true
+	// Length: 10
+	// Order: 011
+	// Description: 순위검색 입력값(1: 1위부터, 10:10위부터)
+	FidInputCnt1 string `json:"fid_input_cnt_1"`
+}
+
+func (r TopInterestStockRequest) query() map[string]string {
+	return map[string]string{
+		"fid_input_iscd_2":       r.FidInputISCD2,
+		"fid_cond_mrkt_div_code": r.FidCondMrktDivCode,
+		"fid_cond_scr_div_code":  r.FidCondScrDivCode,
+		"fid_input_iscd":         r.FidInputISCD,
+		"fid_trgt_cls_code":      r.FidTrgtClsCode,
+		"fid_trgt_exls_cls_code": r.FidTrgtExlsClsCode,
+		"fid_input_price_1":      r.FidInputPrice1,
+		"fid_input_price_2":      r.FidInputPrice2,
+		"fid_vol_cnt":            r.FidVolCnt,
+		"fid_div_cls_code":       r.FidDivClsCode,
+		"fid_input_cnt_1":        r.FidInputCnt1,
+	}
+}
+
+// TopInterestStockResponse is the response for the KIS API.
+//
+// KIS API: 국내주식 관심종목등록 상위[v1_국내주식-102]
+// Summary: 국내주식 관심종목등록 상위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0180] 관심종목등록상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: top-interest-stock
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/top-interest-stock
+// TR ID: FHPST01800000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type TopInterestStockResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output maps output.
+	//
+	// KIS field: 응답상세
+	// Property code: output
+	// Required: true
+	// Length:
+	// Order: 004
+	// Description: array
+	Output []TopInterestStockOutputItem `json:"output"`
+}
+
+// TopInterestStockOutputItem is a KIS response object.
+type TopInterestStockOutputItem struct {
+	// MrktDivClsName maps mrkt_div_cls_name.
+	//
+	// KIS field: 시장 분류 구분 명
+	// Property code: mrkt_div_cls_name
+	// Required: true
+	// Length: 40
+	// Order: 004.001
+	MrktDivClsName string `json:"mrkt_div_cls_name"`
+	// MkscShrnISCD maps mksc_shrn_iscd.
+	//
+	// KIS field: 유가증권 단축 종목코드
+	// Property code: mksc_shrn_iscd
+	// Required: true
+	// Length: 9
+	// Order: 004.002
+	MkscShrnISCD string `json:"mksc_shrn_iscd"`
+	// HtsKorIsnm maps hts_kor_isnm.
+	//
+	// KIS field: HTS 한글 종목명
+	// Property code: hts_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 004.003
+	HtsKorIsnm string `json:"hts_kor_isnm"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.004
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.005
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.006
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.007
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.008
+	AcmlVol string `json:"acml_vol"`
+	// AcmlTRPbmn maps acml_tr_pbmn.
+	//
+	// KIS field: 누적 거래 대금
+	// Property code: acml_tr_pbmn
+	// Required: true
+	// Length: 18
+	// Order: 004.009
+	AcmlTRPbmn string `json:"acml_tr_pbmn"`
+	// Askp maps askp.
+	//
+	// KIS field: 매도호가
+	// Property code: askp
+	// Required: true
+	// Length: 10
+	// Order: 004.010
+	Askp string `json:"askp"`
+	// Bidp maps bidp.
+	//
+	// KIS field: 매수호가
+	// Property code: bidp
+	// Required: true
+	// Length: 10
+	// Order: 004.011
+	Bidp string `json:"bidp"`
+	// DataRank maps data_rank.
+	//
+	// KIS field: 데이터 순위
+	// Property code: data_rank
+	// Required: true
+	// Length: 10
+	// Order: 004.012
+	DataRank string `json:"data_rank"`
+	// InterIssuRegCsnu maps inter_issu_reg_csnu.
+	//
+	// KIS field: 관심 종목 등록 건수
+	// Property code: inter_issu_reg_csnu
+	// Required: true
+	// Length: 10
+	// Order: 004.013
+	InterIssuRegCsnu string `json:"inter_issu_reg_csnu"`
+}
+
+func (r *TopInterestStockResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// ExpTransUpdownRequest is the request for the KIS API.
+//
+// KIS API: 국내주식 예상체결 상승/하락상위[v1_국내주식-103]
+// Summary: 국내주식 예상체결 상승/하락상위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0182] 예상체결 상승/하락상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: exp-trans-updown
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/exp-trans-updown
+// TR ID: FHPST01820000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type ExpTransUpdownRequest struct {
+	// FidRankSortClsCode maps fid_rank_sort_cls_code.
+	//
+	// KIS field: 순위 정렬 구분 코드
+	// Property code: fid_rank_sort_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 001
+	// Description: 0:상승률1:상승폭2:보합3:하락율4:하락폭5:체결량6:거래대금
+	FidRankSortClsCode string `json:"fid_rank_sort_cls_code"`
+	// FidCondMrktDivCode maps fid_cond_mrkt_div_code.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: fid_cond_mrkt_div_code
+	// Required: true
+	// Length: 2
+	// Order: 002
+	// Description: 시장구분코드 (주식 J)
+	FidCondMrktDivCode string `json:"fid_cond_mrkt_div_code"`
+	// FidCondScrDivCode maps fid_cond_scr_div_code.
+	//
+	// KIS field: 조건 화면 분류 코드
+	// Property code: fid_cond_scr_div_code
+	// Required: true
+	// Length: 5
+	// Order: 003
+	// Description: Unique key(20182)
+	FidCondScrDivCode string `json:"fid_cond_scr_div_code"`
+	// FidInputISCD maps fid_input_iscd.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: fid_input_iscd
+	// Required: true
+	// Length: 12
+	// Order: 004
+	// Description: 0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200, 4001: KRX100
+	FidInputISCD string `json:"fid_input_iscd"`
+	// FidDivClsCode maps fid_div_cls_code.
+	//
+	// KIS field: 분류 구분 코드
+	// Property code: fid_div_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 005
+	// Description: 0:전체 1:보통주 2:우선주
+	FidDivClsCode string `json:"fid_div_cls_code"`
+	// FidAplyRangPrc1 maps fid_aply_rang_prc_1.
+	//
+	// KIS field: 적용 범위 가격1
+	// Property code: fid_aply_rang_prc_1
+	// Required: true
+	// Length: 18
+	// Order: 006
+	// Description: 입력값 없을때 전체 (가격 ~)
+	FidAplyRangPrc1 string `json:"fid_aply_rang_prc_1"`
+	// FidVolCnt maps fid_vol_cnt.
+	//
+	// KIS field: 거래량 수
+	// Property code: fid_vol_cnt
+	// Required: true
+	// Length: 12
+	// Order: 007
+	// Description: 입력값 없을때 전체 (거래량 ~)
+	FidVolCnt string `json:"fid_vol_cnt"`
+	// FidPbmn maps fid_pbmn.
+	//
+	// KIS field: 거래대금
+	// Property code: fid_pbmn
+	// Required: true
+	// Length: 18
+	// Order: 008
+	// Description: 입력값 없을때 전체 (거래대금 ~) 천원단위
+	FidPbmn string `json:"fid_pbmn"`
+	// FidBlngClsCode maps fid_blng_cls_code.
+	//
+	// KIS field: 소속 구분 코드
+	// Property code: fid_blng_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 009
+	// Description: 0: 전체
+	FidBlngClsCode string `json:"fid_blng_cls_code"`
+	// FidMkopClsCode maps fid_mkop_cls_code.
+	//
+	// KIS field: 장운영 구분 코드
+	// Property code: fid_mkop_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 010
+	// Description: 0:장전예상1:장마감예상
+	FidMkopClsCode string `json:"fid_mkop_cls_code"`
+}
+
+func (r ExpTransUpdownRequest) query() map[string]string {
+	return map[string]string{
+		"fid_rank_sort_cls_code": r.FidRankSortClsCode,
+		"fid_cond_mrkt_div_code": r.FidCondMrktDivCode,
+		"fid_cond_scr_div_code":  r.FidCondScrDivCode,
+		"fid_input_iscd":         r.FidInputISCD,
+		"fid_div_cls_code":       r.FidDivClsCode,
+		"fid_aply_rang_prc_1":    r.FidAplyRangPrc1,
+		"fid_vol_cnt":            r.FidVolCnt,
+		"fid_pbmn":               r.FidPbmn,
+		"fid_blng_cls_code":      r.FidBlngClsCode,
+		"fid_mkop_cls_code":      r.FidMkopClsCode,
+	}
+}
+
+// ExpTransUpdownResponse is the response for the KIS API.
+//
+// KIS API: 국내주식 예상체결 상승/하락상위[v1_국내주식-103]
+// Summary: 국내주식 예상체결 상승/하락상위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0182] 예상체결 상승/하락상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: exp-trans-updown
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/exp-trans-updown
+// TR ID: FHPST01820000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type ExpTransUpdownResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output maps output.
+	//
+	// KIS field: 응답상세
+	// Property code: output
+	// Required: true
+	// Length:
+	// Order: 004
+	// Description: array
+	Output []ExpTransUpdownOutputItem `json:"output"`
+}
+
+// ExpTransUpdownOutputItem is a KIS response object.
+type ExpTransUpdownOutputItem struct {
+	// StckShrnISCD maps stck_shrn_iscd.
+	//
+	// KIS field: 주식 단축 종목코드
+	// Property code: stck_shrn_iscd
+	// Required: true
+	// Length: 9
+	// Order: 004.001
+	StckShrnISCD string `json:"stck_shrn_iscd"`
+	// HtsKorIsnm maps hts_kor_isnm.
+	//
+	// KIS field: HTS 한글 종목명
+	// Property code: hts_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 004.002
+	HtsKorIsnm string `json:"hts_kor_isnm"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.003
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.004
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.005
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.006
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// StckSdpr maps stck_sdpr.
+	//
+	// KIS field: 주식 기준가
+	// Property code: stck_sdpr
+	// Required: true
+	// Length: 10
+	// Order: 004.007
+	StckSdpr string `json:"stck_sdpr"`
+	// SelnRsqn maps seln_rsqn.
+	//
+	// KIS field: 매도 잔량
+	// Property code: seln_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 004.008
+	SelnRsqn string `json:"seln_rsqn"`
+	// Askp maps askp.
+	//
+	// KIS field: 매도호가
+	// Property code: askp
+	// Required: true
+	// Length: 10
+	// Order: 004.009
+	Askp string `json:"askp"`
+	// Bidp maps bidp.
+	//
+	// KIS field: 매수호가
+	// Property code: bidp
+	// Required: true
+	// Length: 10
+	// Order: 004.010
+	Bidp string `json:"bidp"`
+	// ShnuRsqn maps shnu_rsqn.
+	//
+	// KIS field: 매수2 잔량
+	// Property code: shnu_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 004.011
+	ShnuRsqn string `json:"shnu_rsqn"`
+	// CntgVol maps cntg_vol.
+	//
+	// KIS field: 체결 거래량
+	// Property code: cntg_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.012
+	CntgVol string `json:"cntg_vol"`
+	// AntcTRPbmn maps antc_tr_pbmn.
+	//
+	// KIS field: 체결 거래대금
+	// Property code: antc_tr_pbmn
+	// Required: true
+	// Length: 18
+	// Order: 004.013
+	AntcTRPbmn string `json:"antc_tr_pbmn"`
+	// TotalAskpRsqn maps total_askp_rsqn.
+	//
+	// KIS field: 총 매도호가 잔량
+	// Property code: total_askp_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 004.014
+	TotalAskpRsqn string `json:"total_askp_rsqn"`
+	// TotalBidpRsqn maps total_bidp_rsqn.
+	//
+	// KIS field: 총 매수호가 잔량
+	// Property code: total_bidp_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 004.015
+	TotalBidpRsqn string `json:"total_bidp_rsqn"`
+}
+
+func (r *ExpTransUpdownResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// TradedByCompanyRequest is the request for the KIS API.
+//
+// KIS API: 국내주식 당사매매종목 상위[v1_국내주식-104]
+// Summary: 국내주식 당사매매종목 상위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0186] 당사매매종목 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: traded-by-company
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/traded-by-company
+// TR ID: FHPST01860000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type TradedByCompanyRequest struct {
+	// FidTrgtExlsClsCode maps fid_trgt_exls_cls_code.
+	//
+	// KIS field: 대상 제외 구분 코드
+	// Property code: fid_trgt_exls_cls_code
+	// Required: true
+	// Length: 32
+	// Order: 001
+	// Description: 0: 전체
+	FidTrgtExlsClsCode string `json:"fid_trgt_exls_cls_code"`
+	// FidCondMrktDivCode maps fid_cond_mrkt_div_code.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: fid_cond_mrkt_div_code
+	// Required: true
+	// Length: 2
+	// Order: 002
+	// Description: 시장구분코드 (J:KRX, NX:NXT)
+	FidCondMrktDivCode string `json:"fid_cond_mrkt_div_code"`
+	// FidCondScrDivCode maps fid_cond_scr_div_code.
+	//
+	// KIS field: 조건 화면 분류 코드
+	// Property code: fid_cond_scr_div_code
+	// Required: true
+	// Length: 5
+	// Order: 003
+	// Description: Unique key(20186)
+	FidCondScrDivCode string `json:"fid_cond_scr_div_code"`
+	// FidDivClsCode maps fid_div_cls_code.
+	//
+	// KIS field: 분류 구분 코드
+	// Property code: fid_div_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 004
+	// Description: 0:전체, 1:관리종목, 2:투자주의, 3:투자경고, 4:투자위험예고, 5:투자위험, 6:보통주, 7:우선주
+	FidDivClsCode string `json:"fid_div_cls_code"`
+	// FidRankSortClsCode maps fid_rank_sort_cls_code.
+	//
+	// KIS field: 순위 정렬 구분 코드
+	// Property code: fid_rank_sort_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 005
+	// Description: 0:매도상위,1:매수상위
+	FidRankSortClsCode string `json:"fid_rank_sort_cls_code"`
+	// FidInputDate1 maps fid_input_date_1.
+	//
+	// KIS field: 입력 날짜1
+	// Property code: fid_input_date_1
+	// Required: true
+	// Length: 10
+	// Order: 006
+	// Description: 기간~
+	FidInputDate1 string `json:"fid_input_date_1"`
+	// FidInputDate2 maps fid_input_date_2.
+	//
+	// KIS field: 입력 날짜2
+	// Property code: fid_input_date_2
+	// Required: true
+	// Length: 10
+	// Order: 007
+	// Description: ~기간
+	FidInputDate2 string `json:"fid_input_date_2"`
+	// FidInputISCD maps fid_input_iscd.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: fid_input_iscd
+	// Required: true
+	// Length: 12
+	// Order: 008
+	// Description: 0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200, 4001: KRX100
+	FidInputISCD string `json:"fid_input_iscd"`
+	// FidTrgtClsCode maps fid_trgt_cls_code.
+	//
+	// KIS field: 대상 구분 코드
+	// Property code: fid_trgt_cls_code
+	// Required: true
+	// Length: 32
+	// Order: 009
+	// Description: 0: 전체
+	FidTrgtClsCode string `json:"fid_trgt_cls_code"`
+	// FidAplyRangVol maps fid_aply_rang_vol.
+	//
+	// KIS field: 적용 범위 거래량
+	// Property code: fid_aply_rang_vol
+	// Required: true
+	// Length: 18
+	// Order: 010
+	// Description: 0: 전체, 100: 100주 이상
+	FidAplyRangVol string `json:"fid_aply_rang_vol"`
+	// FidAplyRangPrc2 maps fid_aply_rang_prc_2.
+	//
+	// KIS field: 적용 범위 가격2
+	// Property code: fid_aply_rang_prc_2
+	// Required: true
+	// Length: 18
+	// Order: 011
+	// Description: ~ 가격
+	FidAplyRangPrc2 string `json:"fid_aply_rang_prc_2"`
+	// FidAplyRangPrc1 maps fid_aply_rang_prc_1.
+	//
+	// KIS field: 적용 범위 가격1
+	// Property code: fid_aply_rang_prc_1
+	// Required: true
+	// Length: 18
+	// Order: 012
+	// Description: 가격 ~
+	FidAplyRangPrc1 string `json:"fid_aply_rang_prc_1"`
+}
+
+func (r TradedByCompanyRequest) query() map[string]string {
+	return map[string]string{
+		"fid_trgt_exls_cls_code": r.FidTrgtExlsClsCode,
+		"fid_cond_mrkt_div_code": r.FidCondMrktDivCode,
+		"fid_cond_scr_div_code":  r.FidCondScrDivCode,
+		"fid_div_cls_code":       r.FidDivClsCode,
+		"fid_rank_sort_cls_code": r.FidRankSortClsCode,
+		"fid_input_date_1":       r.FidInputDate1,
+		"fid_input_date_2":       r.FidInputDate2,
+		"fid_input_iscd":         r.FidInputISCD,
+		"fid_trgt_cls_code":      r.FidTrgtClsCode,
+		"fid_aply_rang_vol":      r.FidAplyRangVol,
+		"fid_aply_rang_prc_2":    r.FidAplyRangPrc2,
+		"fid_aply_rang_prc_1":    r.FidAplyRangPrc1,
+	}
+}
+
+// TradedByCompanyResponse is the response for the KIS API.
+//
+// KIS API: 국내주식 당사매매종목 상위[v1_국내주식-104]
+// Summary: 국내주식 당사매매종목 상위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0186] 당사매매종목 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: traded-by-company
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/traded-by-company
+// TR ID: FHPST01860000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type TradedByCompanyResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output maps output.
+	//
+	// KIS field: 응답상세
+	// Property code: output
+	// Required: true
+	// Length:
+	// Order: 004
+	// Description: array
+	Output []TradedByCompanyOutputItem `json:"output"`
+}
+
+// TradedByCompanyOutputItem is a KIS response object.
+type TradedByCompanyOutputItem struct {
+	// DataRank maps data_rank.
+	//
+	// KIS field: 데이터 순위
+	// Property code: data_rank
+	// Required: true
+	// Length: 10
+	// Order: 004.001
+	DataRank string `json:"data_rank"`
+	// MkscShrnISCD maps mksc_shrn_iscd.
+	//
+	// KIS field: 유가증권 단축 종목코드
+	// Property code: mksc_shrn_iscd
+	// Required: true
+	// Length: 9
+	// Order: 004.002
+	MkscShrnISCD string `json:"mksc_shrn_iscd"`
+	// HtsKorIsnm maps hts_kor_isnm.
+	//
+	// KIS field: HTS 한글 종목명
+	// Property code: hts_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 004.003
+	HtsKorIsnm string `json:"hts_kor_isnm"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.004
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.005
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.006
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.007
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.008
+	AcmlVol string `json:"acml_vol"`
+	// AcmlTRPbmn maps acml_tr_pbmn.
+	//
+	// KIS field: 누적 거래 대금
+	// Property code: acml_tr_pbmn
+	// Required: true
+	// Length: 18
+	// Order: 004.009
+	AcmlTRPbmn string `json:"acml_tr_pbmn"`
+	// SelnCnqnSmtn maps seln_cnqn_smtn.
+	//
+	// KIS field: 매도 체결량 합계
+	// Property code: seln_cnqn_smtn
+	// Required: true
+	// Length: 18
+	// Order: 004.010
+	SelnCnqnSmtn string `json:"seln_cnqn_smtn"`
+	// ShnuCnqnSmtn maps shnu_cnqn_smtn.
+	//
+	// KIS field: 매수2 체결량 합계
+	// Property code: shnu_cnqn_smtn
+	// Required: true
+	// Length: 18
+	// Order: 004.011
+	ShnuCnqnSmtn string `json:"shnu_cnqn_smtn"`
+	// NtbyCnqn maps ntby_cnqn.
+	//
+	// KIS field: 순매수 체결량
+	// Property code: ntby_cnqn
+	// Required: true
+	// Length: 18
+	// Order: 004.012
+	NtbyCnqn string `json:"ntby_cnqn"`
+}
+
+func (r *TradedByCompanyResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// NearNewHighlowRequest is the request for the KIS API.
+//
+// KIS API: 국내주식 신고/신저근접종목 상위[v1_국내주식-105]
+// Summary: 국내주식 신고/신저근접종목 상위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0187] 신고/신저 근접종목 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: near-new-highlow
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/near-new-highlow
+// TR ID: FHPST01870000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type NearNewHighlowRequest struct {
+	// FidAplyRangVol maps fid_aply_rang_vol.
+	//
+	// KIS field: 적용 범위 거래량
+	// Property code: fid_aply_rang_vol
+	// Required: true
+	// Length: 18
+	// Order: 001
+	// Description: 0: 전체, 100: 100주 이상
+	FidAplyRangVol string `json:"fid_aply_rang_vol"`
+	// FidCondMrktDivCode maps fid_cond_mrkt_div_code.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: fid_cond_mrkt_div_code
+	// Required: true
+	// Length: 2
+	// Order: 002
+	// Description: 시장구분코드 (주식 J)
+	FidCondMrktDivCode string `json:"fid_cond_mrkt_div_code"`
+	// FidCondScrDivCode maps fid_cond_scr_div_code.
+	//
+	// KIS field: 조건 화면 분류 코드
+	// Property code: fid_cond_scr_div_code
+	// Required: true
+	// Length: 5
+	// Order: 003
+	// Description: Unique key(20187)
+	FidCondScrDivCode string `json:"fid_cond_scr_div_code"`
+	// FidDivClsCode maps fid_div_cls_code.
+	//
+	// KIS field: 분류 구분 코드
+	// Property code: fid_div_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 004
+	// Description: 0:전체, 1:관리종목, 2:투자주의, 3:투자경고
+	FidDivClsCode string `json:"fid_div_cls_code"`
+	// FidInputCnt1 maps fid_input_cnt_1.
+	//
+	// KIS field: 입력 수1
+	// Property code: fid_input_cnt_1
+	// Required: true
+	// Length: 2
+	// Order: 005
+	// Description: 괴리율 최소
+	FidInputCnt1 string `json:"fid_input_cnt_1"`
+	// FidInputCnt2 maps fid_input_cnt_2.
+	//
+	// KIS field: 입력 수2
+	// Property code: fid_input_cnt_2
+	// Required: true
+	// Length: 10
+	// Order: 006
+	// Description: 괴리율 최대
+	FidInputCnt2 string `json:"fid_input_cnt_2"`
+	// FidPrcClsCode maps fid_prc_cls_code.
+	//
+	// KIS field: 가격 구분 코드
+	// Property code: fid_prc_cls_code
+	// Required: true
+	// Length: 10
+	// Order: 007
+	// Description: 0:신고근접, 1:신저근접
+	FidPrcClsCode string `json:"fid_prc_cls_code"`
+	// FidInputISCD maps fid_input_iscd.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: fid_input_iscd
+	// Required: true
+	// Length: 12
+	// Order: 008
+	// Description: 0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200, 4001: KRX100
+	FidInputISCD string `json:"fid_input_iscd"`
+	// FidTrgtClsCode maps fid_trgt_cls_code.
+	//
+	// KIS field: 대상 구분 코드
+	// Property code: fid_trgt_cls_code
+	// Required: true
+	// Length: 32
+	// Order: 009
+	// Description: 0: 전체
+	FidTrgtClsCode string `json:"fid_trgt_cls_code"`
+	// FidTrgtExlsClsCode maps fid_trgt_exls_cls_code.
+	//
+	// KIS field: 대상 제외 구분 코드
+	// Property code: fid_trgt_exls_cls_code
+	// Required: true
+	// Length: 32
+	// Order: 010
+	// Description: 0:전체, 1:관리종목, 2:투자주의, 3:투자경고, 4:투자위험예고, 5:투자위험, 6:보통주, 7:우선주
+	FidTrgtExlsClsCode string `json:"fid_trgt_exls_cls_code"`
+	// FidAplyRangPrc1 maps fid_aply_rang_prc_1.
+	//
+	// KIS field: 적용 범위 가격1
+	// Property code: fid_aply_rang_prc_1
+	// Required: true
+	// Length: 18
+	// Order: 011
+	// Description: 가격 ~
+	FidAplyRangPrc1 string `json:"fid_aply_rang_prc_1"`
+	// FidAplyRangPrc2 maps fid_aply_rang_prc_2.
+	//
+	// KIS field: 적용 범위 가격2
+	// Property code: fid_aply_rang_prc_2
+	// Required: true
+	// Length: 18
+	// Order: 012
+	// Description: ~ 가격
+	FidAplyRangPrc2 string `json:"fid_aply_rang_prc_2"`
+}
+
+func (r NearNewHighlowRequest) query() map[string]string {
+	return map[string]string{
+		"fid_aply_rang_vol":      r.FidAplyRangVol,
+		"fid_cond_mrkt_div_code": r.FidCondMrktDivCode,
+		"fid_cond_scr_div_code":  r.FidCondScrDivCode,
+		"fid_div_cls_code":       r.FidDivClsCode,
+		"fid_input_cnt_1":        r.FidInputCnt1,
+		"fid_input_cnt_2":        r.FidInputCnt2,
+		"fid_prc_cls_code":       r.FidPrcClsCode,
+		"fid_input_iscd":         r.FidInputISCD,
+		"fid_trgt_cls_code":      r.FidTrgtClsCode,
+		"fid_trgt_exls_cls_code": r.FidTrgtExlsClsCode,
+		"fid_aply_rang_prc_1":    r.FidAplyRangPrc1,
+		"fid_aply_rang_prc_2":    r.FidAplyRangPrc2,
+	}
+}
+
+// NearNewHighlowResponse is the response for the KIS API.
+//
+// KIS API: 국내주식 신고/신저근접종목 상위[v1_국내주식-105]
+// Summary: 국내주식 신고/신저근접종목 상위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0187] 신고/신저 근접종목 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: near-new-highlow
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/near-new-highlow
+// TR ID: FHPST01870000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type NearNewHighlowResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output maps output.
+	//
+	// KIS field: 응답상세
+	// Property code: output
+	// Required: true
+	// Length:
+	// Order: 004
+	// Description: array
+	Output []NearNewHighlowOutputItem `json:"output"`
+}
+
+// NearNewHighlowOutputItem is a KIS response object.
+type NearNewHighlowOutputItem struct {
+	// HtsKorIsnm maps hts_kor_isnm.
+	//
+	// KIS field: HTS 한글 종목명
+	// Property code: hts_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 004.001
+	HtsKorIsnm string `json:"hts_kor_isnm"`
+	// MkscShrnISCD maps mksc_shrn_iscd.
+	//
+	// KIS field: 유가증권 단축 종목코드
+	// Property code: mksc_shrn_iscd
+	// Required: true
+	// Length: 9
+	// Order: 004.002
+	MkscShrnISCD string `json:"mksc_shrn_iscd"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.003
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.004
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.005
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.006
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// Askp maps askp.
+	//
+	// KIS field: 매도호가
+	// Property code: askp
+	// Required: true
+	// Length: 10
+	// Order: 004.007
+	Askp string `json:"askp"`
+	// AskpRsqn1 maps askp_rsqn1.
+	//
+	// KIS field: 매도호가 잔량1
+	// Property code: askp_rsqn1
+	// Required: true
+	// Length: 12
+	// Order: 004.008
+	AskpRsqn1 string `json:"askp_rsqn1"`
+	// Bidp maps bidp.
+	//
+	// KIS field: 매수호가
+	// Property code: bidp
+	// Required: true
+	// Length: 10
+	// Order: 004.009
+	Bidp string `json:"bidp"`
+	// BidpRsqn1 maps bidp_rsqn1.
+	//
+	// KIS field: 매수호가 잔량1
+	// Property code: bidp_rsqn1
+	// Required: true
+	// Length: 12
+	// Order: 004.010
+	BidpRsqn1 string `json:"bidp_rsqn1"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.011
+	AcmlVol string `json:"acml_vol"`
+	// NewHgpr maps new_hgpr.
+	//
+	// KIS field: 신 최고가
+	// Property code: new_hgpr
+	// Required: true
+	// Length: 10
+	// Order: 004.012
+	NewHgpr string `json:"new_hgpr"`
+	// HprcNearRate maps hprc_near_rate.
+	//
+	// KIS field: 고가 근접 비율
+	// Property code: hprc_near_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.013
+	HprcNearRate string `json:"hprc_near_rate"`
+	// NewLwpr maps new_lwpr.
+	//
+	// KIS field: 신 최저가
+	// Property code: new_lwpr
+	// Required: true
+	// Length: 10
+	// Order: 004.014
+	NewLwpr string `json:"new_lwpr"`
+	// LwprNearRate maps lwpr_near_rate.
+	//
+	// KIS field: 저가 근접 비율
+	// Property code: lwpr_near_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.015
+	LwprNearRate string `json:"lwpr_near_rate"`
+	// StckSdpr maps stck_sdpr.
+	//
+	// KIS field: 주식 기준가
+	// Property code: stck_sdpr
+	// Required: true
+	// Length: 10
+	// Order: 004.016
+	StckSdpr string `json:"stck_sdpr"`
+}
+
+func (r *NearNewHighlowResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// DividendRateRequest is the request for the KIS API.
+//
+// KIS API: 국내주식 배당률 상위[국내주식-106]
+// Summary: 국내주식 배당률 상위 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0188] 배당률 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: dividend-rate
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/dividend-rate
+// TR ID: HHKDB13470100
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type DividendRateRequest struct {
+	// CtsArea maps CTS_AREA.
+	//
+	// KIS field: CTS_AREA
+	// Property code: CTS_AREA
+	// Required: true
+	// Length: 17
+	// Order: 001
+	// Description: 공백
+	CtsArea string `json:"CTS_AREA"`
+	// Gb1 maps GB1.
+	//
+	// KIS field: KOSPI
+	// Property code: GB1
+	// Required: true
+	// Length: 1
+	// Order: 002
+	// Description: 0:전체, 1:코스피,  2: 코스피200, 3: 코스닥,
+	Gb1 string `json:"GB1"`
+	// Upjong maps UPJONG.
+	//
+	// KIS field: 업종구분
+	// Property code: UPJONG
+	// Required: true
+	// Length: 4
+	// Order: 003
+	// Description: '코스피(0001:종합, 0002:대형주.…0027:제조업 ),  코스닥(1001:종합, …. 1041:IT부품 코스피200 (2001:KOSPI200, 2007:KOSPI100, 2008:KOSPI50)'
+	Upjong string `json:"UPJONG"`
+	// Gb2 maps GB2.
+	//
+	// KIS field: 종목선택
+	// Property code: GB2
+	// Required: true
+	// Length: 1
+	// Order: 004
+	// Description: 0:전체, 6:보통주, 7:우선주
+	Gb2 string `json:"GB2"`
+	// Gb3 maps GB3.
+	//
+	// KIS field: 배당구분
+	// Property code: GB3
+	// Required: true
+	// Length: 1
+	// Order: 005
+	// Description: 1:주식배당, 2: 현금배당
+	Gb3 string `json:"GB3"`
+	// FDt maps F_DT.
+	//
+	// KIS field: 기준일From
+	// Property code: F_DT
+	// Required: true
+	// Length: 8
+	// Order: 006
+	FDt string `json:"F_DT"`
+	// TDt maps T_DT.
+	//
+	// KIS field: 기준일To
+	// Property code: T_DT
+	// Required: true
+	// Length: 8
+	// Order: 007
+	TDt string `json:"T_DT"`
+	// Gb4 maps GB4.
+	//
+	// KIS field: 결산/중간배당
+	// Property code: GB4
+	// Required: true
+	// Length: 1
+	// Order: 008
+	// Description: 0:전체, 1:결산배당, 2:중간배당
+	Gb4 string `json:"GB4"`
+}
+
+func (r DividendRateRequest) query() map[string]string {
+	return map[string]string{
+		"CTS_AREA": r.CtsArea,
+		"GB1":      r.Gb1,
+		"UPJONG":   r.Upjong,
+		"GB2":      r.Gb2,
+		"GB3":      r.Gb3,
+		"F_DT":     r.FDt,
+		"T_DT":     r.TDt,
+		"GB4":      r.Gb4,
+	}
+}
+
+// DividendRateResponse is the response for the KIS API.
+//
+// KIS API: 국내주식 배당률 상위[국내주식-106]
+// Summary: 국내주식 배당률 상위 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0188] 배당률 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: dividend-rate
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/dividend-rate
+// TR ID: HHKDB13470100
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type DividendRateResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output1 maps output1.
+	//
+	// KIS field: 응답상세
+	// Property code: output1
+	// Required: true
+	// Length:
+	// Order: 004
+	// Description: array
+	Output1 []DividendRateOutput1Item `json:"output1"`
+}
+
+// DividendRateOutput1Item is a KIS response object.
+type DividendRateOutput1Item struct {
+	// Rank maps rank.
+	//
+	// KIS field: 순위
+	// Property code: rank
+	// Required: true
+	// Length: 4
+	// Order: 004.001
+	Rank string `json:"rank"`
+	// ShtCd maps sht_cd.
+	//
+	// KIS field: 종목코드
+	// Property code: sht_cd
+	// Required: true
+	// Length: 9
+	// Order: 004.002
+	ShtCd string `json:"sht_cd"`
+	// IsinName maps isin_name.
+	//
+	// KIS field: 종목명
+	// Property code: isin_name
+	// Required: true
+	// Length: 40
+	// Order: 004.003
+	IsinName string `json:"isin_name"`
+	// RecordDate maps record_date.
+	//
+	// KIS field: 기준일
+	// Property code: record_date
+	// Required: true
+	// Length: 8
+	// Order: 004.004
+	RecordDate string `json:"record_date"`
+	// PerStoDiviAmt maps per_sto_divi_amt.
+	//
+	// KIS field: 현금/주식배당금
+	// Property code: per_sto_divi_amt
+	// Required: true
+	// Length: 12
+	// Order: 004.005
+	PerStoDiviAmt string `json:"per_sto_divi_amt"`
+	// DiviRate maps divi_rate.
+	//
+	// KIS field: 현금/주식배당률(%)
+	// Property code: divi_rate
+	// Required: true
+	// Length: 62
+	// Order: 004.006
+	DiviRate string `json:"divi_rate"`
+	// DiviKind maps divi_kind.
+	//
+	// KIS field: 배당종류
+	// Property code: divi_kind
+	// Required: true
+	// Length: 8
+	// Order: 004.007
+	DiviKind string `json:"divi_kind"`
+}
+
+func (r *DividendRateResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// BulkTransNumRequest is the request for the KIS API.
+//
+// KIS API: 국내주식 대량체결건수 상위[국내주식-107]
+// Summary: 국내주식 대량체결건수 상위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0169] 대량체결건수 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: bulk-trans-num
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/bulk-trans-num
+// TR ID: FHKST190900C0
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type BulkTransNumRequest struct {
+	// FidAplyRangPrc2 maps fid_aply_rang_prc_2.
+	//
+	// KIS field: 적용 범위 가격2
+	// Property code: fid_aply_rang_prc_2
+	// Required: true
+	// Length: 18
+	// Order: 001
+	// Description: ~ 가격
+	FidAplyRangPrc2 string `json:"fid_aply_rang_prc_2"`
+	// FidCondMrktDivCode maps fid_cond_mrkt_div_code.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: fid_cond_mrkt_div_code
+	// Required: true
+	// Length: 2
+	// Order: 002
+	// Description: 시장구분코드 (J:KRX, NX:NXT)
+	FidCondMrktDivCode string `json:"fid_cond_mrkt_div_code"`
+	// FidCondScrDivCode maps fid_cond_scr_div_code.
+	//
+	// KIS field: 조건 화면 분류 코드
+	// Property code: fid_cond_scr_div_code
+	// Required: true
+	// Length: 5
+	// Order: 003
+	// Description: Unique key(11909)
+	FidCondScrDivCode string `json:"fid_cond_scr_div_code"`
+	// FidInputISCD maps fid_input_iscd.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: fid_input_iscd
+	// Required: true
+	// Length: 12
+	// Order: 004
+	// Description: 0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200, 4001: KRX100
+	FidInputISCD string `json:"fid_input_iscd"`
+	// FidRankSortClsCode maps fid_rank_sort_cls_code.
+	//
+	// KIS field: 순위 정렬 구분 코드
+	// Property code: fid_rank_sort_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 005
+	// Description: 0:매수상위, 1:매도상위
+	FidRankSortClsCode string `json:"fid_rank_sort_cls_code"`
+	// FidDivClsCode maps fid_div_cls_code.
+	//
+	// KIS field: 분류 구분 코드
+	// Property code: fid_div_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 006
+	// Description: 0:전체
+	FidDivClsCode string `json:"fid_div_cls_code"`
+	// FidInputPrice1 maps fid_input_price_1.
+	//
+	// KIS field: 입력 가격1
+	// Property code: fid_input_price_1
+	// Required: true
+	// Length: 12
+	// Order: 007
+	// Description: 건별금액 ~
+	FidInputPrice1 string `json:"fid_input_price_1"`
+	// FidAplyRangPrc1 maps fid_aply_rang_prc_1.
+	//
+	// KIS field: 적용 범위 가격1
+	// Property code: fid_aply_rang_prc_1
+	// Required: true
+	// Length: 18
+	// Order: 008
+	// Description: 가격 ~
+	FidAplyRangPrc1 string `json:"fid_aply_rang_prc_1"`
+	// FidInputISCD2 maps fid_input_iscd_2.
+	//
+	// KIS field: 입력 종목코드2
+	// Property code: fid_input_iscd_2
+	// Required: true
+	// Length: 8
+	// Order: 009
+	// Description: 공백:전체종목, 개별종목 조회시 종목코드 (000660)
+	FidInputISCD2 string `json:"fid_input_iscd_2"`
+	// FidTrgtExlsClsCode maps fid_trgt_exls_cls_code.
+	//
+	// KIS field: 대상 제외 구분 코드
+	// Property code: fid_trgt_exls_cls_code
+	// Required: true
+	// Length: 32
+	// Order: 010
+	// Description: 0:전체
+	FidTrgtExlsClsCode string `json:"fid_trgt_exls_cls_code"`
+	// FidTrgtClsCode maps fid_trgt_cls_code.
+	//
+	// KIS field: 대상 구분 코드
+	// Property code: fid_trgt_cls_code
+	// Required: true
+	// Length: 32
+	// Order: 011
+	// Description: 0:전체
+	FidTrgtClsCode string `json:"fid_trgt_cls_code"`
+	// FidVolCnt maps fid_vol_cnt.
+	//
+	// KIS field: 거래량 수
+	// Property code: fid_vol_cnt
+	// Required: true
+	// Length: 12
+	// Order: 012
+	// Description: 거래량 ~
+	FidVolCnt string `json:"fid_vol_cnt"`
+}
+
+func (r BulkTransNumRequest) query() map[string]string {
+	return map[string]string{
+		"fid_aply_rang_prc_2":    r.FidAplyRangPrc2,
+		"fid_cond_mrkt_div_code": r.FidCondMrktDivCode,
+		"fid_cond_scr_div_code":  r.FidCondScrDivCode,
+		"fid_input_iscd":         r.FidInputISCD,
+		"fid_rank_sort_cls_code": r.FidRankSortClsCode,
+		"fid_div_cls_code":       r.FidDivClsCode,
+		"fid_input_price_1":      r.FidInputPrice1,
+		"fid_aply_rang_prc_1":    r.FidAplyRangPrc1,
+		"fid_input_iscd_2":       r.FidInputISCD2,
+		"fid_trgt_exls_cls_code": r.FidTrgtExlsClsCode,
+		"fid_trgt_cls_code":      r.FidTrgtClsCode,
+		"fid_vol_cnt":            r.FidVolCnt,
+	}
+}
+
+// BulkTransNumResponse is the response for the KIS API.
+//
+// KIS API: 국내주식 대량체결건수 상위[국내주식-107]
+// Summary: 국내주식 대량체결건수 상위 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0169] 대량체결건수 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: bulk-trans-num
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/bulk-trans-num
+// TR ID: FHKST190900C0
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type BulkTransNumResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output maps output.
+	//
+	// KIS field: 응답상세
+	// Property code: output
+	// Required: true
+	// Length:
+	// Order: 004
+	// Description: array
+	Output []BulkTransNumOutputItem `json:"output"`
+}
+
+// BulkTransNumOutputItem is a KIS response object.
+type BulkTransNumOutputItem struct {
+	// MkscShrnISCD maps mksc_shrn_iscd.
+	//
+	// KIS field: 유가증권 단축 종목코드
+	// Property code: mksc_shrn_iscd
+	// Required: true
+	// Length: 9
+	// Order: 004.001
+	MkscShrnISCD string `json:"mksc_shrn_iscd"`
+	// DataRank maps data_rank.
+	//
+	// KIS field: 데이터 순위
+	// Property code: data_rank
+	// Required: true
+	// Length: 10
+	// Order: 004.002
+	DataRank string `json:"data_rank"`
+	// HtsKorIsnm maps hts_kor_isnm.
+	//
+	// KIS field: HTS 한글 종목명
+	// Property code: hts_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 004.003
+	HtsKorIsnm string `json:"hts_kor_isnm"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.004
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.005
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.006
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.007
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.008
+	AcmlVol string `json:"acml_vol"`
+	// ShnuCntgCsnu maps shnu_cntg_csnu.
+	//
+	// KIS field: 매수2 체결 건수
+	// Property code: shnu_cntg_csnu
+	// Required: true
+	// Length: 10
+	// Order: 004.009
+	ShnuCntgCsnu string `json:"shnu_cntg_csnu"`
+	// SelnCntgCsnu maps seln_cntg_csnu.
+	//
+	// KIS field: 매도 체결 건수
+	// Property code: seln_cntg_csnu
+	// Required: true
+	// Length: 10
+	// Order: 004.010
+	SelnCntgCsnu string `json:"seln_cntg_csnu"`
+	// NtbyCnqn maps ntby_cnqn.
+	//
+	// KIS field: 순매수 체결량
+	// Property code: ntby_cnqn
+	// Required: true
+	// Length: 18
+	// Order: 004.011
+	NtbyCnqn string `json:"ntby_cnqn"`
+}
+
+func (r *BulkTransNumResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// CreditBalanceRequest is the request for the KIS API.
+//
+// KIS API: 국내주식 신용잔고 상위[국내주식-109]
+// Summary: 국내주식 신용잔고 상위 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0475] 신용잔고 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: credit-balance
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/credit-balance
+// TR ID: FHKST17010000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type CreditBalanceRequest struct {
+	// FidCondScrDivCode maps FID_COND_SCR_DIV_CODE.
+	//
+	// KIS field: 조건 화면 분류 코드
+	// Property code: FID_COND_SCR_DIV_CODE
+	// Required: true
+	// Length: 5
+	// Order: 001
+	// Description: Unique key(11701)
+	FidCondScrDivCode string `json:"FID_COND_SCR_DIV_CODE"`
+	// FidInputISCD maps FID_INPUT_ISCD.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: FID_INPUT_ISCD
+	// Required: true
+	// Length: 12
+	// Order: 002
+	// Description: 0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200,
+	FidInputISCD string `json:"FID_INPUT_ISCD"`
+	// FidOption maps FID_OPTION.
+	//
+	// KIS field: 증가율기간
+	// Property code: FID_OPTION
+	// Required: true
+	// Length: 5
+	// Order: 003
+	// Description: 2~999
+	FidOption string `json:"FID_OPTION"`
+	// FidCondMrktDivCode maps FID_COND_MRKT_DIV_CODE.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: FID_COND_MRKT_DIV_CODE
+	// Required: true
+	// Length: 2
+	// Order: 004
+	// Description: 시장구분코드 (주식 J)
+	FidCondMrktDivCode string `json:"FID_COND_MRKT_DIV_CODE"`
+	// FidRankSortClsCode maps FID_RANK_SORT_CLS_CODE.
+	//
+	// KIS field: 순위 정렬 구분 코드
+	// Property code: FID_RANK_SORT_CLS_CODE
+	// Required: true
+	// Length: 2
+	// Order: 005
+	// Description: '(융자)0:잔고비율 상위, 1: 잔고수량 상위, 2: 잔고금액 상위, 3: 잔고비율 증가상위, 4: 잔고비율 감소상위  (대주)5:잔고비율 상위, 6: 잔고수량 상위, 7: 잔고금액 상위, 8: 잔고비율 증가상위, 9: 잔고비율 감소상위 '
+	FidRankSortClsCode string `json:"FID_RANK_SORT_CLS_CODE"`
+}
+
+func (r CreditBalanceRequest) query() map[string]string {
+	return map[string]string{
+		"FID_COND_SCR_DIV_CODE":  r.FidCondScrDivCode,
+		"FID_INPUT_ISCD":         r.FidInputISCD,
+		"FID_OPTION":             r.FidOption,
+		"FID_COND_MRKT_DIV_CODE": r.FidCondMrktDivCode,
+		"FID_RANK_SORT_CLS_CODE": r.FidRankSortClsCode,
+	}
+}
+
+// CreditBalanceResponse is the response for the KIS API.
+//
+// KIS API: 국내주식 신용잔고 상위[국내주식-109]
+// Summary: 국내주식 신용잔고 상위 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0475] 신용잔고 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: credit-balance
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/credit-balance
+// TR ID: FHKST17010000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type CreditBalanceResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output1 maps output1.
+	//
+	// KIS field: 응답상세
+	// Property code: output1
+	// Required: true
+	// Length:
+	// Order: 004
+	// Description: array
+	Output1 []CreditBalanceOutput1Item `json:"output1"`
+	// Output2 maps output2.
+	//
+	// KIS field: 응답상세
+	// Property code: output2
+	// Required: true
+	// Length:
+	// Order: 005
+	// Description: array
+	Output2 []CreditBalanceOutput2Item `json:"output2"`
+}
+
+// CreditBalanceOutput1Item is a KIS response object.
+type CreditBalanceOutput1Item struct {
+	// BstpClsCode maps bstp_cls_code.
+	//
+	// KIS field: 업종 구분 코드
+	// Property code: bstp_cls_code
+	// Required: true
+	// Length: 4
+	// Order: 004.001
+	BstpClsCode string `json:"bstp_cls_code"`
+	// HtsKorIsnm maps hts_kor_isnm.
+	//
+	// KIS field: HTS 한글 종목명
+	// Property code: hts_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 004.002
+	HtsKorIsnm string `json:"hts_kor_isnm"`
+	// StndDate1 maps stnd_date1.
+	//
+	// KIS field: 기준 일자1
+	// Property code: stnd_date1
+	// Required: true
+	// Length: 8
+	// Order: 004.003
+	StndDate1 string `json:"stnd_date1"`
+	// StndDate2 maps stnd_date2.
+	//
+	// KIS field: 기준 일자2
+	// Property code: stnd_date2
+	// Required: true
+	// Length: 8
+	// Order: 004.004
+	StndDate2 string `json:"stnd_date2"`
+}
+
+// CreditBalanceOutput2Item is a KIS response object.
+type CreditBalanceOutput2Item struct {
+	// MkscShrnISCD maps mksc_shrn_iscd.
+	//
+	// KIS field: 유가증권 단축 종목코드
+	// Property code: mksc_shrn_iscd
+	// Required: true
+	// Length: 9
+	// Order: 005.001
+	MkscShrnISCD string `json:"mksc_shrn_iscd"`
+	// HtsKorIsnm maps hts_kor_isnm.
+	//
+	// KIS field: HTS 한글 종목명
+	// Property code: hts_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 005.002
+	HtsKorIsnm string `json:"hts_kor_isnm"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 005.003
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 005.004
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 005.005
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 005.006
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 18
+	// Order: 005.007
+	AcmlVol string `json:"acml_vol"`
+	// WholLoanRmndStcn maps whol_loan_rmnd_stcn.
+	//
+	// KIS field: 전체 융자 잔고 주수
+	// Property code: whol_loan_rmnd_stcn
+	// Required: true
+	// Length: 18
+	// Order: 005.008
+	WholLoanRmndStcn string `json:"whol_loan_rmnd_stcn"`
+	// WholLoanRmndAmt maps whol_loan_rmnd_amt.
+	//
+	// KIS field: 전체 융자 잔고 금액
+	// Property code: whol_loan_rmnd_amt
+	// Required: true
+	// Length: 18
+	// Order: 005.009
+	WholLoanRmndAmt string `json:"whol_loan_rmnd_amt"`
+	// WholLoanRmndRate maps whol_loan_rmnd_rate.
+	//
+	// KIS field: 전체 융자 잔고 비율
+	// Property code: whol_loan_rmnd_rate
+	// Required: true
+	// Length: 84
+	// Order: 005.010
+	WholLoanRmndRate string `json:"whol_loan_rmnd_rate"`
+	// WholStlnRmndStcn maps whol_stln_rmnd_stcn.
+	//
+	// KIS field: 전체 대주 잔고 주수
+	// Property code: whol_stln_rmnd_stcn
+	// Required: true
+	// Length: 18
+	// Order: 005.011
+	WholStlnRmndStcn string `json:"whol_stln_rmnd_stcn"`
+	// WholStlnRmndAmt maps whol_stln_rmnd_amt.
+	//
+	// KIS field: 전체 대주 잔고 금액
+	// Property code: whol_stln_rmnd_amt
+	// Required: true
+	// Length: 18
+	// Order: 005.012
+	WholStlnRmndAmt string `json:"whol_stln_rmnd_amt"`
+	// WholStlnRmndRate maps whol_stln_rmnd_rate.
+	//
+	// KIS field: 전체 대주 잔고 비율
+	// Property code: whol_stln_rmnd_rate
+	// Required: true
+	// Length: 84
+	// Order: 005.013
+	WholStlnRmndRate string `json:"whol_stln_rmnd_rate"`
+	// NdayVrssLoanRmndInrt maps nday_vrss_loan_rmnd_inrt.
+	//
+	// KIS field: N일 대비 융자 잔고 증가율
+	// Property code: nday_vrss_loan_rmnd_inrt
+	// Required: true
+	// Length: 84
+	// Order: 005.014
+	NdayVrssLoanRmndInrt string `json:"nday_vrss_loan_rmnd_inrt"`
+	// NdayVrssStlnRmndInrt maps nday_vrss_stln_rmnd_inrt.
+	//
+	// KIS field: N일 대비 대주 잔고 증가율
+	// Property code: nday_vrss_stln_rmnd_inrt
+	// Required: true
+	// Length: 84
+	// Order: 005.015
+	NdayVrssStlnRmndInrt string `json:"nday_vrss_stln_rmnd_inrt"`
+}
+
+func (r *CreditBalanceResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// ShortSaleRequest is the request for the KIS API.
+//
+// KIS API: 국내주식 공매도 상위종목[국내주식-133]
+// Summary: 공매도 상위종목 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0482] 공매도 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: short-sale
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/short-sale
+// TR ID: FHPST04820000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type ShortSaleRequest struct {
+	// FidAplyRangVol maps FID_APLY_RANG_VOL.
+	//
+	// KIS field: FID 적용 범위 거래량
+	// Property code: FID_APLY_RANG_VOL
+	// Required: true
+	// Length: 18
+	// Order: 001
+	// Description: 공백
+	FidAplyRangVol string `json:"FID_APLY_RANG_VOL"`
+	// FidCondMrktDivCode maps FID_COND_MRKT_DIV_CODE.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: FID_COND_MRKT_DIV_CODE
+	// Required: true
+	// Length: 2
+	// Order: 002
+	// Description: 시장구분코드 (주식 J)
+	FidCondMrktDivCode string `json:"FID_COND_MRKT_DIV_CODE"`
+	// FidCondScrDivCode maps FID_COND_SCR_DIV_CODE.
+	//
+	// KIS field: 조건 화면 분류 코드
+	// Property code: FID_COND_SCR_DIV_CODE
+	// Required: true
+	// Length: 5
+	// Order: 003
+	// Description: Unique key(20482)
+	FidCondScrDivCode string `json:"FID_COND_SCR_DIV_CODE"`
+	// FidInputISCD maps FID_INPUT_ISCD.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: FID_INPUT_ISCD
+	// Required: true
+	// Length: 12
+	// Order: 004
+	// Description: 0000:전체, 0001:코스피, 1001:코스닥, 2001:코스피200, 4001: KRX100, 3003: 코스닥150
+	FidInputISCD string `json:"FID_INPUT_ISCD"`
+	// FidPeriodDivCode maps FID_PERIOD_DIV_CODE.
+	//
+	// KIS field: 조회구분 (일/월)
+	// Property code: FID_PERIOD_DIV_CODE
+	// Required: true
+	// Length: 32
+	// Order: 005
+	// Description: 조회구분 (일/월) D: 일, M:월
+	FidPeriodDivCode string `json:"FID_PERIOD_DIV_CODE"`
+	// FidInputCnt1 maps FID_INPUT_CNT_1.
+	//
+	// KIS field: 조회가간(일수
+	// Property code: FID_INPUT_CNT_1
+	// Required: true
+	// Length: 12
+	// Order: 006
+	// Description: '조회가간(일수): 조회구분(D) 0:1일, 1:2일, 2:3일, 3:4일, 4:1주일, 9:2주일, 14:3주일,  조회구분(M) 1:1개월,  2:2개월, 3:3개월'
+	FidInputCnt1 string `json:"FID_INPUT_CNT_1"`
+	// FidTrgtExlsClsCode maps FID_TRGT_EXLS_CLS_CODE.
+	//
+	// KIS field: 대상 제외 구분 코드
+	// Property code: FID_TRGT_EXLS_CLS_CODE
+	// Required: true
+	// Length: 32
+	// Order: 007
+	// Description: 공백
+	FidTrgtExlsClsCode string `json:"FID_TRGT_EXLS_CLS_CODE"`
+	// FidTrgtClsCode maps FID_TRGT_CLS_CODE.
+	//
+	// KIS field: FID 대상 구분 코드
+	// Property code: FID_TRGT_CLS_CODE
+	// Required: true
+	// Length: 32
+	// Order: 008
+	// Description: 공백
+	FidTrgtClsCode string `json:"FID_TRGT_CLS_CODE"`
+	// FidAplyRangPrc1 maps FID_APLY_RANG_PRC_1.
+	//
+	// KIS field: FID 적용 범위 가격1
+	// Property code: FID_APLY_RANG_PRC_1
+	// Required: true
+	// Length: 18
+	// Order: 009
+	// Description: 가격 ~
+	FidAplyRangPrc1 string `json:"FID_APLY_RANG_PRC_1"`
+	// FidAplyRangPrc2 maps FID_APLY_RANG_PRC_2.
+	//
+	// KIS field: FID 적용 범위 가격2
+	// Property code: FID_APLY_RANG_PRC_2
+	// Required: true
+	// Length: 18
+	// Order: 010
+	// Description: ~ 가격
+	FidAplyRangPrc2 string `json:"FID_APLY_RANG_PRC_2"`
+}
+
+func (r ShortSaleRequest) query() map[string]string {
+	return map[string]string{
+		"FID_APLY_RANG_VOL":      r.FidAplyRangVol,
+		"FID_COND_MRKT_DIV_CODE": r.FidCondMrktDivCode,
+		"FID_COND_SCR_DIV_CODE":  r.FidCondScrDivCode,
+		"FID_INPUT_ISCD":         r.FidInputISCD,
+		"FID_PERIOD_DIV_CODE":    r.FidPeriodDivCode,
+		"FID_INPUT_CNT_1":        r.FidInputCnt1,
+		"FID_TRGT_EXLS_CLS_CODE": r.FidTrgtExlsClsCode,
+		"FID_TRGT_CLS_CODE":      r.FidTrgtClsCode,
+		"FID_APLY_RANG_PRC_1":    r.FidAplyRangPrc1,
+		"FID_APLY_RANG_PRC_2":    r.FidAplyRangPrc2,
+	}
+}
+
+// ShortSaleResponse is the response for the KIS API.
+//
+// KIS API: 국내주식 공매도 상위종목[국내주식-133]
+// Summary: 공매도 상위종목 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0482] 공매도 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.  ※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다. 종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로, 자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.
+// Operation ID: short-sale
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/short-sale
+// TR ID: FHPST04820000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type ShortSaleResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output maps output.
+	//
+	// KIS field: 응답상세
+	// Property code: output
+	// Required: true
+	// Length:
+	// Order: 004
+	// Description: array
+	Output []ShortSaleOutputItem `json:"output"`
+}
+
+// ShortSaleOutputItem is a KIS response object.
+type ShortSaleOutputItem struct {
+	// MkscShrnISCD maps mksc_shrn_iscd.
+	//
+	// KIS field: 유가증권 단축 종목코드
+	// Property code: mksc_shrn_iscd
+	// Required: true
+	// Length: 9
+	// Order: 004.001
+	MkscShrnISCD string `json:"mksc_shrn_iscd"`
+	// HtsKorIsnm maps hts_kor_isnm.
+	//
+	// KIS field: HTS 한글 종목명
+	// Property code: hts_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 004.002
+	HtsKorIsnm string `json:"hts_kor_isnm"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.003
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.004
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.005
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.006
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.007
+	AcmlVol string `json:"acml_vol"`
+	// AcmlTRPbmn maps acml_tr_pbmn.
+	//
+	// KIS field: 누적 거래 대금
+	// Property code: acml_tr_pbmn
+	// Required: true
+	// Length: 18
+	// Order: 004.008
+	AcmlTRPbmn string `json:"acml_tr_pbmn"`
+	// SstsCntgQty maps ssts_cntg_qty.
+	//
+	// KIS field: 공매도 체결 수량
+	// Property code: ssts_cntg_qty
+	// Required: true
+	// Length: 12
+	// Order: 004.009
+	SstsCntgQty string `json:"ssts_cntg_qty"`
+	// SstsVolRlim maps ssts_vol_rlim.
+	//
+	// KIS field: 공매도 거래량 비중
+	// Property code: ssts_vol_rlim
+	// Required: true
+	// Length: 62
+	// Order: 004.010
+	SstsVolRlim string `json:"ssts_vol_rlim"`
+	// SstsTRPbmn maps ssts_tr_pbmn.
+	//
+	// KIS field: 공매도 거래 대금
+	// Property code: ssts_tr_pbmn
+	// Required: true
+	// Length: 18
+	// Order: 004.011
+	SstsTRPbmn string `json:"ssts_tr_pbmn"`
+	// SstsTRPbmnRlim maps ssts_tr_pbmn_rlim.
+	//
+	// KIS field: 공매도 거래대금 비중
+	// Property code: ssts_tr_pbmn_rlim
+	// Required: true
+	// Length: 62
+	// Order: 004.012
+	SstsTRPbmnRlim string `json:"ssts_tr_pbmn_rlim"`
+	// StndDate1 maps stnd_date1.
+	//
+	// KIS field: 기준 일자1
+	// Property code: stnd_date1
+	// Required: true
+	// Length: 8
+	// Order: 004.013
+	StndDate1 string `json:"stnd_date1"`
+	// StndDate2 maps stnd_date2.
+	//
+	// KIS field: 기준 일자2
+	// Property code: stnd_date2
+	// Required: true
+	// Length: 8
+	// Order: 004.014
+	StndDate2 string `json:"stnd_date2"`
+	// AvrgPrc maps avrg_prc.
+	//
+	// KIS field: 평균가격
+	// Property code: avrg_prc
+	// Required: true
+	// Length: 11
+	// Order: 004.015
+	AvrgPrc string `json:"avrg_prc"`
+}
+
+func (r *ShortSaleResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// OvertimeFluctuationRequest is the request for the KIS API.
+//
+// KIS API: 국내주식 시간외등락율순위 [국내주식-138]
+// Summary: 국내주식 시간외등락율순위 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0234] 시간외 등락률순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.
+// Operation ID: overtime-fluctuation
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/overtime-fluctuation
+// TR ID: FHPST02340000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type OvertimeFluctuationRequest struct {
+	// FidCondMrktDivCode maps FID_COND_MRKT_DIV_CODE.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: FID_COND_MRKT_DIV_CODE
+	// Required: true
+	// Length: 2
+	// Order: 001
+	// Description: 시장구분코드 (J: 주식)
+	FidCondMrktDivCode string `json:"FID_COND_MRKT_DIV_CODE"`
+	// FidMrktClsCode maps FID_MRKT_CLS_CODE.
+	//
+	// KIS field: 시장 구분 코드
+	// Property code: FID_MRKT_CLS_CODE
+	// Required: true
+	// Length: 2
+	// Order: 002
+	// Description: 공백 입력
+	FidMrktClsCode string `json:"FID_MRKT_CLS_CODE"`
+	// FidCondScrDivCode maps FID_COND_SCR_DIV_CODE.
+	//
+	// KIS field: 조건 화면 분류 코드
+	// Property code: FID_COND_SCR_DIV_CODE
+	// Required: true
+	// Length: 5
+	// Order: 003
+	// Description: Unique key(20234)
+	FidCondScrDivCode string `json:"FID_COND_SCR_DIV_CODE"`
+	// FidInputISCD maps FID_INPUT_ISCD.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: FID_INPUT_ISCD
+	// Required: true
+	// Length: 12
+	// Order: 004
+	// Description: 0000(전체), 0001(코스피), 1001(코스닥)
+	FidInputISCD string `json:"FID_INPUT_ISCD"`
+	// FidDivClsCode maps FID_DIV_CLS_CODE.
+	//
+	// KIS field: 분류 구분 코드
+	// Property code: FID_DIV_CLS_CODE
+	// Required: true
+	// Length: 2
+	// Order: 005
+	// Description: 1(상한가), 2(상승률), 3(보합),4(하한가),5(하락률)
+	FidDivClsCode string `json:"FID_DIV_CLS_CODE"`
+	// FidInputPrice1 maps FID_INPUT_PRICE_1.
+	//
+	// KIS field: 입력 가격1
+	// Property code: FID_INPUT_PRICE_1
+	// Required: true
+	// Length: 12
+	// Order: 006
+	// Description: 입력값 없을때 전체 (가격 ~)
+	FidInputPrice1 string `json:"FID_INPUT_PRICE_1"`
+	// FidInputPrice2 maps FID_INPUT_PRICE_2.
+	//
+	// KIS field: 입력 가격2
+	// Property code: FID_INPUT_PRICE_2
+	// Required: true
+	// Length: 12
+	// Order: 007
+	// Description: 입력값 없을때 전체 (~ 가격)
+	FidInputPrice2 string `json:"FID_INPUT_PRICE_2"`
+	// FidVolCnt maps FID_VOL_CNT.
+	//
+	// KIS field: 거래량 수
+	// Property code: FID_VOL_CNT
+	// Required: true
+	// Length: 12
+	// Order: 008
+	// Description: 입력값 없을때 전체 (거래량 ~)
+	FidVolCnt string `json:"FID_VOL_CNT"`
+	// FidTrgtClsCode maps FID_TRGT_CLS_CODE.
+	//
+	// KIS field: 대상 구분 코드
+	// Property code: FID_TRGT_CLS_CODE
+	// Required: true
+	// Length: 32
+	// Order: 009
+	// Description: 공백 입력
+	FidTrgtClsCode string `json:"FID_TRGT_CLS_CODE"`
+	// FidTrgtExlsClsCode maps FID_TRGT_EXLS_CLS_CODE.
+	//
+	// KIS field: 대상 제외 구분 코드
+	// Property code: FID_TRGT_EXLS_CLS_CODE
+	// Required: true
+	// Length: 32
+	// Order: 010
+	// Description: 공백 입력
+	FidTrgtExlsClsCode string `json:"FID_TRGT_EXLS_CLS_CODE"`
+}
+
+func (r OvertimeFluctuationRequest) query() map[string]string {
+	return map[string]string{
+		"FID_COND_MRKT_DIV_CODE": r.FidCondMrktDivCode,
+		"FID_MRKT_CLS_CODE":      r.FidMrktClsCode,
+		"FID_COND_SCR_DIV_CODE":  r.FidCondScrDivCode,
+		"FID_INPUT_ISCD":         r.FidInputISCD,
+		"FID_DIV_CLS_CODE":       r.FidDivClsCode,
+		"FID_INPUT_PRICE_1":      r.FidInputPrice1,
+		"FID_INPUT_PRICE_2":      r.FidInputPrice2,
+		"FID_VOL_CNT":            r.FidVolCnt,
+		"FID_TRGT_CLS_CODE":      r.FidTrgtClsCode,
+		"FID_TRGT_EXLS_CLS_CODE": r.FidTrgtExlsClsCode,
+	}
+}
+
+// OvertimeFluctuationResponse is the response for the KIS API.
+//
+// KIS API: 국내주식 시간외등락율순위 [국내주식-138]
+// Summary: 국내주식 시간외등락율순위 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0234] 시간외 등락률순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.
+// Operation ID: overtime-fluctuation
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/overtime-fluctuation
+// TR ID: FHPST02340000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type OvertimeFluctuationResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output1 maps output1.
+	//
+	// KIS field: 응답상세
+	// Property code: output1
+	// Required: true
+	// Length:
+	// Order: 004
+	Output1 OvertimeFluctuationOutput1 `json:"output1"`
+	// Output2 maps output2.
+	//
+	// KIS field: 응답상세
+	// Property code: output2
+	// Required: true
+	// Length:
+	// Order: 005
+	// Description: array
+	Output2 []OvertimeFluctuationOutput2Item `json:"output2"`
+}
+
+// OvertimeFluctuationOutput1 is a KIS response object.
+type OvertimeFluctuationOutput1 struct {
+	// OvtmUntpUplmIssuCnt maps ovtm_untp_uplm_issu_cnt.
+	//
+	// KIS field: 시간외 단일가 상한 종목 수
+	// Property code: ovtm_untp_uplm_issu_cnt
+	// Required: true
+	// Length: 7
+	// Order: 004.001
+	OvtmUntpUplmIssuCnt string `json:"ovtm_untp_uplm_issu_cnt"`
+	// OvtmUntpAscnIssuCnt maps ovtm_untp_ascn_issu_cnt.
+	//
+	// KIS field: 시간외 단일가 상승 종목 수
+	// Property code: ovtm_untp_ascn_issu_cnt
+	// Required: true
+	// Length: 7
+	// Order: 004.002
+	OvtmUntpAscnIssuCnt string `json:"ovtm_untp_ascn_issu_cnt"`
+	// OvtmUntpStnrIssuCnt maps ovtm_untp_stnr_issu_cnt.
+	//
+	// KIS field: 시간외 단일가 보합 종목 수
+	// Property code: ovtm_untp_stnr_issu_cnt
+	// Required: true
+	// Length: 7
+	// Order: 004.003
+	OvtmUntpStnrIssuCnt string `json:"ovtm_untp_stnr_issu_cnt"`
+	// OvtmUntpLslmIssuCnt maps ovtm_untp_lslm_issu_cnt.
+	//
+	// KIS field: 시간외 단일가 하한 종목 수
+	// Property code: ovtm_untp_lslm_issu_cnt
+	// Required: true
+	// Length: 7
+	// Order: 004.004
+	OvtmUntpLslmIssuCnt string `json:"ovtm_untp_lslm_issu_cnt"`
+	// OvtmUntpDownIssuCnt maps ovtm_untp_down_issu_cnt.
+	//
+	// KIS field: 시간외 단일가 하락 종목 수
+	// Property code: ovtm_untp_down_issu_cnt
+	// Required: true
+	// Length: 7
+	// Order: 004.005
+	OvtmUntpDownIssuCnt string `json:"ovtm_untp_down_issu_cnt"`
+	// OvtmUntpAcmlVol maps ovtm_untp_acml_vol.
+	//
+	// KIS field: 시간외 단일가 누적 거래량
+	// Property code: ovtm_untp_acml_vol
+	// Required: true
+	// Length: 19
+	// Order: 004.006
+	OvtmUntpAcmlVol string `json:"ovtm_untp_acml_vol"`
+	// OvtmUntpAcmlTRPbmn maps ovtm_untp_acml_tr_pbmn.
+	//
+	// KIS field: 시간외 단일가 누적 거래대금
+	// Property code: ovtm_untp_acml_tr_pbmn
+	// Required: true
+	// Length: 19
+	// Order: 004.007
+	OvtmUntpAcmlTRPbmn string `json:"ovtm_untp_acml_tr_pbmn"`
+	// OvtmUntpExchVol maps ovtm_untp_exch_vol.
+	//
+	// KIS field: 시간외 단일가 거래소 거래량
+	// Property code: ovtm_untp_exch_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.008
+	OvtmUntpExchVol string `json:"ovtm_untp_exch_vol"`
+	// OvtmUntpExchTRPbmn maps ovtm_untp_exch_tr_pbmn.
+	//
+	// KIS field: 시간외 단일가 거래소 거래대금
+	// Property code: ovtm_untp_exch_tr_pbmn
+	// Required: true
+	// Length: 18
+	// Order: 004.009
+	OvtmUntpExchTRPbmn string `json:"ovtm_untp_exch_tr_pbmn"`
+	// OvtmUntpKosdaqVol maps ovtm_untp_kosdaq_vol.
+	//
+	// KIS field: 시간외 단일가 KOSDAQ 거래량
+	// Property code: ovtm_untp_kosdaq_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.010
+	OvtmUntpKosdaqVol string `json:"ovtm_untp_kosdaq_vol"`
+	// OvtmUntpKosdaqTRPbmn maps ovtm_untp_kosdaq_tr_pbmn.
+	//
+	// KIS field: 시간외 단일가 KOSDAQ 거래대금
+	// Property code: ovtm_untp_kosdaq_tr_pbmn
+	// Required: true
+	// Length: 18
+	// Order: 004.011
+	OvtmUntpKosdaqTRPbmn string `json:"ovtm_untp_kosdaq_tr_pbmn"`
+}
+
+// OvertimeFluctuationOutput2Item is a KIS response object.
+type OvertimeFluctuationOutput2Item struct {
+	// MkscShrnISCD maps mksc_shrn_iscd.
+	//
+	// KIS field: 유가증권 단축 종목코드
+	// Property code: mksc_shrn_iscd
+	// Required: true
+	// Length: 9
+	// Order: 005.001
+	MkscShrnISCD string `json:"mksc_shrn_iscd"`
+	// HtsKorIsnm maps hts_kor_isnm.
+	//
+	// KIS field: HTS 한글 종목명
+	// Property code: hts_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 005.002
+	HtsKorIsnm string `json:"hts_kor_isnm"`
+	// OvtmUntpPrpr maps ovtm_untp_prpr.
+	//
+	// KIS field: 시간외 단일가 현재가
+	// Property code: ovtm_untp_prpr
+	// Required: true
+	// Length: 10
+	// Order: 005.003
+	OvtmUntpPrpr string `json:"ovtm_untp_prpr"`
+	// OvtmUntpPrdyVrss maps ovtm_untp_prdy_vrss.
+	//
+	// KIS field: 시간외 단일가 전일 대비
+	// Property code: ovtm_untp_prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 005.004
+	OvtmUntpPrdyVrss string `json:"ovtm_untp_prdy_vrss"`
+	// OvtmUntpPrdyVrssSign maps ovtm_untp_prdy_vrss_sign.
+	//
+	// KIS field: 시간외 단일가 전일 대비 부호
+	// Property code: ovtm_untp_prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 005.005
+	OvtmUntpPrdyVrssSign string `json:"ovtm_untp_prdy_vrss_sign"`
+	// OvtmUntpPrdyCtrt maps ovtm_untp_prdy_ctrt.
+	//
+	// KIS field: 시간외 단일가 전일 대비율
+	// Property code: ovtm_untp_prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 005.006
+	OvtmUntpPrdyCtrt string `json:"ovtm_untp_prdy_ctrt"`
+	// OvtmUntpAskp1 maps ovtm_untp_askp1.
+	//
+	// KIS field: 시간외 단일가 매도호가1
+	// Property code: ovtm_untp_askp1
+	// Required: true
+	// Length: 10
+	// Order: 005.007
+	OvtmUntpAskp1 string `json:"ovtm_untp_askp1"`
+	// OvtmUntpSelnRsqn maps ovtm_untp_seln_rsqn.
+	//
+	// KIS field: 시간외 단일가 매도 잔량
+	// Property code: ovtm_untp_seln_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 005.008
+	OvtmUntpSelnRsqn string `json:"ovtm_untp_seln_rsqn"`
+	// OvtmUntpBidp1 maps ovtm_untp_bidp1.
+	//
+	// KIS field: 시간외 단일가 매수호가1
+	// Property code: ovtm_untp_bidp1
+	// Required: true
+	// Length: 10
+	// Order: 005.009
+	OvtmUntpBidp1 string `json:"ovtm_untp_bidp1"`
+	// OvtmUntpShnuRsqn maps ovtm_untp_shnu_rsqn.
+	//
+	// KIS field: 시간외 단일가 매수 잔량
+	// Property code: ovtm_untp_shnu_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 005.010
+	OvtmUntpShnuRsqn string `json:"ovtm_untp_shnu_rsqn"`
+	// OvtmUntpVol maps ovtm_untp_vol.
+	//
+	// KIS field: 시간외 단일가 거래량
+	// Property code: ovtm_untp_vol
+	// Required: true
+	// Length: 18
+	// Order: 005.011
+	OvtmUntpVol string `json:"ovtm_untp_vol"`
+	// OvtmVrssAcmlVolRlim maps ovtm_vrss_acml_vol_rlim.
+	//
+	// KIS field: 시간외 대비 누적 거래량 비중
+	// Property code: ovtm_vrss_acml_vol_rlim
+	// Required: true
+	// Length: 52
+	// Order: 005.012
+	OvtmVrssAcmlVolRlim string `json:"ovtm_vrss_acml_vol_rlim"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 005.013
+	StckPrpr string `json:"stck_prpr"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 18
+	// Order: 005.014
+	AcmlVol string `json:"acml_vol"`
+	// Bidp maps bidp.
+	//
+	// KIS field: 매수호가
+	// Property code: bidp
+	// Required: true
+	// Length: 10
+	// Order: 005.015
+	Bidp string `json:"bidp"`
+	// Askp maps askp.
+	//
+	// KIS field: 매도호가
+	// Property code: askp
+	// Required: true
+	// Length: 10
+	// Order: 005.016
+	Askp string `json:"askp"`
+}
+
+func (r *OvertimeFluctuationResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// OvertimeVolumeRequest is the request for the KIS API.
+//
+// KIS API: 국내주식 시간외거래량순위 [국내주식-139]
+// Summary: 국내주식 시간외거래량순위 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0235] 시간외 거래량순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.
+// Operation ID: overtime-volume
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/overtime-volume
+// TR ID: FHPST02350000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type OvertimeVolumeRequest struct {
+	// FidCondMrktDivCode maps FID_COND_MRKT_DIV_CODE.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: FID_COND_MRKT_DIV_CODE
+	// Required: true
+	// Length: 2
+	// Order: 001
+	// Description: 시장구분코드 (J: 주식)
+	FidCondMrktDivCode string `json:"FID_COND_MRKT_DIV_CODE"`
+	// FidCondScrDivCode maps FID_COND_SCR_DIV_CODE.
+	//
+	// KIS field: 조건 화면 분류 코드
+	// Property code: FID_COND_SCR_DIV_CODE
+	// Required: true
+	// Length: 5
+	// Order: 002
+	// Description: Unique key(20235)
+	FidCondScrDivCode string `json:"FID_COND_SCR_DIV_CODE"`
+	// FidInputISCD maps FID_INPUT_ISCD.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: FID_INPUT_ISCD
+	// Required: true
+	// Length: 12
+	// Order: 003
+	// Description: 0000(전체), 0001(코스피), 1001(코스닥)
+	FidInputISCD string `json:"FID_INPUT_ISCD"`
+	// FidRankSortClsCode maps FID_RANK_SORT_CLS_CODE.
+	//
+	// KIS field: 순위 정렬 구분 코드
+	// Property code: FID_RANK_SORT_CLS_CODE
+	// Required: true
+	// Length: 2
+	// Order: 004
+	// Description: 0(매수잔량),  1(매도잔량), 2(거래량)
+	FidRankSortClsCode string `json:"FID_RANK_SORT_CLS_CODE"`
+	// FidInputPrice1 maps FID_INPUT_PRICE_1.
+	//
+	// KIS field: 입력 가격1
+	// Property code: FID_INPUT_PRICE_1
+	// Required: true
+	// Length: 12
+	// Order: 005
+	// Description: 가격 ~
+	FidInputPrice1 string `json:"FID_INPUT_PRICE_1"`
+	// FidInputPrice2 maps FID_INPUT_PRICE_2.
+	//
+	// KIS field: 입력 가격2
+	// Property code: FID_INPUT_PRICE_2
+	// Required: true
+	// Length: 12
+	// Order: 006
+	// Description: ~ 가격
+	FidInputPrice2 string `json:"FID_INPUT_PRICE_2"`
+	// FidVolCnt maps FID_VOL_CNT.
+	//
+	// KIS field: 거래량 수
+	// Property code: FID_VOL_CNT
+	// Required: true
+	// Length: 12
+	// Order: 007
+	// Description: 거래량 ~
+	FidVolCnt string `json:"FID_VOL_CNT"`
+	// FidTrgtClsCode maps FID_TRGT_CLS_CODE.
+	//
+	// KIS field: 대상 구분 코드
+	// Property code: FID_TRGT_CLS_CODE
+	// Required: true
+	// Length: 32
+	// Order: 008
+	// Description: 공백
+	FidTrgtClsCode string `json:"FID_TRGT_CLS_CODE"`
+	// FidTrgtExlsClsCode maps FID_TRGT_EXLS_CLS_CODE.
+	//
+	// KIS field: 대상 제외 구분 코드
+	// Property code: FID_TRGT_EXLS_CLS_CODE
+	// Required: true
+	// Length: 32
+	// Order: 009
+	// Description: 공백
+	FidTrgtExlsClsCode string `json:"FID_TRGT_EXLS_CLS_CODE"`
+}
+
+func (r OvertimeVolumeRequest) query() map[string]string {
+	return map[string]string{
+		"FID_COND_MRKT_DIV_CODE": r.FidCondMrktDivCode,
+		"FID_COND_SCR_DIV_CODE":  r.FidCondScrDivCode,
+		"FID_INPUT_ISCD":         r.FidInputISCD,
+		"FID_RANK_SORT_CLS_CODE": r.FidRankSortClsCode,
+		"FID_INPUT_PRICE_1":      r.FidInputPrice1,
+		"FID_INPUT_PRICE_2":      r.FidInputPrice2,
+		"FID_VOL_CNT":            r.FidVolCnt,
+		"FID_TRGT_CLS_CODE":      r.FidTrgtClsCode,
+		"FID_TRGT_EXLS_CLS_CODE": r.FidTrgtExlsClsCode,
+	}
+}
+
+// OvertimeVolumeResponse is the response for the KIS API.
+//
+// KIS API: 국내주식 시간외거래량순위 [국내주식-139]
+// Summary: 국내주식 시간외거래량순위 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0235] 시간외 거래량순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 최대 30건 확인 가능하며, 다음 조회가 불가합니다.
+// Operation ID: overtime-volume
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/overtime-volume
+// TR ID: FHPST02350000
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type OvertimeVolumeResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output1 maps output1.
+	//
+	// KIS field: 응답상세
+	// Property code: output1
+	// Required: true
+	// Length:
+	// Order: 004
+	Output1 OvertimeVolumeOutput1 `json:"output1"`
+	// Output2 maps output2.
+	//
+	// KIS field: 응답상세
+	// Property code: output2
+	// Required: true
+	// Length:
+	// Order: 005
+	// Description: array
+	Output2 []OvertimeVolumeOutput2Item `json:"output2"`
+}
+
+// OvertimeVolumeOutput1 is a KIS response object.
+type OvertimeVolumeOutput1 struct {
+	// OvtmUntpExchVol maps ovtm_untp_exch_vol.
+	//
+	// KIS field: 시간외 단일가 거래소 거래량
+	// Property code: ovtm_untp_exch_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.001
+	OvtmUntpExchVol string `json:"ovtm_untp_exch_vol"`
+	// OvtmUntpExchTRPbmn maps ovtm_untp_exch_tr_pbmn.
+	//
+	// KIS field: 시간외 단일가 거래소 거래대금
+	// Property code: ovtm_untp_exch_tr_pbmn
+	// Required: true
+	// Length: 18
+	// Order: 004.002
+	OvtmUntpExchTRPbmn string `json:"ovtm_untp_exch_tr_pbmn"`
+	// OvtmUntpKosdaqVol maps ovtm_untp_kosdaq_vol.
+	//
+	// KIS field: 시간외 단일가 KOSDAQ 거래량
+	// Property code: ovtm_untp_kosdaq_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.003
+	OvtmUntpKosdaqVol string `json:"ovtm_untp_kosdaq_vol"`
+	// OvtmUntpKosdaqTRPbmn maps ovtm_untp_kosdaq_tr_pbmn.
+	//
+	// KIS field: 시간외 단일가 KOSDAQ 거래대금
+	// Property code: ovtm_untp_kosdaq_tr_pbmn
+	// Required: true
+	// Length: 18
+	// Order: 004.004
+	OvtmUntpKosdaqTRPbmn string `json:"ovtm_untp_kosdaq_tr_pbmn"`
+}
+
+// OvertimeVolumeOutput2Item is a KIS response object.
+type OvertimeVolumeOutput2Item struct {
+	// StckShrnISCD maps stck_shrn_iscd.
+	//
+	// KIS field: 주식 단축 종목코드
+	// Property code: stck_shrn_iscd
+	// Required: true
+	// Length: 9
+	// Order: 005.001
+	StckShrnISCD string `json:"stck_shrn_iscd"`
+	// HtsKorIsnm maps hts_kor_isnm.
+	//
+	// KIS field: HTS 한글 종목명
+	// Property code: hts_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 005.002
+	HtsKorIsnm string `json:"hts_kor_isnm"`
+	// OvtmUntpPrpr maps ovtm_untp_prpr.
+	//
+	// KIS field: 시간외 단일가 현재가
+	// Property code: ovtm_untp_prpr
+	// Required: true
+	// Length: 10
+	// Order: 005.003
+	OvtmUntpPrpr string `json:"ovtm_untp_prpr"`
+	// OvtmUntpPrdyVrss maps ovtm_untp_prdy_vrss.
+	//
+	// KIS field: 시간외 단일가 전일 대비
+	// Property code: ovtm_untp_prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 005.004
+	OvtmUntpPrdyVrss string `json:"ovtm_untp_prdy_vrss"`
+	// OvtmUntpPrdyVrssSign maps ovtm_untp_prdy_vrss_sign.
+	//
+	// KIS field: 시간외 단일가 전일 대비 부호
+	// Property code: ovtm_untp_prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 005.005
+	OvtmUntpPrdyVrssSign string `json:"ovtm_untp_prdy_vrss_sign"`
+	// OvtmUntpPrdyCtrt maps ovtm_untp_prdy_ctrt.
+	//
+	// KIS field: 시간외 단일가 전일 대비율
+	// Property code: ovtm_untp_prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 005.006
+	OvtmUntpPrdyCtrt string `json:"ovtm_untp_prdy_ctrt"`
+	// OvtmUntpSelnRsqn maps ovtm_untp_seln_rsqn.
+	//
+	// KIS field: 시간외 단일가 매도 잔량
+	// Property code: ovtm_untp_seln_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 005.007
+	OvtmUntpSelnRsqn string `json:"ovtm_untp_seln_rsqn"`
+	// OvtmUntpShnuRsqn maps ovtm_untp_shnu_rsqn.
+	//
+	// KIS field: 시간외 단일가 매수 잔량
+	// Property code: ovtm_untp_shnu_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 005.008
+	OvtmUntpShnuRsqn string `json:"ovtm_untp_shnu_rsqn"`
+	// OvtmUntpVol maps ovtm_untp_vol.
+	//
+	// KIS field: 시간외 단일가 거래량
+	// Property code: ovtm_untp_vol
+	// Required: true
+	// Length: 18
+	// Order: 005.009
+	OvtmUntpVol string `json:"ovtm_untp_vol"`
+	// OvtmVrssAcmlVolRlim maps ovtm_vrss_acml_vol_rlim.
+	//
+	// KIS field: 시간외 대비 누적 거래량 비중
+	// Property code: ovtm_vrss_acml_vol_rlim
+	// Required: true
+	// Length: 52
+	// Order: 005.010
+	OvtmVrssAcmlVolRlim string `json:"ovtm_vrss_acml_vol_rlim"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 005.011
+	StckPrpr string `json:"stck_prpr"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 18
+	// Order: 005.012
+	AcmlVol string `json:"acml_vol"`
+	// Bidp maps bidp.
+	//
+	// KIS field: 매수호가
+	// Property code: bidp
+	// Required: true
+	// Length: 10
+	// Order: 005.013
+	Bidp string `json:"bidp"`
+	// Askp maps askp.
+	//
+	// KIS field: 매도호가
+	// Property code: askp
+	// Required: true
+	// Length: 10
+	// Order: 005.014
+	Askp string `json:"askp"`
+}
+
+func (r *OvertimeVolumeResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// HtsTopViewRequest is the request for the KIS API.
+//
+// KIS API: HTS조회상위20종목 [국내주식-214]
+// Summary: HTS조회상위20종목 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0158] 조회종목상위 화면의 "종목명", "종목코드" 표시 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: hts-top-view
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/hts-top-view
+// TR ID: HHMCM000100C0
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type HtsTopViewRequest struct {
+}
+
+func (r HtsTopViewRequest) query() map[string]string {
+	return map[string]string{}
+}
+
+// HtsTopViewResponse is the response for the KIS API.
+//
+// KIS API: HTS조회상위20종목 [국내주식-214]
+// Summary: HTS조회상위20종목 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0158] 조회종목상위 화면의 "종목명", "종목코드" 표시 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: hts-top-view
+// Endpoint: GET /uapi/domestic-stock/v1/ranking/hts-top-view
+// TR ID: HHMCM000100C0
+// Virtual TR ID: 모의투자 미지원
+// Group: ranking
+// Service group: Ranking
+// Role hint: market_scan
+type HtsTopViewResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output1 maps output1.
+	//
+	// KIS field: 응답상세
+	// Property code: output1
+	// Required: true
+	// Length:
+	// Order: 004
+	Output1 HtsTopViewOutput1 `json:"output1"`
+}
+
+// HtsTopViewOutput1 is a KIS response object.
+type HtsTopViewOutput1 struct {
+	// MrktDivClsCode maps mrkt_div_cls_code.
+	//
+	// KIS field: 시장구분
+	// Property code: mrkt_div_cls_code
+	// Required: true
+	// Length: 9
+	// Order: 004.001
+	// Description: J : 코스피, Q : 코스닥
+	MrktDivClsCode string `json:"mrkt_div_cls_code"`
+	// MkscShrnISCD maps mksc_shrn_iscd.
+	//
+	// KIS field: 종목코드
+	// Property code: mksc_shrn_iscd
+	// Required: true
+	// Length: 2
+	// Order: 004.002
+	// Description: 종목코드
+	MkscShrnISCD string `json:"mksc_shrn_iscd"`
+}
+
+func (r *HtsTopViewResponse) KISStatus() Status {
 	if r == nil {
 		return Status{}
 	}

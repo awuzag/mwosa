@@ -43,7 +43,7 @@ role_hints:
     adapter_boundary: generated_assisted
 `)
 
-	configs, err := loadOperationConfigs(source, overridesDir)
+	configs, err := loadOperationConfigs(source, overridesDir, false)
 	require.NoError(t, err)
 	require.Len(t, configs, 2)
 	assert.Equal(t, "inquire-price", configs[0].OperationID)
@@ -79,9 +79,36 @@ version: 1
 role_hints: {}
 `)
 
-	configs, err := loadOperationConfigs(source, overridesDir)
+	configs, err := loadOperationConfigs(source, overridesDir, false)
 	require.NoError(t, err)
 	assert.Empty(t, configs)
+}
+
+func TestLoadOperationConfigsIncludeAllCatalogUsesNamespacedDuplicateIDs(t *testing.T) {
+	source := testCatalog(
+		testCollection("[국내주식] 기본시세",
+			testAPI("주식현재가 시세", "/uapi/foo/v1/quotations/inquire-price"),
+			testAPI("ETF현재가 시세", "/uapi/etfetn/v1/quotations/inquire-price"),
+		),
+	)
+	overridesDir := writeTestOverrides(t, `
+version: 1
+operations: {}
+`, `
+version: 1
+groups: {}
+`, `
+version: 1
+role_hints: {}
+`)
+
+	configs, err := loadOperationConfigs(source, overridesDir, true)
+	require.NoError(t, err)
+	require.Len(t, configs, 2)
+	assert.Equal(t, "foo-quotations-inquire-price", configs[0].OperationID)
+	assert.Equal(t, "etfetn-quotations-inquire-price", configs[1].OperationID)
+	assert.Equal(t, "FooQuotationsInquirePrice", configs[0].GoName)
+	assert.Equal(t, "ETFETNQuotationsInquirePrice", configs[1].GoName)
 }
 
 func TestLoadOperationConfigsRejectsExcludedEnabledAPI(t *testing.T) {
@@ -103,7 +130,7 @@ version: 1
 role_hints: {}
 `)
 
-	_, err := loadOperationConfigs(source, overridesDir)
+	_, err := loadOperationConfigs(source, overridesDir, false)
 	require.Error(t, err)
 	assert.Contains(t, err.Error(), "order-cash")
 	assert.Contains(t, err.Error(), "excluded")

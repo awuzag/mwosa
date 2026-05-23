@@ -1,0 +1,616 @@
+{
+  "components": {
+    "schemas": {
+      "DailyCreditBalanceResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "msg1": {
+            "description": "응답메세지",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답메세지",
+              "propertyLength": "80",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "msg_cd": {
+            "description": "응답코드",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답코드",
+              "propertyLength": "8",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "output": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "acml_vol": {
+                  "description": "누적 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "누적 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.006",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "deal_date": {
+                  "description": "매매 일자",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "매매 일자",
+                    "propertyLength": "8",
+                    "propertyOrder": "004.001",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_ctrt": {
+                  "description": "전일 대비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일 대비율",
+                    "propertyLength": "82",
+                    "propertyOrder": "004.005",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_vrss": {
+                  "description": "전일 대비",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일 대비",
+                    "propertyLength": "10",
+                    "propertyOrder": "004.004",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_vrss_sign": {
+                  "description": "전일 대비 부호",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일 대비 부호",
+                    "propertyLength": "1",
+                    "propertyOrder": "004.003",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "stck_hgpr": {
+                  "description": "주식 최고가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식 최고가",
+                    "propertyLength": "10",
+                    "propertyOrder": "004.025",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "stck_lwpr": {
+                  "description": "주식 최저가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식 최저가",
+                    "propertyLength": "10",
+                    "propertyOrder": "004.026",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "stck_oprc": {
+                  "description": "주식 시가2",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식 시가2",
+                    "propertyLength": "10",
+                    "propertyOrder": "004.024",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "stck_prpr": {
+                  "description": "주식 현재가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식 현재가",
+                    "propertyLength": "10",
+                    "propertyOrder": "004.002",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "stlm_date": {
+                  "description": "결제 일자",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "결제 일자",
+                    "propertyLength": "8",
+                    "propertyOrder": "004.007",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "whol_loan_gvrt": {
+                  "description": "전체 융자 공여율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전체 융자 공여율",
+                    "propertyLength": "82",
+                    "propertyOrder": "004.015",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "whol_loan_new_amt": {
+                  "description": "전체 융자 신규 금액",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 만원",
+                    "name": "전체 융자 신규 금액",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.011",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "whol_loan_new_stcn": {
+                  "description": "전체 융자 신규 주수",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 주",
+                    "name": "전체 융자 신규 주수",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.008",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "whol_loan_rdmp_amt": {
+                  "description": "전체 융자 상환 금액",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 만원",
+                    "name": "전체 융자 상환 금액",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.012",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "whol_loan_rdmp_stcn": {
+                  "description": "전체 융자 상환 주수",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 주",
+                    "name": "전체 융자 상환 주수",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.009",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "whol_loan_rmnd_amt": {
+                  "description": "전체 융자 잔고 금액",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 만원",
+                    "name": "전체 융자 잔고 금액",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.013",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "whol_loan_rmnd_rate": {
+                  "description": "전체 융자 잔고 비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전체 융자 잔고 비율",
+                    "propertyLength": "84",
+                    "propertyOrder": "004.014",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "whol_loan_rmnd_stcn": {
+                  "description": "전체 융자 잔고 주수",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 주",
+                    "name": "전체 융자 잔고 주수",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.010",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "whol_stln_gvrt": {
+                  "description": "전체 대주 공여율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전체 대주 공여율",
+                    "propertyLength": "82",
+                    "propertyOrder": "004.023",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "whol_stln_new_amt": {
+                  "description": "전체 대주 신규 금액",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 만원",
+                    "name": "전체 대주 신규 금액",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.019",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "whol_stln_new_stcn": {
+                  "description": "전체 대주 신규 주수",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 주",
+                    "name": "전체 대주 신규 주수",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.016",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "whol_stln_rdmp_amt": {
+                  "description": "전체 대주 상환 금액",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 만원",
+                    "name": "전체 대주 상환 금액",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.020",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "whol_stln_rdmp_stcn": {
+                  "description": "전체 대주 상환 주수",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 주",
+                    "name": "전체 대주 상환 주수",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.017",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "whol_stln_rmnd_amt": {
+                  "description": "전체 대주 잔고 금액",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 만원",
+                    "name": "전체 대주 잔고 금액",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.021",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "whol_stln_rmnd_rate": {
+                  "description": "전체 대주 잔고 비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전체 대주 잔고 비율",
+                    "propertyLength": "84",
+                    "propertyOrder": "004.022",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "whol_stln_rmnd_stcn": {
+                  "description": "전체 대주 잔고 주수",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위: 주",
+                    "name": "전체 대주 잔고 주수",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.018",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                }
+              },
+              "required": [
+                "deal_date",
+                "stck_prpr",
+                "prdy_vrss_sign",
+                "prdy_vrss",
+                "prdy_ctrt",
+                "acml_vol",
+                "stlm_date",
+                "whol_loan_new_stcn",
+                "whol_loan_rdmp_stcn",
+                "whol_loan_rmnd_stcn",
+                "whol_loan_new_amt",
+                "whol_loan_rdmp_amt",
+                "whol_loan_rmnd_amt",
+                "whol_loan_rmnd_rate",
+                "whol_loan_gvrt",
+                "whol_stln_new_stcn",
+                "whol_stln_rdmp_stcn",
+                "whol_stln_rmnd_stcn",
+                "whol_stln_new_amt",
+                "whol_stln_rdmp_amt",
+                "whol_stln_rmnd_amt",
+                "whol_stln_rmnd_rate",
+                "whol_stln_gvrt",
+                "stck_oprc",
+                "stck_hgpr",
+                "stck_lwpr"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "rt_cd": {
+            "description": "성공 실패 여부",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "성공 실패 여부",
+              "propertyLength": "1",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        },
+        "required": [
+          "rt_cd",
+          "msg_cd",
+          "msg1",
+          "output"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "KISOAuth": {
+        "bearerFormat": "KIS OAuth access token",
+        "description": "Issued by KIS /oauth2/tokenP and injected by the handwritten runtime.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "KIS Domestic Stock OpenAPI - daily-credit-balance",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/uapi/domestic-stock/v1/quotations/daily-credit-balance": {
+      "get": {
+        "description": "국내주식 신용잔고 일별추이 API입니다.\n한국투자 HTS(eFriend Plus) \u0026gt; [0476] 국내주식 신용잔고 일별추이 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n한 번의 호출에 최대 30건 확인 가능하며, fid_input_date_1 을 입력하여 다음 조회가 가능합니다.\n\n※ 상환수량은 \"매도상환수량+현금상환수량\"의 합계 수치입니다.",
+        "operationId": "daily-credit-balance",
+        "parameters": [
+          {
+            "description": "시장구분코드 (주식 J)",
+            "in": "query",
+            "name": "fid_cond_mrkt_div_code",
+            "required": true,
+            "schema": {
+              "description": "시장 분류 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "시장구분코드 (주식 J)",
+                "name": "시장 분류 코드",
+                "propertyLength": "2",
+                "propertyOrder": "001",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "시장구분코드 (주식 J)",
+              "name": "시장 분류 코드",
+              "propertyLength": "2",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "Unique key(20476)",
+            "in": "query",
+            "name": "fid_cond_scr_div_code",
+            "required": true,
+            "schema": {
+              "description": "화면 분류 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "Unique key(20476)",
+                "name": "화면 분류 코드",
+                "propertyLength": "5",
+                "propertyOrder": "002",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "Unique key(20476)",
+              "name": "화면 분류 코드",
+              "propertyLength": "5",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "종목코드 (ex 005930)",
+            "in": "query",
+            "name": "fid_input_iscd",
+            "required": true,
+            "schema": {
+              "description": "종목코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "종목코드 (ex 005930)",
+                "name": "종목코드",
+                "propertyLength": "12",
+                "propertyOrder": "003",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "종목코드 (ex 005930)",
+              "name": "종목코드",
+              "propertyLength": "12",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "결제일자 (ex 20240313)",
+            "in": "query",
+            "name": "fid_input_date_1",
+            "required": true,
+            "schema": {
+              "description": "결제일자",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "결제일자 (ex 20240313)",
+                "name": "결제일자",
+                "propertyLength": "10",
+                "propertyOrder": "004",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "결제일자 (ex 20240313)",
+              "name": "결제일자",
+              "propertyLength": "10",
+              "propertyOrder": "004",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/DailyCreditBalanceResponse"
+                }
+              }
+            },
+            "description": "KIS business response envelope"
+          }
+        },
+        "security": [
+          {
+            "KISOAuth": []
+          }
+        ],
+        "summary": "국내주식 신용잔고 일별추이[국내주식-110]",
+        "tags": [
+          "Analysis"
+        ],
+        "x-kis": {
+          "accessUrl": "/uapi/domestic-stock/v1/quotations/daily-credit-balance",
+          "apiId": "0aad2cef-b338-4f4f-a8a0-b19c67a390b3",
+          "apiName": "국내주식 신용잔고 일별추이[국내주식-110]",
+          "apiSummary": "국내주식 신용잔고 일별추이 API입니다.\r\n한국투자 HTS(eFriend Plus) \u0026gt; [0476] 국내주식 신용잔고 일별추이 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\r\n한 번의 호출에 최대 30건 확인 가능하며, fid_input_date_1 을 입력하여 다음 조회가 가능합니다.\r\n\r\n※ 상환수량은 \"매도상환수량+현금상환수량\"의 합계 수치입니다.",
+          "catalogSchemaVersion": 1,
+          "collectionId": "4e29f215-0a20-4396-95d4-5d99ad9a2c3d",
+          "collectionName": "[국내주식] 시세분석",
+          "group": "analysis",
+          "lastModifiedDate": "2026-04-10T20:51:45+09:00",
+          "oauth": true,
+          "realDomain": "https://openapi.koreainvestment.com:9443",
+          "realTrId": "FHPST04760000",
+          "roleCandidate": "market_scan",
+          "securityType": "oauth2-access-token",
+          "serviceGroup": "Analysis",
+          "source": {
+            "categoryApi": "https://apiportal.koreainvestment.com/api/apis/public/api-list/{collectionId}",
+            "detailApi": "https://apiportal.koreainvestment.com/api/apis/public/detail?accessUrl={accessUrl}",
+            "detailPageTemplate": "https://apiportal.koreainvestment.com/apiservice-apiservice?{accessUrl}",
+            "portal": "https://apiportal.koreainvestment.com/apiservice-category"
+          },
+          "sourceDetailUrl": "https://apiportal.koreainvestment.com/apiservice-apiservice?/uapi/domestic-stock/v1/quotations/daily-credit-balance",
+          "supportsReal": true,
+          "supportsVirtual": false,
+          "virtualDomain": "모의투자 미지원",
+          "virtualTrId": "모의투자 미지원"
+        }
+      }
+    }
+  }
+}

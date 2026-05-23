@@ -1,0 +1,485 @@
+{
+  "components": {
+    "schemas": {
+      "FrgnmemTradeTrendResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "msg1": {
+            "description": "응답메세지",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답메세지",
+              "propertyLength": "80",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "msg_cd": {
+            "description": "응답코드",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답코드",
+              "propertyLength": "8",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "output1": {
+            "additionalProperties": false,
+            "properties": {
+              "total_seln_qty": {
+                "description": "총매도수량",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "총매도수량",
+                  "propertyLength": "18",
+                  "propertyOrder": "004.001",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "total_shnu_qty": {
+                "description": "총매수2수량",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "총매수2수량",
+                  "propertyLength": "18",
+                  "propertyOrder": "004.002",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              }
+            },
+            "required": [
+              "total_seln_qty",
+              "total_shnu_qty"
+            ],
+            "type": "object"
+          },
+          "output2": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "acml_ntby_qty": {
+                  "description": "누적순매수수량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "누적순매수수량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.008",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "bsop_hour": {
+                  "description": "영업시간",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "영업시간",
+                    "propertyLength": "6",
+                    "propertyOrder": "005.001",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "cntg_vol": {
+                  "description": "체결거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "체결거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.007",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "frgn_ntby_qty_icdc": {
+                  "description": "외국인순매수수량증감",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "외국인순매수수량증감",
+                    "propertyLength": "10",
+                    "propertyOrder": "005.010",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "glob_ntby_qty": {
+                  "description": "외국계순매수수량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "외국계순매수수량",
+                    "propertyLength": "12",
+                    "propertyOrder": "005.009",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "hts_kor_isnm": {
+                  "description": "HTS한글종목명",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "HTS한글종목명",
+                    "propertyLength": "40",
+                    "propertyOrder": "005.003",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "mbcr_name": {
+                  "description": "회원사명",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "회원사명",
+                    "propertyLength": "50",
+                    "propertyOrder": "005.002",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_vrss": {
+                  "description": "전일대비",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일대비",
+                    "propertyLength": "10",
+                    "propertyOrder": "005.005",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_vrss_sign": {
+                  "description": "전일대비부호",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일대비부호",
+                    "propertyLength": "1",
+                    "propertyOrder": "005.006",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "stck_prpr": {
+                  "description": "주식현재가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식현재가",
+                    "propertyLength": "10",
+                    "propertyOrder": "005.004",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                }
+              },
+              "required": [
+                "bsop_hour",
+                "mbcr_name",
+                "hts_kor_isnm",
+                "stck_prpr",
+                "prdy_vrss",
+                "prdy_vrss_sign",
+                "cntg_vol",
+                "acml_ntby_qty",
+                "glob_ntby_qty",
+                "frgn_ntby_qty_icdc"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "rt_cd": {
+            "description": "성공 실패 여부",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "성공 실패 여부",
+              "propertyLength": "1",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        },
+        "required": [
+          "rt_cd",
+          "msg_cd",
+          "msg1",
+          "output1",
+          "output2"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "KISOAuth": {
+        "bearerFormat": "KIS OAuth access token",
+        "description": "Issued by KIS /oauth2/tokenP and injected by the handwritten runtime.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "KIS Domestic Stock OpenAPI - frgnmem-trade-trend",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/uapi/domestic-stock/v1/quotations/frgnmem-trade-trend": {
+      "get": {
+        "description": "회원사 실시간 매매동향(틱) API입니다.\n한국투자 HTS(eFriend Plus) \u0026gt; [0432] 회원사 실시간 매매동향 화면 의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n최근 100건까지 데이터 조회 가능합니다.",
+        "operationId": "frgnmem-trade-trend",
+        "parameters": [
+          {
+            "description": "J 고정 입력",
+            "in": "query",
+            "name": "FID_COND_MRKT_DIV_CODE",
+            "required": true,
+            "schema": {
+              "description": "FID 조건 시장 분류 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "J 고정 입력",
+                "name": "FID 조건 시장 분류 코드",
+                "propertyLength": "2",
+                "propertyOrder": "001",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "J 고정 입력",
+              "name": "FID 조건 시장 분류 코드",
+              "propertyLength": "2",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "20432(primary key)",
+            "in": "query",
+            "name": "FID_COND_SCR_DIV_CODE",
+            "required": true,
+            "schema": {
+              "description": "화면분류코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "20432(primary key)",
+                "name": "화면분류코드",
+                "propertyLength": "5",
+                "propertyOrder": "001",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "20432(primary key)",
+              "name": "화면분류코드",
+              "propertyLength": "5",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "ex. 005930(삼성전자) \n\n※ FID_INPUT_ISCD(종목코드) 혹은 FID_MRKT_CLS_CODE(시장구분코드) 둘 중 하나만 입력",
+            "in": "query",
+            "name": "FID_INPUT_ISCD",
+            "required": true,
+            "schema": {
+              "description": "종목코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "ex. 005930(삼성전자) \n\n※ FID_INPUT_ISCD(종목코드) 혹은 FID_MRKT_CLS_CODE(시장구분코드) 둘 중 하나만 입력",
+                "name": "종목코드",
+                "propertyLength": "12",
+                "propertyOrder": "002",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "ex. 005930(삼성전자) \n\n※ FID_INPUT_ISCD(종목코드) 혹은 FID_MRKT_CLS_CODE(시장구분코드) 둘 중 하나만 입력",
+              "name": "종목코드",
+              "propertyLength": "12",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "ex. 99999(전체)\n\n※ 회원사코드 (kis developers 포탈 사이트 포럼-\u003e FAQ -\u003e 종목정보 다운로드(국내) 참조)",
+            "in": "query",
+            "name": "FID_INPUT_ISCD_2",
+            "required": true,
+            "schema": {
+              "description": "회원사코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "ex. 99999(전체)\n\n※ 회원사코드 (kis developers 포탈 사이트 포럼-\u003e FAQ -\u003e 종목정보 다운로드(국내) 참조)",
+                "name": "회원사코드",
+                "propertyLength": "10",
+                "propertyOrder": "003",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "ex. 99999(전체)\n\n※ 회원사코드 (kis developers 포탈 사이트 포럼-\u003e FAQ -\u003e 종목정보 다운로드(국내) 참조)",
+              "name": "회원사코드",
+              "propertyLength": "10",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "A(전체),K(코스피), Q(코스닥), K2(코스피200), W(ELW)\n\n※ FID_INPUT_ISCD(종목코드) 혹은 FID_MRKT_CLS_CODE(시장구분코드) 둘 중 하나만 입력",
+            "in": "query",
+            "name": "FID_MRKT_CLS_CODE",
+            "required": true,
+            "schema": {
+              "description": "시장구분코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "A(전체),K(코스피), Q(코스닥), K2(코스피200), W(ELW)\n\n※ FID_INPUT_ISCD(종목코드) 혹은 FID_MRKT_CLS_CODE(시장구분코드) 둘 중 하나만 입력",
+                "name": "시장구분코드",
+                "propertyLength": "2",
+                "propertyOrder": "004",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "A(전체),K(코스피), Q(코스닥), K2(코스피200), W(ELW)\n\n※ FID_INPUT_ISCD(종목코드) 혹은 FID_MRKT_CLS_CODE(시장구분코드) 둘 중 하나만 입력",
+              "name": "시장구분코드",
+              "propertyLength": "2",
+              "propertyOrder": "004",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "거래량 ~",
+            "in": "query",
+            "name": "FID_VOL_CNT",
+            "required": true,
+            "schema": {
+              "description": "거래량",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "거래량 ~",
+                "name": "거래량",
+                "propertyLength": "12",
+                "propertyOrder": "005",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "거래량 ~",
+              "name": "거래량",
+              "propertyLength": "12",
+              "propertyOrder": "005",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FrgnmemTradeTrendResponse"
+                }
+              }
+            },
+            "description": "KIS business response envelope"
+          }
+        },
+        "security": [
+          {
+            "KISOAuth": []
+          }
+        ],
+        "summary": "회원사 실시간 매매동향(틱) [국내주식-163]",
+        "tags": [
+          "Analysis"
+        ],
+        "x-kis": {
+          "accessUrl": "/uapi/domestic-stock/v1/quotations/frgnmem-trade-trend",
+          "apiId": "ce9f2a8f-e3cb-4bd3-83ba-7b6034eafae9",
+          "apiName": "회원사 실시간 매매동향(틱) [국내주식-163]",
+          "apiSummary": "회원사 실시간 매매동향(틱) API입니다.\r\n한국투자 HTS(eFriend Plus) \u0026gt; [0432] 회원사 실시간 매매동향 화면 의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\r\n\r\n최근 100건까지 데이터 조회 가능합니다.",
+          "catalogSchemaVersion": 1,
+          "collectionId": "4e29f215-0a20-4396-95d4-5d99ad9a2c3d",
+          "collectionName": "[국내주식] 시세분석",
+          "group": "analysis",
+          "lastModifiedDate": "2026-04-10T20:49:55+09:00",
+          "oauth": true,
+          "realDomain": "https://openapi.koreainvestment.com:9443",
+          "realTrId": "FHPST04320000",
+          "roleCandidate": "market_scan",
+          "securityType": "oauth2-access-token",
+          "serviceGroup": "Analysis",
+          "source": {
+            "categoryApi": "https://apiportal.koreainvestment.com/api/apis/public/api-list/{collectionId}",
+            "detailApi": "https://apiportal.koreainvestment.com/api/apis/public/detail?accessUrl={accessUrl}",
+            "detailPageTemplate": "https://apiportal.koreainvestment.com/apiservice-apiservice?{accessUrl}",
+            "portal": "https://apiportal.koreainvestment.com/apiservice-category"
+          },
+          "sourceDetailUrl": "https://apiportal.koreainvestment.com/apiservice-apiservice?/uapi/domestic-stock/v1/quotations/frgnmem-trade-trend",
+          "supportsReal": true,
+          "supportsVirtual": false,
+          "virtualDomain": "모의투자 미지원",
+          "virtualTrId": "모의투자 미지원"
+        }
+      }
+    }
+  }
+}

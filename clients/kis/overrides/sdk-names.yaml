@@ -165,7 +165,8 @@ operations:
     doc:
       summary: 국내 주식 체결강도 상위 순위를 조회합니다.
   search-info:
-    enabled: false
+    enabled: true
+    access_url: /uapi/domestic-stock/v1/quotations/search-info
     go_name: SearchInfo
     group_method: Product
     service_group: Instrument
@@ -174,7 +175,8 @@ operations:
     doc:
       summary: 국내 주식 상품 기본 정보를 조회합니다.
   search-stock-info:
-    enabled: false
+    enabled: true
+    access_url: /uapi/domestic-stock/v1/quotations/search-stock-info
     go_name: SearchStockInfo
     group_method: Stock
     service_group: Instrument

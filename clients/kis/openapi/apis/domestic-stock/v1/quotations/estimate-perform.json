@@ -1,0 +1,467 @@
+{
+  "components": {
+    "schemas": {
+      "EstimatePerformResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "msg1": {
+            "description": "응답메세지",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답메세지",
+              "propertyLength": "80",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "msg_cd": {
+            "description": "응답코드",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답코드",
+              "propertyLength": "8",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "output1": {
+            "additionalProperties": false,
+            "properties": {
+              "capital": {
+                "description": "누적거래량",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "누적거래량",
+                  "propertyLength": "18",
+                  "propertyOrder": "004.007",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "estdate": {
+                "description": "전일대비부호",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "전일대비부호",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.005",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "forn_item_lmtrt": {
+                "description": "행사가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "행사가",
+                  "propertyLength": "112",
+                  "propertyOrder": "004.008",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "item_kor_nm": {
+                "description": "HTS한글종목명",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "HTS한글종목명",
+                  "propertyLength": "40",
+                  "propertyOrder": "004.002",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "name1": {
+                "description": "ELW현재가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "ELW현재가",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.003",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "name2": {
+                "description": "전일대비",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "전일대비",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.004",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "rcmd_name": {
+                "description": "전일대비율",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "전일대비율",
+                  "propertyLength": "82",
+                  "propertyOrder": "004.006",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "sht_cd": {
+                "description": "ELW단축종목코드",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "ELW단축종목코드",
+                  "propertyLength": "9",
+                  "propertyOrder": "004.001",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              }
+            },
+            "required": [
+              "sht_cd",
+              "item_kor_nm",
+              "name1",
+              "name2",
+              "estdate",
+              "rcmd_name",
+              "capital",
+              "forn_item_lmtrt"
+            ],
+            "type": "object"
+          },
+          "output2": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "data1": {
+                  "description": "DATA1",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "결산연월(outblock4) 참조",
+                    "name": "DATA1",
+                    "propertyLength": "15",
+                    "propertyOrder": "005.001",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "data2": {
+                  "description": "DATA2",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "결산연월(outblock4) 참조",
+                    "name": "DATA2",
+                    "propertyLength": "15",
+                    "propertyOrder": "005.002",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "data3": {
+                  "description": "DATA3",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "결산연월(outblock4) 참조",
+                    "name": "DATA3",
+                    "propertyLength": "15",
+                    "propertyOrder": "005.003",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "data4": {
+                  "description": "DATA4",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "결산연월(outblock4) 참조",
+                    "name": "DATA4",
+                    "propertyLength": "15",
+                    "propertyOrder": "005.004",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "data5": {
+                  "description": "DATA5",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "결산연월(outblock4) 참조",
+                    "name": "DATA5",
+                    "propertyLength": "15",
+                    "propertyOrder": "005.005",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                }
+              },
+              "required": [
+                "data1",
+                "data2",
+                "data3",
+                "data4",
+                "data5"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "output3": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "data1": {
+                  "description": "DATA1",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "결산연월(outblock4) 참조",
+                    "name": "DATA1",
+                    "propertyLength": "15",
+                    "propertyOrder": "006.001",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "data2": {
+                  "description": "DATA2",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "결산연월(outblock4) 참조",
+                    "name": "DATA2",
+                    "propertyLength": "15",
+                    "propertyOrder": "006.002",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "data3": {
+                  "description": "DATA3",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "결산연월(outblock4) 참조",
+                    "name": "DATA3",
+                    "propertyLength": "15",
+                    "propertyOrder": "006.003",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "data4": {
+                  "description": "DATA4",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "결산연월(outblock4) 참조",
+                    "name": "DATA4",
+                    "propertyLength": "15",
+                    "propertyOrder": "006.004",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "data5": {
+                  "description": "DATA5",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "결산연월(outblock4) 참조",
+                    "name": "DATA5",
+                    "propertyLength": "15",
+                    "propertyOrder": "006.005",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                }
+              },
+              "required": [
+                "data1",
+                "data2",
+                "data3",
+                "data4",
+                "data5"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "output4": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "dt": {
+                  "description": "결산년월",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "DATA1 ~5 결산월 정보",
+                    "name": "결산년월",
+                    "propertyLength": "8",
+                    "propertyOrder": "007.001",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                }
+              },
+              "required": [
+                "dt"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "rt_cd": {
+            "description": "성공 실패 여부",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "성공 실패 여부",
+              "propertyLength": "1",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        },
+        "required": [
+          "rt_cd",
+          "msg_cd",
+          "msg1",
+          "output1",
+          "output2",
+          "output3",
+          "output4"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "KISOAuth": {
+        "bearerFormat": "KIS OAuth access token",
+        "description": "Issued by KIS /oauth2/tokenP and injected by the handwritten runtime.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "KIS Domestic Stock OpenAPI - estimate-perform",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/uapi/domestic-stock/v1/quotations/estimate-perform": {
+      "get": {
+        "description": "국내주식 종목추정실적 API입니다.\n한국투자 HTS(eFriend Plus) \u0026gt; [0613] 종목추정실적 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. \n \n※ 본 화면의 추정실적 및 투자의견은 당월 초의 애널리스트의 의견사항이므로 월중 변동 사항이 있을 수 있음을 유의하시기 바랍니다.\n※ 종목별 수익추정은 리서치본부에서 매월 발표되는 거래소, 코스닥 160여개 기업에 한정합니다. 구체적인 종목 리스트는 추정종목리스트를 참고하기 바랍니다.",
+        "operationId": "estimate-perform",
+        "parameters": [
+          {
+            "description": "ex) 265520",
+            "in": "query",
+            "name": "SHT_CD",
+            "required": true,
+            "schema": {
+              "description": "종목코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "ex) 265520",
+                "name": "종목코드",
+                "propertyLength": "2",
+                "propertyOrder": "001",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "ex) 265520",
+              "name": "종목코드",
+              "propertyLength": "2",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/EstimatePerformResponse"
+                }
+              }
+            },
+            "description": "KIS business response envelope"
+          }
+        },
+        "security": [
+          {
+            "KISOAuth": []
+          }
+        ],
+        "summary": "국내주식 종목추정실적 [국내주식-187]",
+        "tags": [
+          "Instrument"
+        ],
+        "x-kis": {
+          "accessUrl": "/uapi/domestic-stock/v1/quotations/estimate-perform",
+          "apiId": "fbb4bb45-57bb-4037-905d-dff0ff635cf6",
+          "apiName": "국내주식 종목추정실적 [국내주식-187]",
+          "apiSummary": "국내주식 종목추정실적 API입니다.\r\n한국투자 HTS(eFriend Plus) \u0026gt; [0613] 종목추정실적 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. \r\n \r\n※ 본 화면의 추정실적 및 투자의견은 당월 초의 애널리스트의 의견사항이므로 월중 변동 사항이 있을 수 있음을 유의하시기 바랍니다.\r\n※ 종목별 수익추정은 리서치본부에서 매월 발표되는 거래소, 코스닥 160여개 기업에 한정합니다. 구체적인 종목 리스트는 추정종목리스트를 참고하기 바랍니다.",
+          "catalogSchemaVersion": 1,
+          "collectionId": "996ddbef-140c-46da-9bfb-b1cdc1d9b81b",
+          "collectionName": "[국내주식] 종목정보",
+          "group": "instrument",
+          "lastModifiedDate": "2025-05-14T13:22:33+09:00",
+          "oauth": true,
+          "realDomain": "https://openapi.koreainvestment.com:9443",
+          "realTrId": "HHKST668300C0",
+          "roleCandidate": "instrument",
+          "securityType": "oauth2-access-token",
+          "serviceGroup": "Instrument",
+          "source": {
+            "categoryApi": "https://apiportal.koreainvestment.com/api/apis/public/api-list/{collectionId}",
+            "detailApi": "https://apiportal.koreainvestment.com/api/apis/public/detail?accessUrl={accessUrl}",
+            "detailPageTemplate": "https://apiportal.koreainvestment.com/apiservice-apiservice?{accessUrl}",
+            "portal": "https://apiportal.koreainvestment.com/apiservice-category"
+          },
+          "sourceDetailUrl": "https://apiportal.koreainvestment.com/apiservice-apiservice?/uapi/domestic-stock/v1/quotations/estimate-perform",
+          "supportsReal": true,
+          "supportsVirtual": false,
+          "virtualDomain": "미지원",
+          "virtualTrId": "모의투자 미지원"
+        }
+      }
+    }
+  }
+}

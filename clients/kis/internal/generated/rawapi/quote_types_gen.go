@@ -170,14 +170,14 @@ type InquirePriceOutput struct {
 	// Length: 3
 	// Order: 004.010
 	GrmnRateClsCode string `json:"grmn_rate_cls_code"`
-	// ElwPblcYn maps elw_pblc_yn.
+	// ELWPblcYn maps elw_pblc_yn.
 	//
 	// KIS field: ELW 발행 여부
 	// Property code: elw_pblc_yn
 	// Required: true
 	// Length: 1
 	// Order: 004.011
-	ElwPblcYn string `json:"elw_pblc_yn"`
+	ELWPblcYn string `json:"elw_pblc_yn"`
 	// StckPrpr maps stck_prpr.
 	//
 	// KIS field: 주식 현재가
@@ -749,6 +749,543 @@ type InquirePriceOutput struct {
 }
 
 func (r *InquirePriceResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// InquirePrice2Request is the request for the KIS API.
+//
+// KIS API: 주식현재가 시세2[v1_국내주식-054]
+// Summary: 주식현재가 시세2 API입니다.
+// Operation ID: inquire-price-2
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/inquire-price-2
+// TR ID: FHPST01010000
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: read_only
+type InquirePrice2Request struct {
+	// FidCondMrktDivCode maps FID_COND_MRKT_DIV_CODE.
+	//
+	// KIS field: FID 조건 시장 분류 코드
+	// Property code: FID_COND_MRKT_DIV_CODE
+	// Required: true
+	// Length: 2
+	// Order: 001
+	// Description: J:KRX, NX:NXT, UN:통합
+	FidCondMrktDivCode string `json:"FID_COND_MRKT_DIV_CODE"`
+	// FidInputISCD maps FID_INPUT_ISCD.
+	//
+	// KIS field: FID 입력 종목코드
+	// Property code: FID_INPUT_ISCD
+	// Required: true
+	// Length: 12
+	// Order: 002
+	// Description: 000660
+	FidInputISCD string `json:"FID_INPUT_ISCD"`
+}
+
+func (r InquirePrice2Request) query() map[string]string {
+	return map[string]string{
+		"FID_COND_MRKT_DIV_CODE": r.FidCondMrktDivCode,
+		"FID_INPUT_ISCD":         r.FidInputISCD,
+	}
+}
+
+// InquirePrice2Response is the response for the KIS API.
+//
+// KIS API: 주식현재가 시세2[v1_국내주식-054]
+// Summary: 주식현재가 시세2 API입니다.
+// Operation ID: inquire-price-2
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/inquire-price-2
+// TR ID: FHPST01010000
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: read_only
+type InquirePrice2Response struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output maps output.
+	//
+	// KIS field: 응답상세
+	// Property code: output
+	// Required: true
+	// Length:
+	// Order: 004
+	Output InquirePrice2Output `json:"output"`
+}
+
+// InquirePrice2Output is a KIS response object.
+type InquirePrice2Output struct {
+	// RprsMrktKorName maps rprs_mrkt_kor_name.
+	//
+	// KIS field: 대표 시장 한글 명
+	// Property code: rprs_mrkt_kor_name
+	// Required: true
+	// Length: 40
+	// Order: 004.001
+	RprsMrktKorName string `json:"rprs_mrkt_kor_name"`
+	// NewHgprLwprClsCode maps new_hgpr_lwpr_cls_code.
+	//
+	// KIS field: 신 고가 저가 구분 코드
+	// Property code: new_hgpr_lwpr_cls_code
+	// Required: true
+	// Length: 10
+	// Order: 004.002
+	// Description: 특정 경우에만 데이터 출력
+	NewHgprLwprClsCode string `json:"new_hgpr_lwpr_cls_code"`
+	// MxprLlamClsCode maps mxpr_llam_cls_code.
+	//
+	// KIS field: 상하한가 구분 코드
+	// Property code: mxpr_llam_cls_code
+	// Required: true
+	// Length: 10
+	// Order: 004.003
+	// Description: 특정 경우에만 데이터 출력
+	MxprLlamClsCode string `json:"mxpr_llam_cls_code"`
+	// CrdtAbleYn maps crdt_able_yn.
+	//
+	// KIS field: 신용 가능 여부
+	// Property code: crdt_able_yn
+	// Required: true
+	// Length: 1
+	// Order: 004.004
+	CrdtAbleYn string `json:"crdt_able_yn"`
+	// StckMxpr maps stck_mxpr.
+	//
+	// KIS field: 주식 상한가
+	// Property code: stck_mxpr
+	// Required: true
+	// Length: 10
+	// Order: 004.005
+	StckMxpr string `json:"stck_mxpr"`
+	// ELWPblcYn maps elw_pblc_yn.
+	//
+	// KIS field: ELW 발행 여부
+	// Property code: elw_pblc_yn
+	// Required: true
+	// Length: 1
+	// Order: 004.006
+	ELWPblcYn string `json:"elw_pblc_yn"`
+	// PrdyClprVrssOprcRate maps prdy_clpr_vrss_oprc_rate.
+	//
+	// KIS field: 전일 종가 대비 시가2 비율
+	// Property code: prdy_clpr_vrss_oprc_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.007
+	PrdyClprVrssOprcRate string `json:"prdy_clpr_vrss_oprc_rate"`
+	// CrdtRate maps crdt_rate.
+	//
+	// KIS field: 신용 비율
+	// Property code: crdt_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.008
+	CrdtRate string `json:"crdt_rate"`
+	// MargRate maps marg_rate.
+	//
+	// KIS field: 증거금 비율
+	// Property code: marg_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.009
+	MargRate string `json:"marg_rate"`
+	// LwprVrssPrpr maps lwpr_vrss_prpr.
+	//
+	// KIS field: 최저가 대비 현재가
+	// Property code: lwpr_vrss_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.010
+	LwprVrssPrpr string `json:"lwpr_vrss_prpr"`
+	// LwprVrssPrprSign maps lwpr_vrss_prpr_sign.
+	//
+	// KIS field: 최저가 대비 현재가 부호
+	// Property code: lwpr_vrss_prpr_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.011
+	LwprVrssPrprSign string `json:"lwpr_vrss_prpr_sign"`
+	// PrdyClprVrssLwprRate maps prdy_clpr_vrss_lwpr_rate.
+	//
+	// KIS field: 전일 종가 대비 최저가 비율
+	// Property code: prdy_clpr_vrss_lwpr_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.012
+	PrdyClprVrssLwprRate string `json:"prdy_clpr_vrss_lwpr_rate"`
+	// StckLwpr maps stck_lwpr.
+	//
+	// KIS field: 주식 최저가
+	// Property code: stck_lwpr
+	// Required: true
+	// Length: 10
+	// Order: 004.013
+	StckLwpr string `json:"stck_lwpr"`
+	// HgprVrssPrpr maps hgpr_vrss_prpr.
+	//
+	// KIS field: 최고가 대비 현재가
+	// Property code: hgpr_vrss_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.014
+	HgprVrssPrpr string `json:"hgpr_vrss_prpr"`
+	// HgprVrssPrprSign maps hgpr_vrss_prpr_sign.
+	//
+	// KIS field: 최고가 대비 현재가 부호
+	// Property code: hgpr_vrss_prpr_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.015
+	HgprVrssPrprSign string `json:"hgpr_vrss_prpr_sign"`
+	// PrdyClprVrssHgprRate maps prdy_clpr_vrss_hgpr_rate.
+	//
+	// KIS field: 전일 종가 대비 최고가 비율
+	// Property code: prdy_clpr_vrss_hgpr_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.016
+	PrdyClprVrssHgprRate string `json:"prdy_clpr_vrss_hgpr_rate"`
+	// StckHgpr maps stck_hgpr.
+	//
+	// KIS field: 주식 최고가
+	// Property code: stck_hgpr
+	// Required: true
+	// Length: 10
+	// Order: 004.017
+	StckHgpr string `json:"stck_hgpr"`
+	// OprcVrssPrpr maps oprc_vrss_prpr.
+	//
+	// KIS field: 시가2 대비 현재가
+	// Property code: oprc_vrss_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.018
+	OprcVrssPrpr string `json:"oprc_vrss_prpr"`
+	// OprcVrssPrprSign maps oprc_vrss_prpr_sign.
+	//
+	// KIS field: 시가2 대비 현재가 부호
+	// Property code: oprc_vrss_prpr_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.019
+	OprcVrssPrprSign string `json:"oprc_vrss_prpr_sign"`
+	// MangIssuYn maps mang_issu_yn.
+	//
+	// KIS field: 관리 종목 여부
+	// Property code: mang_issu_yn
+	// Required: true
+	// Length: 1
+	// Order: 004.020
+	MangIssuYn string `json:"mang_issu_yn"`
+	// DiviAppClsCode maps divi_app_cls_code.
+	//
+	// KIS field: 동시호가배분처리코드
+	// Property code: divi_app_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 004.021
+	// Description: 11:매수상한배분 12:매수하한배분 13: 매도상한배분 14:매도하한배분
+	DiviAppClsCode string `json:"divi_app_cls_code"`
+	// ShortOverYn maps short_over_yn.
+	//
+	// KIS field: 단기과열여부
+	// Property code: short_over_yn
+	// Required: true
+	// Length: 1
+	// Order: 004.022
+	ShortOverYn string `json:"short_over_yn"`
+	// MrktWarnClsCode maps mrkt_warn_cls_code.
+	//
+	// KIS field: 시장경고코드
+	// Property code: mrkt_warn_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 004.023
+	// Description: 00: 없음 01: 투자주의 02:투자경고 03:투자위험
+	MrktWarnClsCode string `json:"mrkt_warn_cls_code"`
+	// InvtCafulYn maps invt_caful_yn.
+	//
+	// KIS field: 투자유의여부
+	// Property code: invt_caful_yn
+	// Required: true
+	// Length: 1
+	// Order: 004.024
+	InvtCafulYn string `json:"invt_caful_yn"`
+	// StangeRunupYn maps stange_runup_yn.
+	//
+	// KIS field: 이상급등여부
+	// Property code: stange_runup_yn
+	// Required: true
+	// Length: 1
+	// Order: 004.025
+	StangeRunupYn string `json:"stange_runup_yn"`
+	// SstsHotYn maps ssts_hot_yn.
+	//
+	// KIS field: 공매도과열 여부
+	// Property code: ssts_hot_yn
+	// Required: true
+	// Length: 1
+	// Order: 004.026
+	SstsHotYn string `json:"ssts_hot_yn"`
+	// LowCurrentYn maps low_current_yn.
+	//
+	// KIS field: 저유동성 종목 여부
+	// Property code: low_current_yn
+	// Required: true
+	// Length: 1
+	// Order: 004.027
+	LowCurrentYn string `json:"low_current_yn"`
+	// ViClsCode maps vi_cls_code.
+	//
+	// KIS field: VI적용구분코드
+	// Property code: vi_cls_code
+	// Required: true
+	// Length: 1
+	// Order: 004.028
+	ViClsCode string `json:"vi_cls_code"`
+	// ShortOverClsCode maps short_over_cls_code.
+	//
+	// KIS field: 단기과열구분코드
+	// Property code: short_over_cls_code
+	// Required: true
+	// Length: 10
+	// Order: 004.029
+	ShortOverClsCode string `json:"short_over_cls_code"`
+	// StckLlam maps stck_llam.
+	//
+	// KIS field: 주식 하한가
+	// Property code: stck_llam
+	// Required: true
+	// Length: 10
+	// Order: 004.030
+	StckLlam string `json:"stck_llam"`
+	// NewLstnClsName maps new_lstn_cls_name.
+	//
+	// KIS field: 신규 상장 구분 명
+	// Property code: new_lstn_cls_name
+	// Required: true
+	// Length: 40
+	// Order: 004.031
+	NewLstnClsName string `json:"new_lstn_cls_name"`
+	// VlntDealClsName maps vlnt_deal_cls_name.
+	//
+	// KIS field: 임의 매매 구분 명
+	// Property code: vlnt_deal_cls_name
+	// Required: true
+	// Length: 16
+	// Order: 004.032
+	VlntDealClsName string `json:"vlnt_deal_cls_name"`
+	// FlngClsName maps flng_cls_name.
+	//
+	// KIS field: 락 구분 이름
+	// Property code: flng_cls_name
+	// Required: true
+	// Length: 40
+	// Order: 004.033
+	// Description: 특정 경우에만 데이터 출력
+	FlngClsName string `json:"flng_cls_name"`
+	// RevlIssuReasName maps revl_issu_reas_name.
+	//
+	// KIS field: 재평가 종목 사유 명
+	// Property code: revl_issu_reas_name
+	// Required: true
+	// Length: 40
+	// Order: 004.034
+	// Description: 특정 경우에만 데이터 출력
+	RevlIssuReasName string `json:"revl_issu_reas_name"`
+	// MrktWarnClsName maps mrkt_warn_cls_name.
+	//
+	// KIS field: 시장 경고 구분 명
+	// Property code: mrkt_warn_cls_name
+	// Required: true
+	// Length: 40
+	// Order: 004.035
+	// Description: 특정 경우에만 데이터 출력 "투자환기" / "투자경고"
+	MrktWarnClsName string `json:"mrkt_warn_cls_name"`
+	// StckSdpr maps stck_sdpr.
+	//
+	// KIS field: 주식 기준가
+	// Property code: stck_sdpr
+	// Required: true
+	// Length: 10
+	// Order: 004.036
+	StckSdpr string `json:"stck_sdpr"`
+	// BstpClsCode maps bstp_cls_code.
+	//
+	// KIS field: 업종 구분 코드
+	// Property code: bstp_cls_code
+	// Required: true
+	// Length: 4
+	// Order: 004.037
+	BstpClsCode string `json:"bstp_cls_code"`
+	// StckPrdyClpr maps stck_prdy_clpr.
+	//
+	// KIS field: 주식 전일 종가
+	// Property code: stck_prdy_clpr
+	// Required: true
+	// Length: 10
+	// Order: 004.038
+	StckPrdyClpr string `json:"stck_prdy_clpr"`
+	// InsnPbntYn maps insn_pbnt_yn.
+	//
+	// KIS field: 불성실 공시 여부
+	// Property code: insn_pbnt_yn
+	// Required: true
+	// Length: 1
+	// Order: 004.039
+	InsnPbntYn string `json:"insn_pbnt_yn"`
+	// FcamModClsName maps fcam_mod_cls_name.
+	//
+	// KIS field: 액면가 변경 구분 명
+	// Property code: fcam_mod_cls_name
+	// Required: true
+	// Length: 10
+	// Order: 004.040
+	// Description: 특정 경우에만 데이터 출력
+	FcamModClsName string `json:"fcam_mod_cls_name"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.041
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.042
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.043
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.044
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// AcmlTRPbmn maps acml_tr_pbmn.
+	//
+	// KIS field: 누적 거래 대금
+	// Property code: acml_tr_pbmn
+	// Required: true
+	// Length: 18
+	// Order: 004.045
+	AcmlTRPbmn string `json:"acml_tr_pbmn"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.046
+	AcmlVol string `json:"acml_vol"`
+	// PrdyVrssVolRate maps prdy_vrss_vol_rate.
+	//
+	// KIS field: 전일 대비 거래량 비율
+	// Property code: prdy_vrss_vol_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.047
+	PrdyVrssVolRate string `json:"prdy_vrss_vol_rate"`
+	// BstpKorIsnm maps bstp_kor_isnm.
+	//
+	// KIS field: 업종 한글 종목명
+	// Property code: bstp_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 004.048
+	// Description: ※ 거래소 정보로 특정 종목은 업종구분이 없어 데이터 미회신
+	BstpKorIsnm string `json:"bstp_kor_isnm"`
+	// SltrYn maps sltr_yn.
+	//
+	// KIS field: 정리매매 여부
+	// Property code: sltr_yn
+	// Required: true
+	// Length: 1
+	// Order: 004.049
+	SltrYn string `json:"sltr_yn"`
+	// TrhtYn maps trht_yn.
+	//
+	// KIS field: 거래정지 여부
+	// Property code: trht_yn
+	// Required: true
+	// Length: 1
+	// Order: 004.050
+	TrhtYn string `json:"trht_yn"`
+	// OprcRangContYn maps oprc_rang_cont_yn.
+	//
+	// KIS field: 시가 범위 연장 여부
+	// Property code: oprc_rang_cont_yn
+	// Required: true
+	// Length: 1
+	// Order: 004.051
+	OprcRangContYn string `json:"oprc_rang_cont_yn"`
+	// VlntFinClsCode maps vlnt_fin_cls_code.
+	//
+	// KIS field: 임의 종료 구분 코드
+	// Property code: vlnt_fin_cls_code
+	// Required: true
+	// Length: 1
+	// Order: 004.052
+	VlntFinClsCode string `json:"vlnt_fin_cls_code"`
+	// StckOprc maps stck_oprc.
+	//
+	// KIS field: 주식 시가2
+	// Property code: stck_oprc
+	// Required: true
+	// Length: 10
+	// Order: 004.053
+	StckOprc string `json:"stck_oprc"`
+	// PrdyVol maps prdy_vol.
+	//
+	// KIS field: 전일 거래량
+	// Property code: prdy_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.054
+	PrdyVol string `json:"prdy_vol"`
+}
+
+func (r *InquirePrice2Response) KISStatus() Status {
 	if r == nil {
 		return Status{}
 	}
@@ -3073,6 +3610,282 @@ func (r *InquireTimeItemChartPriceResponse) KISStatus() Status {
 	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
 }
 
+// InquireTimeDailychartpriceRequest is the request for the KIS API.
+//
+// KIS API: 주식일별분봉조회 [국내주식-213]
+// Summary: 주식일별분봉조회 API입니다.   실전계좌의 경우, 한 번의 호출에 최대 120건까지 확인 가능하며,  FID_INPUT_DATE_1, FID_INPUT_HOUR_1 이용하여 과거일자 분봉조회 가능합니다.  ※ 과거 분봉 조회 시, 당사 서버에서 보관하고 있는 만큼의 데이터만 확인이 가능합니다. (최대 1년 분봉 보관)
+// Operation ID: inquire-time-dailychartprice
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/inquire-time-dailychartprice
+// TR ID: FHKST03010230
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: daily_bar
+type InquireTimeDailychartpriceRequest struct {
+	// FidCondMrktDivCode maps FID_COND_MRKT_DIV_CODE.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: FID_COND_MRKT_DIV_CODE
+	// Required: true
+	// Length: 2
+	// Order: 001
+	// Description: J:KRX, NX:NXT, UN:통합
+	FidCondMrktDivCode string `json:"FID_COND_MRKT_DIV_CODE"`
+	// FidInputISCD maps FID_INPUT_ISCD.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: FID_INPUT_ISCD
+	// Required: true
+	// Length: 12
+	// Order: 002
+	// Description: 종목코드 (ex 005930 삼성전자)
+	FidInputISCD string `json:"FID_INPUT_ISCD"`
+	// FidInputHour1 maps FID_INPUT_HOUR_1.
+	//
+	// KIS field: 입력 시간1
+	// Property code: FID_INPUT_HOUR_1
+	// Required: true
+	// Length: 10
+	// Order: 003
+	// Description: 입력 시간(ex 13시 130000)
+	FidInputHour1 string `json:"FID_INPUT_HOUR_1"`
+	// FidInputDate1 maps FID_INPUT_DATE_1.
+	//
+	// KIS field: 입력 날짜1
+	// Property code: FID_INPUT_DATE_1
+	// Required: true
+	// Length: 2
+	// Order: 004
+	// Description: 입력 날짜(20241023)
+	FidInputDate1 string `json:"FID_INPUT_DATE_1"`
+	// FidPwDataIncuYn maps FID_PW_DATA_INCU_YN.
+	//
+	// KIS field: 과거 데이터 포함 여부
+	// Property code: FID_PW_DATA_INCU_YN
+	// Required: true
+	// Length: 2
+	// Order: 005
+	FidPwDataIncuYn string `json:"FID_PW_DATA_INCU_YN"`
+	// FidFakeTickIncuYn maps FID_FAKE_TICK_INCU_YN.
+	//
+	// KIS field: 허봉 포함 여부
+	// Property code: FID_FAKE_TICK_INCU_YN
+	// Required: false
+	// Length: 2
+	// Order: 006
+	// Description: 공백 필수 입력
+	FidFakeTickIncuYn string `json:"FID_FAKE_TICK_INCU_YN"`
+}
+
+func (r InquireTimeDailychartpriceRequest) query() map[string]string {
+	return map[string]string{
+		"FID_COND_MRKT_DIV_CODE": r.FidCondMrktDivCode,
+		"FID_INPUT_ISCD":         r.FidInputISCD,
+		"FID_INPUT_HOUR_1":       r.FidInputHour1,
+		"FID_INPUT_DATE_1":       r.FidInputDate1,
+		"FID_PW_DATA_INCU_YN":    r.FidPwDataIncuYn,
+		"FID_FAKE_TICK_INCU_YN":  r.FidFakeTickIncuYn,
+	}
+}
+
+// InquireTimeDailychartpriceResponse is the response for the KIS API.
+//
+// KIS API: 주식일별분봉조회 [국내주식-213]
+// Summary: 주식일별분봉조회 API입니다.   실전계좌의 경우, 한 번의 호출에 최대 120건까지 확인 가능하며,  FID_INPUT_DATE_1, FID_INPUT_HOUR_1 이용하여 과거일자 분봉조회 가능합니다.  ※ 과거 분봉 조회 시, 당사 서버에서 보관하고 있는 만큼의 데이터만 확인이 가능합니다. (최대 1년 분봉 보관)
+// Operation ID: inquire-time-dailychartprice
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/inquire-time-dailychartprice
+// TR ID: FHKST03010230
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: daily_bar
+type InquireTimeDailychartpriceResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output1 maps output1.
+	//
+	// KIS field: 응답상세
+	// Property code: output1
+	// Required: true
+	// Length:
+	// Order: 004
+	Output1 InquireTimeDailychartpriceOutput1 `json:"output1"`
+	// Output2 maps output2.
+	//
+	// KIS field: 응답상세
+	// Property code: output2
+	// Required: true
+	// Length:
+	// Order: 005
+	// Description: array
+	Output2 []InquireTimeDailychartpriceOutput2Item `json:"output2"`
+}
+
+// InquireTimeDailychartpriceOutput1 is a KIS response object.
+type InquireTimeDailychartpriceOutput1 struct {
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.001
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.002
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 11
+	// Order: 004.003
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// StckPrdyClpr maps stck_prdy_clpr.
+	//
+	// KIS field: 주식 전일 종가
+	// Property code: stck_prdy_clpr
+	// Required: true
+	// Length: 10
+	// Order: 004.004
+	StckPrdyClpr string `json:"stck_prdy_clpr"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.005
+	AcmlVol string `json:"acml_vol"`
+	// AcmlTRPbmn maps acml_tr_pbmn.
+	//
+	// KIS field: 누적 거래 대금
+	// Property code: acml_tr_pbmn
+	// Required: true
+	// Length: 18
+	// Order: 004.006
+	AcmlTRPbmn string `json:"acml_tr_pbmn"`
+	// HtsKorIsnm maps hts_kor_isnm.
+	//
+	// KIS field: HTS 한글 종목명
+	// Property code: hts_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 004.007
+	HtsKorIsnm string `json:"hts_kor_isnm"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.008
+	StckPrpr string `json:"stck_prpr"`
+}
+
+// InquireTimeDailychartpriceOutput2Item is a KIS response object.
+type InquireTimeDailychartpriceOutput2Item struct {
+	// StckBsopDate maps stck_bsop_date.
+	//
+	// KIS field: 주식 영업 일자
+	// Property code: stck_bsop_date
+	// Required: true
+	// Length: 8
+	// Order: 005.001
+	StckBsopDate string `json:"stck_bsop_date"`
+	// StckCntgHour maps stck_cntg_hour.
+	//
+	// KIS field: 주식 체결 시간
+	// Property code: stck_cntg_hour
+	// Required: true
+	// Length: 6
+	// Order: 005.002
+	StckCntgHour string `json:"stck_cntg_hour"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 005.003
+	StckPrpr string `json:"stck_prpr"`
+	// StckOprc maps stck_oprc.
+	//
+	// KIS field: 주식 시가2
+	// Property code: stck_oprc
+	// Required: true
+	// Length: 10
+	// Order: 005.004
+	StckOprc string `json:"stck_oprc"`
+	// StckHgpr maps stck_hgpr.
+	//
+	// KIS field: 주식 최고가
+	// Property code: stck_hgpr
+	// Required: true
+	// Length: 10
+	// Order: 005.005
+	StckHgpr string `json:"stck_hgpr"`
+	// StckLwpr maps stck_lwpr.
+	//
+	// KIS field: 주식 최저가
+	// Property code: stck_lwpr
+	// Required: true
+	// Length: 10
+	// Order: 005.006
+	StckLwpr string `json:"stck_lwpr"`
+	// CntgVol maps cntg_vol.
+	//
+	// KIS field: 체결 거래량
+	// Property code: cntg_vol
+	// Required: true
+	// Length: 18
+	// Order: 005.007
+	CntgVol string `json:"cntg_vol"`
+	// AcmlTRPbmn maps acml_tr_pbmn.
+	//
+	// KIS field: 누적 거래 대금
+	// Property code: acml_tr_pbmn
+	// Required: true
+	// Length: 18
+	// Order: 005.008
+	AcmlTRPbmn string `json:"acml_tr_pbmn"`
+}
+
+func (r *InquireTimeDailychartpriceResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
 // InquireTimeItemConclusionRequest is the request for the KIS API.
 //
 // KIS API: 주식현재가 당일시간대별체결[v1_국내주식-023]
@@ -3323,6 +4136,3580 @@ type InquireTimeItemConclusionOutput2 struct {
 }
 
 func (r *InquireTimeItemConclusionResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// InquireDailyOvertimepriceRequest is the request for the KIS API.
+//
+// KIS API: 주식현재가 시간외일자별주가[v1_국내주식-026]
+// Summary: 주식현재가 시간외일자별주가 API입니다.  (최근일 30건만 조회 가능) 한국투자 HTS(eFriend Plus) &gt; [0232] 시간외 일자별주가의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: inquire-daily-overtimeprice
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/inquire-daily-overtimeprice
+// TR ID: FHPST02320000
+// Virtual TR ID: FHPST02320000
+// Group: quote
+// Service group: Quote
+// Role hint: intraday_bar
+type InquireDailyOvertimepriceRequest struct {
+	// FidCondMrktDivCode maps FID_COND_MRKT_DIV_CODE.
+	//
+	// KIS field: FID 조건 시장 분류 코드
+	// Property code: FID_COND_MRKT_DIV_CODE
+	// Required: true
+	// Length: 2
+	// Order: 001
+	// Description: J : 주식, ETF, ETN
+	FidCondMrktDivCode string `json:"FID_COND_MRKT_DIV_CODE"`
+	// FidInputISCD maps FID_INPUT_ISCD.
+	//
+	// KIS field: FID 입력 종목코드
+	// Property code: FID_INPUT_ISCD
+	// Required: true
+	// Length: 12
+	// Order: 002
+	// Description: 종목번호 (6자리) ETN의 경우, Q로 시작 (EX. Q500001)
+	FidInputISCD string `json:"FID_INPUT_ISCD"`
+}
+
+func (r InquireDailyOvertimepriceRequest) query() map[string]string {
+	return map[string]string{
+		"FID_COND_MRKT_DIV_CODE": r.FidCondMrktDivCode,
+		"FID_INPUT_ISCD":         r.FidInputISCD,
+	}
+}
+
+// InquireDailyOvertimepriceResponse is the response for the KIS API.
+//
+// KIS API: 주식현재가 시간외일자별주가[v1_국내주식-026]
+// Summary: 주식현재가 시간외일자별주가 API입니다.  (최근일 30건만 조회 가능) 한국투자 HTS(eFriend Plus) &gt; [0232] 시간외 일자별주가의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: inquire-daily-overtimeprice
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/inquire-daily-overtimeprice
+// TR ID: FHPST02320000
+// Virtual TR ID: FHPST02320000
+// Group: quote
+// Service group: Quote
+// Role hint: intraday_bar
+type InquireDailyOvertimepriceResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output1 maps output1.
+	//
+	// KIS field: 응답상세1
+	// Property code: output1
+	// Required: false
+	// Length:
+	// Order: 004
+	// Description: 기본정보
+	Output1 InquireDailyOvertimepriceOutput1 `json:"output1"`
+	// Output2 maps output2.
+	//
+	// KIS field: 응답상세2
+	// Property code: output2
+	// Required: false
+	// Length:
+	// Order: 005
+	// Description: Array 일자별 정보
+	Output2 []InquireDailyOvertimepriceOutput2Item `json:"output2"`
+}
+
+// InquireDailyOvertimepriceOutput1 is a KIS response object.
+type InquireDailyOvertimepriceOutput1 struct {
+	// OvtmUntpPrpr maps ovtm_untp_prpr.
+	//
+	// KIS field: 시간외 단일가 현재가
+	// Property code: ovtm_untp_prpr
+	// Required: false
+	// Length: 10
+	// Order: 004.001
+	OvtmUntpPrpr string `json:"ovtm_untp_prpr"`
+	// OvtmUntpPrdyVrss maps ovtm_untp_prdy_vrss.
+	//
+	// KIS field: 시간외 단일가 전일 대비
+	// Property code: ovtm_untp_prdy_vrss
+	// Required: false
+	// Length: 10
+	// Order: 004.002
+	OvtmUntpPrdyVrss string `json:"ovtm_untp_prdy_vrss"`
+	// OvtmUntpPrdyVrssSign maps ovtm_untp_prdy_vrss_sign.
+	//
+	// KIS field: 시간외 단일가 전일 대비 부호
+	// Property code: ovtm_untp_prdy_vrss_sign
+	// Required: false
+	// Length: 1
+	// Order: 004.003
+	OvtmUntpPrdyVrssSign string `json:"ovtm_untp_prdy_vrss_sign"`
+	// OvtmUntpPrdyCtrt maps ovtm_untp_prdy_ctrt.
+	//
+	// KIS field: 시간외 단일가 전일 대비율
+	// Property code: ovtm_untp_prdy_ctrt
+	// Required: false
+	// Length: 11
+	// Order: 004.004
+	// Description: 11(8.2)
+	OvtmUntpPrdyCtrt string `json:"ovtm_untp_prdy_ctrt"`
+	// OvtmUntpVol maps ovtm_untp_vol.
+	//
+	// KIS field: 시간외 단일가 거래량
+	// Property code: ovtm_untp_vol
+	// Required: false
+	// Length: 18
+	// Order: 004.005
+	OvtmUntpVol string `json:"ovtm_untp_vol"`
+	// OvtmUntpTRPbmn maps ovtm_untp_tr_pbmn.
+	//
+	// KIS field: 시간외 단일가 거래 대금
+	// Property code: ovtm_untp_tr_pbmn
+	// Required: false
+	// Length: 18
+	// Order: 004.006
+	OvtmUntpTRPbmn string `json:"ovtm_untp_tr_pbmn"`
+	// OvtmUntpMxpr maps ovtm_untp_mxpr.
+	//
+	// KIS field: 시간외 단일가 상한가
+	// Property code: ovtm_untp_mxpr
+	// Required: false
+	// Length: 18
+	// Order: 004.007
+	OvtmUntpMxpr string `json:"ovtm_untp_mxpr"`
+	// OvtmUntpLlam maps ovtm_untp_llam.
+	//
+	// KIS field: 시간외 단일가 하한가
+	// Property code: ovtm_untp_llam
+	// Required: false
+	// Length: 18
+	// Order: 004.008
+	OvtmUntpLlam string `json:"ovtm_untp_llam"`
+	// OvtmUntpOprc maps ovtm_untp_oprc.
+	//
+	// KIS field: 시간외 단일가 시가2
+	// Property code: ovtm_untp_oprc
+	// Required: false
+	// Length: 10
+	// Order: 004.009
+	OvtmUntpOprc string `json:"ovtm_untp_oprc"`
+	// OvtmUntpHgpr maps ovtm_untp_hgpr.
+	//
+	// KIS field: 시간외 단일가 최고가
+	// Property code: ovtm_untp_hgpr
+	// Required: false
+	// Length: 10
+	// Order: 004.010
+	OvtmUntpHgpr string `json:"ovtm_untp_hgpr"`
+	// OvtmUntpLwpr maps ovtm_untp_lwpr.
+	//
+	// KIS field: 시간외 단일가 최저가
+	// Property code: ovtm_untp_lwpr
+	// Required: false
+	// Length: 10
+	// Order: 004.011
+	OvtmUntpLwpr string `json:"ovtm_untp_lwpr"`
+	// OvtmUntpAntcCnpr maps ovtm_untp_antc_cnpr.
+	//
+	// KIS field: 시간외 단일가 예상 체결가
+	// Property code: ovtm_untp_antc_cnpr
+	// Required: false
+	// Length: 10
+	// Order: 004.012
+	OvtmUntpAntcCnpr string `json:"ovtm_untp_antc_cnpr"`
+	// OvtmUntpAntcCntgVrss maps ovtm_untp_antc_cntg_vrss.
+	//
+	// KIS field: 시간외 단일가 예상 체결 대비
+	// Property code: ovtm_untp_antc_cntg_vrss
+	// Required: false
+	// Length: 10
+	// Order: 004.013
+	OvtmUntpAntcCntgVrss string `json:"ovtm_untp_antc_cntg_vrss"`
+	// OvtmUntpAntcCntgVrssSign maps ovtm_untp_antc_cntg_vrss_sign.
+	//
+	// KIS field: 시간외 단일가 예상 체결 대비
+	// Property code: ovtm_untp_antc_cntg_vrss_sign
+	// Required: false
+	// Length: 1
+	// Order: 004.014
+	OvtmUntpAntcCntgVrssSign string `json:"ovtm_untp_antc_cntg_vrss_sign"`
+	// OvtmUntpAntcCntgCtrt maps ovtm_untp_antc_cntg_ctrt.
+	//
+	// KIS field: 시간외 단일가 예상 체결 대비율
+	// Property code: ovtm_untp_antc_cntg_ctrt
+	// Required: false
+	// Length: 11
+	// Order: 004.015
+	// Description: 11(8.2)
+	OvtmUntpAntcCntgCtrt string `json:"ovtm_untp_antc_cntg_ctrt"`
+	// OvtmUntpAntcVol maps ovtm_untp_antc_vol.
+	//
+	// KIS field: 시간외 단일가 예상 거래량
+	// Property code: ovtm_untp_antc_vol
+	// Required: false
+	// Length: 18
+	// Order: 004.016
+	OvtmUntpAntcVol string `json:"ovtm_untp_antc_vol"`
+}
+
+// InquireDailyOvertimepriceOutput2Item is a KIS response object.
+type InquireDailyOvertimepriceOutput2Item struct {
+	// StckBsopDate maps stck_bsop_date.
+	//
+	// KIS field: 주식 영업 일자
+	// Property code: stck_bsop_date
+	// Required: false
+	// Length: 8
+	// Order: 005.001
+	StckBsopDate string `json:"stck_bsop_date"`
+	// OvtmUntpPrpr maps ovtm_untp_prpr.
+	//
+	// KIS field: 시간외 단일가 현재가
+	// Property code: ovtm_untp_prpr
+	// Required: false
+	// Length: 10
+	// Order: 005.002
+	OvtmUntpPrpr string `json:"ovtm_untp_prpr"`
+	// OvtmUntpPrdyVrss maps ovtm_untp_prdy_vrss.
+	//
+	// KIS field: 시간외 단일가 전일 대비
+	// Property code: ovtm_untp_prdy_vrss
+	// Required: false
+	// Length: 10
+	// Order: 005.003
+	OvtmUntpPrdyVrss string `json:"ovtm_untp_prdy_vrss"`
+	// OvtmUntpPrdyVrssSign maps ovtm_untp_prdy_vrss_sign.
+	//
+	// KIS field: 시간외 단일가 전일 대비 부호
+	// Property code: ovtm_untp_prdy_vrss_sign
+	// Required: false
+	// Length: 1
+	// Order: 005.004
+	OvtmUntpPrdyVrssSign string `json:"ovtm_untp_prdy_vrss_sign"`
+	// OvtmUntpPrdyCtrt maps ovtm_untp_prdy_ctrt.
+	//
+	// KIS field: 시간외 단일가 전일 대비율
+	// Property code: ovtm_untp_prdy_ctrt
+	// Required: false
+	// Length: 11
+	// Order: 005.005
+	// Description: 11(8.2)
+	OvtmUntpPrdyCtrt string `json:"ovtm_untp_prdy_ctrt"`
+	// OvtmUntpVol maps ovtm_untp_vol.
+	//
+	// KIS field: 시간외 단일가 거래량
+	// Property code: ovtm_untp_vol
+	// Required: false
+	// Length: 18
+	// Order: 005.006
+	OvtmUntpVol string `json:"ovtm_untp_vol"`
+	// StckClpr maps stck_clpr.
+	//
+	// KIS field: 주식 종가
+	// Property code: stck_clpr
+	// Required: false
+	// Length: 10
+	// Order: 005.007
+	StckClpr string `json:"stck_clpr"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: false
+	// Length: 10
+	// Order: 005.008
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: false
+	// Length: 1
+	// Order: 005.009
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: false
+	// Length: 11
+	// Order: 005.010
+	// Description: 11(8.2)
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: false
+	// Length: 18
+	// Order: 005.011
+	AcmlVol string `json:"acml_vol"`
+	// OvtmUntpTRPbmn maps ovtm_untp_tr_pbmn.
+	//
+	// KIS field: 시간외 단일가 거래대금
+	// Property code: ovtm_untp_tr_pbmn
+	// Required: false
+	// Length: 18
+	// Order: 005.012
+	OvtmUntpTRPbmn string `json:"ovtm_untp_tr_pbmn"`
+}
+
+func (r *InquireDailyOvertimepriceResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// InquireTimeOvertimeconclusionRequest is the request for the KIS API.
+//
+// KIS API: 주식현재가 시간외시간별체결[v1_국내주식-025]
+// Summary: 주식현재가 시간외시간별체결 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0231] 시간외 시간별체결의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: inquire-time-overtimeconclusion
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/inquire-time-overtimeconclusion
+// TR ID: FHPST02310000
+// Virtual TR ID: FHPST02310000
+// Group: quote
+// Service group: Quote
+// Role hint: intraday_bar
+type InquireTimeOvertimeconclusionRequest struct {
+	// FidCondMrktDivCode maps FID_COND_MRKT_DIV_CODE.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: FID_COND_MRKT_DIV_CODE
+	// Required: true
+	// Length: 2
+	// Order: 001
+	// Description: J : 주식, ETF, ETN
+	FidCondMrktDivCode string `json:"FID_COND_MRKT_DIV_CODE"`
+	// FidInputISCD maps FID_INPUT_ISCD.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: FID_INPUT_ISCD
+	// Required: true
+	// Length: 12
+	// Order: 002
+	// Description: 종목번호 (6자리) ETN의 경우, Q로 시작 (EX. Q500001)
+	FidInputISCD string `json:"FID_INPUT_ISCD"`
+	// FidHourClsCode maps FID_HOUR_CLS_CODE.
+	//
+	// KIS field: 시간 구분 코드
+	// Property code: FID_HOUR_CLS_CODE
+	// Required: true
+	// Length: 5
+	// Order: 003
+	// Description: 1 : 시간외 (Default)
+	FidHourClsCode string `json:"FID_HOUR_CLS_CODE"`
+}
+
+func (r InquireTimeOvertimeconclusionRequest) query() map[string]string {
+	return map[string]string{
+		"FID_COND_MRKT_DIV_CODE": r.FidCondMrktDivCode,
+		"FID_INPUT_ISCD":         r.FidInputISCD,
+		"FID_HOUR_CLS_CODE":      r.FidHourClsCode,
+	}
+}
+
+// InquireTimeOvertimeconclusionResponse is the response for the KIS API.
+//
+// KIS API: 주식현재가 시간외시간별체결[v1_국내주식-025]
+// Summary: 주식현재가 시간외시간별체결 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0231] 시간외 시간별체결의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: inquire-time-overtimeconclusion
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/inquire-time-overtimeconclusion
+// TR ID: FHPST02310000
+// Virtual TR ID: FHPST02310000
+// Group: quote
+// Service group: Quote
+// Role hint: intraday_bar
+type InquireTimeOvertimeconclusionResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output1 maps output1.
+	//
+	// KIS field: 응답상세1
+	// Property code: output1
+	// Required: false
+	// Length:
+	// Order: 004
+	// Description: 기본정보
+	Output1 InquireTimeOvertimeconclusionOutput1 `json:"output1"`
+	// Output2 maps output2.
+	//
+	// KIS field: 응답상세2
+	// Property code: output2
+	// Required: false
+	// Length:
+	// Order: 005
+	// Description: Array 시간별체결 정보
+	Output2 []InquireTimeOvertimeconclusionOutput2Item `json:"output2"`
+}
+
+// InquireTimeOvertimeconclusionOutput1 is a KIS response object.
+type InquireTimeOvertimeconclusionOutput1 struct {
+	// OvtmUntpPrpr maps ovtm_untp_prpr.
+	//
+	// KIS field: 시간외 단일가 현재가
+	// Property code: ovtm_untp_prpr
+	// Required: false
+	// Length: 10
+	// Order: 004.001
+	OvtmUntpPrpr string `json:"ovtm_untp_prpr"`
+	// OvtmUntpPrdyVrss maps ovtm_untp_prdy_vrss.
+	//
+	// KIS field: 시간외 단일가 전일 대비
+	// Property code: ovtm_untp_prdy_vrss
+	// Required: false
+	// Length: 10
+	// Order: 004.002
+	OvtmUntpPrdyVrss string `json:"ovtm_untp_prdy_vrss"`
+	// OvtmUntpPrdyVrssSign maps ovtm_untp_prdy_vrss_sign.
+	//
+	// KIS field: 시간외 단일가 전일 대비 부호
+	// Property code: ovtm_untp_prdy_vrss_sign
+	// Required: false
+	// Length: 1
+	// Order: 004.003
+	OvtmUntpPrdyVrssSign string `json:"ovtm_untp_prdy_vrss_sign"`
+	// OvtmUntpPrdyCtrt maps ovtm_untp_prdy_ctrt.
+	//
+	// KIS field: 시간외 단일가 전일 대비율
+	// Property code: ovtm_untp_prdy_ctrt
+	// Required: false
+	// Length: 11
+	// Order: 004.004
+	OvtmUntpPrdyCtrt string `json:"ovtm_untp_prdy_ctrt"`
+	// OvtmUntpVol maps ovtm_untp_vol.
+	//
+	// KIS field: 시간외 단일가 거래량
+	// Property code: ovtm_untp_vol
+	// Required: false
+	// Length: 18
+	// Order: 004.005
+	OvtmUntpVol string `json:"ovtm_untp_vol"`
+	// OvtmUntpTRPbmn maps ovtm_untp_tr_pbmn.
+	//
+	// KIS field: 시간외 단일가 거래 대금
+	// Property code: ovtm_untp_tr_pbmn
+	// Required: false
+	// Length: 18
+	// Order: 004.006
+	OvtmUntpTRPbmn string `json:"ovtm_untp_tr_pbmn"`
+	// OvtmUntpMxpr maps ovtm_untp_mxpr.
+	//
+	// KIS field: 시간외 단일가 상한가
+	// Property code: ovtm_untp_mxpr
+	// Required: false
+	// Length: 18
+	// Order: 004.007
+	OvtmUntpMxpr string `json:"ovtm_untp_mxpr"`
+	// OvtmUntpLlam maps ovtm_untp_llam.
+	//
+	// KIS field: 시간외 단일가 하한가
+	// Property code: ovtm_untp_llam
+	// Required: false
+	// Length: 18
+	// Order: 004.008
+	OvtmUntpLlam string `json:"ovtm_untp_llam"`
+	// OvtmUntpOprc maps ovtm_untp_oprc.
+	//
+	// KIS field: 시간외 단일가 시가2
+	// Property code: ovtm_untp_oprc
+	// Required: false
+	// Length: 10
+	// Order: 004.009
+	OvtmUntpOprc string `json:"ovtm_untp_oprc"`
+	// OvtmUntpHgpr maps ovtm_untp_hgpr.
+	//
+	// KIS field: 시간외 단일가 최고가
+	// Property code: ovtm_untp_hgpr
+	// Required: false
+	// Length: 10
+	// Order: 004.010
+	OvtmUntpHgpr string `json:"ovtm_untp_hgpr"`
+	// OvtmUntpLwpr maps ovtm_untp_lwpr.
+	//
+	// KIS field: 시간외 단일가 최저가
+	// Property code: ovtm_untp_lwpr
+	// Required: false
+	// Length: 10
+	// Order: 004.011
+	OvtmUntpLwpr string `json:"ovtm_untp_lwpr"`
+	// OvtmUntpAntcCnpr maps ovtm_untp_antc_cnpr.
+	//
+	// KIS field: 시간외 단일가 예상 체결가
+	// Property code: ovtm_untp_antc_cnpr
+	// Required: false
+	// Length: 10
+	// Order: 004.012
+	OvtmUntpAntcCnpr string `json:"ovtm_untp_antc_cnpr"`
+	// OvtmUntpAntcCntgVrss maps ovtm_untp_antc_cntg_vrss.
+	//
+	// KIS field: 시간외 단일가 예상 체결 대비
+	// Property code: ovtm_untp_antc_cntg_vrss
+	// Required: false
+	// Length: 10
+	// Order: 004.013
+	OvtmUntpAntcCntgVrss string `json:"ovtm_untp_antc_cntg_vrss"`
+	// OvtmUntpAntcCntgVrssSign maps ovtm_untp_antc_cntg_vrss_sign.
+	//
+	// KIS field: 시간외 단일가 예상 체결 대비
+	// Property code: ovtm_untp_antc_cntg_vrss_sign
+	// Required: false
+	// Length: 1
+	// Order: 004.014
+	OvtmUntpAntcCntgVrssSign string `json:"ovtm_untp_antc_cntg_vrss_sign"`
+	// OvtmUntpAntcCntgCtrt maps ovtm_untp_antc_cntg_ctrt.
+	//
+	// KIS field: 시간외 단일가 예상 체결 대비율
+	// Property code: ovtm_untp_antc_cntg_ctrt
+	// Required: false
+	// Length: 11
+	// Order: 004.015
+	OvtmUntpAntcCntgCtrt string `json:"ovtm_untp_antc_cntg_ctrt"`
+	// OvtmUntpAntcVol maps ovtm_untp_antc_vol.
+	//
+	// KIS field: 시간외 단일가 예상 거래량
+	// Property code: ovtm_untp_antc_vol
+	// Required: false
+	// Length: 18
+	// Order: 004.016
+	OvtmUntpAntcVol string `json:"ovtm_untp_antc_vol"`
+	// UplmSign maps uplm_sign.
+	//
+	// KIS field: 상한 부호
+	// Property code: uplm_sign
+	// Required: false
+	// Length: 1
+	// Order: 004.017
+	UplmSign string `json:"uplm_sign"`
+	// LslmSign maps lslm_sign.
+	//
+	// KIS field: 하한 부호
+	// Property code: lslm_sign
+	// Required: false
+	// Length: 1
+	// Order: 004.018
+	LslmSign string `json:"lslm_sign"`
+}
+
+// InquireTimeOvertimeconclusionOutput2Item is a KIS response object.
+type InquireTimeOvertimeconclusionOutput2Item struct {
+	// StckCntgHour maps stck_cntg_hour.
+	//
+	// KIS field: 주식 체결 시간
+	// Property code: stck_cntg_hour
+	// Required: false
+	// Length: 6
+	// Order: 005.001
+	StckCntgHour string `json:"stck_cntg_hour"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: false
+	// Length: 10
+	// Order: 005.002
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: false
+	// Length: 10
+	// Order: 005.003
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: false
+	// Length: 1
+	// Order: 005.004
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: false
+	// Length: 11
+	// Order: 005.005
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// Askp maps askp.
+	//
+	// KIS field: 매도호가
+	// Property code: askp
+	// Required: false
+	// Length: 10
+	// Order: 005.006
+	Askp string `json:"askp"`
+	// Bidp maps bidp.
+	//
+	// KIS field: 매수호가
+	// Property code: bidp
+	// Required: false
+	// Length: 10
+	// Order: 005.007
+	Bidp string `json:"bidp"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: false
+	// Length: 18
+	// Order: 005.008
+	AcmlVol string `json:"acml_vol"`
+	// CntgVol maps cntg_vol.
+	//
+	// KIS field: 체결 거래량
+	// Property code: cntg_vol
+	// Required: false
+	// Length: 18
+	// Order: 005.009
+	CntgVol string `json:"cntg_vol"`
+}
+
+func (r *InquireTimeOvertimeconclusionResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// InquireOvertimePriceRequest is the request for the KIS API.
+//
+// KIS API: 국내주식 시간외현재가[국내주식-076]
+// Summary: 국내주식 시간외현재가 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0230] 시간외 현재가 화면의 좌측 상단기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: inquire-overtime-price
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/inquire-overtime-price
+// TR ID: FHPST02300000
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: intraday_bar
+type InquireOvertimePriceRequest struct {
+	// FidCondMrktDivCode maps FID_COND_MRKT_DIV_CODE.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: FID_COND_MRKT_DIV_CODE
+	// Required: true
+	// Length: 2
+	// Order: 001
+	// Description: 시장구분코드 (주식 J)
+	FidCondMrktDivCode string `json:"FID_COND_MRKT_DIV_CODE"`
+	// FidInputISCD maps FID_INPUT_ISCD.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: FID_INPUT_ISCD
+	// Required: true
+	// Length: 12
+	// Order: 002
+	// Description: 종목코드
+	FidInputISCD string `json:"FID_INPUT_ISCD"`
+}
+
+func (r InquireOvertimePriceRequest) query() map[string]string {
+	return map[string]string{
+		"FID_COND_MRKT_DIV_CODE": r.FidCondMrktDivCode,
+		"FID_INPUT_ISCD":         r.FidInputISCD,
+	}
+}
+
+// InquireOvertimePriceResponse is the response for the KIS API.
+//
+// KIS API: 국내주식 시간외현재가[국내주식-076]
+// Summary: 국내주식 시간외현재가 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0230] 시간외 현재가 화면의 좌측 상단기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: inquire-overtime-price
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/inquire-overtime-price
+// TR ID: FHPST02300000
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: intraday_bar
+type InquireOvertimePriceResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output maps output.
+	//
+	// KIS field: 응답상세
+	// Property code: output
+	// Required: true
+	// Length:
+	// Order: 004
+	Output InquireOvertimePriceOutput `json:"output"`
+}
+
+// InquireOvertimePriceOutput is a KIS response object.
+type InquireOvertimePriceOutput struct {
+	// BstpKorIsnm maps bstp_kor_isnm.
+	//
+	// KIS field: 업종 한글 종목명
+	// Property code: bstp_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 004.001
+	// Description: ※ 거래소 정보로 특정 종목은 업종구분이 없어 데이터 미회신
+	BstpKorIsnm string `json:"bstp_kor_isnm"`
+	// MangIssuClsName maps mang_issu_cls_name.
+	//
+	// KIS field: 관리 종목 구분 명
+	// Property code: mang_issu_cls_name
+	// Required: true
+	// Length: 40
+	// Order: 004.002
+	MangIssuClsName string `json:"mang_issu_cls_name"`
+	// OvtmUntpPrpr maps ovtm_untp_prpr.
+	//
+	// KIS field: 시간외 단일가 현재가
+	// Property code: ovtm_untp_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.003
+	OvtmUntpPrpr string `json:"ovtm_untp_prpr"`
+	// OvtmUntpPrdyVrss maps ovtm_untp_prdy_vrss.
+	//
+	// KIS field: 시간외 단일가 전일 대비
+	// Property code: ovtm_untp_prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.004
+	OvtmUntpPrdyVrss string `json:"ovtm_untp_prdy_vrss"`
+	// OvtmUntpPrdyVrssSign maps ovtm_untp_prdy_vrss_sign.
+	//
+	// KIS field: 시간외 단일가 전일 대비 부호
+	// Property code: ovtm_untp_prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.005
+	OvtmUntpPrdyVrssSign string `json:"ovtm_untp_prdy_vrss_sign"`
+	// OvtmUntpPrdyCtrt maps ovtm_untp_prdy_ctrt.
+	//
+	// KIS field: 시간외 단일가 전일 대비율
+	// Property code: ovtm_untp_prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.006
+	OvtmUntpPrdyCtrt string `json:"ovtm_untp_prdy_ctrt"`
+	// OvtmUntpVol maps ovtm_untp_vol.
+	//
+	// KIS field: 시간외 단일가 거래량
+	// Property code: ovtm_untp_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.007
+	OvtmUntpVol string `json:"ovtm_untp_vol"`
+	// OvtmUntpTRPbmn maps ovtm_untp_tr_pbmn.
+	//
+	// KIS field: 시간외 단일가 거래 대금
+	// Property code: ovtm_untp_tr_pbmn
+	// Required: true
+	// Length: 18
+	// Order: 004.008
+	OvtmUntpTRPbmn string `json:"ovtm_untp_tr_pbmn"`
+	// OvtmUntpMxpr maps ovtm_untp_mxpr.
+	//
+	// KIS field: 시간외 단일가 상한가
+	// Property code: ovtm_untp_mxpr
+	// Required: true
+	// Length: 18
+	// Order: 004.009
+	OvtmUntpMxpr string `json:"ovtm_untp_mxpr"`
+	// OvtmUntpLlam maps ovtm_untp_llam.
+	//
+	// KIS field: 시간외 단일가 하한가
+	// Property code: ovtm_untp_llam
+	// Required: true
+	// Length: 18
+	// Order: 004.010
+	OvtmUntpLlam string `json:"ovtm_untp_llam"`
+	// OvtmUntpOprc maps ovtm_untp_oprc.
+	//
+	// KIS field: 시간외 단일가 시가2
+	// Property code: ovtm_untp_oprc
+	// Required: true
+	// Length: 10
+	// Order: 004.011
+	OvtmUntpOprc string `json:"ovtm_untp_oprc"`
+	// OvtmUntpHgpr maps ovtm_untp_hgpr.
+	//
+	// KIS field: 시간외 단일가 최고가
+	// Property code: ovtm_untp_hgpr
+	// Required: true
+	// Length: 10
+	// Order: 004.012
+	OvtmUntpHgpr string `json:"ovtm_untp_hgpr"`
+	// OvtmUntpLwpr maps ovtm_untp_lwpr.
+	//
+	// KIS field: 시간외 단일가 최저가
+	// Property code: ovtm_untp_lwpr
+	// Required: true
+	// Length: 10
+	// Order: 004.013
+	OvtmUntpLwpr string `json:"ovtm_untp_lwpr"`
+	// MargRate maps marg_rate.
+	//
+	// KIS field: 증거금 비율
+	// Property code: marg_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.014
+	MargRate string `json:"marg_rate"`
+	// OvtmUntpAntcCnpr maps ovtm_untp_antc_cnpr.
+	//
+	// KIS field: 시간외 단일가 예상 체결가
+	// Property code: ovtm_untp_antc_cnpr
+	// Required: true
+	// Length: 10
+	// Order: 004.015
+	OvtmUntpAntcCnpr string `json:"ovtm_untp_antc_cnpr"`
+	// OvtmUntpAntcCntgVrss maps ovtm_untp_antc_cntg_vrss.
+	//
+	// KIS field: 시간외 단일가 예상 체결 대비
+	// Property code: ovtm_untp_antc_cntg_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.016
+	OvtmUntpAntcCntgVrss string `json:"ovtm_untp_antc_cntg_vrss"`
+	// OvtmUntpAntcCntgVrssSign maps ovtm_untp_antc_cntg_vrss_sign.
+	//
+	// KIS field: 시간외 단일가 예상 체결 대비
+	// Property code: ovtm_untp_antc_cntg_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.017
+	OvtmUntpAntcCntgVrssSign string `json:"ovtm_untp_antc_cntg_vrss_sign"`
+	// OvtmUntpAntcCntgCtrt maps ovtm_untp_antc_cntg_ctrt.
+	//
+	// KIS field: 시간외 단일가 예상 체결 대비율
+	// Property code: ovtm_untp_antc_cntg_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.018
+	OvtmUntpAntcCntgCtrt string `json:"ovtm_untp_antc_cntg_ctrt"`
+	// OvtmUntpAntcCnqn maps ovtm_untp_antc_cnqn.
+	//
+	// KIS field: 시간외 단일가 예상 체결량
+	// Property code: ovtm_untp_antc_cnqn
+	// Required: true
+	// Length: 18
+	// Order: 004.019
+	OvtmUntpAntcCnqn string `json:"ovtm_untp_antc_cnqn"`
+	// CrdtAbleYn maps crdt_able_yn.
+	//
+	// KIS field: 신용 가능 여부
+	// Property code: crdt_able_yn
+	// Required: true
+	// Length: 1
+	// Order: 004.020
+	CrdtAbleYn string `json:"crdt_able_yn"`
+	// NewLstnClsName maps new_lstn_cls_name.
+	//
+	// KIS field: 신규 상장 구분 명
+	// Property code: new_lstn_cls_name
+	// Required: true
+	// Length: 40
+	// Order: 004.021
+	NewLstnClsName string `json:"new_lstn_cls_name"`
+	// SltrYn maps sltr_yn.
+	//
+	// KIS field: 정리매매 여부
+	// Property code: sltr_yn
+	// Required: true
+	// Length: 1
+	// Order: 004.022
+	SltrYn string `json:"sltr_yn"`
+	// MangIssuYn maps mang_issu_yn.
+	//
+	// KIS field: 관리 종목 여부
+	// Property code: mang_issu_yn
+	// Required: true
+	// Length: 1
+	// Order: 004.023
+	MangIssuYn string `json:"mang_issu_yn"`
+	// MrktWarnClsCode maps mrkt_warn_cls_code.
+	//
+	// KIS field: 시장 경고 구분 코드
+	// Property code: mrkt_warn_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 004.024
+	MrktWarnClsCode string `json:"mrkt_warn_cls_code"`
+	// TrhtYn maps trht_yn.
+	//
+	// KIS field: 거래정지 여부
+	// Property code: trht_yn
+	// Required: true
+	// Length: 1
+	// Order: 004.025
+	TrhtYn string `json:"trht_yn"`
+	// VlntDealClsName maps vlnt_deal_cls_name.
+	//
+	// KIS field: 임의 매매 구분 명
+	// Property code: vlnt_deal_cls_name
+	// Required: true
+	// Length: 16
+	// Order: 004.026
+	VlntDealClsName string `json:"vlnt_deal_cls_name"`
+	// OvtmUntpSdpr maps ovtm_untp_sdpr.
+	//
+	// KIS field: 시간외 단일가 기준가
+	// Property code: ovtm_untp_sdpr
+	// Required: true
+	// Length: 10
+	// Order: 004.027
+	OvtmUntpSdpr string `json:"ovtm_untp_sdpr"`
+	// MrktWarnClsName maps mrkt_warn_cls_name.
+	//
+	// KIS field: 시장 경구 구분 명
+	// Property code: mrkt_warn_cls_name
+	// Required: true
+	// Length: 40
+	// Order: 004.028
+	MrktWarnClsName string `json:"mrkt_warn_cls_name"`
+	// RevlIssuReasName maps revl_issu_reas_name.
+	//
+	// KIS field: 재평가 종목 사유 명
+	// Property code: revl_issu_reas_name
+	// Required: true
+	// Length: 40
+	// Order: 004.029
+	RevlIssuReasName string `json:"revl_issu_reas_name"`
+	// InsnPbntYn maps insn_pbnt_yn.
+	//
+	// KIS field: 불성실 공시 여부
+	// Property code: insn_pbnt_yn
+	// Required: true
+	// Length: 1
+	// Order: 004.030
+	InsnPbntYn string `json:"insn_pbnt_yn"`
+	// FlngClsName maps flng_cls_name.
+	//
+	// KIS field: 락 구분 이름
+	// Property code: flng_cls_name
+	// Required: true
+	// Length: 40
+	// Order: 004.031
+	FlngClsName string `json:"flng_cls_name"`
+	// RprsMrktKorName maps rprs_mrkt_kor_name.
+	//
+	// KIS field: 대표 시장 한글 명
+	// Property code: rprs_mrkt_kor_name
+	// Required: true
+	// Length: 40
+	// Order: 004.032
+	RprsMrktKorName string `json:"rprs_mrkt_kor_name"`
+	// OvtmViClsCode maps ovtm_vi_cls_code.
+	//
+	// KIS field: 시간외단일가VI적용구분코드
+	// Property code: ovtm_vi_cls_code
+	// Required: true
+	// Length: 1
+	// Order: 004.033
+	OvtmViClsCode string `json:"ovtm_vi_cls_code"`
+	// Bidp maps bidp.
+	//
+	// KIS field: 매수호가
+	// Property code: bidp
+	// Required: true
+	// Length: 10
+	// Order: 004.034
+	Bidp string `json:"bidp"`
+	// Askp maps askp.
+	//
+	// KIS field: 매도호가
+	// Property code: askp
+	// Required: true
+	// Length: 10
+	// Order: 004.035
+	Askp string `json:"askp"`
+}
+
+func (r *InquireOvertimePriceResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// InquireOvertimeAskingPriceRequest is the request for the KIS API.
+//
+// KIS API: 국내주식 시간외호가[국내주식-077]
+// Summary: 국내주식 시간외호가 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0230] 시간외 현재가 화면의 '호가' 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: inquire-overtime-asking-price
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/inquire-overtime-asking-price
+// TR ID: FHPST02300400
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: intraday_bar
+type InquireOvertimeAskingPriceRequest struct {
+	// FidInputISCD maps FID_INPUT_ISCD.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: FID_INPUT_ISCD
+	// Required: true
+	// Length: 12
+	// Order: 001
+	// Description: 종목코드
+	FidInputISCD string `json:"FID_INPUT_ISCD"`
+	// FidCondMrktDivCode maps FID_COND_MRKT_DIV_CODE.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: FID_COND_MRKT_DIV_CODE
+	// Required: true
+	// Length: 2
+	// Order: 002
+	// Description: 시장구분코드 (주식 J)
+	FidCondMrktDivCode string `json:"FID_COND_MRKT_DIV_CODE"`
+}
+
+func (r InquireOvertimeAskingPriceRequest) query() map[string]string {
+	return map[string]string{
+		"FID_INPUT_ISCD":         r.FidInputISCD,
+		"FID_COND_MRKT_DIV_CODE": r.FidCondMrktDivCode,
+	}
+}
+
+// InquireOvertimeAskingPriceResponse is the response for the KIS API.
+//
+// KIS API: 국내주식 시간외호가[국내주식-077]
+// Summary: 국내주식 시간외호가 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0230] 시간외 현재가 화면의 '호가' 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: inquire-overtime-asking-price
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/inquire-overtime-asking-price
+// TR ID: FHPST02300400
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: intraday_bar
+type InquireOvertimeAskingPriceResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output1 maps output1.
+	//
+	// KIS field: 응답상세
+	// Property code: output1
+	// Required: true
+	// Length:
+	// Order: 004
+	Output1 InquireOvertimeAskingPriceOutput1 `json:"output1"`
+}
+
+// InquireOvertimeAskingPriceOutput1 is a KIS response object.
+type InquireOvertimeAskingPriceOutput1 struct {
+	// OvtmUntpLastHour maps ovtm_untp_last_hour.
+	//
+	// KIS field: 시간외 단일가 최종 시간
+	// Property code: ovtm_untp_last_hour
+	// Required: true
+	// Length: 6
+	// Order: 004.001
+	OvtmUntpLastHour string `json:"ovtm_untp_last_hour"`
+	// OvtmUntpAskp1 maps ovtm_untp_askp1.
+	//
+	// KIS field: 시간외 단일가 매도호가1
+	// Property code: ovtm_untp_askp1
+	// Required: true
+	// Length: 10
+	// Order: 004.002
+	OvtmUntpAskp1 string `json:"ovtm_untp_askp1"`
+	// OvtmUntpAskp2 maps ovtm_untp_askp2.
+	//
+	// KIS field: 시간외 단일가 매도호가2
+	// Property code: ovtm_untp_askp2
+	// Required: true
+	// Length: 10
+	// Order: 004.003
+	OvtmUntpAskp2 string `json:"ovtm_untp_askp2"`
+	// OvtmUntpAskp3 maps ovtm_untp_askp3.
+	//
+	// KIS field: 시간외 단일가 매도호가3
+	// Property code: ovtm_untp_askp3
+	// Required: true
+	// Length: 10
+	// Order: 004.004
+	OvtmUntpAskp3 string `json:"ovtm_untp_askp3"`
+	// OvtmUntpAskp4 maps ovtm_untp_askp4.
+	//
+	// KIS field: 시간외 단일가 매도호가4
+	// Property code: ovtm_untp_askp4
+	// Required: true
+	// Length: 10
+	// Order: 004.005
+	OvtmUntpAskp4 string `json:"ovtm_untp_askp4"`
+	// OvtmUntpAskp5 maps ovtm_untp_askp5.
+	//
+	// KIS field: 시간외 단일가 매도호가5
+	// Property code: ovtm_untp_askp5
+	// Required: true
+	// Length: 10
+	// Order: 004.006
+	OvtmUntpAskp5 string `json:"ovtm_untp_askp5"`
+	// OvtmUntpAskp6 maps ovtm_untp_askp6.
+	//
+	// KIS field: 시간외 단일가 매도호가6
+	// Property code: ovtm_untp_askp6
+	// Required: true
+	// Length: 10
+	// Order: 004.007
+	OvtmUntpAskp6 string `json:"ovtm_untp_askp6"`
+	// OvtmUntpAskp7 maps ovtm_untp_askp7.
+	//
+	// KIS field: 시간외 단일가 매도호가7
+	// Property code: ovtm_untp_askp7
+	// Required: true
+	// Length: 10
+	// Order: 004.008
+	OvtmUntpAskp7 string `json:"ovtm_untp_askp7"`
+	// OvtmUntpAskp8 maps ovtm_untp_askp8.
+	//
+	// KIS field: 시간외 단일가 매도호가8
+	// Property code: ovtm_untp_askp8
+	// Required: true
+	// Length: 10
+	// Order: 004.009
+	OvtmUntpAskp8 string `json:"ovtm_untp_askp8"`
+	// OvtmUntpAskp9 maps ovtm_untp_askp9.
+	//
+	// KIS field: 시간외 단일가 매도호가9
+	// Property code: ovtm_untp_askp9
+	// Required: true
+	// Length: 10
+	// Order: 004.010
+	OvtmUntpAskp9 string `json:"ovtm_untp_askp9"`
+	// OvtmUntpAskp10 maps ovtm_untp_askp10.
+	//
+	// KIS field: 시간외 단일가 매도호가10
+	// Property code: ovtm_untp_askp10
+	// Required: true
+	// Length: 10
+	// Order: 004.011
+	OvtmUntpAskp10 string `json:"ovtm_untp_askp10"`
+	// OvtmUntpBidp1 maps ovtm_untp_bidp1.
+	//
+	// KIS field: 시간외 단일가 매수호가1
+	// Property code: ovtm_untp_bidp1
+	// Required: true
+	// Length: 10
+	// Order: 004.012
+	OvtmUntpBidp1 string `json:"ovtm_untp_bidp1"`
+	// OvtmUntpBidp2 maps ovtm_untp_bidp2.
+	//
+	// KIS field: 시간외 단일가 매수호가2
+	// Property code: ovtm_untp_bidp2
+	// Required: true
+	// Length: 10
+	// Order: 004.013
+	OvtmUntpBidp2 string `json:"ovtm_untp_bidp2"`
+	// OvtmUntpBidp3 maps ovtm_untp_bidp3.
+	//
+	// KIS field: 시간외 단일가 매수호가3
+	// Property code: ovtm_untp_bidp3
+	// Required: true
+	// Length: 10
+	// Order: 004.014
+	OvtmUntpBidp3 string `json:"ovtm_untp_bidp3"`
+	// OvtmUntpBidp4 maps ovtm_untp_bidp4.
+	//
+	// KIS field: 시간외 단일가 매수호가4
+	// Property code: ovtm_untp_bidp4
+	// Required: true
+	// Length: 10
+	// Order: 004.015
+	OvtmUntpBidp4 string `json:"ovtm_untp_bidp4"`
+	// OvtmUntpBidp5 maps ovtm_untp_bidp5.
+	//
+	// KIS field: 시간외 단일가 매수호가5
+	// Property code: ovtm_untp_bidp5
+	// Required: true
+	// Length: 10
+	// Order: 004.016
+	OvtmUntpBidp5 string `json:"ovtm_untp_bidp5"`
+	// OvtmUntpBidp6 maps ovtm_untp_bidp6.
+	//
+	// KIS field: 시간외 단일가 매수호가6
+	// Property code: ovtm_untp_bidp6
+	// Required: true
+	// Length: 10
+	// Order: 004.017
+	OvtmUntpBidp6 string `json:"ovtm_untp_bidp6"`
+	// OvtmUntpBidp7 maps ovtm_untp_bidp7.
+	//
+	// KIS field: 시간외 단일가 매수호가7
+	// Property code: ovtm_untp_bidp7
+	// Required: true
+	// Length: 10
+	// Order: 004.018
+	OvtmUntpBidp7 string `json:"ovtm_untp_bidp7"`
+	// OvtmUntpBidp8 maps ovtm_untp_bidp8.
+	//
+	// KIS field: 시간외 단일가 매수호가8
+	// Property code: ovtm_untp_bidp8
+	// Required: true
+	// Length: 10
+	// Order: 004.019
+	OvtmUntpBidp8 string `json:"ovtm_untp_bidp8"`
+	// OvtmUntpBidp9 maps ovtm_untp_bidp9.
+	//
+	// KIS field: 시간외 단일가 매수호가9
+	// Property code: ovtm_untp_bidp9
+	// Required: true
+	// Length: 10
+	// Order: 004.020
+	OvtmUntpBidp9 string `json:"ovtm_untp_bidp9"`
+	// OvtmUntpBidp10 maps ovtm_untp_bidp10.
+	//
+	// KIS field: 시간외 단일가 매수호가10
+	// Property code: ovtm_untp_bidp10
+	// Required: true
+	// Length: 10
+	// Order: 004.021
+	OvtmUntpBidp10 string `json:"ovtm_untp_bidp10"`
+	// OvtmUntpAskpIcdc1 maps ovtm_untp_askp_icdc1.
+	//
+	// KIS field: 시간외 단일가 매도호가 증감1
+	// Property code: ovtm_untp_askp_icdc1
+	// Required: true
+	// Length: 10
+	// Order: 004.022
+	OvtmUntpAskpIcdc1 string `json:"ovtm_untp_askp_icdc1"`
+	// OvtmUntpAskpIcdc2 maps ovtm_untp_askp_icdc2.
+	//
+	// KIS field: 시간외 단일가 매도호가 증감2
+	// Property code: ovtm_untp_askp_icdc2
+	// Required: true
+	// Length: 10
+	// Order: 004.023
+	OvtmUntpAskpIcdc2 string `json:"ovtm_untp_askp_icdc2"`
+	// OvtmUntpAskpIcdc3 maps ovtm_untp_askp_icdc3.
+	//
+	// KIS field: 시간외 단일가 매도호가 증감3
+	// Property code: ovtm_untp_askp_icdc3
+	// Required: true
+	// Length: 10
+	// Order: 004.024
+	OvtmUntpAskpIcdc3 string `json:"ovtm_untp_askp_icdc3"`
+	// OvtmUntpAskpIcdc4 maps ovtm_untp_askp_icdc4.
+	//
+	// KIS field: 시간외 단일가 매도호가 증감4
+	// Property code: ovtm_untp_askp_icdc4
+	// Required: true
+	// Length: 10
+	// Order: 004.025
+	OvtmUntpAskpIcdc4 string `json:"ovtm_untp_askp_icdc4"`
+	// OvtmUntpAskpIcdc5 maps ovtm_untp_askp_icdc5.
+	//
+	// KIS field: 시간외 단일가 매도호가 증감5
+	// Property code: ovtm_untp_askp_icdc5
+	// Required: true
+	// Length: 10
+	// Order: 004.026
+	OvtmUntpAskpIcdc5 string `json:"ovtm_untp_askp_icdc5"`
+	// OvtmUntpAskpIcdc6 maps ovtm_untp_askp_icdc6.
+	//
+	// KIS field: 시간외 단일가 매도호가 증감6
+	// Property code: ovtm_untp_askp_icdc6
+	// Required: true
+	// Length: 10
+	// Order: 004.027
+	OvtmUntpAskpIcdc6 string `json:"ovtm_untp_askp_icdc6"`
+	// OvtmUntpAskpIcdc7 maps ovtm_untp_askp_icdc7.
+	//
+	// KIS field: 시간외 단일가 매도호가 증감7
+	// Property code: ovtm_untp_askp_icdc7
+	// Required: true
+	// Length: 10
+	// Order: 004.028
+	OvtmUntpAskpIcdc7 string `json:"ovtm_untp_askp_icdc7"`
+	// OvtmUntpAskpIcdc8 maps ovtm_untp_askp_icdc8.
+	//
+	// KIS field: 시간외 단일가 매도호가 증감8
+	// Property code: ovtm_untp_askp_icdc8
+	// Required: true
+	// Length: 10
+	// Order: 004.029
+	OvtmUntpAskpIcdc8 string `json:"ovtm_untp_askp_icdc8"`
+	// OvtmUntpAskpIcdc9 maps ovtm_untp_askp_icdc9.
+	//
+	// KIS field: 시간외 단일가 매도호가 증감9
+	// Property code: ovtm_untp_askp_icdc9
+	// Required: true
+	// Length: 10
+	// Order: 004.030
+	OvtmUntpAskpIcdc9 string `json:"ovtm_untp_askp_icdc9"`
+	// OvtmUntpAskpIcdc10 maps ovtm_untp_askp_icdc10.
+	//
+	// KIS field: 시간외 단일가 매도호가 증감10
+	// Property code: ovtm_untp_askp_icdc10
+	// Required: true
+	// Length: 10
+	// Order: 004.031
+	OvtmUntpAskpIcdc10 string `json:"ovtm_untp_askp_icdc10"`
+	// OvtmUntpBidpIcdc1 maps ovtm_untp_bidp_icdc1.
+	//
+	// KIS field: 시간외 단일가 매수호가 증감1
+	// Property code: ovtm_untp_bidp_icdc1
+	// Required: true
+	// Length: 10
+	// Order: 004.032
+	OvtmUntpBidpIcdc1 string `json:"ovtm_untp_bidp_icdc1"`
+	// OvtmUntpBidpIcdc2 maps ovtm_untp_bidp_icdc2.
+	//
+	// KIS field: 시간외 단일가 매수호가 증감2
+	// Property code: ovtm_untp_bidp_icdc2
+	// Required: true
+	// Length: 10
+	// Order: 004.033
+	OvtmUntpBidpIcdc2 string `json:"ovtm_untp_bidp_icdc2"`
+	// OvtmUntpBidpIcdc3 maps ovtm_untp_bidp_icdc3.
+	//
+	// KIS field: 시간외 단일가 매수호가 증감3
+	// Property code: ovtm_untp_bidp_icdc3
+	// Required: true
+	// Length: 10
+	// Order: 004.034
+	OvtmUntpBidpIcdc3 string `json:"ovtm_untp_bidp_icdc3"`
+	// OvtmUntpBidpIcdc4 maps ovtm_untp_bidp_icdc4.
+	//
+	// KIS field: 시간외 단일가 매수호가 증감4
+	// Property code: ovtm_untp_bidp_icdc4
+	// Required: true
+	// Length: 10
+	// Order: 004.035
+	OvtmUntpBidpIcdc4 string `json:"ovtm_untp_bidp_icdc4"`
+	// OvtmUntpBidpIcdc5 maps ovtm_untp_bidp_icdc5.
+	//
+	// KIS field: 시간외 단일가 매수호가 증감5
+	// Property code: ovtm_untp_bidp_icdc5
+	// Required: true
+	// Length: 10
+	// Order: 004.036
+	OvtmUntpBidpIcdc5 string `json:"ovtm_untp_bidp_icdc5"`
+	// OvtmUntpBidpIcdc6 maps ovtm_untp_bidp_icdc6.
+	//
+	// KIS field: 시간외 단일가 매수호가 증감6
+	// Property code: ovtm_untp_bidp_icdc6
+	// Required: true
+	// Length: 10
+	// Order: 004.037
+	OvtmUntpBidpIcdc6 string `json:"ovtm_untp_bidp_icdc6"`
+	// OvtmUntpBidpIcdc7 maps ovtm_untp_bidp_icdc7.
+	//
+	// KIS field: 시간외 단일가 매수호가 증감7
+	// Property code: ovtm_untp_bidp_icdc7
+	// Required: true
+	// Length: 10
+	// Order: 004.038
+	OvtmUntpBidpIcdc7 string `json:"ovtm_untp_bidp_icdc7"`
+	// OvtmUntpBidpIcdc8 maps ovtm_untp_bidp_icdc8.
+	//
+	// KIS field: 시간외 단일가 매수호가 증감8
+	// Property code: ovtm_untp_bidp_icdc8
+	// Required: true
+	// Length: 10
+	// Order: 004.039
+	OvtmUntpBidpIcdc8 string `json:"ovtm_untp_bidp_icdc8"`
+	// OvtmUntpBidpIcdc9 maps ovtm_untp_bidp_icdc9.
+	//
+	// KIS field: 시간외 단일가 매수호가 증감9
+	// Property code: ovtm_untp_bidp_icdc9
+	// Required: true
+	// Length: 10
+	// Order: 004.040
+	OvtmUntpBidpIcdc9 string `json:"ovtm_untp_bidp_icdc9"`
+	// OvtmUntpBidpIcdc10 maps ovtm_untp_bidp_icdc10.
+	//
+	// KIS field: 시간외 단일가 매수호가 증감10
+	// Property code: ovtm_untp_bidp_icdc10
+	// Required: true
+	// Length: 10
+	// Order: 004.041
+	OvtmUntpBidpIcdc10 string `json:"ovtm_untp_bidp_icdc10"`
+	// OvtmUntpAskpRsqn1 maps ovtm_untp_askp_rsqn1.
+	//
+	// KIS field: 시간외 단일가 매도호가 잔량1
+	// Property code: ovtm_untp_askp_rsqn1
+	// Required: true
+	// Length: 12
+	// Order: 004.042
+	OvtmUntpAskpRsqn1 string `json:"ovtm_untp_askp_rsqn1"`
+	// OvtmUntpAskpRsqn2 maps ovtm_untp_askp_rsqn2.
+	//
+	// KIS field: 시간외 단일가 매도호가 잔량2
+	// Property code: ovtm_untp_askp_rsqn2
+	// Required: true
+	// Length: 12
+	// Order: 004.043
+	OvtmUntpAskpRsqn2 string `json:"ovtm_untp_askp_rsqn2"`
+	// OvtmUntpAskpRsqn3 maps ovtm_untp_askp_rsqn3.
+	//
+	// KIS field: 시간외 단일가 매도호가 잔량3
+	// Property code: ovtm_untp_askp_rsqn3
+	// Required: true
+	// Length: 12
+	// Order: 004.044
+	OvtmUntpAskpRsqn3 string `json:"ovtm_untp_askp_rsqn3"`
+	// OvtmUntpAskpRsqn4 maps ovtm_untp_askp_rsqn4.
+	//
+	// KIS field: 시간외 단일가 매도호가 잔량4
+	// Property code: ovtm_untp_askp_rsqn4
+	// Required: true
+	// Length: 12
+	// Order: 004.045
+	OvtmUntpAskpRsqn4 string `json:"ovtm_untp_askp_rsqn4"`
+	// OvtmUntpAskpRsqn5 maps ovtm_untp_askp_rsqn5.
+	//
+	// KIS field: 시간외 단일가 매도호가 잔량5
+	// Property code: ovtm_untp_askp_rsqn5
+	// Required: true
+	// Length: 12
+	// Order: 004.046
+	OvtmUntpAskpRsqn5 string `json:"ovtm_untp_askp_rsqn5"`
+	// OvtmUntpAskpRsqn6 maps ovtm_untp_askp_rsqn6.
+	//
+	// KIS field: 시간외 단일가 매도호가 잔량6
+	// Property code: ovtm_untp_askp_rsqn6
+	// Required: true
+	// Length: 12
+	// Order: 004.047
+	OvtmUntpAskpRsqn6 string `json:"ovtm_untp_askp_rsqn6"`
+	// OvtmUntpAskpRsqn7 maps ovtm_untp_askp_rsqn7.
+	//
+	// KIS field: 시간외 단일가 매도호가 잔량7
+	// Property code: ovtm_untp_askp_rsqn7
+	// Required: true
+	// Length: 12
+	// Order: 004.048
+	OvtmUntpAskpRsqn7 string `json:"ovtm_untp_askp_rsqn7"`
+	// OvtmUntpAskpRsqn8 maps ovtm_untp_askp_rsqn8.
+	//
+	// KIS field: 시간외 단일가 매도호가 잔량8
+	// Property code: ovtm_untp_askp_rsqn8
+	// Required: true
+	// Length: 12
+	// Order: 004.049
+	OvtmUntpAskpRsqn8 string `json:"ovtm_untp_askp_rsqn8"`
+	// OvtmUntpAskpRsqn9 maps ovtm_untp_askp_rsqn9.
+	//
+	// KIS field: 시간외 단일가 매도호가 잔량9
+	// Property code: ovtm_untp_askp_rsqn9
+	// Required: true
+	// Length: 12
+	// Order: 004.050
+	OvtmUntpAskpRsqn9 string `json:"ovtm_untp_askp_rsqn9"`
+	// OvtmUntpAskpRsqn10 maps ovtm_untp_askp_rsqn10.
+	//
+	// KIS field: 시간외 단일가 매도호가 잔량10
+	// Property code: ovtm_untp_askp_rsqn10
+	// Required: true
+	// Length: 12
+	// Order: 004.051
+	OvtmUntpAskpRsqn10 string `json:"ovtm_untp_askp_rsqn10"`
+	// OvtmUntpBidpRsqn1 maps ovtm_untp_bidp_rsqn1.
+	//
+	// KIS field: 시간외 단일가 매수호가 잔량1
+	// Property code: ovtm_untp_bidp_rsqn1
+	// Required: true
+	// Length: 12
+	// Order: 004.052
+	OvtmUntpBidpRsqn1 string `json:"ovtm_untp_bidp_rsqn1"`
+	// OvtmUntpBidpRsqn2 maps ovtm_untp_bidp_rsqn2.
+	//
+	// KIS field: 시간외 단일가 매수호가 잔량2
+	// Property code: ovtm_untp_bidp_rsqn2
+	// Required: true
+	// Length: 12
+	// Order: 004.053
+	OvtmUntpBidpRsqn2 string `json:"ovtm_untp_bidp_rsqn2"`
+	// OvtmUntpBidpRsqn3 maps ovtm_untp_bidp_rsqn3.
+	//
+	// KIS field: 시간외 단일가 매수호가 잔량3
+	// Property code: ovtm_untp_bidp_rsqn3
+	// Required: true
+	// Length: 12
+	// Order: 004.054
+	OvtmUntpBidpRsqn3 string `json:"ovtm_untp_bidp_rsqn3"`
+	// OvtmUntpBidpRsqn4 maps ovtm_untp_bidp_rsqn4.
+	//
+	// KIS field: 시간외 단일가 매수호가 잔량4
+	// Property code: ovtm_untp_bidp_rsqn4
+	// Required: true
+	// Length: 12
+	// Order: 004.055
+	OvtmUntpBidpRsqn4 string `json:"ovtm_untp_bidp_rsqn4"`
+	// OvtmUntpBidpRsqn5 maps ovtm_untp_bidp_rsqn5.
+	//
+	// KIS field: 시간외 단일가 매수호가 잔량5
+	// Property code: ovtm_untp_bidp_rsqn5
+	// Required: true
+	// Length: 12
+	// Order: 004.056
+	OvtmUntpBidpRsqn5 string `json:"ovtm_untp_bidp_rsqn5"`
+	// OvtmUntpBidpRsqn6 maps ovtm_untp_bidp_rsqn6.
+	//
+	// KIS field: 시간외 단일가 매수호가 잔량6
+	// Property code: ovtm_untp_bidp_rsqn6
+	// Required: true
+	// Length: 12
+	// Order: 004.057
+	OvtmUntpBidpRsqn6 string `json:"ovtm_untp_bidp_rsqn6"`
+	// OvtmUntpBidpRsqn7 maps ovtm_untp_bidp_rsqn7.
+	//
+	// KIS field: 시간외 단일가 매수호가 잔량7
+	// Property code: ovtm_untp_bidp_rsqn7
+	// Required: true
+	// Length: 12
+	// Order: 004.058
+	OvtmUntpBidpRsqn7 string `json:"ovtm_untp_bidp_rsqn7"`
+	// OvtmUntpBidpRsqn8 maps ovtm_untp_bidp_rsqn8.
+	//
+	// KIS field: 시간외 단일가 매수호가 잔량8
+	// Property code: ovtm_untp_bidp_rsqn8
+	// Required: true
+	// Length: 12
+	// Order: 004.059
+	OvtmUntpBidpRsqn8 string `json:"ovtm_untp_bidp_rsqn8"`
+	// OvtmUntpBidpRsqn9 maps ovtm_untp_bidp_rsqn9.
+	//
+	// KIS field: 시간외 단일가 매수호가 잔량9
+	// Property code: ovtm_untp_bidp_rsqn9
+	// Required: true
+	// Length: 12
+	// Order: 004.060
+	OvtmUntpBidpRsqn9 string `json:"ovtm_untp_bidp_rsqn9"`
+	// OvtmUntpBidpRsqn10 maps ovtm_untp_bidp_rsqn10.
+	//
+	// KIS field: 시간외 단일가 매수호가 잔량10
+	// Property code: ovtm_untp_bidp_rsqn10
+	// Required: true
+	// Length: 12
+	// Order: 004.061
+	OvtmUntpBidpRsqn10 string `json:"ovtm_untp_bidp_rsqn10"`
+	// OvtmUntpTotalAskpRsqn maps ovtm_untp_total_askp_rsqn.
+	//
+	// KIS field: 시간외 단일가 총 매도호가 잔량
+	// Property code: ovtm_untp_total_askp_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 004.062
+	OvtmUntpTotalAskpRsqn string `json:"ovtm_untp_total_askp_rsqn"`
+	// OvtmUntpTotalBidpRsqn maps ovtm_untp_total_bidp_rsqn.
+	//
+	// KIS field: 시간외 단일가 총 매수호가 잔량
+	// Property code: ovtm_untp_total_bidp_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 004.063
+	OvtmUntpTotalBidpRsqn string `json:"ovtm_untp_total_bidp_rsqn"`
+	// OvtmUntpTotalAskpRsqnIcdc maps ovtm_untp_total_askp_rsqn_icdc.
+	//
+	// KIS field: 시간외 단일가 총 매도호가 잔량
+	// Property code: ovtm_untp_total_askp_rsqn_icdc
+	// Required: true
+	// Length: 10
+	// Order: 004.064
+	OvtmUntpTotalAskpRsqnIcdc string `json:"ovtm_untp_total_askp_rsqn_icdc"`
+	// OvtmUntpTotalBidpRsqnIcdc maps ovtm_untp_total_bidp_rsqn_icdc.
+	//
+	// KIS field: 시간외 단일가 총 매수호가 잔량
+	// Property code: ovtm_untp_total_bidp_rsqn_icdc
+	// Required: true
+	// Length: 10
+	// Order: 004.065
+	OvtmUntpTotalBidpRsqnIcdc string `json:"ovtm_untp_total_bidp_rsqn_icdc"`
+	// OvtmUntpNtbyBidpRsqn maps ovtm_untp_ntby_bidp_rsqn.
+	//
+	// KIS field: 시간외 단일가 순매수 호가 잔량
+	// Property code: ovtm_untp_ntby_bidp_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 004.066
+	OvtmUntpNtbyBidpRsqn string `json:"ovtm_untp_ntby_bidp_rsqn"`
+	// TotalAskpRsqn maps total_askp_rsqn.
+	//
+	// KIS field: 총 매도호가 잔량
+	// Property code: total_askp_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 004.067
+	TotalAskpRsqn string `json:"total_askp_rsqn"`
+	// TotalBidpRsqn maps total_bidp_rsqn.
+	//
+	// KIS field: 총 매수호가 잔량
+	// Property code: total_bidp_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 004.068
+	TotalBidpRsqn string `json:"total_bidp_rsqn"`
+	// TotalAskpRsqnIcdc maps total_askp_rsqn_icdc.
+	//
+	// KIS field: 총 매도호가 잔량 증감
+	// Property code: total_askp_rsqn_icdc
+	// Required: true
+	// Length: 10
+	// Order: 004.069
+	TotalAskpRsqnIcdc string `json:"total_askp_rsqn_icdc"`
+	// TotalBidpRsqnIcdc maps total_bidp_rsqn_icdc.
+	//
+	// KIS field: 총 매수호가 잔량 증감
+	// Property code: total_bidp_rsqn_icdc
+	// Required: true
+	// Length: 10
+	// Order: 004.070
+	TotalBidpRsqnIcdc string `json:"total_bidp_rsqn_icdc"`
+	// OvtmTotalAskpRsqn maps ovtm_total_askp_rsqn.
+	//
+	// KIS field: 시간외 총 매도호가 잔량
+	// Property code: ovtm_total_askp_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 004.071
+	OvtmTotalAskpRsqn string `json:"ovtm_total_askp_rsqn"`
+	// OvtmTotalBidpRsqn maps ovtm_total_bidp_rsqn.
+	//
+	// KIS field: 시간외 총 매수호가 잔량
+	// Property code: ovtm_total_bidp_rsqn
+	// Required: true
+	// Length: 12
+	// Order: 004.072
+	OvtmTotalBidpRsqn string `json:"ovtm_total_bidp_rsqn"`
+	// OvtmTotalAskpIcdc maps ovtm_total_askp_icdc.
+	//
+	// KIS field: 시간외 총 매도호가 증감
+	// Property code: ovtm_total_askp_icdc
+	// Required: true
+	// Length: 10
+	// Order: 004.073
+	OvtmTotalAskpIcdc string `json:"ovtm_total_askp_icdc"`
+	// OvtmTotalBidpIcdc maps ovtm_total_bidp_icdc.
+	//
+	// KIS field: 시간외 총 매수호가 증감
+	// Property code: ovtm_total_bidp_icdc
+	// Required: true
+	// Length: 10
+	// Order: 004.074
+	OvtmTotalBidpIcdc string `json:"ovtm_total_bidp_icdc"`
+}
+
+func (r *InquireOvertimeAskingPriceResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// ExpClosingPriceRequest is the request for the KIS API.
+//
+// KIS API: 국내주식 장마감 예상체결가[국내주식-120]
+// Summary: 국내주식 장마감 예상체결가 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0183] 장마감 예상체결가 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: exp-closing-price
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/exp-closing-price
+// TR ID: FHKST117300C0
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: read_only
+type ExpClosingPriceRequest struct {
+	// FidRankSortClsCode maps FID_RANK_SORT_CLS_CODE.
+	//
+	// KIS field: 순위 정렬 구분 코드
+	// Property code: FID_RANK_SORT_CLS_CODE
+	// Required: true
+	// Length: 2
+	// Order: 001
+	// Description: 0:전체, 1:상한가마감예상, 2:하한가마감예상, 3:직전대비상승률상위 ,4:직전대비하락률상위
+	FidRankSortClsCode string `json:"FID_RANK_SORT_CLS_CODE"`
+	// FidCondMrktDivCode maps FID_COND_MRKT_DIV_CODE.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: FID_COND_MRKT_DIV_CODE
+	// Required: true
+	// Length: 2
+	// Order: 002
+	// Description: 시장구분코드 (주식 J)
+	FidCondMrktDivCode string `json:"FID_COND_MRKT_DIV_CODE"`
+	// FidCondScrDivCode maps FID_COND_SCR_DIV_CODE.
+	//
+	// KIS field: 조건 화면 분류 코드
+	// Property code: FID_COND_SCR_DIV_CODE
+	// Required: true
+	// Length: 5
+	// Order: 003
+	// Description: Unique key(11173)
+	FidCondScrDivCode string `json:"FID_COND_SCR_DIV_CODE"`
+	// FidInputISCD maps FID_INPUT_ISCD.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: FID_INPUT_ISCD
+	// Required: true
+	// Length: 12
+	// Order: 004
+	// Description: 0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200, 4001: KRX100
+	FidInputISCD string `json:"FID_INPUT_ISCD"`
+	// FidBlngClsCode maps FID_BLNG_CLS_CODE.
+	//
+	// KIS field: 소속 구분 코드
+	// Property code: FID_BLNG_CLS_CODE
+	// Required: true
+	// Length: 2
+	// Order: 005
+	// Description: 0:전체, 1:종가범위연장
+	FidBlngClsCode string `json:"FID_BLNG_CLS_CODE"`
+}
+
+func (r ExpClosingPriceRequest) query() map[string]string {
+	return map[string]string{
+		"FID_RANK_SORT_CLS_CODE": r.FidRankSortClsCode,
+		"FID_COND_MRKT_DIV_CODE": r.FidCondMrktDivCode,
+		"FID_COND_SCR_DIV_CODE":  r.FidCondScrDivCode,
+		"FID_INPUT_ISCD":         r.FidInputISCD,
+		"FID_BLNG_CLS_CODE":      r.FidBlngClsCode,
+	}
+}
+
+// ExpClosingPriceResponse is the response for the KIS API.
+//
+// KIS API: 국내주식 장마감 예상체결가[국내주식-120]
+// Summary: 국내주식 장마감 예상체결가 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0183] 장마감 예상체결가 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: exp-closing-price
+// Endpoint: GET /uapi/domestic-stock/v1/quotations/exp-closing-price
+// TR ID: FHKST117300C0
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: read_only
+type ExpClosingPriceResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output1 maps output1.
+	//
+	// KIS field: 응답상세
+	// Property code: output1
+	// Required: true
+	// Length:
+	// Order: 004
+	// Description: array
+	Output1 []ExpClosingPriceOutput1Item `json:"output1"`
+}
+
+// ExpClosingPriceOutput1Item is a KIS response object.
+type ExpClosingPriceOutput1Item struct {
+	// StckShrnISCD maps stck_shrn_iscd.
+	//
+	// KIS field: 주식 단축 종목코드
+	// Property code: stck_shrn_iscd
+	// Required: true
+	// Length: 9
+	// Order: 004.001
+	StckShrnISCD string `json:"stck_shrn_iscd"`
+	// HtsKorIsnm maps hts_kor_isnm.
+	//
+	// KIS field: HTS 한글 종목명
+	// Property code: hts_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 004.002
+	HtsKorIsnm string `json:"hts_kor_isnm"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.003
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.004
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.005
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.006
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// SdprVrssPrpr maps sdpr_vrss_prpr.
+	//
+	// KIS field: 기준가 대비 현재가
+	// Property code: sdpr_vrss_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.007
+	SdprVrssPrpr string `json:"sdpr_vrss_prpr"`
+	// SdprVrssPrprRate maps sdpr_vrss_prpr_rate.
+	//
+	// KIS field: 기준가 대비 현재가 비율
+	// Property code: sdpr_vrss_prpr_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.008
+	SdprVrssPrprRate string `json:"sdpr_vrss_prpr_rate"`
+	// CntgVol maps cntg_vol.
+	//
+	// KIS field: 체결 거래량
+	// Property code: cntg_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.009
+	CntgVol string `json:"cntg_vol"`
+}
+
+func (r *ExpClosingPriceResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// ETFETNQuotationsInquirePriceRequest is the request for the KIS API.
+//
+// KIS API: ETF/ETN 현재가[v1_국내주식-068]
+// Summary: ETF/ETN 현재가 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0240] ETF/ETN 현재가 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: etfetn-quotations-inquire-price
+// Endpoint: GET /uapi/etfetn/v1/quotations/inquire-price
+// TR ID: FHPST02400000
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: read_only
+type ETFETNQuotationsInquirePriceRequest struct {
+	// FidInputISCD maps fid_input_iscd.
+	//
+	// KIS field: FID 입력 종목코드
+	// Property code: fid_input_iscd
+	// Required: true
+	// Length: 12
+	// Order: 001
+	// Description: 종목코드
+	FidInputISCD string `json:"fid_input_iscd"`
+	// FidCondMrktDivCode maps fid_cond_mrkt_div_code.
+	//
+	// KIS field: FID 조건 시장 분류 코드
+	// Property code: fid_cond_mrkt_div_code
+	// Required: true
+	// Length: 2
+	// Order: 002
+	// Description: J
+	FidCondMrktDivCode string `json:"fid_cond_mrkt_div_code"`
+}
+
+func (r ETFETNQuotationsInquirePriceRequest) query() map[string]string {
+	return map[string]string{
+		"fid_input_iscd":         r.FidInputISCD,
+		"fid_cond_mrkt_div_code": r.FidCondMrktDivCode,
+	}
+}
+
+// ETFETNQuotationsInquirePriceResponse is the response for the KIS API.
+//
+// KIS API: ETF/ETN 현재가[v1_국내주식-068]
+// Summary: ETF/ETN 현재가 API입니다. 한국투자 HTS(eFriend Plus) &gt; [0240] ETF/ETN 현재가 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: etfetn-quotations-inquire-price
+// Endpoint: GET /uapi/etfetn/v1/quotations/inquire-price
+// TR ID: FHPST02400000
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: read_only
+type ETFETNQuotationsInquirePriceResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output maps output.
+	//
+	// KIS field: 응답상세
+	// Property code: output
+	// Required: true
+	// Length:
+	// Order: 004
+	Output ETFETNQuotationsInquirePriceOutput `json:"output"`
+}
+
+// ETFETNQuotationsInquirePriceOutput is a KIS response object.
+type ETFETNQuotationsInquirePriceOutput struct {
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.001
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.002
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.003
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.004
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.005
+	AcmlVol string `json:"acml_vol"`
+	// PrdyVol maps prdy_vol.
+	//
+	// KIS field: 전일 거래량
+	// Property code: prdy_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.006
+	PrdyVol string `json:"prdy_vol"`
+	// StckMxpr maps stck_mxpr.
+	//
+	// KIS field: 주식 상한가
+	// Property code: stck_mxpr
+	// Required: true
+	// Length: 10
+	// Order: 004.007
+	StckMxpr string `json:"stck_mxpr"`
+	// StckLlam maps stck_llam.
+	//
+	// KIS field: 주식 하한가
+	// Property code: stck_llam
+	// Required: true
+	// Length: 10
+	// Order: 004.008
+	StckLlam string `json:"stck_llam"`
+	// StckPrdyClpr maps stck_prdy_clpr.
+	//
+	// KIS field: 주식 전일 종가
+	// Property code: stck_prdy_clpr
+	// Required: true
+	// Length: 10
+	// Order: 004.009
+	StckPrdyClpr string `json:"stck_prdy_clpr"`
+	// StckOprc maps stck_oprc.
+	//
+	// KIS field: 주식 시가2
+	// Property code: stck_oprc
+	// Required: true
+	// Length: 10
+	// Order: 004.010
+	StckOprc string `json:"stck_oprc"`
+	// PrdyClprVrssOprcRate maps prdy_clpr_vrss_oprc_rate.
+	//
+	// KIS field: 전일 종가 대비 시가2 비율
+	// Property code: prdy_clpr_vrss_oprc_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.011
+	PrdyClprVrssOprcRate string `json:"prdy_clpr_vrss_oprc_rate"`
+	// StckHgpr maps stck_hgpr.
+	//
+	// KIS field: 주식 최고가
+	// Property code: stck_hgpr
+	// Required: true
+	// Length: 10
+	// Order: 004.012
+	StckHgpr string `json:"stck_hgpr"`
+	// PrdyClprVrssHgprRate maps prdy_clpr_vrss_hgpr_rate.
+	//
+	// KIS field: 전일 종가 대비 최고가 비율
+	// Property code: prdy_clpr_vrss_hgpr_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.013
+	PrdyClprVrssHgprRate string `json:"prdy_clpr_vrss_hgpr_rate"`
+	// StckLwpr maps stck_lwpr.
+	//
+	// KIS field: 주식 최저가
+	// Property code: stck_lwpr
+	// Required: true
+	// Length: 10
+	// Order: 004.014
+	StckLwpr string `json:"stck_lwpr"`
+	// PrdyClprVrssLwprRate maps prdy_clpr_vrss_lwpr_rate.
+	//
+	// KIS field: 전일 종가 대비 최저가 비율
+	// Property code: prdy_clpr_vrss_lwpr_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.015
+	PrdyClprVrssLwprRate string `json:"prdy_clpr_vrss_lwpr_rate"`
+	// PrdyLastNav maps prdy_last_nav.
+	//
+	// KIS field: 전일 최종 NAV
+	// Property code: prdy_last_nav
+	// Required: true
+	// Length: 112
+	// Order: 004.016
+	PrdyLastNav string `json:"prdy_last_nav"`
+	// Nav maps nav.
+	//
+	// KIS field: NAV
+	// Property code: nav
+	// Required: true
+	// Length: 112
+	// Order: 004.017
+	Nav string `json:"nav"`
+	// NavPrdyVrss maps nav_prdy_vrss.
+	//
+	// KIS field: NAV 전일 대비
+	// Property code: nav_prdy_vrss
+	// Required: true
+	// Length: 112
+	// Order: 004.018
+	NavPrdyVrss string `json:"nav_prdy_vrss"`
+	// NavPrdyVrssSign maps nav_prdy_vrss_sign.
+	//
+	// KIS field: NAV 전일 대비 부호
+	// Property code: nav_prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.019
+	NavPrdyVrssSign string `json:"nav_prdy_vrss_sign"`
+	// NavPrdyCtrt maps nav_prdy_ctrt.
+	//
+	// KIS field: NAV 전일 대비율
+	// Property code: nav_prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.020
+	NavPrdyCtrt string `json:"nav_prdy_ctrt"`
+	// TrcErrt maps trc_errt.
+	//
+	// KIS field: 추적 오차율
+	// Property code: trc_errt
+	// Required: true
+	// Length: 82
+	// Order: 004.021
+	TrcErrt string `json:"trc_errt"`
+	// StckSdpr maps stck_sdpr.
+	//
+	// KIS field: 주식 기준가
+	// Property code: stck_sdpr
+	// Required: true
+	// Length: 10
+	// Order: 004.022
+	StckSdpr string `json:"stck_sdpr"`
+	// StckSspr maps stck_sspr.
+	//
+	// KIS field: 주식 대용가
+	// Property code: stck_sspr
+	// Required: true
+	// Length: 10
+	// Order: 004.023
+	StckSspr string `json:"stck_sspr"`
+	// NmixCtrt maps nmix_ctrt.
+	//
+	// KIS field: 지수 대비율
+	// Property code: nmix_ctrt
+	// Required: true
+	// Length: 135
+	// Order: 004.024
+	NmixCtrt string `json:"nmix_ctrt"`
+	// ETFCrclStcn maps etf_crcl_stcn.
+	//
+	// KIS field: ETF 유통 주수
+	// Property code: etf_crcl_stcn
+	// Required: true
+	// Length: 18
+	// Order: 004.025
+	ETFCrclStcn string `json:"etf_crcl_stcn"`
+	// ETFNtasTtam maps etf_ntas_ttam.
+	//
+	// KIS field: ETF 순자산 총액
+	// Property code: etf_ntas_ttam
+	// Required: true
+	// Length: 22
+	// Order: 004.026
+	ETFNtasTtam string `json:"etf_ntas_ttam"`
+	// ETFFrcrNtasTtam maps etf_frcr_ntas_ttam.
+	//
+	// KIS field: ETF 외화 순자산 총액
+	// Property code: etf_frcr_ntas_ttam
+	// Required: true
+	// Length: 22
+	// Order: 004.027
+	ETFFrcrNtasTtam string `json:"etf_frcr_ntas_ttam"`
+	// FrgnLimtRate maps frgn_limt_rate.
+	//
+	// KIS field: 외국인 한도 비율
+	// Property code: frgn_limt_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.028
+	FrgnLimtRate string `json:"frgn_limt_rate"`
+	// FrgnOderAbleQty maps frgn_oder_able_qty.
+	//
+	// KIS field: 외국인 주문 가능 수량
+	// Property code: frgn_oder_able_qty
+	// Required: true
+	// Length: 18
+	// Order: 004.029
+	FrgnOderAbleQty string `json:"frgn_oder_able_qty"`
+	// ETFCuUnitScrtCnt maps etf_cu_unit_scrt_cnt.
+	//
+	// KIS field: ETF CU 단위 증권 수
+	// Property code: etf_cu_unit_scrt_cnt
+	// Required: true
+	// Length: 18
+	// Order: 004.030
+	ETFCuUnitScrtCnt string `json:"etf_cu_unit_scrt_cnt"`
+	// ETFCnfgIssuCnt maps etf_cnfg_issu_cnt.
+	//
+	// KIS field: ETF 구성 종목 수
+	// Property code: etf_cnfg_issu_cnt
+	// Required: true
+	// Length: 18
+	// Order: 004.031
+	ETFCnfgIssuCnt string `json:"etf_cnfg_issu_cnt"`
+	// ETFDvdnCycl maps etf_dvdn_cycl.
+	//
+	// KIS field: ETF 배당 주기
+	// Property code: etf_dvdn_cycl
+	// Required: true
+	// Length: 2
+	// Order: 004.032
+	ETFDvdnCycl string `json:"etf_dvdn_cycl"`
+	// Crcd maps crcd.
+	//
+	// KIS field: 통화 코드
+	// Property code: crcd
+	// Required: true
+	// Length: 4
+	// Order: 004.033
+	Crcd string `json:"crcd"`
+	// ETFCrclNtasTtam maps etf_crcl_ntas_ttam.
+	//
+	// KIS field: ETF 유통 순자산 총액
+	// Property code: etf_crcl_ntas_ttam
+	// Required: true
+	// Length: 22
+	// Order: 004.034
+	ETFCrclNtasTtam string `json:"etf_crcl_ntas_ttam"`
+	// ETFFrcrCrclNtasTtam maps etf_frcr_crcl_ntas_ttam.
+	//
+	// KIS field: ETF 외화 유통 순자산 총액
+	// Property code: etf_frcr_crcl_ntas_ttam
+	// Required: true
+	// Length: 22
+	// Order: 004.035
+	ETFFrcrCrclNtasTtam string `json:"etf_frcr_crcl_ntas_ttam"`
+	// ETFFrcrLastNtasWrthVal maps etf_frcr_last_ntas_wrth_val.
+	//
+	// KIS field: ETF 외화 최종 순자산 가치 값
+	// Property code: etf_frcr_last_ntas_wrth_val
+	// Required: true
+	// Length: 13
+	// Order: 004.036
+	ETFFrcrLastNtasWrthVal string `json:"etf_frcr_last_ntas_wrth_val"`
+	// LpOderAbleClsCode maps lp_oder_able_cls_code.
+	//
+	// KIS field: LP 주문 가능 구분 코드
+	// Property code: lp_oder_able_cls_code
+	// Required: true
+	// Length: 2
+	// Order: 004.037
+	LpOderAbleClsCode string `json:"lp_oder_able_cls_code"`
+	// StckDryyHgpr maps stck_dryy_hgpr.
+	//
+	// KIS field: 주식 연중 최고가
+	// Property code: stck_dryy_hgpr
+	// Required: true
+	// Length: 10
+	// Order: 004.038
+	StckDryyHgpr string `json:"stck_dryy_hgpr"`
+	// DryyHgprVrssPrprRate maps dryy_hgpr_vrss_prpr_rate.
+	//
+	// KIS field: 연중 최고가 대비 현재가 비율
+	// Property code: dryy_hgpr_vrss_prpr_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.039
+	DryyHgprVrssPrprRate string `json:"dryy_hgpr_vrss_prpr_rate"`
+	// DryyHgprDate maps dryy_hgpr_date.
+	//
+	// KIS field: 연중 최고가 일자
+	// Property code: dryy_hgpr_date
+	// Required: true
+	// Length: 8
+	// Order: 004.040
+	DryyHgprDate string `json:"dryy_hgpr_date"`
+	// StckDryyLwpr maps stck_dryy_lwpr.
+	//
+	// KIS field: 주식 연중 최저가
+	// Property code: stck_dryy_lwpr
+	// Required: true
+	// Length: 10
+	// Order: 004.041
+	StckDryyLwpr string `json:"stck_dryy_lwpr"`
+	// DryyLwprVrssPrprRate maps dryy_lwpr_vrss_prpr_rate.
+	//
+	// KIS field: 연중 최저가 대비 현재가 비율
+	// Property code: dryy_lwpr_vrss_prpr_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.042
+	DryyLwprVrssPrprRate string `json:"dryy_lwpr_vrss_prpr_rate"`
+	// DryyLwprDate maps dryy_lwpr_date.
+	//
+	// KIS field: 연중 최저가 일자
+	// Property code: dryy_lwpr_date
+	// Required: true
+	// Length: 8
+	// Order: 004.043
+	DryyLwprDate string `json:"dryy_lwpr_date"`
+	// BstpKorIsnm maps bstp_kor_isnm.
+	//
+	// KIS field: 업종 한글 종목명
+	// Property code: bstp_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 004.044
+	// Description: ※ 거래소 정보로 특정 종목은 업종구분이 없어 데이터 미회신
+	BstpKorIsnm string `json:"bstp_kor_isnm"`
+	// ViClsCode maps vi_cls_code.
+	//
+	// KIS field: VI적용구분코드
+	// Property code: vi_cls_code
+	// Required: true
+	// Length: 1
+	// Order: 004.045
+	ViClsCode string `json:"vi_cls_code"`
+	// LstnStcn maps lstn_stcn.
+	//
+	// KIS field: 상장 주수
+	// Property code: lstn_stcn
+	// Required: true
+	// Length: 18
+	// Order: 004.046
+	LstnStcn string `json:"lstn_stcn"`
+	// FrgnHldnQty maps frgn_hldn_qty.
+	//
+	// KIS field: 외국인 보유 수량
+	// Property code: frgn_hldn_qty
+	// Required: true
+	// Length: 18
+	// Order: 004.047
+	FrgnHldnQty string `json:"frgn_hldn_qty"`
+	// FrgnHldnQtyRate maps frgn_hldn_qty_rate.
+	//
+	// KIS field: 외국인 보유 수량 비율
+	// Property code: frgn_hldn_qty_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.048
+	FrgnHldnQtyRate string `json:"frgn_hldn_qty_rate"`
+	// ETFTrcErtMltp maps etf_trc_ert_mltp.
+	//
+	// KIS field: ETF 추적 수익률 배수
+	// Property code: etf_trc_ert_mltp
+	// Required: true
+	// Length: 126
+	// Order: 004.049
+	ETFTrcErtMltp string `json:"etf_trc_ert_mltp"`
+	// Dprt maps dprt.
+	//
+	// KIS field: 괴리율
+	// Property code: dprt
+	// Required: true
+	// Length: 82
+	// Order: 004.050
+	Dprt string `json:"dprt"`
+	// MbcrName maps mbcr_name.
+	//
+	// KIS field: 회원사 명
+	// Property code: mbcr_name
+	// Required: true
+	// Length: 50
+	// Order: 004.051
+	MbcrName string `json:"mbcr_name"`
+	// StckLstnDate maps stck_lstn_date.
+	//
+	// KIS field: 주식 상장 일자
+	// Property code: stck_lstn_date
+	// Required: true
+	// Length: 8
+	// Order: 004.052
+	StckLstnDate string `json:"stck_lstn_date"`
+	// MtrtDate maps mtrt_date.
+	//
+	// KIS field: 만기 일자
+	// Property code: mtrt_date
+	// Required: true
+	// Length: 8
+	// Order: 004.053
+	MtrtDate string `json:"mtrt_date"`
+	// ShrgTypeCode maps shrg_type_code.
+	//
+	// KIS field: 분배금형태코드
+	// Property code: shrg_type_code
+	// Required: true
+	// Length: 2
+	// Order: 004.054
+	ShrgTypeCode string `json:"shrg_type_code"`
+	// LpHldnRate maps lp_hldn_rate.
+	//
+	// KIS field: LP 보유 비율
+	// Property code: lp_hldn_rate
+	// Required: true
+	// Length: 84
+	// Order: 004.055
+	LpHldnRate string `json:"lp_hldn_rate"`
+	// ETFTrgtNmixBstpCode maps etf_trgt_nmix_bstp_code.
+	//
+	// KIS field: ETF대상지수업종코드
+	// Property code: etf_trgt_nmix_bstp_code
+	// Required: true
+	// Length: 4
+	// Order: 004.056
+	ETFTrgtNmixBstpCode string `json:"etf_trgt_nmix_bstp_code"`
+	// ETFDivName maps etf_div_name.
+	//
+	// KIS field: ETF 분류 명
+	// Property code: etf_div_name
+	// Required: true
+	// Length: 40
+	// Order: 004.057
+	ETFDivName string `json:"etf_div_name"`
+	// ETFRprsBstpKorIsnm maps etf_rprs_bstp_kor_isnm.
+	//
+	// KIS field: ETF 대표 업종 한글 종목명
+	// Property code: etf_rprs_bstp_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 004.058
+	ETFRprsBstpKorIsnm string `json:"etf_rprs_bstp_kor_isnm"`
+	// LpHldnVol maps lp_hldn_vol.
+	//
+	// KIS field: ETN LP 보유량
+	// Property code: lp_hldn_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.059
+	LpHldnVol string `json:"lp_hldn_vol"`
+}
+
+func (r *ETFETNQuotationsInquirePriceResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// InquireComponentStockPriceRequest is the request for the KIS API.
+//
+// KIS API: ETF 구성종목시세[국내주식-073]
+// Summary: ETF 구성종목시세 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0245] ETF/ETN 구성종목시세 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: inquire-component-stock-price
+// Endpoint: GET /uapi/etfetn/v1/quotations/inquire-component-stock-price
+// TR ID: FHKST121600C0
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: read_only
+type InquireComponentStockPriceRequest struct {
+	// FidCondMrktDivCode maps FID_COND_MRKT_DIV_CODE.
+	//
+	// KIS field: 조건시장분류코드
+	// Property code: FID_COND_MRKT_DIV_CODE
+	// Required: true
+	// Length: 2
+	// Order: 001
+	// Description: 시장구분코드 (J)
+	FidCondMrktDivCode string `json:"FID_COND_MRKT_DIV_CODE"`
+	// FidInputISCD maps FID_INPUT_ISCD.
+	//
+	// KIS field: 입력종목코드
+	// Property code: FID_INPUT_ISCD
+	// Required: true
+	// Length: 12
+	// Order: 002
+	// Description: 종목코드
+	FidInputISCD string `json:"FID_INPUT_ISCD"`
+	// FidCondScrDivCode maps FID_COND_SCR_DIV_CODE.
+	//
+	// KIS field: 조건화면분류코드
+	// Property code: FID_COND_SCR_DIV_CODE
+	// Required: true
+	// Length: 5
+	// Order: 003
+	// Description: Unique key( 11216 )
+	FidCondScrDivCode string `json:"FID_COND_SCR_DIV_CODE"`
+}
+
+func (r InquireComponentStockPriceRequest) query() map[string]string {
+	return map[string]string{
+		"FID_COND_MRKT_DIV_CODE": r.FidCondMrktDivCode,
+		"FID_INPUT_ISCD":         r.FidInputISCD,
+		"FID_COND_SCR_DIV_CODE":  r.FidCondScrDivCode,
+	}
+}
+
+// InquireComponentStockPriceResponse is the response for the KIS API.
+//
+// KIS API: ETF 구성종목시세[국내주식-073]
+// Summary: ETF 구성종목시세 API입니다.  한국투자 HTS(eFriend Plus) &gt; [0245] ETF/ETN 구성종목시세 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: inquire-component-stock-price
+// Endpoint: GET /uapi/etfetn/v1/quotations/inquire-component-stock-price
+// TR ID: FHKST121600C0
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: read_only
+type InquireComponentStockPriceResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output1 maps output1.
+	//
+	// KIS field: 응답상세
+	// Property code: output1
+	// Required: true
+	// Length:
+	// Order: 004
+	Output1 InquireComponentStockPriceOutput1 `json:"output1"`
+	// Output2 maps output2.
+	//
+	// KIS field: 응답상세
+	// Property code: output2
+	// Required: true
+	// Length:
+	// Order: 005
+	// Description: array
+	Output2 []InquireComponentStockPriceOutput2Item `json:"output2"`
+}
+
+// InquireComponentStockPriceOutput1 is a KIS response object.
+type InquireComponentStockPriceOutput1 struct {
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.001
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.002
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.003
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.004
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// ETFCnfgIssuAvls maps etf_cnfg_issu_avls.
+	//
+	// KIS field: ETF구성종목시가총액
+	// Property code: etf_cnfg_issu_avls
+	// Required: true
+	// Length: 18
+	// Order: 004.005
+	ETFCnfgIssuAvls string `json:"etf_cnfg_issu_avls"`
+	// Nav maps nav.
+	//
+	// KIS field: NAV
+	// Property code: nav
+	// Required: true
+	// Length: 112
+	// Order: 004.006
+	Nav string `json:"nav"`
+	// NavPrdyVrssSign maps nav_prdy_vrss_sign.
+	//
+	// KIS field: NAV 전일 대비 부호
+	// Property code: nav_prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.007
+	NavPrdyVrssSign string `json:"nav_prdy_vrss_sign"`
+	// NavPrdyVrss maps nav_prdy_vrss.
+	//
+	// KIS field: NAV 전일 대비
+	// Property code: nav_prdy_vrss
+	// Required: true
+	// Length: 112
+	// Order: 004.008
+	NavPrdyVrss string `json:"nav_prdy_vrss"`
+	// NavPrdyCtrt maps nav_prdy_ctrt.
+	//
+	// KIS field: NAV 전일 대비율
+	// Property code: nav_prdy_ctrt
+	// Required: true
+	// Length: 84
+	// Order: 004.009
+	NavPrdyCtrt string `json:"nav_prdy_ctrt"`
+	// ETFNtasTtam maps etf_ntas_ttam.
+	//
+	// KIS field: ETF 순자산 총액
+	// Property code: etf_ntas_ttam
+	// Required: true
+	// Length: 22
+	// Order: 004.010
+	ETFNtasTtam string `json:"etf_ntas_ttam"`
+	// PrdyClprNav maps prdy_clpr_nav.
+	//
+	// KIS field: NAV전일종가
+	// Property code: prdy_clpr_nav
+	// Required: true
+	// Length: 112
+	// Order: 004.011
+	PrdyClprNav string `json:"prdy_clpr_nav"`
+	// OprcNav maps oprc_nav.
+	//
+	// KIS field: NAV시가
+	// Property code: oprc_nav
+	// Required: true
+	// Length: 112
+	// Order: 004.012
+	OprcNav string `json:"oprc_nav"`
+	// HprcNav maps hprc_nav.
+	//
+	// KIS field: NAV고가
+	// Property code: hprc_nav
+	// Required: true
+	// Length: 112
+	// Order: 004.013
+	HprcNav string `json:"hprc_nav"`
+	// LprcNav maps lprc_nav.
+	//
+	// KIS field: NAV저가
+	// Property code: lprc_nav
+	// Required: true
+	// Length: 112
+	// Order: 004.014
+	LprcNav string `json:"lprc_nav"`
+	// ETFCuUnitScrtCnt maps etf_cu_unit_scrt_cnt.
+	//
+	// KIS field: ETF CU 단위 증권 수
+	// Property code: etf_cu_unit_scrt_cnt
+	// Required: true
+	// Length: 18
+	// Order: 004.015
+	ETFCuUnitScrtCnt string `json:"etf_cu_unit_scrt_cnt"`
+	// ETFCnfgIssuCnt maps etf_cnfg_issu_cnt.
+	//
+	// KIS field: ETF 구성 종목 수
+	// Property code: etf_cnfg_issu_cnt
+	// Required: true
+	// Length: 18
+	// Order: 004.016
+	ETFCnfgIssuCnt string `json:"etf_cnfg_issu_cnt"`
+}
+
+// InquireComponentStockPriceOutput2Item is a KIS response object.
+type InquireComponentStockPriceOutput2Item struct {
+	// StckShrnISCD maps stck_shrn_iscd.
+	//
+	// KIS field: 주식 단축 종목코드
+	// Property code: stck_shrn_iscd
+	// Required: true
+	// Length: 9
+	// Order: 005.001
+	StckShrnISCD string `json:"stck_shrn_iscd"`
+	// HtsKorIsnm maps hts_kor_isnm.
+	//
+	// KIS field: HTS 한글 종목명
+	// Property code: hts_kor_isnm
+	// Required: true
+	// Length: 40
+	// Order: 005.002
+	HtsKorIsnm string `json:"hts_kor_isnm"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 005.003
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 005.004
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 005.005
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 005.006
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 18
+	// Order: 005.007
+	AcmlVol string `json:"acml_vol"`
+	// AcmlTRPbmn maps acml_tr_pbmn.
+	//
+	// KIS field: 누적 거래 대금
+	// Property code: acml_tr_pbmn
+	// Required: true
+	// Length: 18
+	// Order: 005.008
+	AcmlTRPbmn string `json:"acml_tr_pbmn"`
+	// TdayRsflRate maps tday_rsfl_rate.
+	//
+	// KIS field: 당일 등락 비율
+	// Property code: tday_rsfl_rate
+	// Required: true
+	// Length: 52
+	// Order: 005.009
+	TdayRsflRate string `json:"tday_rsfl_rate"`
+	// PrdyVrssVol maps prdy_vrss_vol.
+	//
+	// KIS field: 전일 대비 거래량
+	// Property code: prdy_vrss_vol
+	// Required: true
+	// Length: 18
+	// Order: 005.010
+	PrdyVrssVol string `json:"prdy_vrss_vol"`
+	// TRPbmnTnrt maps tr_pbmn_tnrt.
+	//
+	// KIS field: 거래대금회전율
+	// Property code: tr_pbmn_tnrt
+	// Required: true
+	// Length: 82
+	// Order: 005.011
+	TRPbmnTnrt string `json:"tr_pbmn_tnrt"`
+	// HtsAvls maps hts_avls.
+	//
+	// KIS field: HTS 시가총액
+	// Property code: hts_avls
+	// Required: true
+	// Length: 18
+	// Order: 005.012
+	HtsAvls string `json:"hts_avls"`
+	// ETFCnfgIssuAvls maps etf_cnfg_issu_avls.
+	//
+	// KIS field: ETF구성종목시가총액
+	// Property code: etf_cnfg_issu_avls
+	// Required: true
+	// Length: 18
+	// Order: 005.013
+	ETFCnfgIssuAvls string `json:"etf_cnfg_issu_avls"`
+	// ETFCnfgIssuRlim maps etf_cnfg_issu_rlim.
+	//
+	// KIS field: ETF구성종목비중
+	// Property code: etf_cnfg_issu_rlim
+	// Required: true
+	// Length: 72
+	// Order: 005.014
+	ETFCnfgIssuRlim string `json:"etf_cnfg_issu_rlim"`
+	// ETFVltnAmt maps etf_vltn_amt.
+	//
+	// KIS field: ETF구성종목내평가금액
+	// Property code: etf_vltn_amt
+	// Required: true
+	// Length: 18
+	// Order: 005.015
+	ETFVltnAmt string `json:"etf_vltn_amt"`
+}
+
+func (r *InquireComponentStockPriceResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// NavComparisonTrendRequest is the request for the KIS API.
+//
+// KIS API: NAV 비교추이(종목)[v1_국내주식-069]
+// Summary: NAV 비교추이(종목) API입니다. 한국투자 HTS(eFriend Plus) &gt; [0244] ETF/ETN 비교추이(NAV/IIV) 좌측 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: nav-comparison-trend
+// Endpoint: GET /uapi/etfetn/v1/quotations/nav-comparison-trend
+// TR ID: FHPST02440000
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: read_only
+type NavComparisonTrendRequest struct {
+	// FidCondMrktDivCode maps FID_COND_MRKT_DIV_CODE.
+	//
+	// KIS field: 조건 시장 분류 코드
+	// Property code: FID_COND_MRKT_DIV_CODE
+	// Required: true
+	// Length: 2
+	// Order: 001
+	// Description: J
+	FidCondMrktDivCode string `json:"FID_COND_MRKT_DIV_CODE"`
+	// FidInputISCD maps FID_INPUT_ISCD.
+	//
+	// KIS field: 입력 종목코드
+	// Property code: FID_INPUT_ISCD
+	// Required: true
+	// Length: 12
+	// Order: 002
+	// Description: 종목코드
+	FidInputISCD string `json:"FID_INPUT_ISCD"`
+}
+
+func (r NavComparisonTrendRequest) query() map[string]string {
+	return map[string]string{
+		"FID_COND_MRKT_DIV_CODE": r.FidCondMrktDivCode,
+		"FID_INPUT_ISCD":         r.FidInputISCD,
+	}
+}
+
+// NavComparisonTrendResponse is the response for the KIS API.
+//
+// KIS API: NAV 비교추이(종목)[v1_국내주식-069]
+// Summary: NAV 비교추이(종목) API입니다. 한국투자 HTS(eFriend Plus) &gt; [0244] ETF/ETN 비교추이(NAV/IIV) 좌측 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.
+// Operation ID: nav-comparison-trend
+// Endpoint: GET /uapi/etfetn/v1/quotations/nav-comparison-trend
+// TR ID: FHPST02440000
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: read_only
+type NavComparisonTrendResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output1 maps output1.
+	//
+	// KIS field: 응답상세
+	// Property code: output1
+	// Required: true
+	// Length:
+	// Order: 004
+	Output1 NavComparisonTrendOutput1 `json:"output1"`
+	// Output2 maps output2.
+	//
+	// KIS field: 응답상세
+	// Property code: output2
+	// Required: true
+	// Length:
+	// Order: 005
+	Output2 NavComparisonTrendOutput2 `json:"output2"`
+}
+
+// NavComparisonTrendOutput1 is a KIS response object.
+type NavComparisonTrendOutput1 struct {
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 8
+	// Order: 004.001
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 8
+	// Order: 004.002
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 2
+	// Order: 004.003
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 4
+	// Order: 004.004
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 12
+	// Order: 004.005
+	AcmlVol string `json:"acml_vol"`
+	// AcmlTRPbmn maps acml_tr_pbmn.
+	//
+	// KIS field: 누적 거래 대금
+	// Property code: acml_tr_pbmn
+	// Required: true
+	// Length: 60
+	// Order: 004.006
+	AcmlTRPbmn string `json:"acml_tr_pbmn"`
+	// StckPrdyClpr maps stck_prdy_clpr.
+	//
+	// KIS field: 주식 전일 종가
+	// Property code: stck_prdy_clpr
+	// Required: true
+	// Length: 10
+	// Order: 004.007
+	StckPrdyClpr string `json:"stck_prdy_clpr"`
+	// StckOprc maps stck_oprc.
+	//
+	// KIS field: 주식 시가2
+	// Property code: stck_oprc
+	// Required: true
+	// Length: 10
+	// Order: 004.008
+	StckOprc string `json:"stck_oprc"`
+	// StckHgpr maps stck_hgpr.
+	//
+	// KIS field: 주식 최고가
+	// Property code: stck_hgpr
+	// Required: true
+	// Length: 10
+	// Order: 004.009
+	StckHgpr string `json:"stck_hgpr"`
+	// StckLwpr maps stck_lwpr.
+	//
+	// KIS field: 주식 최저가
+	// Property code: stck_lwpr
+	// Required: true
+	// Length: 10
+	// Order: 004.010
+	StckLwpr string `json:"stck_lwpr"`
+	// StckMxpr maps stck_mxpr.
+	//
+	// KIS field: 주식 상한가
+	// Property code: stck_mxpr
+	// Required: true
+	// Length: 10
+	// Order: 004.011
+	StckMxpr string `json:"stck_mxpr"`
+	// StckLlam maps stck_llam.
+	//
+	// KIS field: 주식 하한가
+	// Property code: stck_llam
+	// Required: true
+	// Length: 10
+	// Order: 004.012
+	StckLlam string `json:"stck_llam"`
+}
+
+// NavComparisonTrendOutput2 is a KIS response object.
+type NavComparisonTrendOutput2 struct {
+	// Nav maps nav.
+	//
+	// KIS field: NAV
+	// Property code: nav
+	// Required: true
+	// Length: 11
+	// Order: 005.001
+	Nav string `json:"nav"`
+	// NavPrdyVrssSign maps nav_prdy_vrss_sign.
+	//
+	// KIS field: NAV 전일 대비 부호
+	// Property code: nav_prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 005.002
+	NavPrdyVrssSign string `json:"nav_prdy_vrss_sign"`
+	// NavPrdyVrss maps nav_prdy_vrss.
+	//
+	// KIS field: NAV 전일 대비
+	// Property code: nav_prdy_vrss
+	// Required: true
+	// Length: 11
+	// Order: 005.003
+	NavPrdyVrss string `json:"nav_prdy_vrss"`
+	// NavPrdyCtrt maps nav_prdy_ctrt.
+	//
+	// KIS field: NAV 전일 대비율
+	// Property code: nav_prdy_ctrt
+	// Required: true
+	// Length: 8
+	// Order: 005.004
+	NavPrdyCtrt string `json:"nav_prdy_ctrt"`
+	// PrdyClprNav maps prdy_clpr_nav.
+	//
+	// KIS field: NAV전일종가
+	// Property code: prdy_clpr_nav
+	// Required: true
+	// Length: 11
+	// Order: 005.005
+	PrdyClprNav string `json:"prdy_clpr_nav"`
+	// OprcNav maps oprc_nav.
+	//
+	// KIS field: NAV시가
+	// Property code: oprc_nav
+	// Required: true
+	// Length: 11
+	// Order: 005.006
+	OprcNav string `json:"oprc_nav"`
+	// HprcNav maps hprc_nav.
+	//
+	// KIS field: NAV고가
+	// Property code: hprc_nav
+	// Required: true
+	// Length: 11
+	// Order: 005.007
+	HprcNav string `json:"hprc_nav"`
+	// LprcNav maps lprc_nav.
+	//
+	// KIS field: NAV저가
+	// Property code: lprc_nav
+	// Required: true
+	// Length: 11
+	// Order: 005.008
+	LprcNav string `json:"lprc_nav"`
+}
+
+func (r *NavComparisonTrendResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// NavComparisonDailyTrendRequest is the request for the KIS API.
+//
+// KIS API: NAV 비교추이(일)[v1_국내주식-071]
+// Summary: NAV 비교추이(일) API입니다. 한국투자 HTS(eFriend Plus) &gt; [0244] ETF/ETN 비교추이(NAV/IIV) 좌측 화면 "일별" 비교추이 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 실전계좌의 경우, 한 번의 호출에 최대 100건까지 확인 가능합니다.
+// Operation ID: nav-comparison-daily-trend
+// Endpoint: GET /uapi/etfetn/v1/quotations/nav-comparison-daily-trend
+// TR ID: FHPST02440200
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: read_only
+type NavComparisonDailyTrendRequest struct {
+	// FidCondMrktDivCode maps fid_cond_mrkt_div_code.
+	//
+	// KIS field: FID 조건 시장 분류 코드
+	// Property code: fid_cond_mrkt_div_code
+	// Required: true
+	// Length: 2
+	// Order: 001
+	// Description: J 입력
+	FidCondMrktDivCode string `json:"fid_cond_mrkt_div_code"`
+	// FidInputISCD maps fid_input_iscd.
+	//
+	// KIS field: FID 입력 종목코드
+	// Property code: fid_input_iscd
+	// Required: true
+	// Length: 12
+	// Order: 002
+	// Description: 종목코드 (6자리)
+	FidInputISCD string `json:"fid_input_iscd"`
+	// FidInputDate1 maps fid_input_date_1.
+	//
+	// KIS field: FID 입력 날짜1
+	// Property code: fid_input_date_1
+	// Required: true
+	// Length: 10
+	// Order: 003
+	// Description: 조회 시작일자 (ex. 20240101)
+	FidInputDate1 string `json:"fid_input_date_1"`
+	// FidInputDate2 maps fid_input_date_2.
+	//
+	// KIS field: FID 입력 날짜2
+	// Property code: fid_input_date_2
+	// Required: true
+	// Length: 10
+	// Order: 004
+	// Description: 조회 종료일자 (ex. 20240220)
+	FidInputDate2 string `json:"fid_input_date_2"`
+}
+
+func (r NavComparisonDailyTrendRequest) query() map[string]string {
+	return map[string]string{
+		"fid_cond_mrkt_div_code": r.FidCondMrktDivCode,
+		"fid_input_iscd":         r.FidInputISCD,
+		"fid_input_date_1":       r.FidInputDate1,
+		"fid_input_date_2":       r.FidInputDate2,
+	}
+}
+
+// NavComparisonDailyTrendResponse is the response for the KIS API.
+//
+// KIS API: NAV 비교추이(일)[v1_국내주식-071]
+// Summary: NAV 비교추이(일) API입니다. 한국투자 HTS(eFriend Plus) &gt; [0244] ETF/ETN 비교추이(NAV/IIV) 좌측 화면 "일별" 비교추이 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 실전계좌의 경우, 한 번의 호출에 최대 100건까지 확인 가능합니다.
+// Operation ID: nav-comparison-daily-trend
+// Endpoint: GET /uapi/etfetn/v1/quotations/nav-comparison-daily-trend
+// TR ID: FHPST02440200
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: read_only
+type NavComparisonDailyTrendResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output maps output.
+	//
+	// KIS field: 응답상세
+	// Property code: output
+	// Required: true
+	// Length:
+	// Order: 004
+	// Description: array
+	Output []NavComparisonDailyTrendOutputItem `json:"output"`
+}
+
+// NavComparisonDailyTrendOutputItem is a KIS response object.
+type NavComparisonDailyTrendOutputItem struct {
+	// StckBsopDate maps stck_bsop_date.
+	//
+	// KIS field: 주식 영업 일자
+	// Property code: stck_bsop_date
+	// Required: true
+	// Length: 8
+	// Order: 004.001
+	StckBsopDate string `json:"stck_bsop_date"`
+	// StckClpr maps stck_clpr.
+	//
+	// KIS field: 주식 종가
+	// Property code: stck_clpr
+	// Required: true
+	// Length: 10
+	// Order: 004.002
+	StckClpr string `json:"stck_clpr"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.003
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.004
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.005
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.006
+	AcmlVol string `json:"acml_vol"`
+	// CntgVol maps cntg_vol.
+	//
+	// KIS field: 체결 거래량
+	// Property code: cntg_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.007
+	CntgVol string `json:"cntg_vol"`
+	// Dprt maps dprt.
+	//
+	// KIS field: 괴리율
+	// Property code: dprt
+	// Required: true
+	// Length: 82
+	// Order: 004.008
+	Dprt string `json:"dprt"`
+	// NavVrssPrpr maps nav_vrss_prpr.
+	//
+	// KIS field: NAV 대비 현재가
+	// Property code: nav_vrss_prpr
+	// Required: true
+	// Length: 112
+	// Order: 004.009
+	NavVrssPrpr string `json:"nav_vrss_prpr"`
+	// Nav maps nav.
+	//
+	// KIS field: NAV
+	// Property code: nav
+	// Required: true
+	// Length: 112
+	// Order: 004.010
+	Nav string `json:"nav"`
+	// NavPrdyVrssSign maps nav_prdy_vrss_sign.
+	//
+	// KIS field: NAV 전일 대비 부호
+	// Property code: nav_prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.011
+	NavPrdyVrssSign string `json:"nav_prdy_vrss_sign"`
+	// NavPrdyVrss maps nav_prdy_vrss.
+	//
+	// KIS field: NAV 전일 대비
+	// Property code: nav_prdy_vrss
+	// Required: true
+	// Length: 112
+	// Order: 004.012
+	NavPrdyVrss string `json:"nav_prdy_vrss"`
+	// NavPrdyCtrt maps nav_prdy_ctrt.
+	//
+	// KIS field: NAV 전일 대비율
+	// Property code: nav_prdy_ctrt
+	// Required: true
+	// Length: 84
+	// Order: 004.013
+	NavPrdyCtrt string `json:"nav_prdy_ctrt"`
+}
+
+func (r *NavComparisonDailyTrendResponse) KISStatus() Status {
+	if r == nil {
+		return Status{}
+	}
+	return Status{RTCD: r.RtCd, MsgCD: r.MsgCd, Msg1: r.Msg1}
+}
+
+// NavComparisonTimeTrendRequest is the request for the KIS API.
+//
+// KIS API: NAV 비교추이(분)[v1_국내주식-070]
+// Summary: NAV 비교추이(분) API입니다. 한국투자 HTS(eFriend Plus) &gt; [0244] ETF/ETN 비교추이(NAV/IIV) 좌측 화면 "분별" 비교추이 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 실전계좌의 경우, 한 번의 호출에 최근 30건까지 확인 가능합니다.
+// Operation ID: nav-comparison-time-trend
+// Endpoint: GET /uapi/etfetn/v1/quotations/nav-comparison-time-trend
+// TR ID: FHPST02440100
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: intraday_bar
+type NavComparisonTimeTrendRequest struct {
+	// FidHourClsCode maps fid_hour_cls_code.
+	//
+	// KIS field: FID 시간 구분 코드
+	// Property code: fid_hour_cls_code
+	// Required: true
+	// Length: 5
+	// Order: 001
+	// Description: 1분 :60, 3분: 180 … 120분:7200
+	FidHourClsCode string `json:"fid_hour_cls_code"`
+	// FidCondMrktDivCode maps fid_cond_mrkt_div_code.
+	//
+	// KIS field: FID 조건 시장 분류 코드
+	// Property code: fid_cond_mrkt_div_code
+	// Required: true
+	// Length: 2
+	// Order: 002
+	// Description: E - 고정값
+	FidCondMrktDivCode string `json:"fid_cond_mrkt_div_code"`
+	// FidInputISCD maps fid_input_iscd.
+	//
+	// KIS field: FID 입력 종목코드
+	// Property code: fid_input_iscd
+	// Required: true
+	// Length: 12
+	// Order: 003
+	// Description: 종목코드
+	FidInputISCD string `json:"fid_input_iscd"`
+}
+
+func (r NavComparisonTimeTrendRequest) query() map[string]string {
+	return map[string]string{
+		"fid_hour_cls_code":      r.FidHourClsCode,
+		"fid_cond_mrkt_div_code": r.FidCondMrktDivCode,
+		"fid_input_iscd":         r.FidInputISCD,
+	}
+}
+
+// NavComparisonTimeTrendResponse is the response for the KIS API.
+//
+// KIS API: NAV 비교추이(분)[v1_국내주식-070]
+// Summary: NAV 비교추이(분) API입니다. 한국투자 HTS(eFriend Plus) &gt; [0244] ETF/ETN 비교추이(NAV/IIV) 좌측 화면 "분별" 비교추이 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. 실전계좌의 경우, 한 번의 호출에 최근 30건까지 확인 가능합니다.
+// Operation ID: nav-comparison-time-trend
+// Endpoint: GET /uapi/etfetn/v1/quotations/nav-comparison-time-trend
+// TR ID: FHPST02440100
+// Virtual TR ID: 모의투자 미지원
+// Group: quote
+// Service group: Quote
+// Role hint: intraday_bar
+type NavComparisonTimeTrendResponse struct {
+	// RtCd maps rt_cd.
+	//
+	// KIS field: 성공 실패 여부
+	// Property code: rt_cd
+	// Required: true
+	// Length: 1
+	// Order: 001
+	RtCd string `json:"rt_cd"`
+	// MsgCd maps msg_cd.
+	//
+	// KIS field: 응답코드
+	// Property code: msg_cd
+	// Required: true
+	// Length: 8
+	// Order: 002
+	MsgCd string `json:"msg_cd"`
+	// Msg1 maps msg1.
+	//
+	// KIS field: 응답메세지
+	// Property code: msg1
+	// Required: true
+	// Length: 80
+	// Order: 003
+	Msg1 string `json:"msg1"`
+	// Output maps output.
+	//
+	// KIS field: 응답상세
+	// Property code: output
+	// Required: true
+	// Length:
+	// Order: 004
+	// Description: array
+	Output []NavComparisonTimeTrendOutputItem `json:"output"`
+}
+
+// NavComparisonTimeTrendOutputItem is a KIS response object.
+type NavComparisonTimeTrendOutputItem struct {
+	// BsopHour maps bsop_hour.
+	//
+	// KIS field: 영업 시간
+	// Property code: bsop_hour
+	// Required: true
+	// Length: 6
+	// Order: 004.001
+	BsopHour string `json:"bsop_hour"`
+	// Nav maps nav.
+	//
+	// KIS field: NAV
+	// Property code: nav
+	// Required: true
+	// Length: 112
+	// Order: 004.002
+	Nav string `json:"nav"`
+	// NavPrdyVrssSign maps nav_prdy_vrss_sign.
+	//
+	// KIS field: NAV 전일 대비 부호
+	// Property code: nav_prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.003
+	NavPrdyVrssSign string `json:"nav_prdy_vrss_sign"`
+	// NavPrdyVrss maps nav_prdy_vrss.
+	//
+	// KIS field: NAV 전일 대비
+	// Property code: nav_prdy_vrss
+	// Required: true
+	// Length: 112
+	// Order: 004.004
+	NavPrdyVrss string `json:"nav_prdy_vrss"`
+	// NavPrdyCtrt maps nav_prdy_ctrt.
+	//
+	// KIS field: NAV 전일 대비율
+	// Property code: nav_prdy_ctrt
+	// Required: true
+	// Length: 84
+	// Order: 004.005
+	NavPrdyCtrt string `json:"nav_prdy_ctrt"`
+	// NavVrssPrpr maps nav_vrss_prpr.
+	//
+	// KIS field: NAV 대비 현재가
+	// Property code: nav_vrss_prpr
+	// Required: true
+	// Length: 112
+	// Order: 004.006
+	NavVrssPrpr string `json:"nav_vrss_prpr"`
+	// Dprt maps dprt.
+	//
+	// KIS field: 괴리율
+	// Property code: dprt
+	// Required: true
+	// Length: 82
+	// Order: 004.007
+	Dprt string `json:"dprt"`
+	// StckPrpr maps stck_prpr.
+	//
+	// KIS field: 주식 현재가
+	// Property code: stck_prpr
+	// Required: true
+	// Length: 10
+	// Order: 004.008
+	StckPrpr string `json:"stck_prpr"`
+	// PrdyVrss maps prdy_vrss.
+	//
+	// KIS field: 전일 대비
+	// Property code: prdy_vrss
+	// Required: true
+	// Length: 10
+	// Order: 004.009
+	PrdyVrss string `json:"prdy_vrss"`
+	// PrdyVrssSign maps prdy_vrss_sign.
+	//
+	// KIS field: 전일 대비 부호
+	// Property code: prdy_vrss_sign
+	// Required: true
+	// Length: 1
+	// Order: 004.010
+	PrdyVrssSign string `json:"prdy_vrss_sign"`
+	// PrdyCtrt maps prdy_ctrt.
+	//
+	// KIS field: 전일 대비율
+	// Property code: prdy_ctrt
+	// Required: true
+	// Length: 82
+	// Order: 004.011
+	PrdyCtrt string `json:"prdy_ctrt"`
+	// AcmlVol maps acml_vol.
+	//
+	// KIS field: 누적 거래량
+	// Property code: acml_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.012
+	AcmlVol string `json:"acml_vol"`
+	// CntgVol maps cntg_vol.
+	//
+	// KIS field: 체결 거래량
+	// Property code: cntg_vol
+	// Required: true
+	// Length: 18
+	// Order: 004.013
+	CntgVol string `json:"cntg_vol"`
+}
+
+func (r *NavComparisonTimeTrendResponse) KISStatus() Status {
 	if r == nil {
 		return Status{}
 	}

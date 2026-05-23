@@ -51,8 +51,8 @@ type quoteAPI interface {
 }
 
 type instrumentAPI interface {
-	Product(context.Context, string, ...kisclient.InstrumentOption) (kisclient.Product, error)
-	Stock(context.Context, string, ...kisclient.InstrumentOption) (kisclient.Stock, error)
+	Product(context.Context, kisclient.SearchInfoRequest) (kisclient.SearchInfoResponse, error)
+	Stock(context.Context, kisclient.SearchStockInfoRequest) (kisclient.SearchStockInfoResponse, error)
 }
 
 type Provider struct {
@@ -535,18 +535,24 @@ func (p *Provider) searchInstruments(ctx context.Context, input instrument.Searc
 	}
 
 	instrumentService := p.client.Instrument()
-	product, err := instrumentService.Product(ctx, query)
+	product, err := instrumentService.Product(ctx, kisclient.SearchInfoRequest{
+		Pdno:       query,
+		PrdtTypeCd: kisclient.DefaultDomesticStockProductType,
+	})
 	if err != nil {
 		return instrument.SearchResult{}, errb.With("operation", provider.OperationKISProduct).Wrapf(err, "fetch kis product")
 	}
-	item := instrumentFromProduct(product, input.SecurityType)
+	item := instrumentFromSearchInfo(product.Output, input.SecurityType)
 	operations := []provider.OperationID{provider.OperationKISProduct}
 	if input.SecurityType == provider.SecurityTypeStock {
-		stock, err := instrumentService.Stock(ctx, query)
+		stock, err := instrumentService.Stock(ctx, kisclient.SearchStockInfoRequest{
+			Pdno:       query,
+			PrdtTypeCd: kisclient.DefaultDomesticStockProductType,
+		})
 		if err != nil {
 			return instrument.SearchResult{}, errb.With("operation", provider.OperationKISStock).Wrapf(err, "fetch kis stock")
 		}
-		item = instrumentFromProductAndStock(product, stock, input.SecurityType)
+		item = instrumentFromSearchInfoAndSearchStockInfo(product.Output, stock.Output, input.SecurityType)
 		operations = append(operations, provider.OperationKISStock)
 	}
 
@@ -769,8 +775,8 @@ func koreaLocation() *time.Location {
 	return time.FixedZone("Asia/Seoul", 9*60*60)
 }
 
-func instrumentFromProduct(product kisclient.Product, securityType provider.SecurityType) instrument.Instrument {
-	securityCode := firstNonEmpty(product.ShortProductNo, product.ProductNo)
+func instrumentFromSearchInfo(product kisclient.SearchInfoOutput, securityType provider.SecurityType) instrument.Instrument {
+	securityCode := firstNonEmpty(product.ShtnPdno, product.Pdno)
 	return instrument.Instrument{
 		Provider:     provider.ProviderKIS,
 		Group:        provider.GroupKISInstrument,
@@ -778,42 +784,42 @@ func instrumentFromProduct(product kisclient.Product, securityType provider.Secu
 		Market:       provider.MarketKRX,
 		SecurityType: securityType,
 		SecurityCode: securityCode,
-		ISIN:         product.StandardProductNo,
-		Name:         firstNonEmpty(product.Name, product.AbbreviatedName),
+		ISIN:         product.StdPdno,
+		Name:         firstNonEmpty(product.PrdtName, product.PrdtAbrvName),
 		ExchangeCode: "KRX",
 		CountryCode:  "KR",
 		Timezone:     "Asia/Seoul",
 		Extensions: map[string]string{
 			"security_key":             fmt.Sprintf("krx:%s", securityCode),
 			"canonical_record_key":     fmt.Sprintf("instrument:krx:%s:current", securityCode),
-			"kis_product_no":           product.ProductNo,
-			"kis_product_type_code":    product.ProductTypeCode,
-			"kis_product_class_code":   product.ProductClassCode,
-			"kis_product_class_name":   product.ProductClassName,
-			"kis_investment_type_code": product.InvestmentTypeCode,
-			"kis_investment_type_name": product.InvestmentTypeCodeName,
-			"english_name":             product.EnglishName,
+			"kis_product_no":           product.Pdno,
+			"kis_product_type_code":    product.PrdtTypeCd,
+			"kis_product_class_code":   product.PrdtClsfCd,
+			"kis_product_class_name":   product.PrdtClsfName,
+			"kis_investment_type_code": product.IvstPrdtTypeCd,
+			"kis_investment_type_name": product.IvstPrdtTypeCdName,
+			"english_name":             product.PrdtEngName,
 		},
 	}
 }
 
-func instrumentFromProductAndStock(product kisclient.Product, stock kisclient.Stock, securityType provider.SecurityType) instrument.Instrument {
-	item := instrumentFromProduct(product, securityType)
+func instrumentFromSearchInfoAndSearchStockInfo(product kisclient.SearchInfoOutput, stock kisclient.SearchStockInfoOutput, securityType provider.SecurityType) instrument.Instrument {
+	item := instrumentFromSearchInfo(product, securityType)
 	item.Operation = provider.OperationKISStock
-	item.SecurityCode = firstNonEmpty(stock.ProductNo, item.SecurityCode)
-	item.ISIN = firstNonEmpty(stock.StandardProductNo, item.ISIN)
-	item.Name = firstNonEmpty(stock.Name, item.Name)
-	item.Extensions["kis_market_id_code"] = stock.MarketIDCode
-	item.Extensions["kis_security_group_id_code"] = stock.SecurityGroupIDCode
-	item.Extensions["kis_exchange_division_code"] = stock.ExchangeDivisionCode
-	item.Extensions["kis_settlement_month_day"] = stock.SettlementMonthDay
-	item.Extensions["kis_listed_shares"] = stock.ListedShares
-	item.Extensions["kis_capital"] = stock.Capital
-	item.Extensions["kis_par_value"] = stock.ParValue
-	item.Extensions["kis_trading_halt"] = stock.TradingHalt
-	item.Extensions["kis_administrative_issue"] = stock.AdministrativeIssue
-	item.Extensions["kis_industry_code"] = stock.IndustryCode
-	item.Extensions["kis_industry_name"] = stock.IndustryName
+	item.SecurityCode = firstNonEmpty(stock.Pdno, item.SecurityCode)
+	item.ISIN = firstNonEmpty(stock.StdPdno, item.ISIN)
+	item.Name = firstNonEmpty(stock.PrdtName, item.Name)
+	item.Extensions["kis_market_id_code"] = stock.MketIDCd
+	item.Extensions["kis_security_group_id_code"] = stock.SctyGrpIDCd
+	item.Extensions["kis_exchange_division_code"] = stock.ExcgDvsnCd
+	item.Extensions["kis_settlement_month_day"] = stock.SetlMmdd
+	item.Extensions["kis_listed_shares"] = stock.LstgStqt
+	item.Extensions["kis_capital"] = stock.Cpta
+	item.Extensions["kis_par_value"] = stock.Papr
+	item.Extensions["kis_trading_halt"] = stock.TRStopYn
+	item.Extensions["kis_administrative_issue"] = stock.AdmnItemYn
+	item.Extensions["kis_industry_code"] = stock.StdIdstClsfCd
+	item.Extensions["kis_industry_name"] = stock.StdIdstClsfCdName
 	return item
 }
 

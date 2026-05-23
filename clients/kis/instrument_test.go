@@ -41,11 +41,14 @@ func TestProductBuildsKISRequestAndParsesMetadata(t *testing.T) {
 	defer server.Close()
 
 	client := newTestClient(t, server.URL, "token")
-	product, err := client.Instrument().Product(context.Background(), "005930")
+	product, err := client.Instrument().Product(context.Background(), SearchInfoRequest{
+		Pdno:       "005930",
+		PrdtTypeCd: DefaultDomesticStockProductType,
+	})
 	require.NoError(t, err)
-	assert.Equal(t, "005930", product.ProductNo)
-	assert.Equal(t, "삼성전자", product.Name)
-	assert.Equal(t, "KR7005930003", product.StandardProductNo)
+	assert.Equal(t, "005930", product.Output.Pdno)
+	assert.Equal(t, "삼성전자", product.Output.PrdtName)
+	assert.Equal(t, "KR7005930003", product.Output.StdPdno)
 }
 
 func TestStockBuildsKISRequestAndParsesMetadata(t *testing.T) {
@@ -85,10 +88,13 @@ func TestStockBuildsKISRequestAndParsesMetadata(t *testing.T) {
 	defer server.Close()
 
 	client := newTestClient(t, server.URL, "token")
-	stock, err := client.Instrument().Stock(context.Background(), "005930")
+	stock, err := client.Instrument().Stock(context.Background(), SearchStockInfoRequest{
+		Pdno:       "005930",
+		PrdtTypeCd: DefaultDomesticStockProductType,
+	})
 	require.NoError(t, err)
-	assert.Equal(t, "00000A005930", stock.ProductNo)
-	assert.Equal(t, "삼성전자", stock.AbbreviatedName)
-	assert.Equal(t, "5969782550", stock.ListedShares)
-	assert.Equal(t, "032601", stock.IndustryCode)
+	assert.Equal(t, "00000A005930", stock.Output.Pdno)
+	assert.Equal(t, "삼성전자", stock.Output.PrdtAbrvName)
+	assert.Equal(t, "5969782550", stock.Output.LstgStqt)
+	assert.Equal(t, "032601", stock.Output.StdIdstClsfCd)
 }

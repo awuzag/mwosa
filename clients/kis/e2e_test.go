@@ -136,19 +136,25 @@ func TestE2ERealOnlyInstrumentAndETFETN(t *testing.T) {
 		t.Skipf("set %s=0 because Product, Stock, and ETFETNPrice are not virtual-investment APIs", kisVirtualEnv)
 	}
 
-	product, err := client.Instrument().Product(ctx, config.Symbol)
+	product, err := client.Instrument().Product(ctx, SearchInfoRequest{
+		Pdno:       config.Symbol,
+		PrdtTypeCd: DefaultDomesticStockProductType,
+	})
 	if err != nil {
 		t.Fatalf("live product symbol=%s: %v", config.Symbol, err)
 	}
-	if strings.TrimSpace(product.Name) == "" {
+	if strings.TrimSpace(product.Output.PrdtName) == "" {
 		t.Fatalf("live product symbol=%s returned empty name: %+v", config.Symbol, product)
 	}
 
-	stock, err := client.Instrument().Stock(ctx, config.Symbol)
+	stock, err := client.Instrument().Stock(ctx, SearchStockInfoRequest{
+		Pdno:       config.Symbol,
+		PrdtTypeCd: DefaultDomesticStockProductType,
+	})
 	if err != nil {
 		t.Fatalf("live stock symbol=%s: %v", config.Symbol, err)
 	}
-	if strings.TrimSpace(stock.Name) == "" {
+	if strings.TrimSpace(stock.Output.PrdtName) == "" {
 		t.Fatalf("live stock symbol=%s returned empty name: %+v", config.Symbol, stock)
 	}
 

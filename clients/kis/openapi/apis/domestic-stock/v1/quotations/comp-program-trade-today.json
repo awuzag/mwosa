@@ -1,0 +1,560 @@
+{
+  "components": {
+    "schemas": {
+      "CompProgramTradeTodayResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "msg1": {
+            "description": "응답메세지",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답메세지",
+              "propertyLength": "80",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "msg_cd": {
+            "description": "응답코드",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답코드",
+              "propertyLength": "8",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "output1": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "arbt_smtm_ntby_tr_pbmn_rate": {
+                  "description": "차익 합계 순매수 거래대금 비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "차익 합계 순매수 거래대금 비율",
+                    "propertyLength": "72",
+                    "propertyOrder": "004.011",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "arbt_smtm_seln_tr_pbmn_rate": {
+                  "description": "차익 합계 매도 거래대금 비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "차익 합계 매도 거래대금 비율",
+                    "propertyLength": "72",
+                    "propertyOrder": "004.003",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "arbt_smtm_shun_tr_pbmn_rate": {
+                  "description": "차익합계매수거래대금비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "차익합계매수거래대금비율",
+                    "propertyLength": "72",
+                    "propertyOrder": "004.005",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "arbt_smtn_ntby_tr_pbmn": {
+                  "description": "차익 합계 순매수 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "차익 합계 순매수 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.010",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "arbt_smtn_seln_tr_pbmn": {
+                  "description": "차익 합계 매도 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "차익 합계 매도 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.002",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "arbt_smtn_shnu_tr_pbmn": {
+                  "description": "차익 합계 매수2 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "차익 합계 매수2 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.004",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "bsop_hour": {
+                  "description": "영업 시간",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "영업 시간",
+                    "propertyLength": "6",
+                    "propertyOrder": "004.001",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "bstp_nmix_prdy_vrss": {
+                  "description": "업종 지수 전일 대비",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "업종 지수 전일 대비",
+                    "propertyLength": "112",
+                    "propertyOrder": "004.017",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "bstp_nmix_prpr": {
+                  "description": "업종 지수 현재가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "업종 지수 현재가",
+                    "propertyLength": "112",
+                    "propertyOrder": "004.016",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "nabt_smtm_ntby_tr_pbmn_rate": {
+                  "description": "비차익 합계 순매수 거래대금 비",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "비차익 합계 순매수 거래대금 비",
+                    "propertyLength": "72",
+                    "propertyOrder": "004.013",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "nabt_smtm_seln_tr_pbmn_rate": {
+                  "description": "비차익 합계 매도 거래대금 비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "비차익 합계 매도 거래대금 비율",
+                    "propertyLength": "72",
+                    "propertyOrder": "004.007",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "nabt_smtm_shun_tr_pbmn_rate": {
+                  "description": "비차익합계매수거래대금비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "비차익합계매수거래대금비율",
+                    "propertyLength": "72",
+                    "propertyOrder": "004.009",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "nabt_smtn_ntby_tr_pbmn": {
+                  "description": "비차익 합계 순매수 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "비차익 합계 순매수 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.012",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "nabt_smtn_seln_tr_pbmn": {
+                  "description": "비차익 합계 매도 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "비차익 합계 매도 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.006",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "nabt_smtn_shnu_tr_pbmn": {
+                  "description": "비차익 합계 매수2 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "비차익 합계 매수2 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.008",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_vrss_sign": {
+                  "description": "전일 대비 부호",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일 대비 부호",
+                    "propertyLength": "1",
+                    "propertyOrder": "004.018",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "whol_ntby_tr_pbmn_rate": {
+                  "description": "전체 순매수 거래대금 비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전체 순매수 거래대금 비율",
+                    "propertyLength": "72",
+                    "propertyOrder": "004.015",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "whol_smtn_ntby_tr_pbmn": {
+                  "description": "전체 합계 순매수 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전체 합계 순매수 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.014",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                }
+              },
+              "required": [
+                "bsop_hour",
+                "arbt_smtn_seln_tr_pbmn",
+                "arbt_smtm_seln_tr_pbmn_rate",
+                "arbt_smtn_shnu_tr_pbmn",
+                "arbt_smtm_shun_tr_pbmn_rate",
+                "nabt_smtn_seln_tr_pbmn",
+                "nabt_smtm_seln_tr_pbmn_rate",
+                "nabt_smtn_shnu_tr_pbmn",
+                "nabt_smtm_shun_tr_pbmn_rate",
+                "arbt_smtn_ntby_tr_pbmn",
+                "arbt_smtm_ntby_tr_pbmn_rate",
+                "nabt_smtn_ntby_tr_pbmn",
+                "nabt_smtm_ntby_tr_pbmn_rate",
+                "whol_smtn_ntby_tr_pbmn",
+                "whol_ntby_tr_pbmn_rate",
+                "bstp_nmix_prpr",
+                "bstp_nmix_prdy_vrss",
+                "prdy_vrss_sign"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "rt_cd": {
+            "description": "성공 실패 여부",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "성공 실패 여부",
+              "propertyLength": "1",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        },
+        "required": [
+          "rt_cd",
+          "msg_cd",
+          "msg1",
+          "output1"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "KISOAuth": {
+        "bearerFormat": "KIS OAuth access token",
+        "description": "Issued by KIS /oauth2/tokenP and injected by the handwritten runtime.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "KIS Domestic Stock OpenAPI - comp-program-trade-today",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/uapi/domestic-stock/v1/quotations/comp-program-trade-today": {
+      "get": {
+        "description": "프로그램매매 종합현황(시간) API입니다. \n한국투자 HTS(eFriend Plus) \u0026gt; [0460] 프로그램매매 종합현황 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n※ 장시간(09:00~15:30) 동안의 최근 30분간의 데이터 확인이 가능하며, 다음조회가 불가합니다.\n※ 장시간(09:00~15:30) 이후에는 bsop_hour 에 153000 ~ 170000 까지의 시간데이터가 출력되지만 데이터는 모두 동일한 장마감 데이터인 점 유의 부탁드립니다.",
+        "operationId": "comp-program-trade-today",
+        "parameters": [
+          {
+            "description": "KRX : J , NXT : NX, 통합 : UN",
+            "in": "query",
+            "name": "FID_COND_MRKT_DIV_CODE",
+            "required": true,
+            "schema": {
+              "description": "시장 분류 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "KRX : J , NXT : NX, 통합 : UN",
+                "name": "시장 분류 코드",
+                "propertyLength": "2",
+                "propertyOrder": "001",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "KRX : J , NXT : NX, 통합 : UN",
+              "name": "시장 분류 코드",
+              "propertyLength": "2",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "K:코스피, Q:코스닥",
+            "in": "query",
+            "name": "FID_MRKT_CLS_CODE",
+            "required": true,
+            "schema": {
+              "description": "시장 구분 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "K:코스피, Q:코스닥",
+                "name": "시장 구분 코드",
+                "propertyLength": "2",
+                "propertyOrder": "002",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "K:코스피, Q:코스닥",
+              "name": "시장 구분 코드",
+              "propertyLength": "2",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "공백 입력",
+            "in": "query",
+            "name": "FID_SCTN_CLS_CODE",
+            "required": true,
+            "schema": {
+              "description": "구간 구분 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공백 입력",
+                "name": "구간 구분 코드",
+                "propertyLength": "2",
+                "propertyOrder": "003",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공백 입력",
+              "name": "구간 구분 코드",
+              "propertyLength": "2",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "공백 입력",
+            "in": "query",
+            "name": "FID_INPUT_ISCD",
+            "required": true,
+            "schema": {
+              "description": "입력 종목코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공백 입력",
+                "name": "입력 종목코드",
+                "propertyLength": "12",
+                "propertyOrder": "004",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공백 입력",
+              "name": "입력 종목코드",
+              "propertyLength": "12",
+              "propertyOrder": "004",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "공백 입력",
+            "in": "query",
+            "name": "FID_COND_MRKT_DIV_CODE1",
+            "required": true,
+            "schema": {
+              "description": "시장 분류코드1",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공백 입력",
+                "name": "시장 분류코드1",
+                "propertyLength": "2",
+                "propertyOrder": "005",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공백 입력",
+              "name": "시장 분류코드1",
+              "propertyLength": "2",
+              "propertyOrder": "005",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "공백 입력",
+            "in": "query",
+            "name": "FID_INPUT_HOUR_1",
+            "required": true,
+            "schema": {
+              "description": "입력 시간1",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공백 입력",
+                "name": "입력 시간1",
+                "propertyLength": "10",
+                "propertyOrder": "006",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공백 입력",
+              "name": "입력 시간1",
+              "propertyLength": "10",
+              "propertyOrder": "006",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/CompProgramTradeTodayResponse"
+                }
+              }
+            },
+            "description": "KIS business response envelope"
+          }
+        },
+        "security": [
+          {
+            "KISOAuth": []
+          }
+        ],
+        "summary": "프로그램매매 종합현황(시간) [국내주식-114]",
+        "tags": [
+          "Analysis"
+        ],
+        "x-kis": {
+          "accessUrl": "/uapi/domestic-stock/v1/quotations/comp-program-trade-today",
+          "apiId": "0843477a-156b-4ac5-bf65-199b124b072f",
+          "apiName": "프로그램매매 종합현황(시간) [국내주식-114]",
+          "apiSummary": "프로그램매매 종합현황(시간) API입니다. \r\n한국투자 HTS(eFriend Plus) \u0026gt; [0460] 프로그램매매 종합현황 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\r\n\r\n※ 장시간(09:00~15:30) 동안의 최근 30분간의 데이터 확인이 가능하며, 다음조회가 불가합니다.\r\n※ 장시간(09:00~15:30) 이후에는 bsop_hour 에 153000 ~ 170000 까지의 시간데이터가 출력되지만 데이터는 모두 동일한 장마감 데이터인 점 유의 부탁드립니다.",
+          "catalogSchemaVersion": 1,
+          "collectionId": "4e29f215-0a20-4396-95d4-5d99ad9a2c3d",
+          "collectionName": "[국내주식] 시세분석",
+          "group": "analysis",
+          "lastModifiedDate": "2026-04-10T20:49:22+09:00",
+          "oauth": true,
+          "realDomain": "https://openapi.koreainvestment.com:9443",
+          "realTrId": "FHPPG04600101",
+          "roleCandidate": "market_scan",
+          "securityType": "oauth2-access-token",
+          "serviceGroup": "Analysis",
+          "source": {
+            "categoryApi": "https://apiportal.koreainvestment.com/api/apis/public/api-list/{collectionId}",
+            "detailApi": "https://apiportal.koreainvestment.com/api/apis/public/detail?accessUrl={accessUrl}",
+            "detailPageTemplate": "https://apiportal.koreainvestment.com/apiservice-apiservice?{accessUrl}",
+            "portal": "https://apiportal.koreainvestment.com/apiservice-category"
+          },
+          "sourceDetailUrl": "https://apiportal.koreainvestment.com/apiservice-apiservice?/uapi/domestic-stock/v1/quotations/comp-program-trade-today",
+          "supportsReal": true,
+          "supportsVirtual": false,
+          "virtualDomain": "미지원",
+          "virtualTrId": "모의투자 미지원"
+        }
+      }
+    }
+  }
+}
