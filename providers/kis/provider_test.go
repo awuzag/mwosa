@@ -41,9 +41,11 @@ func TestProviderRegistersReadOnlyKISRoles(t *testing.T) {
 
 func TestFetchStockQuoteUsesPrice(t *testing.T) {
 	client := &fakeKISClient{
-		price: kisclient.Price{
-			Symbol:  "005930",
-			Current: "75000",
+		price: kisclient.InquirePriceResponse{
+			Output: kisclient.InquirePriceOutput{
+				StckShrnISCD: "005930",
+				StckPrpr:     "75000",
+			},
 		},
 	}
 	p := NewWithClient(client, false)
@@ -134,9 +136,11 @@ func TestFetchQuoteUsesValidCachedTokenWithoutIssuingToken(t *testing.T) {
 		UpdatedAt:   now.Add(-time.Hour),
 	}
 	client := &fakeKISClient{
-		price: kisclient.Price{
-			Symbol:  "005930",
-			Current: "75000",
+		price: kisclient.InquirePriceResponse{
+			Output: kisclient.InquirePriceOutput{
+				StckShrnISCD: "005930",
+				StckPrpr:     "75000",
+			},
 		},
 	}
 	p := NewWithClient(client, false, WithTokenCache(cache, key), WithClock(func() time.Time { return now }))
@@ -167,9 +171,11 @@ func TestFetchQuoteStoresTokenOnCacheMiss(t *testing.T) {
 			ExpiresIn:   86400,
 			ExpiredAt:   "2026-05-11 09:00:00",
 		},
-		price: kisclient.Price{
-			Symbol:  "005930",
-			Current: "75000",
+		price: kisclient.InquirePriceResponse{
+			Output: kisclient.InquirePriceOutput{
+				StckShrnISCD: "005930",
+				StckPrpr:     "75000",
+			},
 		},
 	}
 	p := NewWithClient(client, false, WithTokenCache(cache, key), WithClock(func() time.Time { return now }))
@@ -205,9 +211,11 @@ func TestFetchQuoteRefreshesExpiredCachedToken(t *testing.T) {
 			ExpiresIn:   86400,
 			ExpiredAt:   "2026-05-11 09:00:00",
 		},
-		price: kisclient.Price{
-			Symbol:  "005930",
-			Current: "75000",
+		price: kisclient.InquirePriceResponse{
+			Output: kisclient.InquirePriceOutput{
+				StckShrnISCD: "005930",
+				StckPrpr:     "75000",
+			},
 		},
 	}
 	p := NewWithClient(client, false, WithTokenCache(cache, key), WithClock(func() time.Time { return now }))
@@ -243,9 +251,11 @@ func TestFetchQuoteTreatsDifferentEnvironmentAsCacheMiss(t *testing.T) {
 			ExpiresIn:   86400,
 			ExpiredAt:   "2026-05-11 09:00:00",
 		},
-		price: kisclient.Price{
-			Symbol:  "005930",
-			Current: "75000",
+		price: kisclient.InquirePriceResponse{
+			Output: kisclient.InquirePriceOutput{
+				StckShrnISCD: "005930",
+				StckPrpr:     "75000",
+			},
 		},
 	}
 	p := NewWithClient(client, false, WithTokenCache(cache, virtualKey), WithClock(func() time.Time { return now }))
@@ -267,9 +277,11 @@ func TestExplicitAccessTokenSkipsTokenCache(t *testing.T) {
 	key := newTokenCacheKey("app-key", false)
 	cache := newFakeTokenCache()
 	client := &fakeKISClient{
-		price: kisclient.Price{
-			Symbol:  "005930",
-			Current: "75000",
+		price: kisclient.InquirePriceResponse{
+			Output: kisclient.InquirePriceOutput{
+				StckShrnISCD: "005930",
+				StckPrpr:     "75000",
+			},
 		},
 	}
 	p := NewWithClient(client, true, WithTokenCache(cache, key))
@@ -288,17 +300,17 @@ func TestExplicitAccessTokenSkipsTokenCache(t *testing.T) {
 
 func TestFetchDailyBarsNormalizesKISBars(t *testing.T) {
 	client := &fakeKISClient{
-		bars: []kisclient.Bar{
+		bars: []kisclient.InquireDailyItemChartPriceOutput2Item{
 			{
-				Date:               "20260508",
-				Open:               "70000",
-				High:               "76000",
-				Low:                "69000",
-				Close:              "75000",
-				PreviousChange:     "1000",
-				PreviousChangeSign: "2",
-				Volume:             "12345",
-				Amount:             "98765",
+				StckBsopDate: "20260508",
+				StckOprc:     "70000",
+				StckHgpr:     "76000",
+				StckLwpr:     "69000",
+				StckClpr:     "75000",
+				PrdyVrss:     "1000",
+				PrdyVrssSign: "2",
+				AcmlVol:      "12345",
+				AcmlTRPbmn:   "98765",
 			},
 		},
 	}
@@ -317,7 +329,7 @@ func TestFetchDailyBarsNormalizesKISBars(t *testing.T) {
 	require.Len(t, result.Bars, 1)
 	bar := result.Bars[0]
 	require.Equal(t, provider.ProviderKIS, bar.Provider)
-	require.Equal(t, provider.GroupKISDomesticStockQuotation, bar.Group)
+	require.Equal(t, provider.GroupKISQuote, bar.Group)
 	require.Equal(t, provider.OperationKISDaily, bar.Operation)
 	require.Equal(t, "2026-05-08", bar.TradingDate)
 	require.Equal(t, "005930", bar.Symbol)
@@ -327,16 +339,16 @@ func TestFetchDailyBarsNormalizesKISBars(t *testing.T) {
 
 func TestFetchIntradayBarsNormalizesKISBars(t *testing.T) {
 	client := &fakeKISClient{
-		intradayBars: []kisclient.IntradayBar{
+		intradayBars: []kisclient.InquireTimeItemChartPriceOutput2Item{
 			{
-				Date:    "20260508",
-				Time:    "141200",
-				Open:    "70000",
-				High:    "76000",
-				Low:     "69000",
-				Current: "75000",
-				Volume:  "123",
-				Amount:  "9225000",
+				StckBsopDate: "20260508",
+				StckCntgHour: "141200",
+				StckOprc:     "70000",
+				StckHgpr:     "76000",
+				StckLwpr:     "69000",
+				StckPrpr:     "75000",
+				CntgVol:      "123",
+				AcmlTRPbmn:   "9225000",
 			},
 		},
 	}
@@ -362,16 +374,22 @@ func TestFetchIntradayBarsNormalizesKISBars(t *testing.T) {
 
 func TestFetchOrderbookSnapshotNormalizesLevels(t *testing.T) {
 	client := &fakeKISClient{
-		orderbook: kisclient.Orderbook{
-			AcceptanceTime:   "141200",
-			Asks:             []kisclient.OrderbookLevel{{Price: "75100", Quantity: "10", Delta: "1"}},
-			Bids:             []kisclient.OrderbookLevel{{Price: "75000", Quantity: "20", Delta: "-2"}},
-			TotalAskQuantity: "100",
-			TotalBidQuantity: "200",
-			Expected: kisclient.ExpectedConclusion{
-				Symbol:         "005930",
-				ExpectedPrice:  "75050",
-				ExpectedVolume: "30",
+		orderbook: kisclient.InquireAskingPriceExpCcnResponse{
+			Output1: kisclient.InquireAskingPriceExpCcnOutput1{
+				AsprAcptHour:  "141200",
+				Askp1:         "75100",
+				AskpRsqn1:     "10",
+				AskpRsqnIcdc1: "1",
+				Bidp1:         "75000",
+				BidpRsqn1:     "20",
+				BidpRsqnIcdc1: "-2",
+				TotalAskpRsqn: "100",
+				TotalBidpRsqn: "200",
+			},
+			Output2: kisclient.InquireAskingPriceExpCcnOutput2{
+				StckShrnISCD: "005930",
+				AntcCnpr:     "75050",
+				AntcVol:      "30",
 			},
 		},
 	}
@@ -396,13 +414,13 @@ func TestFetchOrderbookSnapshotNormalizesLevels(t *testing.T) {
 
 func TestListMarketTradesUsesRecentTrades(t *testing.T) {
 	client := &fakeKISClient{
-		trades: []kisclient.Trade{
+		trades: []kisclient.InquireCcnlOutputItem{
 			{
-				Time:           "141200",
-				Current:        "75000",
-				Volume:         "12",
-				Strength:       "120.5",
-				PreviousChange: "1000",
+				StckCntgHour: "141200",
+				StckPrpr:     "75000",
+				CntgVol:      "12",
+				TdayRltv:     "120.5",
+				PrdyVrss:     "1000",
 			},
 		},
 	}
@@ -427,15 +445,13 @@ func TestListMarketTradesUsesRecentTrades(t *testing.T) {
 
 func TestListMarketTradesWithAtUsesTimedTrades(t *testing.T) {
 	client := &fakeKISClient{
-		timedTrades: []kisclient.TimedTrade{
-			{
-				Time:              "141200",
-				Current:           "75000",
-				Ask:               "75100",
-				Bid:               "75000",
-				Volume:            "12",
-				AccumulatedVolume: "1234",
-			},
+		timedTrade: kisclient.InquireTimeItemConclusionOutput2{
+			StckCntgHour: "141200",
+			StckPbpr:     "75000",
+			Askp:         "75100",
+			Bidp:         "75000",
+			Cnqn:         "12",
+			AcmlVol:      "1234",
 		},
 	}
 	p := NewWithClient(client, true)
@@ -471,7 +487,7 @@ func TestRegistryRoutesNewKISMarketDataRoles(t *testing.T) {
 		Symbol:       "005930",
 	})
 	require.NoError(t, err)
-	require.Equal(t, provider.GroupKISDomesticStockQuotation, intradayFetcher.IntradayBarProfile().Group)
+	require.Equal(t, provider.GroupKISQuote, intradayFetcher.IntradayBarProfile().Group)
 
 	orderbookSnapshotter, err := orderbook.NewRouter(router).RouteOrderbookSnapshot(context.Background(), orderbook.RouteInput{
 		ProviderID:   provider.ProviderKIS,
@@ -480,7 +496,7 @@ func TestRegistryRoutesNewKISMarketDataRoles(t *testing.T) {
 		Symbol:       "005930",
 	})
 	require.NoError(t, err)
-	require.Equal(t, provider.GroupKISDomesticStockQuotation, orderbookSnapshotter.OrderbookProfile().Group)
+	require.Equal(t, provider.GroupKISQuote, orderbookSnapshotter.OrderbookProfile().Group)
 
 	tradesLister, err := tradesrole.NewRouter(router).RouteMarketTrades(context.Background(), tradesrole.RouteInput{
 		ProviderID:   provider.ProviderKIS,
@@ -489,7 +505,7 @@ func TestRegistryRoutesNewKISMarketDataRoles(t *testing.T) {
 		Symbol:       "005930",
 	})
 	require.NoError(t, err)
-	require.Equal(t, provider.GroupKISDomesticStockQuotation, tradesLister.TradesProfile().Group)
+	require.Equal(t, provider.GroupKISQuote, tradesLister.TradesProfile().Group)
 }
 
 func TestSearchStockInstrumentCombinesProductAndStock(t *testing.T) {
@@ -564,16 +580,16 @@ type fakeKISClient struct {
 	productCalls      int
 	stockCalls        int
 
-	price                   kisclient.Price
+	price                   kisclient.InquirePriceResponse
 	token                   kisclient.Token
 	usedToken               kisclient.Token
 	etfetnPrice             kisclient.ETFETNPrice
 	etfComponents           kisclient.ETFComponentStockPriceResult
-	bars                    []kisclient.Bar
-	intradayBars            []kisclient.IntradayBar
-	orderbook               kisclient.Orderbook
-	trades                  []kisclient.Trade
-	timedTrades             []kisclient.TimedTrade
+	bars                    []kisclient.InquireDailyItemChartPriceOutput2Item
+	intradayBars            []kisclient.InquireTimeItemChartPriceOutput2Item
+	orderbook               kisclient.InquireAskingPriceExpCcnResponse
+	trades                  []kisclient.InquireCcnlOutputItem
+	timedTrade              kisclient.InquireTimeItemConclusionOutput2
 	product                 kisclient.Product
 	stock                   kisclient.Stock
 	lastTimeTradesInputHour string
@@ -592,7 +608,20 @@ func (c *fakeKISClient) UseToken(token kisclient.Token) {
 	c.usedToken = token
 }
 
-func (c *fakeKISClient) Price(context.Context, string) (kisclient.Price, error) {
+func (c *fakeKISClient) Quote() quoteAPI {
+	return fakeKISQuoteService{client: c}
+}
+
+func (c *fakeKISClient) Instrument() instrumentAPI {
+	return fakeKISInstrumentService{client: c}
+}
+
+type fakeKISQuoteService struct {
+	client *fakeKISClient
+}
+
+func (s fakeKISQuoteService) Price(context.Context, kisclient.InquirePriceRequest) (kisclient.InquirePriceResponse, error) {
+	c := s.client
 	c.priceCalls++
 	return c.price, nil
 }
@@ -607,38 +636,49 @@ func (c *fakeKISClient) ETFComponentStockPrices(context.Context, string) (kiscli
 	return c.etfComponents, nil
 }
 
-func (c *fakeKISClient) Daily(_ context.Context, _ string, options ...kisclient.DailyOption) ([]kisclient.Bar, error) {
+func (s fakeKISQuoteService) Daily(context.Context, kisclient.InquireDailyItemChartPriceRequest) (kisclient.InquireDailyItemChartPriceResponse, error) {
+	c := s.client
 	c.dailyCalls++
-	return c.bars, nil
+	return kisclient.InquireDailyItemChartPriceResponse{Output2: c.bars}, nil
 }
 
-func (c *fakeKISClient) Intraday(context.Context, string, ...kisclient.IntradayOption) ([]kisclient.IntradayBar, error) {
+func (s fakeKISQuoteService) Intraday(context.Context, kisclient.InquireTimeItemChartPriceRequest) (kisclient.InquireTimeItemChartPriceResponse, error) {
+	c := s.client
 	c.intradayCalls++
-	return c.intradayBars, nil
+	return kisclient.InquireTimeItemChartPriceResponse{Output2: c.intradayBars}, nil
 }
 
-func (c *fakeKISClient) Orderbook(context.Context, string) (kisclient.Orderbook, error) {
+func (s fakeKISQuoteService) Orderbook(context.Context, kisclient.InquireAskingPriceExpCcnRequest) (kisclient.InquireAskingPriceExpCcnResponse, error) {
+	c := s.client
 	c.orderbookCalls++
 	return c.orderbook, nil
 }
 
-func (c *fakeKISClient) Trades(context.Context, string) ([]kisclient.Trade, error) {
+func (s fakeKISQuoteService) Trades(context.Context, kisclient.InquireCcnlRequest) (kisclient.InquireCcnlResponse, error) {
+	c := s.client
 	c.tradesCalls++
-	return c.trades, nil
+	return kisclient.InquireCcnlResponse{Output: c.trades}, nil
 }
 
-func (c *fakeKISClient) TimeTrades(_ context.Context, _ string, inputHour string) ([]kisclient.TimedTrade, error) {
+func (s fakeKISQuoteService) TimeTrades(_ context.Context, input kisclient.InquireTimeItemConclusionRequest) (kisclient.InquireTimeItemConclusionResponse, error) {
+	c := s.client
 	c.timeTradesCalls++
-	c.lastTimeTradesInputHour = inputHour
-	return c.timedTrades, nil
+	c.lastTimeTradesInputHour = input.FidInputHour1
+	return kisclient.InquireTimeItemConclusionResponse{Output2: c.timedTrade}, nil
 }
 
-func (c *fakeKISClient) Product(context.Context, string, ...kisclient.InstrumentOption) (kisclient.Product, error) {
+type fakeKISInstrumentService struct {
+	client *fakeKISClient
+}
+
+func (s fakeKISInstrumentService) Product(context.Context, string, ...kisclient.InstrumentOption) (kisclient.Product, error) {
+	c := s.client
 	c.productCalls++
 	return c.product, nil
 }
 
-func (c *fakeKISClient) Stock(context.Context, string, ...kisclient.InstrumentOption) (kisclient.Stock, error) {
+func (s fakeKISInstrumentService) Stock(context.Context, string, ...kisclient.InstrumentOption) (kisclient.Stock, error) {
+	c := s.client
 	c.stockCalls++
 	return c.stock, nil
 }

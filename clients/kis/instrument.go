@@ -11,7 +11,7 @@ import (
 // ETF, ETN, and ELW.
 const DefaultDomesticStockProductType = "300"
 
-// InstrumentOption configures Product and Stock metadata requests.
+// InstrumentOption configures Instrument service metadata requests.
 type InstrumentOption func(*instrumentQuery) error
 
 type instrumentQuery struct {
@@ -30,7 +30,7 @@ func WithProductType(productTypeCode string) InstrumentOption {
 	}
 }
 
-// Product is product metadata returned by Client.Product.
+// Product is product metadata returned by InstrumentService.Product.
 type Product struct {
 	ProductNo              string
 	ProductTypeCode        string
@@ -71,7 +71,7 @@ type ProductOutput struct {
 	FirstRegisteredDate    string `json:"frst_erlm_dt"`
 }
 
-// Stock is domestic stock metadata returned by Client.Stock.
+// Stock is domestic stock metadata returned by InstrumentService.Stock.
 type Stock struct {
 	ProductNo            string
 	ProductTypeCode      string
@@ -134,13 +134,26 @@ type StockOutput struct {
 	ETFETNInvestmentWarningItem string `json:"etf_etn_ivst_heed_item_yn"`
 }
 
+// InstrumentService calls handwritten KIS instrument metadata APIs.
+type InstrumentService struct {
+	client *Client
+}
+
+// Instrument returns the KIS instrument metadata service.
+func (c *Client) Instrument() InstrumentService {
+	return InstrumentService{client: c}
+}
+
 // Product fetches product metadata for a KIS product number.
 //
 // The request uses TR ID CTPF1604R. The default product type is "300" for
 // domestic stocks, ETF, ETN, and ELW.
-func (c *Client) Product(ctx context.Context, productNo string, options ...InstrumentOption) (Product, error) {
+func (s InstrumentService) Product(ctx context.Context, productNo string, options ...InstrumentOption) (Product, error) {
 	query := defaultInstrumentQuery()
 	errb := instrumentErrBuilder(OperationProduct, "/uapi/domestic-stock/v1/quotations/search-info", trIDDomesticStockProduct, productNo)
+	if s.client == nil {
+		return Product{}, errb.New("kis product request: client is required")
+	}
 	for _, option := range options {
 		if option == nil {
 			return Product{}, errb.New("kis product request: option is required")
@@ -154,7 +167,7 @@ func (c *Client) Product(ctx context.Context, productNo string, options ...Instr
 	}
 
 	var envelope productEnvelope
-	request, err := c.request(ctx, GroupDomesticStockInstrument, OperationProduct, trIDDomesticStockProduct, errb)
+	request, err := s.client.request(ctx, GroupInstrument, OperationProduct, trIDDomesticStockProduct, errb)
 	if err != nil {
 		return Product{}, err
 	}
@@ -167,10 +180,10 @@ func (c *Client) Product(ctx context.Context, productNo string, options ...Instr
 	if err != nil {
 		return Product{}, errb.Wrapf(err, "request kis product")
 	}
-	if err := checkHTTP(response, errb, GroupDomesticStockInstrument, OperationProduct, trIDDomesticStockProduct); err != nil {
+	if err := checkHTTP(response, errb, GroupInstrument, OperationProduct, trIDDomesticStockProduct); err != nil {
 		return Product{}, err
 	}
-	if err := checkKIS(envelope.responseFields, errb, GroupDomesticStockInstrument, OperationProduct, trIDDomesticStockProduct); err != nil {
+	if err := checkKIS(envelope.responseFields, errb, GroupInstrument, OperationProduct, trIDDomesticStockProduct); err != nil {
 		return Product{}, err
 	}
 	return productFromOutput(envelope.Output), nil
@@ -179,9 +192,12 @@ func (c *Client) Product(ctx context.Context, productNo string, options ...Instr
 // Stock fetches domestic stock metadata for a KIS short stock code.
 //
 // The request uses TR ID CTPF1002R. The default product type is "300".
-func (c *Client) Stock(ctx context.Context, symbol string, options ...InstrumentOption) (Stock, error) {
+func (s InstrumentService) Stock(ctx context.Context, symbol string, options ...InstrumentOption) (Stock, error) {
 	query := defaultInstrumentQuery()
 	errb := instrumentErrBuilder(OperationStock, "/uapi/domestic-stock/v1/quotations/search-stock-info", trIDDomesticStockInfo, symbol)
+	if s.client == nil {
+		return Stock{}, errb.New("kis stock request: client is required")
+	}
 	for _, option := range options {
 		if option == nil {
 			return Stock{}, errb.New("kis stock request: option is required")
@@ -195,7 +211,7 @@ func (c *Client) Stock(ctx context.Context, symbol string, options ...Instrument
 	}
 
 	var envelope stockEnvelope
-	request, err := c.request(ctx, GroupDomesticStockInstrument, OperationStock, trIDDomesticStockInfo, errb)
+	request, err := s.client.request(ctx, GroupInstrument, OperationStock, trIDDomesticStockInfo, errb)
 	if err != nil {
 		return Stock{}, err
 	}
@@ -208,10 +224,10 @@ func (c *Client) Stock(ctx context.Context, symbol string, options ...Instrument
 	if err != nil {
 		return Stock{}, errb.Wrapf(err, "request kis stock")
 	}
-	if err := checkHTTP(response, errb, GroupDomesticStockInstrument, OperationStock, trIDDomesticStockInfo); err != nil {
+	if err := checkHTTP(response, errb, GroupInstrument, OperationStock, trIDDomesticStockInfo); err != nil {
 		return Stock{}, err
 	}
-	if err := checkKIS(envelope.responseFields, errb, GroupDomesticStockInstrument, OperationStock, trIDDomesticStockInfo); err != nil {
+	if err := checkKIS(envelope.responseFields, errb, GroupInstrument, OperationStock, trIDDomesticStockInfo); err != nil {
 		return Stock{}, err
 	}
 	return stockFromOutput(envelope.Output), nil
@@ -220,7 +236,7 @@ func (c *Client) Stock(ctx context.Context, symbol string, options ...Instrument
 func (q instrumentQuery) validate(productNo string, operation string) error {
 	errb := oops.In("kis_client").With(
 		"provider", ProviderKIS,
-		"group", GroupDomesticStockInstrument,
+		"group", GroupInstrument,
 		"operation", operation,
 	)
 	if strings.TrimSpace(productNo) == "" {
@@ -235,7 +251,7 @@ func (q instrumentQuery) validate(productNo string, operation string) error {
 func instrumentErrBuilder(operation string, endpoint string, trID string, productNo string) oops.OopsErrorBuilder {
 	return oops.In("kis_client").With(
 		"provider", ProviderKIS,
-		"group", GroupDomesticStockInstrument,
+		"group", GroupInstrument,
 		"operation", operation,
 		"endpoint", endpoint,
 		"tr_id", trID,

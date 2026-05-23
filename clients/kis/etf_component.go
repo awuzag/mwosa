@@ -40,7 +40,7 @@ func (c *Client) ETFComponentStockPrices(ctx context.Context, symbol string) (ET
 	symbol = strings.TrimSpace(symbol)
 	errb := oops.In("kis_client").With(
 		"provider", ProviderKIS,
-		"group", GroupDomesticStockQuotation,
+		"group", GroupQuote,
 		"operation", OperationETFComponentStockPrice,
 		"endpoint", "/uapi/etfetn/v1/quotations/inquire-component-stock-price",
 		"tr_id", trIDETFComponentStockPrice,
@@ -51,7 +51,7 @@ func (c *Client) ETFComponentStockPrices(ctx context.Context, symbol string) (ET
 	}
 
 	var envelope etfComponentStockPriceEnvelope
-	request, err := c.request(ctx, GroupDomesticStockQuotation, OperationETFComponentStockPrice, trIDETFComponentStockPrice, errb)
+	request, err := c.request(ctx, GroupQuote, OperationETFComponentStockPrice, trIDETFComponentStockPrice, errb)
 	if err != nil {
 		return ETFComponentStockPriceResult{}, err
 	}
@@ -65,10 +65,10 @@ func (c *Client) ETFComponentStockPrices(ctx context.Context, symbol string) (ET
 	if err != nil {
 		return ETFComponentStockPriceResult{}, errb.Wrapf(err, "request kis ETF component stock prices")
 	}
-	if err := checkHTTP(response, errb, GroupDomesticStockQuotation, OperationETFComponentStockPrice, trIDETFComponentStockPrice); err != nil {
+	if err := checkHTTP(response, errb, GroupQuote, OperationETFComponentStockPrice, trIDETFComponentStockPrice); err != nil {
 		return ETFComponentStockPriceResult{}, err
 	}
-	if err := checkKIS(envelope.responseFields, errb, GroupDomesticStockQuotation, OperationETFComponentStockPrice, trIDETFComponentStockPrice); err != nil {
+	if err := checkKIS(envelope.responseFields, errb, GroupQuote, OperationETFComponentStockPrice, trIDETFComponentStockPrice); err != nil {
 		return ETFComponentStockPriceResult{}, err
 	}
 	result, err := etfComponentStockPriceResultFromEnvelope(symbol, envelope)

@@ -37,70 +37,96 @@ const (
 func TestE2EPrice(t *testing.T) {
 	client, ctx, config := newLiveClient(t)
 
-	price, err := client.Price(ctx, config.Symbol)
+	price, err := client.Quote().Price(ctx, kis.InquirePriceRequest{
+		FidCondMrktDivCode: "J",
+		FidInputISCD:       config.Symbol,
+	})
 	if err != nil {
 		t.Fatalf("live price symbol=%s: %v", config.Symbol, err)
 	}
-	if strings.TrimSpace(price.Current) == "" {
+	if strings.TrimSpace(price.Output.StckPrpr) == "" {
 		t.Fatalf("live price symbol=%s returned empty current price: %+v", config.Symbol, price)
 	}
-	t.Logf("symbol=%s current=%s volume=%s", price.Symbol, price.Current, price.Volume)
+	logSymbol := strings.TrimSpace(price.Output.StckShrnISCD)
+	if logSymbol == "" {
+		logSymbol = config.Symbol
+	}
+	t.Logf("symbol=%s current=%s volume=%s", logSymbol, price.Output.StckPrpr, price.Output.AcmlVol)
 }
 
 func TestE2EDaily(t *testing.T) {
 	client, ctx, config := newLiveClient(t)
 
-	bars, err := client.Daily(ctx, config.Symbol,
-		kis.WithPeriod("D"),
-		kis.WithDateRange(config.DailyFrom, config.DailyTo),
-	)
+	bars, err := client.Quote().Daily(ctx, kis.InquireDailyItemChartPriceRequest{
+		FidCondMrktDivCode: "J",
+		FidInputISCD:       config.Symbol,
+		FidInputDate1:      config.DailyFrom,
+		FidInputDate2:      config.DailyTo,
+		FidPeriodDivCode:   "D",
+		FidOrgAdjPrc:       "0",
+	})
 	if err != nil {
 		t.Fatalf("live daily symbol=%s from=%s to=%s: %v", config.Symbol, config.DailyFrom, config.DailyTo, err)
 	}
-	if len(bars) == 0 {
+	if len(bars.Output2) == 0 {
 		t.Fatalf("live daily symbol=%s from=%s to=%s returned no bars", config.Symbol, config.DailyFrom, config.DailyTo)
 	}
-	first := bars[0]
-	t.Logf("symbol=%s first_date=%s close=%s volume=%s count=%d", config.Symbol, first.Date, first.Close, first.Volume, len(bars))
+	first := bars.Output2[0]
+	t.Logf("symbol=%s first_date=%s close=%s volume=%s count=%d", config.Symbol, first.StckBsopDate, first.StckClpr, first.AcmlVol, len(bars.Output2))
 }
 
 func TestE2EExtendedDomesticQuotation(t *testing.T) {
 	skipUnlessEnabled(t, kisE2EExtendedEnv, "extended live KIS quotation e2e tests")
 	client, ctx, config := newLiveClient(t)
 
-	minutes, err := client.Intraday(ctx, config.Symbol, kis.WithInputHour(config.InputHour))
+	minutes, err := client.Quote().Intraday(ctx, kis.InquireTimeItemChartPriceRequest{
+		FidCondMrktDivCode: "J",
+		FidInputISCD:       config.Symbol,
+		FidInputHour1:      config.InputHour,
+		FidPwDataIncuYn:    "Y",
+	})
 	if err != nil {
 		t.Fatalf("live intraday symbol=%s input_hour=%s: %v", config.Symbol, config.InputHour, err)
 	}
-	if len(minutes) == 0 {
+	if len(minutes.Output2) == 0 {
 		t.Fatalf("live intraday symbol=%s input_hour=%s returned no rows", config.Symbol, config.InputHour)
 	}
 
-	book, err := client.Orderbook(ctx, config.Symbol)
+	book, err := client.Quote().Orderbook(ctx, kis.InquireAskingPriceExpCcnRequest{
+		FidCondMrktDivCode: "J",
+		FidInputISCD:       config.Symbol,
+	})
 	if err != nil {
 		t.Fatalf("live orderbook symbol=%s: %v", config.Symbol, err)
 	}
-	if len(book.Asks) == 0 || len(book.Bids) == 0 {
+	if strings.TrimSpace(book.Output1.Askp1) == "" || strings.TrimSpace(book.Output1.Bidp1) == "" {
 		t.Fatalf("live orderbook symbol=%s returned empty levels: %+v", config.Symbol, book)
 	}
 
-	trades, err := client.Trades(ctx, config.Symbol)
+	trades, err := client.Quote().Trades(ctx, kis.InquireCcnlRequest{
+		FidCondMrktDivCode: "J",
+		FidInputISCD:       config.Symbol,
+	})
 	if err != nil {
 		t.Fatalf("live trades symbol=%s: %v", config.Symbol, err)
 	}
-	if len(trades) == 0 {
+	if len(trades.Output) == 0 {
 		t.Fatalf("live trades symbol=%s returned no rows", config.Symbol)
 	}
 
-	timedTrades, err := client.TimeTrades(ctx, config.Symbol, config.InputHour)
+	timedTrades, err := client.Quote().TimeTrades(ctx, kis.InquireTimeItemConclusionRequest{
+		FidCondMrktDivCode: "J",
+		FidInputISCD:       config.Symbol,
+		FidInputHour1:      config.InputHour,
+	})
 	if err != nil {
 		t.Fatalf("live time trades symbol=%s input_hour=%s: %v", config.Symbol, config.InputHour, err)
 	}
-	if len(timedTrades) == 0 {
+	if strings.TrimSpace(timedTrades.Output2.StckCntgHour) == "" {
 		t.Fatalf("live time trades symbol=%s input_hour=%s returned no rows", config.Symbol, config.InputHour)
 	}
 
-	t.Logf("symbol=%s minutes=%d asks=%d bids=%d trades=%d timed_trades=%d", config.Symbol, len(minutes), len(book.Asks), len(book.Bids), len(trades), len(timedTrades))
+	t.Logf("symbol=%s minutes=%d first_ask=%s first_bid=%s trades=%d timed_trade_time=%s", config.Symbol, len(minutes.Output2), book.Output1.Askp1, book.Output1.Bidp1, len(trades.Output), timedTrades.Output2.StckCntgHour)
 }
 
 func TestE2ERealOnlyInstrumentAndETFETN(t *testing.T) {
@@ -110,7 +136,7 @@ func TestE2ERealOnlyInstrumentAndETFETN(t *testing.T) {
 		t.Skipf("set %s=0 because Product, Stock, and ETFETNPrice are not virtual-investment APIs", kisVirtualEnv)
 	}
 
-	product, err := client.Product(ctx, config.Symbol)
+	product, err := client.Instrument().Product(ctx, config.Symbol)
 	if err != nil {
 		t.Fatalf("live product symbol=%s: %v", config.Symbol, err)
 	}
@@ -118,7 +144,7 @@ func TestE2ERealOnlyInstrumentAndETFETN(t *testing.T) {
 		t.Fatalf("live product symbol=%s returned empty name: %+v", config.Symbol, product)
 	}
 
-	stock, err := client.Stock(ctx, config.Symbol)
+	stock, err := client.Instrument().Stock(ctx, config.Symbol)
 	if err != nil {
 		t.Fatalf("live stock symbol=%s: %v", config.Symbol, err)
 	}

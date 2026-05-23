@@ -41,7 +41,10 @@ func TestTokenPostsCredentialsAndStoresAccessToken(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, "issued-token", token.AccessToken)
 
-	price, err := client.Price(context.Background(), "005930")
+	price, err := client.Quote().Price(context.Background(), InquirePriceRequest{
+		FidCondMrktDivCode: "J",
+		FidInputISCD:       "005930",
+	})
 	require.NoError(t, err)
-	assert.Equal(t, "70000", price.Current)
+	assert.Equal(t, "70000", price.Output.StckPrpr)
 }

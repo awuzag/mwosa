@@ -19,11 +19,11 @@ const (
 	// ProviderKIS is the provider identifier used in SDK error context.
 	ProviderKIS = "kis"
 
-	// GroupDomesticStockQuotation is the KIS domestic stock quotation API group.
-	GroupDomesticStockQuotation = "domesticStockQuotation"
+	// GroupQuote is the KIS quote API group.
+	GroupQuote = "quote"
 
-	// GroupDomesticStockInstrument is the KIS domestic stock instrument API group.
-	GroupDomesticStockInstrument = "domesticStockInstrument"
+	// GroupInstrument is the KIS instrument API group.
+	GroupInstrument = "instrument"
 
 	// OperationToken is the SDK operation name for OAuth token issuance.
 	OperationToken = "token"

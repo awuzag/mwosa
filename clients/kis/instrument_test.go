@@ -41,7 +41,7 @@ func TestProductBuildsKISRequestAndParsesMetadata(t *testing.T) {
 	defer server.Close()
 
 	client := newTestClient(t, server.URL, "token")
-	product, err := client.Product(context.Background(), "005930")
+	product, err := client.Instrument().Product(context.Background(), "005930")
 	require.NoError(t, err)
 	assert.Equal(t, "005930", product.ProductNo)
 	assert.Equal(t, "삼성전자", product.Name)
@@ -85,7 +85,7 @@ func TestStockBuildsKISRequestAndParsesMetadata(t *testing.T) {
 	defer server.Close()
 
 	client := newTestClient(t, server.URL, "token")
-	stock, err := client.Stock(context.Background(), "005930")
+	stock, err := client.Instrument().Stock(context.Background(), "005930")
 	require.NoError(t, err)
 	assert.Equal(t, "00000A005930", stock.ProductNo)
 	assert.Equal(t, "삼성전자", stock.AbbreviatedName)

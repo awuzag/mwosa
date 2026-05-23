@@ -52,12 +52,15 @@ func TestOrderbookBuildsKISRequestAndParsesLevels(t *testing.T) {
 	defer server.Close()
 
 	client := newTestClient(t, server.URL, "token")
-	book, err := client.Orderbook(context.Background(), "005930")
+	book, err := client.Quote().Orderbook(context.Background(), InquireAskingPriceExpCcnRequest{
+		FidCondMrktDivCode: "J",
+		FidInputISCD:       "005930",
+	})
 	require.NoError(t, err)
-	assert.Equal(t, "160000", book.AcceptanceTime)
-	require.Len(t, book.Asks, 10)
-	require.Len(t, book.Bids, 10)
-	assert.Equal(t, OrderbookLevel{Price: "70100", Quantity: "100", Delta: "1"}, book.Asks[0])
-	assert.Equal(t, OrderbookLevel{Price: "70000", Quantity: "300", Delta: "2"}, book.Bids[0])
-	assert.Equal(t, "70100", book.Expected.ExpectedPrice)
+	assert.Equal(t, "160000", book.Output1.AsprAcptHour)
+	assert.Equal(t, "70100", book.Output1.Askp1)
+	assert.Equal(t, "100", book.Output1.AskpRsqn1)
+	assert.Equal(t, "70000", book.Output1.Bidp1)
+	assert.Equal(t, "300", book.Output1.BidpRsqn1)
+	assert.Equal(t, "70100", book.Output2.AntcCnpr)
 }

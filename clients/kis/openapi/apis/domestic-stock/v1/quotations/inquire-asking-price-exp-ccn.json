@@ -1,0 +1,1378 @@
+{
+  "components": {
+    "schemas": {
+      "InquireAskingPriceExpCcnResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "msg1": {
+            "description": "응답메세지",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답메세지",
+              "propertyLength": "80",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "msg_cd": {
+            "description": "응답코드",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답코드",
+              "propertyLength": "8",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "output1": {
+            "additionalProperties": false,
+            "properties": {
+              "askp1": {
+                "description": "매도호가1",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가1",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.002",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp10": {
+                "description": "매도호가10",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가10",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.011",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp2": {
+                "description": "매도호가2",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가2",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.003",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp3": {
+                "description": "매도호가3",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가3",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.004",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp4": {
+                "description": "매도호가4",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가4",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.005",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp5": {
+                "description": "매도호가5",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가5",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.006",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp6": {
+                "description": "매도호가6",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가6",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.007",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp7": {
+                "description": "매도호가7",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가7",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.008",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp8": {
+                "description": "매도호가8",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가8",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.009",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp9": {
+                "description": "매도호가9",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가9",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.010",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn1": {
+                "description": "매도호가 잔량1",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량1",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.022",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn10": {
+                "description": "매도호가 잔량10",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량10",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.031",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn2": {
+                "description": "매도호가 잔량2",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량2",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.023",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn3": {
+                "description": "매도호가 잔량3",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량3",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.024",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn4": {
+                "description": "매도호가 잔량4",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량4",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.025",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn5": {
+                "description": "매도호가 잔량5",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량5",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.026",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn6": {
+                "description": "매도호가 잔량6",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량6",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.027",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn7": {
+                "description": "매도호가 잔량7",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량7",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.028",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn8": {
+                "description": "매도호가 잔량8",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량8",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.029",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn9": {
+                "description": "매도호가 잔량9",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량9",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.030",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn_icdc1": {
+                "description": "매도호가 잔량 증감1",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량 증감1",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.042",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn_icdc10": {
+                "description": "매도호가 잔량 증감10",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량 증감10",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.051",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn_icdc2": {
+                "description": "매도호가 잔량 증감2",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량 증감2",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.043",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn_icdc3": {
+                "description": "매도호가 잔량 증감3",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량 증감3",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.044",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn_icdc4": {
+                "description": "매도호가 잔량 증감4",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량 증감4",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.045",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn_icdc5": {
+                "description": "매도호가 잔량 증감5",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량 증감5",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.046",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn_icdc6": {
+                "description": "매도호가 잔량 증감6",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량 증감6",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.047",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn_icdc7": {
+                "description": "매도호가 잔량 증감7",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량 증감7",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.048",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn_icdc8": {
+                "description": "매도호가 잔량 증감8",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량 증감8",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.049",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "askp_rsqn_icdc9": {
+                "description": "매도호가 잔량 증감9",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매도호가 잔량 증감9",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.050",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "aspr_acpt_hour": {
+                "description": "호가 접수 시간",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "호가 접수 시간",
+                  "propertyLength": "6",
+                  "propertyOrder": "004.001",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp1": {
+                "description": "매수호가1",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가1",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.012",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp10": {
+                "description": "매수호가10",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가10",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.021",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp2": {
+                "description": "매수호가2",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가2",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.013",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp3": {
+                "description": "매수호가3",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가3",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.014",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp4": {
+                "description": "매수호가4",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가4",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.015",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp5": {
+                "description": "매수호가5",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가5",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.016",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp6": {
+                "description": "매수호가6",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가6",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.017",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp7": {
+                "description": "매수호가7",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가7",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.018",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp8": {
+                "description": "매수호가8",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가8",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.019",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp9": {
+                "description": "매수호가9",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가9",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.020",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn1": {
+                "description": "매수호가 잔량1",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량1",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.032",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn10": {
+                "description": "매수호가 잔량10",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량10",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.041",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn2": {
+                "description": "매수호가 잔량2",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량2",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.033",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn3": {
+                "description": "매수호가 잔량3",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량3",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.034",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn4": {
+                "description": "매수호가 잔량4",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량4",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.035",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn5": {
+                "description": "매수호가 잔량5",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량5",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.036",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn6": {
+                "description": "매수호가 잔량6",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량6",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.037",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn7": {
+                "description": "매수호가 잔량7",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량7",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.038",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn8": {
+                "description": "매수호가 잔량8",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량8",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.039",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn9": {
+                "description": "매수호가 잔량9",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량9",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.040",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn_icdc1": {
+                "description": "매수호가 잔량 증감1",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량 증감1",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.052",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn_icdc10": {
+                "description": "매수호가 잔량 증감10",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량 증감10",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.061",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn_icdc2": {
+                "description": "매수호가 잔량 증감2",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량 증감2",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.053",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn_icdc3": {
+                "description": "매수호가 잔량 증감3",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량 증감3",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.054",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn_icdc4": {
+                "description": "매수호가 잔량 증감4",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량 증감4",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.055",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn_icdc5": {
+                "description": "매수호가 잔량 증감5",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량 증감5",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.056",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn_icdc6": {
+                "description": "매수호가 잔량 증감6",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량 증감6",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.057",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn_icdc7": {
+                "description": "매수호가 잔량 증감7",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량 증감7",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.058",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn_icdc8": {
+                "description": "매수호가 잔량 증감8",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량 증감8",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.059",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bidp_rsqn_icdc9": {
+                "description": "매수호가 잔량 증감9",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "매수호가 잔량 증감9",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.060",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "new_mkop_cls_code": {
+                "description": "신 장운영 구분 코드",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "' '00' : 장전 예상체결가와 장마감 동시호가\n'49' : 장후 예상체결가\n\n(1) 첫 번째 비트\n1 : 장개시전\n2 : 장중\n3 : 장종료후\n4 : 시간외단일가\n7 : 일반Buy-in\n8 : 당일Buy-in\n(2) 두 번째 비트\n0 : 보통\n1 : 종가\n2 : 대량\n3 : 바스켓\n7 : 정리매매\n8 : Buy-in'",
+                  "name": "신 장운영 구분 코드",
+                  "propertyLength": "2",
+                  "propertyOrder": "004.071",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "ntby_aspr_rsqn": {
+                "description": "순매수 호가 잔량",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "순매수 호가 잔량",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.070",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "ovtm_total_askp_icdc": {
+                "description": "시간외 총 매도호가 증감",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 총 매도호가 증감",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.066",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "ovtm_total_askp_rsqn": {
+                "description": "시간외 총 매도호가 잔량",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 총 매도호가 잔량",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.068",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "ovtm_total_bidp_icdc": {
+                "description": "시간외 총 매수호가 증감",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 총 매수호가 증감",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.067",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "ovtm_total_bidp_rsqn": {
+                "description": "시간외 총 매수호가 잔량",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 총 매수호가 잔량",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.069",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "total_askp_rsqn": {
+                "description": "총 매도호가 잔량",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "총 매도호가 잔량",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.062",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "total_askp_rsqn_icdc": {
+                "description": "총 매도호가 잔량 증감",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "총 매도호가 잔량 증감",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.064",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "total_bidp_rsqn": {
+                "description": "총 매수호가 잔량",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "총 매수호가 잔량",
+                  "propertyLength": "12",
+                  "propertyOrder": "004.063",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "total_bidp_rsqn_icdc": {
+                "description": "총 매수호가 잔량 증감",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "총 매수호가 잔량 증감",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.065",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              }
+            },
+            "required": [
+              "aspr_acpt_hour",
+              "askp1",
+              "askp2",
+              "askp3",
+              "askp4",
+              "askp5",
+              "askp6",
+              "askp7",
+              "askp8",
+              "askp9",
+              "askp10",
+              "bidp1",
+              "bidp2",
+              "bidp3",
+              "bidp4",
+              "bidp5",
+              "bidp6",
+              "bidp7",
+              "bidp8",
+              "bidp9",
+              "bidp10",
+              "askp_rsqn1",
+              "askp_rsqn2",
+              "askp_rsqn3",
+              "askp_rsqn4",
+              "askp_rsqn5",
+              "askp_rsqn6",
+              "askp_rsqn7",
+              "askp_rsqn8",
+              "askp_rsqn9",
+              "askp_rsqn10",
+              "bidp_rsqn1",
+              "bidp_rsqn2",
+              "bidp_rsqn3",
+              "bidp_rsqn4",
+              "bidp_rsqn5",
+              "bidp_rsqn6",
+              "bidp_rsqn7",
+              "bidp_rsqn8",
+              "bidp_rsqn9",
+              "bidp_rsqn10",
+              "askp_rsqn_icdc1",
+              "askp_rsqn_icdc2",
+              "askp_rsqn_icdc3",
+              "askp_rsqn_icdc4",
+              "askp_rsqn_icdc5",
+              "askp_rsqn_icdc6",
+              "askp_rsqn_icdc7",
+              "askp_rsqn_icdc8",
+              "askp_rsqn_icdc9",
+              "askp_rsqn_icdc10",
+              "bidp_rsqn_icdc1",
+              "bidp_rsqn_icdc2",
+              "bidp_rsqn_icdc3",
+              "bidp_rsqn_icdc4",
+              "bidp_rsqn_icdc5",
+              "bidp_rsqn_icdc6",
+              "bidp_rsqn_icdc7",
+              "bidp_rsqn_icdc8",
+              "bidp_rsqn_icdc9",
+              "bidp_rsqn_icdc10",
+              "total_askp_rsqn",
+              "total_bidp_rsqn",
+              "total_askp_rsqn_icdc",
+              "total_bidp_rsqn_icdc",
+              "ovtm_total_askp_icdc",
+              "ovtm_total_bidp_icdc",
+              "ovtm_total_askp_rsqn",
+              "ovtm_total_bidp_rsqn",
+              "ntby_aspr_rsqn",
+              "new_mkop_cls_code"
+            ],
+            "type": "object"
+          },
+          "output2": {
+            "additionalProperties": false,
+            "properties": {
+              "antc_cnpr": {
+                "description": "예상 체결가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "예상 체결가",
+                  "propertyLength": "10",
+                  "propertyOrder": "005.007",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "antc_cntg_prdy_ctrt": {
+                "description": "예상 체결 전일 대비율",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "예상 체결 전일 대비율",
+                  "propertyLength": "11",
+                  "propertyOrder": "005.010",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "antc_cntg_vrss": {
+                "description": "예상 체결 대비",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "예상 체결 대비",
+                  "propertyLength": "10",
+                  "propertyOrder": "005.009",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "antc_cntg_vrss_sign": {
+                "description": "예상 체결 대비 부호",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "예상 체결 대비 부호",
+                  "propertyLength": "1",
+                  "propertyOrder": "005.008",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "antc_mkop_cls_code": {
+                "description": "예상 장운영 구분 코드",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "예상 장운영 구분 코드",
+                  "propertyLength": "3",
+                  "propertyOrder": "005.001",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "antc_vol": {
+                "description": "예상 거래량",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "예상 거래량",
+                  "propertyLength": "18",
+                  "propertyOrder": "005.011",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "stck_hgpr": {
+                "description": "주식 최고가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "주식 최고가",
+                  "propertyLength": "10",
+                  "propertyOrder": "005.004",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "stck_lwpr": {
+                "description": "주식 최저가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "주식 최저가",
+                  "propertyLength": "10",
+                  "propertyOrder": "005.005",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "stck_oprc": {
+                "description": "주식 시가2",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "주식 시가2",
+                  "propertyLength": "10",
+                  "propertyOrder": "005.003",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "stck_prpr": {
+                "description": "주식 현재가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "주식 현재가",
+                  "propertyLength": "10",
+                  "propertyOrder": "005.002",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "stck_sdpr": {
+                "description": "주식 기준가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "주식 기준가",
+                  "propertyLength": "10",
+                  "propertyOrder": "005.006",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "stck_shrn_iscd": {
+                "description": "주식 단축 종목코드",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "주식 단축 종목코드",
+                  "propertyLength": "9",
+                  "propertyOrder": "005.012",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "vi_cls_code": {
+                "description": "VI적용구분코드",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "VI적용구분코드",
+                  "propertyLength": "1",
+                  "propertyOrder": "005.013",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              }
+            },
+            "required": [
+              "antc_mkop_cls_code",
+              "stck_prpr",
+              "stck_oprc",
+              "stck_hgpr",
+              "stck_lwpr",
+              "stck_sdpr",
+              "antc_cnpr",
+              "antc_cntg_vrss_sign",
+              "antc_cntg_vrss",
+              "antc_cntg_prdy_ctrt",
+              "antc_vol",
+              "stck_shrn_iscd",
+              "vi_cls_code"
+            ],
+            "type": "object"
+          },
+          "rt_cd": {
+            "description": "성공 실패 여부",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "성공 실패 여부",
+              "propertyLength": "1",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        },
+        "required": [
+          "rt_cd",
+          "msg_cd",
+          "msg1",
+          "output1",
+          "output2"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "KISOAuth": {
+        "bearerFormat": "KIS OAuth access token",
+        "description": "Issued by KIS /oauth2/tokenP and injected by the handwritten runtime.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "KIS Domestic Stock OpenAPI - inquire-asking-price-exp-ccn",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/uapi/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn": {
+      "get": {
+        "description": "국내 주식 현재가 호가와 예상 체결을 조회합니다.",
+        "operationId": "inquire-asking-price-exp-ccn",
+        "parameters": [
+          {
+            "description": "J:KRX, NX:NXT, UN:통합",
+            "in": "query",
+            "name": "FID_COND_MRKT_DIV_CODE",
+            "required": true,
+            "schema": {
+              "description": "조건 시장 분류 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "J:KRX, NX:NXT, UN:통합",
+                "name": "조건 시장 분류 코드",
+                "propertyLength": "2",
+                "propertyOrder": "001",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "J:KRX, NX:NXT, UN:통합",
+              "name": "조건 시장 분류 코드",
+              "propertyLength": "2",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          {
+            "description": "종목코드 (ex 005930 삼성전자)",
+            "in": "query",
+            "name": "FID_INPUT_ISCD",
+            "required": true,
+            "schema": {
+              "description": "입력 종목코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "종목코드 (ex 005930 삼성전자)",
+                "name": "입력 종목코드",
+                "propertyLength": "12",
+                "propertyOrder": "002",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "종목코드 (ex 005930 삼성전자)",
+              "name": "입력 종목코드",
+              "propertyLength": "12",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InquireAskingPriceExpCcnResponse"
+                }
+              }
+            },
+            "description": "KIS business response envelope"
+          }
+        },
+        "security": [
+          {
+            "KISOAuth": []
+          }
+        ],
+        "summary": "주식현재가 호가/예상체결[v1_국내주식-011]",
+        "tags": [
+          "Quote"
+        ],
+        "x-kis": {
+          "accessUrl": "/uapi/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn",
+          "apiId": "af3d3794-92c0-4f3b-8041-4ca4ddcda5de",
+          "apiName": "주식현재가 호가/예상체결[v1_국내주식-011]",
+          "apiSummary": "국내 주식 현재가 호가와 예상 체결을 조회합니다.",
+          "catalogSchemaVersion": 1,
+          "collectionId": "1031d032-6747-414b-bdf2-fd419c0c98ce",
+          "collectionName": "[국내주식] 기본시세",
+          "group": "quote",
+          "lastModifiedDate": "2026-03-27T13:02:05+09:00",
+          "oauth": true,
+          "realDomain": "https://openapi.koreainvestment.com:9443",
+          "realTrId": "FHKST01010200",
+          "roleCandidate": "orderbook",
+          "securityType": "oauth2-access-token",
+          "serviceGroup": "Quote",
+          "source": {
+            "categoryApi": "https://apiportal.koreainvestment.com/api/apis/public/api-list/{collectionId}",
+            "detailApi": "https://apiportal.koreainvestment.com/api/apis/public/detail?accessUrl={accessUrl}",
+            "detailPageTemplate": "https://apiportal.koreainvestment.com/apiservice-apiservice?{accessUrl}",
+            "portal": "https://apiportal.koreainvestment.com/apiservice-category"
+          },
+          "sourceDetailUrl": "https://apiportal.koreainvestment.com/apiservice-apiservice?/uapi/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn",
+          "supportsReal": true,
+          "supportsVirtual": true,
+          "virtualDomain": "https://openapivts.koreainvestment.com:29443",
+          "virtualTrId": "FHKST01010200"
+        }
+      }
+    }
+  }
+}

@@ -20,6 +20,7 @@ type Client struct {
 	appSecret    string
 	customerType string
 	account      string
+	virtual      bool
 	http         *resty.Client
 
 	tokenMu sync.RWMutex
@@ -63,6 +64,7 @@ func New(options ...Option) (*Client, error) {
 		appSecret:    cfg.appSecret,
 		customerType: cfg.customerType,
 		account:      cfg.account,
+		virtual:      cfg.virtual,
 		http:         restyClient,
 		token: tokenState{
 			accessToken: cfg.accessToken,

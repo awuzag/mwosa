@@ -48,7 +48,7 @@ func TestStoreDelegatesToCompositionRepository(t *testing.T) {
 	aggregate := compositionrole.Composition{
 		Source: compositionrole.SourceRef{
 			Provider:  provider.ProviderKIS,
-			Group:     provider.GroupKISDomesticStockQuotation,
+			Group:     provider.GroupKISQuote,
 			Operation: provider.OperationKISETFComponentStockPrice,
 		},
 		Subject: compositionrole.InstrumentRef{

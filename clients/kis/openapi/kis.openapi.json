@@ -1,0 +1,186 @@
+{
+  "info": {
+    "title": "KIS Domestic Stock OpenAPI split index",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/uapi/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn": {
+      "$ref": "./apis/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn.json#/paths/~1uapi~1domestic-stock~1v1~1quotations~1inquire-asking-price-exp-ccn"
+    },
+    "/uapi/domestic-stock/v1/quotations/inquire-ccnl": {
+      "$ref": "./apis/domestic-stock/v1/quotations/inquire-ccnl.json#/paths/~1uapi~1domestic-stock~1v1~1quotations~1inquire-ccnl"
+    },
+    "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice": {
+      "$ref": "./apis/domestic-stock/quotation/inquire-daily-itemchartprice.json#/paths/~1uapi~1domestic-stock~1v1~1quotations~1inquire-daily-itemchartprice"
+    },
+    "/uapi/domestic-stock/v1/quotations/inquire-daily-price": {
+      "$ref": "./apis/domestic-stock/v1/quotations/inquire-daily-price.json#/paths/~1uapi~1domestic-stock~1v1~1quotations~1inquire-daily-price"
+    },
+    "/uapi/domestic-stock/v1/quotations/inquire-investor": {
+      "$ref": "./apis/domestic-stock/v1/quotations/inquire-investor.json#/paths/~1uapi~1domestic-stock~1v1~1quotations~1inquire-investor"
+    },
+    "/uapi/domestic-stock/v1/quotations/inquire-member": {
+      "$ref": "./apis/domestic-stock/v1/quotations/inquire-member.json#/paths/~1uapi~1domestic-stock~1v1~1quotations~1inquire-member"
+    },
+    "/uapi/domestic-stock/v1/quotations/inquire-price": {
+      "$ref": "./apis/domestic-stock/quotation/inquire-price.json#/paths/~1uapi~1domestic-stock~1v1~1quotations~1inquire-price"
+    },
+    "/uapi/domestic-stock/v1/quotations/inquire-time-itemchartprice": {
+      "$ref": "./apis/domestic-stock/quotation/inquire-time-itemchartprice.json#/paths/~1uapi~1domestic-stock~1v1~1quotations~1inquire-time-itemchartprice"
+    },
+    "/uapi/domestic-stock/v1/quotations/inquire-time-itemconclusion": {
+      "$ref": "./apis/domestic-stock/v1/quotations/inquire-time-itemconclusion.json#/paths/~1uapi~1domestic-stock~1v1~1quotations~1inquire-time-itemconclusion"
+    },
+    "/uapi/domestic-stock/v1/quotations/volume-rank": {
+      "$ref": "./apis/domestic-stock/ranking/volume-rank.json#/paths/~1uapi~1domestic-stock~1v1~1quotations~1volume-rank"
+    },
+    "/uapi/domestic-stock/v1/ranking/fluctuation": {
+      "$ref": "./apis/domestic-stock/ranking/fluctuation.json#/paths/~1uapi~1domestic-stock~1v1~1ranking~1fluctuation"
+    },
+    "/uapi/domestic-stock/v1/ranking/market-cap": {
+      "$ref": "./apis/domestic-stock/v1/ranking/market-cap.json#/paths/~1uapi~1domestic-stock~1v1~1ranking~1market-cap"
+    },
+    "/uapi/domestic-stock/v1/ranking/market-value": {
+      "$ref": "./apis/domestic-stock/v1/ranking/market-value.json#/paths/~1uapi~1domestic-stock~1v1~1ranking~1market-value"
+    },
+    "/uapi/domestic-stock/v1/ranking/volume-power": {
+      "$ref": "./apis/domestic-stock/v1/ranking/volume-power.json#/paths/~1uapi~1domestic-stock~1v1~1ranking~1volume-power"
+    }
+  },
+  "x-kis-fetched-at": "2026-05-10T06:52:27Z",
+  "x-kis-source": {
+    "categoryApi": "https://apiportal.koreainvestment.com/api/apis/public/api-list/{collectionId}",
+    "detailApi": "https://apiportal.koreainvestment.com/api/apis/public/detail?accessUrl={accessUrl}",
+    "detailPageTemplate": "https://apiportal.koreainvestment.com/apiservice-apiservice?{accessUrl}",
+    "portal": "https://apiportal.koreainvestment.com/apiservice-category"
+  },
+  "x-kis-split-files": [
+    {
+      "file": "apis/domestic-stock/quotation/inquire-price.json",
+      "goName": "InquirePrice",
+      "group": "quote",
+      "groupMethod": "Price",
+      "operationId": "inquire-price",
+      "rawFunction": "InquirePrice",
+      "serviceGroup": "Quote"
+    },
+    {
+      "file": "apis/domestic-stock/v1/quotations/inquire-ccnl.json",
+      "goName": "InquireCcnl",
+      "group": "quote",
+      "groupMethod": "Trades",
+      "operationId": "inquire-ccnl",
+      "rawFunction": "InquireCcnl",
+      "serviceGroup": "Quote"
+    },
+    {
+      "file": "apis/domestic-stock/v1/quotations/inquire-daily-price.json",
+      "goName": "InquireDailyPrice",
+      "group": "quote",
+      "groupMethod": "DailyPrice",
+      "operationId": "inquire-daily-price",
+      "rawFunction": "InquireDailyPrice",
+      "serviceGroup": "Quote"
+    },
+    {
+      "file": "apis/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn.json",
+      "goName": "InquireAskingPriceExpCcn",
+      "group": "quote",
+      "groupMethod": "Orderbook",
+      "operationId": "inquire-asking-price-exp-ccn",
+      "rawFunction": "InquireAskingPriceExpCcn",
+      "serviceGroup": "Quote"
+    },
+    {
+      "file": "apis/domestic-stock/v1/quotations/inquire-investor.json",
+      "goName": "InquireInvestor",
+      "group": "quote",
+      "groupMethod": "Investor",
+      "operationId": "inquire-investor",
+      "rawFunction": "InquireInvestor",
+      "serviceGroup": "Quote"
+    },
+    {
+      "file": "apis/domestic-stock/v1/quotations/inquire-member.json",
+      "goName": "InquireMember",
+      "group": "quote",
+      "groupMethod": "Member",
+      "operationId": "inquire-member",
+      "rawFunction": "InquireMember",
+      "serviceGroup": "Quote"
+    },
+    {
+      "file": "apis/domestic-stock/quotation/inquire-daily-itemchartprice.json",
+      "goName": "InquireDailyItemChartPrice",
+      "group": "quote",
+      "groupMethod": "Daily",
+      "operationId": "inquire-daily-itemchartprice",
+      "rawFunction": "InquireDailyItemChartPrice",
+      "serviceGroup": "Quote"
+    },
+    {
+      "file": "apis/domestic-stock/quotation/inquire-time-itemchartprice.json",
+      "goName": "InquireTimeItemChartPrice",
+      "group": "quote",
+      "groupMethod": "Intraday",
+      "operationId": "inquire-time-itemchartprice",
+      "rawFunction": "InquireTimeItemChartPrice",
+      "serviceGroup": "Quote"
+    },
+    {
+      "file": "apis/domestic-stock/v1/quotations/inquire-time-itemconclusion.json",
+      "goName": "InquireTimeItemConclusion",
+      "group": "quote",
+      "groupMethod": "TimeTrades",
+      "operationId": "inquire-time-itemconclusion",
+      "rawFunction": "InquireTimeItemConclusion",
+      "serviceGroup": "Quote"
+    },
+    {
+      "file": "apis/domestic-stock/ranking/volume-rank.json",
+      "goName": "VolumeRank",
+      "group": "ranking",
+      "groupMethod": "Volume",
+      "operationId": "volume-rank",
+      "rawFunction": "VolumeRank",
+      "serviceGroup": "Ranking"
+    },
+    {
+      "file": "apis/domestic-stock/ranking/fluctuation.json",
+      "goName": "Fluctuation",
+      "group": "ranking",
+      "groupMethod": "Fluctuation",
+      "operationId": "fluctuation",
+      "rawFunction": "Fluctuation",
+      "serviceGroup": "Ranking"
+    },
+    {
+      "file": "apis/domestic-stock/v1/ranking/market-cap.json",
+      "goName": "MarketCap",
+      "group": "ranking",
+      "groupMethod": "MarketCap",
+      "operationId": "market-cap",
+      "rawFunction": "MarketCap",
+      "serviceGroup": "Ranking"
+    },
+    {
+      "file": "apis/domestic-stock/v1/ranking/market-value.json",
+      "goName": "MarketValue",
+      "group": "ranking",
+      "groupMethod": "MarketValue",
+      "operationId": "market-value",
+      "rawFunction": "MarketValue",
+      "serviceGroup": "Ranking"
+    },
+    {
+      "file": "apis/domestic-stock/v1/ranking/volume-power.json",
+      "goName": "VolumePower",
+      "group": "ranking",
+      "groupMethod": "VolumePower",
+      "operationId": "volume-power",
+      "rawFunction": "VolumePower",
+      "serviceGroup": "Ranking"
+    }
+  ]
+}
