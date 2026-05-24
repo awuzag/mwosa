@@ -1045,6 +1045,24 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "product_type",
+              "completion": [
+                "300",
+                "301",
+                "302",
+                "512",
+                "513",
+                "529"
+              ],
+              "default": "300",
+              "description": "300: 주식, ETF, ETN, ELW \n301 : 선물옵션 \n302 : 채권 \n306 : ELS'",
+              "flag": "product-type",
+              "required": true,
+              "source": "default",
+              "valueKind": "string"
             }
           },
           {
@@ -1073,6 +1091,16 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "product_no",
+              "default": "",
+              "description": "종목번호 (6자리)\nETN의 경우, Q로 시작 (EX. Q500001)",
+              "flag": "product-no",
+              "required": true,
+              "source": "user",
+              "valueKind": "symbol"
             }
           }
         ],

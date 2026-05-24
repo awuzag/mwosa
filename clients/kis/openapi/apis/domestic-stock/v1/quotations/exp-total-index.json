@@ -385,6 +385,24 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "market",
+              "completion": [
+                "krx",
+                "nxt",
+                "unified",
+                "J",
+                "NX",
+                "UN"
+              ],
+              "default": "J",
+              "description": "0:전체 K:거래소 Q:코스닥",
+              "flag": "market",
+              "required": true,
+              "source": "default",
+              "valueKind": "market"
             }
           },
           {
@@ -413,6 +431,24 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "market",
+              "completion": [
+                "krx",
+                "nxt",
+                "unified",
+                "J",
+                "NX",
+                "UN"
+              ],
+              "default": "J",
+              "description": "시장구분코드 (업종 U)",
+              "flag": "market",
+              "required": true,
+              "source": "default",
+              "valueKind": "market"
             }
           },
           {
@@ -441,6 +477,16 @@
               "propertyOrder": "003",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "",
+              "default": "",
+              "description": "Unique key(11175)",
+              "flag": "fid-cond-scr-div-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -469,6 +515,16 @@
               "propertyOrder": "004",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "symbol",
+              "default": "",
+              "description": "0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200, 4001: KRX100",
+              "flag": "symbol",
+              "required": true,
+              "source": "user",
+              "valueKind": "symbol"
             }
           },
           {
@@ -497,6 +553,16 @@
               "propertyOrder": "005",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "1:장시작전, 2:장마감",
+              "flag": "fid-mkop-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           }
         ],

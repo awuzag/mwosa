@@ -441,6 +441,24 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "market",
+              "completion": [
+                "krx",
+                "nxt",
+                "unified",
+                "J",
+                "NX",
+                "UN"
+              ],
+              "default": "J",
+              "description": "업종 : U",
+              "flag": "market",
+              "required": true,
+              "source": "default",
+              "valueKind": "market"
             }
           },
           {
@@ -469,6 +487,16 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "symbol",
+              "default": "",
+              "description": "'0001 : 종합\n0002 : 대형주\n...\n포탈 (FAQ : 종목정보 다운로드(국내) - 업종코드 참조)'",
+              "flag": "symbol",
+              "required": true,
+              "source": "user",
+              "valueKind": "symbol"
             }
           },
           {
@@ -497,6 +525,16 @@
               "propertyOrder": "003",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "from",
+              "default": "",
+              "description": "조회 시작일자 (ex. 20220501)",
+              "flag": "from",
+              "required": true,
+              "source": "user",
+              "valueKind": "date"
             }
           },
           {
@@ -525,6 +563,16 @@
               "propertyOrder": "004",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "to",
+              "default": "",
+              "description": "조회 종료일자 (ex. 20220530)",
+              "flag": "to",
+              "required": true,
+              "source": "user",
+              "valueKind": "date"
             }
           },
           {
@@ -553,6 +601,26 @@
               "propertyOrder": "005",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "period",
+              "completion": [
+                "daily",
+                "weekly",
+                "monthly",
+                "yearly",
+                "D",
+                "W",
+                "M",
+                "Y"
+              ],
+              "default": "D",
+              "description": "'\tD:일봉 W:주봉, M:월봉, Y:년봉'",
+              "flag": "period",
+              "required": true,
+              "source": "default",
+              "valueKind": "period"
             }
           }
         ],

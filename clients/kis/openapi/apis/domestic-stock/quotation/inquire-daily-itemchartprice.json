@@ -721,6 +721,24 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "market",
+              "completion": [
+                "krx",
+                "nxt",
+                "unified",
+                "J",
+                "NX",
+                "UN"
+              ],
+              "default": "J",
+              "description": "J:KRX, NX:NXT, UN:통합",
+              "flag": "market",
+              "required": true,
+              "source": "default",
+              "valueKind": "market"
             }
           },
           {
@@ -749,6 +767,16 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "symbol",
+              "default": "",
+              "description": "종목코드 (ex 005930 삼성전자)",
+              "flag": "symbol",
+              "required": true,
+              "source": "user",
+              "valueKind": "symbol"
             }
           },
           {
@@ -777,6 +805,16 @@
               "propertyOrder": "003",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "from",
+              "default": "",
+              "description": "조회 시작일자",
+              "flag": "from",
+              "required": true,
+              "source": "user",
+              "valueKind": "date"
             }
           },
           {
@@ -805,6 +843,16 @@
               "propertyOrder": "004",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "to",
+              "default": "",
+              "description": "조회 종료일자 (최대 100개)",
+              "flag": "to",
+              "required": true,
+              "source": "user",
+              "valueKind": "date"
             }
           },
           {
@@ -833,6 +881,26 @@
               "propertyOrder": "005",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "period",
+              "completion": [
+                "daily",
+                "weekly",
+                "monthly",
+                "yearly",
+                "D",
+                "W",
+                "M",
+                "Y"
+              ],
+              "default": "D",
+              "description": "D:일봉 W:주봉, M:월봉, Y:년봉",
+              "flag": "period",
+              "required": true,
+              "source": "default",
+              "valueKind": "period"
             }
           },
           {
@@ -861,6 +929,20 @@
               "propertyOrder": "006",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "adjust_price",
+              "completion": [
+                "0",
+                "1"
+              ],
+              "default": "0",
+              "description": "0:수정주가 1:원주가",
+              "flag": "adjust-price",
+              "required": true,
+              "source": "default",
+              "valueKind": "string"
             }
           }
         ],

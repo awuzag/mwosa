@@ -474,6 +474,24 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "market",
+              "completion": [
+                "krx",
+                "nxt",
+                "unified",
+                "J",
+                "NX",
+                "UN"
+              ],
+              "default": "J",
+              "description": "시장구분코드 (주식 J)",
+              "flag": "market",
+              "required": true,
+              "source": "default",
+              "valueKind": "market"
             }
           },
           {
@@ -502,6 +520,16 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "",
+              "default": "",
+              "description": "Unique key(20476)",
+              "flag": "fid-cond-scr-div-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -530,6 +558,16 @@
               "propertyOrder": "003",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "symbol",
+              "default": "",
+              "description": "종목코드 (ex 005930)",
+              "flag": "symbol",
+              "required": true,
+              "source": "user",
+              "valueKind": "symbol"
             }
           },
           {
@@ -558,6 +596,16 @@
               "propertyOrder": "004",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "from",
+              "default": "",
+              "description": "결제일자 (ex 20240313)",
+              "flag": "from",
+              "required": true,
+              "source": "user",
+              "valueKind": "date"
             }
           }
         ],

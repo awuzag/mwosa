@@ -208,6 +208,16 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "1: 장시작전, 2: 장마감",
+              "flag": "fid-mkop-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -236,6 +246,16 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "10(10초), 30(30초), 60(1분), 600(10분)",
+              "flag": "fid-input-hour-1",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -264,6 +284,16 @@
               "propertyOrder": "003",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "symbol",
+              "default": "",
+              "description": "0000:전체, 0001:코스피, 1001:코스닥, 2001:코스피200, 4001: KRX100",
+              "flag": "symbol",
+              "required": true,
+              "source": "user",
+              "valueKind": "symbol"
             }
           },
           {
@@ -292,6 +322,24 @@
               "propertyOrder": "004",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "market",
+              "completion": [
+                "krx",
+                "nxt",
+                "unified",
+                "J",
+                "NX",
+                "UN"
+              ],
+              "default": "J",
+              "description": "시장구분코드 (주식 U)",
+              "flag": "market",
+              "required": true,
+              "source": "default",
+              "valueKind": "market"
             }
           }
         ],

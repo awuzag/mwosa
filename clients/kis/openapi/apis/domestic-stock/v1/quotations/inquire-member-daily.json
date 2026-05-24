@@ -236,6 +236,24 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "market",
+              "completion": [
+                "krx",
+                "nxt",
+                "unified",
+                "J",
+                "NX",
+                "UN"
+              ],
+              "default": "J",
+              "description": "J: KRX, NX: NXT, UN: 통합",
+              "flag": "market",
+              "required": true,
+              "source": "default",
+              "valueKind": "market"
             }
           },
           {
@@ -264,6 +282,16 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "symbol",
+              "default": "",
+              "description": "주식종목코드입력",
+              "flag": "symbol",
+              "required": true,
+              "source": "user",
+              "valueKind": "symbol"
             }
           },
           {
@@ -292,6 +320,16 @@
               "propertyOrder": "003",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "회원사코드 (kis developers 포탈 사이트 포럼-\u003e FAQ -\u003e 종목정보 다운로드(국내) \u003e 회원사 참조)",
+              "flag": "fid-input-iscd-2",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -320,6 +358,16 @@
               "propertyOrder": "004",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "from",
+              "default": "",
+              "description": "날짜 ~",
+              "flag": "from",
+              "required": true,
+              "source": "user",
+              "valueKind": "date"
             }
           },
           {
@@ -348,6 +396,16 @@
               "propertyOrder": "005",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "to",
+              "default": "",
+              "description": "~ 날짜",
+              "flag": "to",
+              "required": true,
+              "source": "user",
+              "valueKind": "date"
             }
           },
           {
@@ -376,6 +434,16 @@
               "propertyOrder": "006",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "공백",
+              "flag": "fid-sctn-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           }
         ],

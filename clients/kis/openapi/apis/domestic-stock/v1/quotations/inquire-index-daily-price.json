@@ -581,6 +581,26 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "period",
+              "completion": [
+                "daily",
+                "weekly",
+                "monthly",
+                "yearly",
+                "D",
+                "W",
+                "M",
+                "Y"
+              ],
+              "default": "D",
+              "description": "일/주/월 구분코드 ( D:일별 , W:주별, M:월별 )",
+              "flag": "period",
+              "required": true,
+              "source": "default",
+              "valueKind": "period"
             }
           },
           {
@@ -609,6 +629,24 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "market",
+              "completion": [
+                "krx",
+                "nxt",
+                "unified",
+                "J",
+                "NX",
+                "UN"
+              ],
+              "default": "J",
+              "description": "시장구분코드 (업종 U)",
+              "flag": "market",
+              "required": true,
+              "source": "default",
+              "valueKind": "market"
             }
           },
           {
@@ -637,6 +675,16 @@
               "propertyOrder": "003",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "symbol",
+              "default": "",
+              "description": "코스피(0001), 코스닥(1001), 코스피200(2001)\n...\n포탈 (FAQ : 종목정보 다운로드(국내) - 업종코드 참조)",
+              "flag": "symbol",
+              "required": true,
+              "source": "user",
+              "valueKind": "symbol"
             }
           },
           {
@@ -665,6 +713,16 @@
               "propertyOrder": "004",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "from",
+              "default": "",
+              "description": "입력 날짜(ex. 20240223)",
+              "flag": "from",
+              "required": true,
+              "source": "user",
+              "valueKind": "date"
             }
           }
         ],

@@ -287,6 +287,16 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "Unique key(1)",
+              "flag": "type",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -315,6 +325,16 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "HTS_ID 입력",
+              "flag": "user-id",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -343,6 +363,16 @@
               "propertyOrder": "003",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "공백",
+              "flag": "data-rank",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -371,6 +401,16 @@
               "propertyOrder": "004",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "관심그룹 조회 결과의 그룹 값 입력",
+              "flag": "inter-grp-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -399,6 +439,16 @@
               "propertyOrder": "005",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "공백",
+              "flag": "inter-grp-name",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -427,6 +477,16 @@
               "propertyOrder": "006",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "공백",
+              "flag": "hts-kor-isnm",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -455,6 +515,16 @@
               "propertyOrder": "007",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "공백",
+              "flag": "cntg-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -483,6 +553,16 @@
               "propertyOrder": "008",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "Unique key(4)",
+              "flag": "fid-etc-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           }
         ],

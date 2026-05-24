@@ -191,6 +191,16 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "기준일자(YYYYMMDD)",
+              "flag": "bass-dt",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -219,6 +229,16 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "공백으로 입력",
+              "flag": "ctx-area-nk",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -247,6 +267,16 @@
               "propertyOrder": "003",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "공백으로 입력",
+              "flag": "ctx-area-fk",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           }
         ],

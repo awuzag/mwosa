@@ -446,6 +446,16 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "사용자 HTS ID",
+              "flag": "user-id",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -474,6 +484,16 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "종목조건검색 목록조회 API의 output인 'seq'을 이용\n(0 부터 시작)",
+              "flag": "seq",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           }
         ],

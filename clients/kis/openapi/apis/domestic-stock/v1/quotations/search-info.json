@@ -387,6 +387,16 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "product_no",
+              "default": "",
+              "description": "'주식(하이닉스) :  000660 (코드 : 300)\n선물(101S12) :  KR4101SC0009 (코드 : 301)\n미국(AAPL) : AAPL (코드 : 512)'",
+              "flag": "product-no",
+              "required": true,
+              "source": "user",
+              "valueKind": "symbol"
             }
           },
           {
@@ -415,6 +425,24 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "product_type",
+              "completion": [
+                "300",
+                "301",
+                "302",
+                "512",
+                "513",
+                "529"
+              ],
+              "default": "300",
+              "description": "'300 주식\n301 선물옵션\n302 채권\n512  미국 나스닥 / 513  미국 뉴욕 / 529  미국 아멕스 \n515  일본\n501  홍콩 / 543  홍콩CNY / 558  홍콩USD\n507  베트남 하노이 / 508  베트남 호치민\n551  중국 상해A / 552  중국 심천A'",
+              "flag": "product-type",
+              "required": true,
+              "source": "default",
+              "valueKind": "string"
             }
           }
         ],

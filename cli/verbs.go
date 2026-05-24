@@ -11,6 +11,7 @@ type commandRoots struct {
 	Delete   *cobra.Command
 	Screen   *cobra.Command
 	History  *cobra.Command
+	Fetch    *cobra.Command
 	Run      *cobra.Command
 	Compare  *cobra.Command
 	Rank     *cobra.Command
@@ -82,6 +83,13 @@ func newHistoryCommand() *cobra.Command {
 	return &cobra.Command{
 		Use:   "history",
 		Short: "List mwosa execution history",
+	}
+}
+
+func newFetchCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "fetch",
+		Short: "Fetch provider-backed data without storing it",
 	}
 }
 

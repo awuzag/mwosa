@@ -306,6 +306,24 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "market",
+              "completion": [
+                "krx",
+                "nxt",
+                "unified",
+                "J",
+                "NX",
+                "UN"
+              ],
+              "default": "J",
+              "description": "J:KRX, NX:NXT, UN:통합",
+              "flag": "market",
+              "required": true,
+              "source": "default",
+              "valueKind": "market"
             }
           },
           {
@@ -334,6 +352,16 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "symbol",
+              "default": "",
+              "description": "종목코드 (ex 005930 삼성전자)",
+              "flag": "symbol",
+              "required": true,
+              "source": "user",
+              "valueKind": "symbol"
             }
           },
           {
@@ -362,6 +390,26 @@
               "propertyOrder": "003",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "period",
+              "completion": [
+                "daily",
+                "weekly",
+                "monthly",
+                "yearly",
+                "D",
+                "W",
+                "M",
+                "Y"
+              ],
+              "default": "D",
+              "description": "'D : (일)최근 30거래일 \nW : (주)최근 30주 \nM : (월)최근 30개월'",
+              "flag": "period",
+              "required": true,
+              "source": "default",
+              "valueKind": "period"
             }
           },
           {
@@ -390,6 +438,20 @@
               "propertyOrder": "004",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "adjust_price",
+              "completion": [
+                "0",
+                "1"
+              ],
+              "default": "0",
+              "description": "'0 : 수정주가미반영\n1 : 수정주가반영\n* 수정주가는 액면분할/액면병합 등 권리 발생 시 과거 시세를 현재 주가에 맞게 보정한 가격'",
+              "flag": "adjust-price",
+              "required": true,
+              "source": "default",
+              "valueKind": "string"
             }
           }
         ],

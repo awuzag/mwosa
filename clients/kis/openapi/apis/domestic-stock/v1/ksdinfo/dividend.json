@@ -292,6 +292,16 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "공백",
+              "flag": "cts",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -320,6 +330,16 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "0:배당전체, 1:결산배당, 2:중간배당",
+              "flag": "gb1",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -348,6 +368,16 @@
               "propertyOrder": "003",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "일자 ~",
+              "flag": "f-dt",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -376,6 +406,16 @@
               "propertyOrder": "004",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "~ 일자",
+              "flag": "t-dt",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -404,6 +444,16 @@
               "propertyOrder": "005",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "공백: 전체,  특정종목 조회시 : 종목코드",
+              "flag": "sht-cd",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -432,6 +482,16 @@
               "propertyOrder": "006",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "공백",
+              "flag": "high-gb",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           }
         ],

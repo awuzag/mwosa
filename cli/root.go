@@ -136,6 +136,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	deleteCommand := newDeleteCommand()
 	screenCommand := newScreenCommand()
 	historyCommand := newHistoryCommand()
+	fetchCommand := newFetchCommand()
 	runCommand := newRunCommand()
 	compareCommand := newCompareCommand()
 	rankCommand := newRankCommand()
@@ -161,6 +162,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 		Delete:   deleteCommand,
 		Screen:   screenCommand,
 		History:  historyCommand,
+		Fetch:    fetchCommand,
 		Run:      runCommand,
 		Compare:  compareCommand,
 		Rank:     rankCommand,
@@ -205,6 +207,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	cmd.AddCommand(deleteCommand)
 	cmd.AddCommand(screenCommand)
 	cmd.AddCommand(historyCommand)
+	cmd.AddCommand(fetchCommand)
 	cmd.AddCommand(runCommand)
 	cmd.AddCommand(compareCommand)
 	cmd.AddCommand(rankCommand)

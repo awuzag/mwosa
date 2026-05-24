@@ -306,6 +306,24 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "market",
+              "completion": [
+                "krx",
+                "nxt",
+                "unified",
+                "J",
+                "NX",
+                "UN"
+              ],
+              "default": "J",
+              "description": "시장구분코드 (W)",
+              "flag": "market",
+              "required": true,
+              "source": "default",
+              "valueKind": "market"
             }
           },
           {
@@ -334,6 +352,16 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "",
+              "default": "",
+              "description": "Unique key(20287)",
+              "flag": "fid-cond-scr-div-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -362,6 +390,16 @@
               "propertyOrder": "003",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "'000000(전체), 2001(코스피200)\n, 3003(코스닥150), 005930(삼성전자) '",
+              "flag": "fid-unas-input-iscd",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -390,6 +428,16 @@
               "propertyOrder": "004",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "symbol",
+              "default": "",
+              "description": "'00000(전체), 00003(한국투자증권)\n, 00017(KB증권), 00005(미래에셋주식회사)'",
+              "flag": "symbol",
+              "required": true,
+              "source": "user",
+              "valueKind": "symbol"
             }
           },
           {
@@ -418,6 +466,24 @@
               "propertyOrder": "005",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "market",
+              "completion": [
+                "krx",
+                "nxt",
+                "unified",
+                "J",
+                "NX",
+                "UN"
+              ],
+              "default": "J",
+              "description": "Unique key(A)",
+              "flag": "market",
+              "required": true,
+              "source": "default",
+              "valueKind": "market"
             }
           },
           {
@@ -446,6 +512,16 @@
               "propertyOrder": "006",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "",
+              "default": "",
+              "description": "가격(이상)",
+              "flag": "fid-input-price-1",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -474,6 +550,16 @@
               "propertyOrder": "007",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "",
+              "default": "",
+              "description": "가격(이하)",
+              "flag": "fid-input-price-2",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -502,6 +588,16 @@
               "propertyOrder": "008",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "거래량(이상)",
+              "flag": "fid-input-vol-1",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -530,6 +626,16 @@
               "propertyOrder": "009",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "거래량(이하)",
+              "flag": "fid-input-vol-2",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -558,6 +664,16 @@
               "propertyOrder": "010",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "1(분), 2(일)",
+              "flag": "fid-hour-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -586,6 +702,16 @@
               "propertyOrder": "011",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 일 또는 분",
+              "flag": "fid-input-hour-1",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -614,6 +740,16 @@
               "propertyOrder": "012",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "기준시간(분 선택 시)",
+              "flag": "fid-input-hour-2",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -642,6 +778,16 @@
               "propertyOrder": "013",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "",
+              "default": "",
+              "description": "'1(가격급등), 2(가격급락), 3(거래량급증)\n, 4(매수잔량급증), 5(매도잔량급증)'",
+              "flag": "fid-rank-sort-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -670,6 +816,16 @@
               "propertyOrder": "014",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "0(전체), 1(일반), 2(조기종료)",
+              "flag": "fid-blng-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           }
         ],

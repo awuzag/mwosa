@@ -35,6 +35,10 @@ type Config struct {
 type marketDataClient interface {
 	Token(context.Context) (kisclient.Token, error)
 	UseToken(kisclient.Token)
+	RawOperations() []kisclient.RawOperationMetadata
+	LookupRawOperation(string) (kisclient.RawOperationMetadata, bool)
+	RawRequestTemplate(string) (map[string]string, error)
+	InvokeRaw(context.Context, string, map[string]string) (any, error)
 	Quote() quoteAPI
 	ETFETNPrice(context.Context, string) (kisclient.ETFETNPrice, error)
 	ETFComponentStockPrices(context.Context, string) (kisclient.ETFComponentStockPriceResult, error)
@@ -83,6 +87,22 @@ func (a kisClientAdapter) Token(ctx context.Context) (kisclient.Token, error) {
 
 func (a kisClientAdapter) UseToken(token kisclient.Token) {
 	a.client.UseToken(token)
+}
+
+func (a kisClientAdapter) RawOperations() []kisclient.RawOperationMetadata {
+	return a.client.RawOperations()
+}
+
+func (a kisClientAdapter) LookupRawOperation(operationID string) (kisclient.RawOperationMetadata, bool) {
+	return a.client.LookupRawOperation(operationID)
+}
+
+func (a kisClientAdapter) RawRequestTemplate(operationID string) (map[string]string, error) {
+	return a.client.RawRequestTemplate(operationID)
+}
+
+func (a kisClientAdapter) InvokeRaw(ctx context.Context, operationID string, input map[string]string) (any, error) {
+	return a.client.InvokeRaw(ctx, operationID, input)
 }
 
 func (a kisClientAdapter) Quote() quoteAPI {

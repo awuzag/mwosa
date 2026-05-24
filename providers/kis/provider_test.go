@@ -84,6 +84,37 @@ func TestFetchETFQuoteUsesETFETNPrice(t *testing.T) {
 	require.Equal(t, "10250", result.Price)
 }
 
+func TestFetchRawUsesGeneratedRegistryAndKeepsProviderNativeResponse(t *testing.T) {
+	client := &fakeKISClient{
+		rawResponse: kisclient.InquirePriceResponse{
+			RtCd:  "0",
+			MsgCd: "ok",
+			Msg1:  "ok",
+			Output: kisclient.InquirePriceOutput{
+				StckShrnISCD: "005930",
+				StckPrpr:     "75000",
+			},
+		},
+	}
+	p := NewWithClient(client, true)
+
+	result, err := p.FetchRaw(context.Background(), RawRequest{
+		OperationID: provider.OperationID("inquire-price"),
+		Input: map[string]string{
+			"FID_INPUT_ISCD": "005930",
+		},
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, 1, client.rawCalls)
+	require.Equal(t, provider.ProviderKIS, result.Provider)
+	require.Equal(t, provider.GroupID("quote"), result.Group)
+	require.Equal(t, provider.OperationID("inquire-price"), result.Operation)
+	require.Equal(t, "quote_snapshot", result.Canonical)
+	require.Equal(t, "005930", client.rawInput["FID_INPUT_ISCD"])
+	require.IsType(t, kisclient.InquirePriceResponse{}, result.Response)
+}
+
 func TestListConstituentsReturnsOnlyCompositionMembers(t *testing.T) {
 	client := &fakeKISClient{
 		etfComponents: kisclient.ETFComponentStockPriceResult{
@@ -581,6 +612,7 @@ type fakeKISClient struct {
 	timeTradesCalls   int
 	productCalls      int
 	stockCalls        int
+	rawCalls          int
 
 	price                   kisclient.InquirePriceResponse
 	token                   kisclient.Token
@@ -594,6 +626,8 @@ type fakeKISClient struct {
 	timedTrade              kisclient.InquireTimeItemConclusionOutput2
 	product                 kisclient.SearchInfoResponse
 	stock                   kisclient.SearchStockInfoResponse
+	rawResponse             any
+	rawInput                map[string]string
 	lastTimeTradesInputHour string
 }
 
@@ -608,6 +642,27 @@ func (c *fakeKISClient) Token(context.Context) (kisclient.Token, error) {
 func (c *fakeKISClient) UseToken(token kisclient.Token) {
 	c.useTokenCalls++
 	c.usedToken = token
+}
+
+func (c *fakeKISClient) RawOperations() []kisclient.RawOperationMetadata {
+	return kisclient.RawOperations()
+}
+
+func (c *fakeKISClient) LookupRawOperation(operationID string) (kisclient.RawOperationMetadata, bool) {
+	return kisclient.LookupRawOperation(operationID)
+}
+
+func (c *fakeKISClient) RawRequestTemplate(operationID string) (map[string]string, error) {
+	return kisclient.RawRequestTemplate(operationID)
+}
+
+func (c *fakeKISClient) InvokeRaw(_ context.Context, _ string, input map[string]string) (any, error) {
+	c.rawCalls++
+	c.rawInput = input
+	if c.rawResponse != nil {
+		return c.rawResponse, nil
+	}
+	return kisclient.InquirePriceResponse{RtCd: "0", MsgCd: "ok", Msg1: "ok"}, nil
 }
 
 func (c *fakeKISClient) Quote() quoteAPI {

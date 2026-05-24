@@ -1115,6 +1115,16 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "symbol",
+              "default": "",
+              "description": "코스피: KSP, 코스닥:KSQ,\n선물,콜옵션,풋옵션 : K2I, 주식선물:999,\nETF: ETF, ELW:ELW, ETN: ETN, \n미니: MKI, 위클리월 : WKM, 위클리목: WKI\n코스닥150: KQI",
+              "flag": "symbol",
+              "required": true,
+              "source": "user",
+              "valueKind": "symbol"
             }
           },
           {
@@ -1143,6 +1153,16 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "- fid_input_iscd: KSP(코스피) 혹은 KSQ(코스닥)인 경우\n코스피(0001_종합, .…0027_제조업 )\n코스닥(1001_종합, …. 1041_IT부품)\n...\n포탈 (FAQ : 종목정보 다운로드(국내) - 업종코드 참조)\n\n- fid_input_iscd가 K2I인 경우\nF001(선물)\nOC01(콜옵션)\nOP01(풋옵션)\n\n- fid_input_iscd가 999인 경우\nS001(주식선물)\n\n- fid_input_iscd가 ETF인 경우\nT000(ETF)\n\n- fid_input_iscd가 ELW인 경우\nW000(ELW)\n\n- fid_input_iscd가 ETN인 경우\nE199(ETN)\n\n- fid_input_iscd가 MKI인 경우\nF004(미니선물)\nOC02(미니콜옵션)\nOP02(미니풋옵션)\n\n- fid_input_iscd가 WKM인 경우\nOC05(위클리콜(월))\nOP05(위클리풋(월))\n\n- fid_input_iscd가 WKI인 경우\nOC04(위클리콜(목))\nOP04(위클리풋(목))   \n\n- fid_input_iscd가 KQI인 경우\nF002(코스닥150선물)\nOC03(코스닥150콜옵션)\nOP03(코스닥150풋옵션)",
+              "flag": "fid-input-iscd-2",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           }
         ],

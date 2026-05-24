@@ -513,6 +513,16 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "그룹별종목조회 결과 fid_mrkt_cls_code(시장구분) 1 입력\nJ: KRX, NX: NXT, UN: 통합\nex) J",
+              "flag": "fid-cond-mrkt-div-code-1",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -541,6 +551,16 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "그룹별종목조회 결과 jong_code(종목코드) 1 입력\nex) 005930",
+              "flag": "fid-input-iscd-1",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -569,6 +589,16 @@
               "propertyOrder": "003",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드2",
+              "flag": "fid-cond-mrkt-div-code-2",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -597,6 +627,16 @@
               "propertyOrder": "004",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드2",
+              "flag": "fid-input-iscd-2",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -625,6 +665,16 @@
               "propertyOrder": "005",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드3",
+              "flag": "fid-cond-mrkt-div-code-3",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -653,6 +703,16 @@
               "propertyOrder": "006",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드3",
+              "flag": "fid-input-iscd-3",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -681,6 +741,16 @@
               "propertyOrder": "007",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드4",
+              "flag": "fid-cond-mrkt-div-code-4",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -709,6 +779,16 @@
               "propertyOrder": "008",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드4",
+              "flag": "fid-input-iscd-4",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -737,6 +817,16 @@
               "propertyOrder": "009",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드5",
+              "flag": "fid-cond-mrkt-div-code-5",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -765,6 +855,16 @@
               "propertyOrder": "010",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드5",
+              "flag": "fid-input-iscd-5",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -793,6 +893,16 @@
               "propertyOrder": "011",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드6",
+              "flag": "fid-cond-mrkt-div-code-6",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -821,6 +931,16 @@
               "propertyOrder": "012",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드6",
+              "flag": "fid-input-iscd-6",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -849,6 +969,16 @@
               "propertyOrder": "013",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드7",
+              "flag": "fid-cond-mrkt-div-code-7",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -877,6 +1007,16 @@
               "propertyOrder": "014",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드7",
+              "flag": "fid-input-iscd-7",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -905,6 +1045,16 @@
               "propertyOrder": "015",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드8",
+              "flag": "fid-cond-mrkt-div-code-8",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -933,6 +1083,16 @@
               "propertyOrder": "016",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드8",
+              "flag": "fid-input-iscd-8",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -961,6 +1121,16 @@
               "propertyOrder": "017",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드9",
+              "flag": "fid-cond-mrkt-div-code-9",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -989,6 +1159,16 @@
               "propertyOrder": "018",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드9",
+              "flag": "fid-input-iscd-9",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1017,6 +1197,16 @@
               "propertyOrder": "019",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드10",
+              "flag": "fid-cond-mrkt-div-code-10",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1045,6 +1235,16 @@
               "propertyOrder": "020",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드10",
+              "flag": "fid-input-iscd-10",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1073,6 +1273,16 @@
               "propertyOrder": "021",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드11",
+              "flag": "fid-cond-mrkt-div-code-11",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1101,6 +1311,16 @@
               "propertyOrder": "022",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드11",
+              "flag": "fid-input-iscd-11",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1129,6 +1349,16 @@
               "propertyOrder": "023",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드12",
+              "flag": "fid-cond-mrkt-div-code-12",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1157,6 +1387,16 @@
               "propertyOrder": "024",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드12",
+              "flag": "fid-input-iscd-12",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1185,6 +1425,16 @@
               "propertyOrder": "025",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드13",
+              "flag": "fid-cond-mrkt-div-code-13",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1213,6 +1463,16 @@
               "propertyOrder": "026",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드13",
+              "flag": "fid-input-iscd-13",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1241,6 +1501,16 @@
               "propertyOrder": "027",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드14",
+              "flag": "fid-cond-mrkt-div-code-14",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1269,6 +1539,16 @@
               "propertyOrder": "028",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드14",
+              "flag": "fid-input-iscd-14",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1297,6 +1577,16 @@
               "propertyOrder": "029",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드15",
+              "flag": "fid-cond-mrkt-div-code-15",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1325,6 +1615,16 @@
               "propertyOrder": "030",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드15",
+              "flag": "fid-input-iscd-15",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1353,6 +1653,16 @@
               "propertyOrder": "031",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드16",
+              "flag": "fid-cond-mrkt-div-code-16",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1381,6 +1691,16 @@
               "propertyOrder": "032",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드16",
+              "flag": "fid-input-iscd-16",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1409,6 +1729,16 @@
               "propertyOrder": "033",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드17",
+              "flag": "fid-cond-mrkt-div-code-17",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1437,6 +1767,16 @@
               "propertyOrder": "034",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드17",
+              "flag": "fid-input-iscd-17",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1465,6 +1805,16 @@
               "propertyOrder": "035",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드18",
+              "flag": "fid-cond-mrkt-div-code-18",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1493,6 +1843,16 @@
               "propertyOrder": "036",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드18",
+              "flag": "fid-input-iscd-18",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1521,6 +1881,16 @@
               "propertyOrder": "037",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드19",
+              "flag": "fid-cond-mrkt-div-code-19",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1549,6 +1919,16 @@
               "propertyOrder": "038",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드19",
+              "flag": "fid-input-iscd-19",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1577,6 +1957,16 @@
               "propertyOrder": "039",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드20",
+              "flag": "fid-cond-mrkt-div-code-20",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1605,6 +1995,16 @@
               "propertyOrder": "040",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드20",
+              "flag": "fid-input-iscd-20",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1633,6 +2033,16 @@
               "propertyOrder": "041",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드21",
+              "flag": "fid-cond-mrkt-div-code-21",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1661,6 +2071,16 @@
               "propertyOrder": "042",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드21",
+              "flag": "fid-input-iscd-21",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1689,6 +2109,16 @@
               "propertyOrder": "043",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드22",
+              "flag": "fid-cond-mrkt-div-code-22",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1717,6 +2147,16 @@
               "propertyOrder": "044",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드22",
+              "flag": "fid-input-iscd-22",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1745,6 +2185,16 @@
               "propertyOrder": "045",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드23",
+              "flag": "fid-cond-mrkt-div-code-23",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1773,6 +2223,16 @@
               "propertyOrder": "046",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드23",
+              "flag": "fid-input-iscd-23",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1801,6 +2261,16 @@
               "propertyOrder": "047",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드24",
+              "flag": "fid-cond-mrkt-div-code-24",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1829,6 +2299,16 @@
               "propertyOrder": "048",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드24",
+              "flag": "fid-input-iscd-24",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1857,6 +2337,16 @@
               "propertyOrder": "049",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드25",
+              "flag": "fid-cond-mrkt-div-code-25",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1885,6 +2375,16 @@
               "propertyOrder": "050",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드25",
+              "flag": "fid-input-iscd-25",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1913,6 +2413,16 @@
               "propertyOrder": "051",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드26",
+              "flag": "fid-cond-mrkt-div-code-26",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1941,6 +2451,16 @@
               "propertyOrder": "052",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드26",
+              "flag": "fid-input-iscd-26",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1969,6 +2489,16 @@
               "propertyOrder": "053",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드27",
+              "flag": "fid-cond-mrkt-div-code-27",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -1997,6 +2527,16 @@
               "propertyOrder": "054",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드27",
+              "flag": "fid-input-iscd-27",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -2025,6 +2565,16 @@
               "propertyOrder": "055",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드28",
+              "flag": "fid-cond-mrkt-div-code-28",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -2053,6 +2603,16 @@
               "propertyOrder": "056",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드28",
+              "flag": "fid-input-iscd-28",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -2081,6 +2641,16 @@
               "propertyOrder": "057",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드29",
+              "flag": "fid-cond-mrkt-div-code-29",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -2109,6 +2679,16 @@
               "propertyOrder": "058",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드29",
+              "flag": "fid-input-iscd-29",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -2137,6 +2717,16 @@
               "propertyOrder": "059",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조건 시장 분류 코드30",
+              "flag": "fid-cond-mrkt-div-code-30",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -2165,6 +2755,16 @@
               "propertyOrder": "060",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "입력 종목코드30",
+              "flag": "fid-input-iscd-30",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           }
         ],

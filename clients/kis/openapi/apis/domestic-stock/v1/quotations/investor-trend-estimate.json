@@ -166,6 +166,16 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "종목코드",
+              "flag": "mksc-shrn-iscd",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           }
         ],

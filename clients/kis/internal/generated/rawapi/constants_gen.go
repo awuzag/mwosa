@@ -2,14 +2,39 @@
 
 package rawapi
 
+import (
+	"context"
+	"fmt"
+	"strings"
+)
+
 type OperationMetadata struct {
-	OperationID     string
-	Endpoint        string
-	Group           string
-	ServiceGroup    string
-	RealTRID        string
-	VirtualTRID     string
-	SupportsVirtual bool
+	OperationID     string              `json:"operation_id"`
+	Endpoint        string              `json:"endpoint"`
+	Method          string              `json:"method"`
+	Summary         string              `json:"summary"`
+	Description     string              `json:"description"`
+	Group           string              `json:"provider_group"`
+	ServiceGroup    string              `json:"service_group"`
+	RoleHint        string              `json:"role_hint"`
+	RealTRID        string              `json:"real_tr_id"`
+	VirtualTRID     string              `json:"virtual_tr_id"`
+	SupportsVirtual bool                `json:"supports_virtual"`
+	Parameters      []ParameterMetadata `json:"parameters"`
+}
+
+type ParameterMetadata struct {
+	Name        string   `json:"name"`
+	FieldName   string   `json:"field_name"`
+	Flag        string   `json:"flag"`
+	Source      string   `json:"source"`
+	Required    bool     `json:"required"`
+	Default     string   `json:"default"`
+	Canonical   string   `json:"canonical"`
+	ValueKind   string   `json:"value_kind"`
+	Description string   `json:"description"`
+	Advanced    bool     `json:"advanced"`
+	Completion  []string `json:"completion,omitempty"`
 }
 
 const (
@@ -953,1216 +978,5217 @@ const (
 	SupportsVirtualHtsTopView                    = false
 )
 
+type rawInvoker func(context.Context, Executor, map[string]string) (any, error)
+
+var operationOrder = []string{
+	OperationInquirePrice,
+	OperationInquirePrice2,
+	OperationInquireCcnl,
+	OperationInquireDailyPrice,
+	OperationInquireAskingPriceExpCcn,
+	OperationInquireInvestor,
+	OperationInquireMember,
+	OperationInquireDailyItemChartPrice,
+	OperationInquireTimeItemChartPrice,
+	OperationInquireTimeDailychartprice,
+	OperationInquireTimeItemConclusion,
+	OperationInquireDailyOvertimeprice,
+	OperationInquireTimeOvertimeconclusion,
+	OperationInquireOvertimePrice,
+	OperationInquireOvertimeAskingPrice,
+	OperationExpClosingPrice,
+	OperationETFETNQuotationsInquirePrice,
+	OperationInquireComponentStockPrice,
+	OperationNavComparisonTrend,
+	OperationNavComparisonDailyTrend,
+	OperationNavComparisonTimeTrend,
+	OperationInquireELWPrice,
+	OperationNewlyListed,
+	OperationSensitivity,
+	OperationUdrlAssetPrice,
+	OperationCondSearch,
+	OperationQuickChange,
+	OperationUdrlAssetList,
+	OperationCompareStocks,
+	OperationLpTradeTrend,
+	OperationIndicatorTrendCcnl,
+	OperationIndicatorTrendMinute,
+	OperationIndicatorTrendDaily,
+	OperationVolatilityTrendTick,
+	OperationVolatilityTrendCcnl,
+	OperationVolatilityTrendDaily,
+	OperationSensitivityTrendCcnl,
+	OperationVolatilityTrendMinute,
+	OperationSensitivityTrendDaily,
+	OperationExpirationStocks,
+	OperationIndicator,
+	OperationUpdownRate,
+	OperationELWRankingVolumeRank,
+	OperationInquireIndexPrice,
+	OperationInquireIndexDailyPrice,
+	OperationInquireIndexTickprice,
+	OperationInquireIndexTimeprice,
+	OperationInquireTimeIndexchartprice,
+	OperationInquireDailyIndexchartprice,
+	OperationInquireIndexCategoryPrice,
+	OperationExpIndexTrend,
+	OperationExpTotalIndex,
+	OperationInquireViStatus,
+	OperationCompInterest,
+	OperationNewsTitle,
+	OperationChkHoliday,
+	OperationMarketTime,
+	OperationSearchInfo,
+	OperationSearchStockInfo,
+	OperationBalanceSheet,
+	OperationIncomeStatement,
+	OperationFinancialRatio,
+	OperationProfitRatio,
+	OperationOtherMajorRatios,
+	OperationStabilityRatio,
+	OperationGrowthRatio,
+	OperationCreditByCompany,
+	OperationDividend,
+	OperationPurreq,
+	OperationMergerSplit,
+	OperationRevSplit,
+	OperationCapDcrs,
+	OperationListInfo,
+	OperationPubOffer,
+	OperationForfeit,
+	OperationMandDeposit,
+	OperationPaidinCapin,
+	OperationBonusIssue,
+	OperationSharehldMeet,
+	OperationEstimatePerform,
+	OperationLendableByCompany,
+	OperationInvestOpinion,
+	OperationInvestOpbysec,
+	OperationPsearchTitle,
+	OperationPsearchResult,
+	OperationIntstockGrouplist,
+	OperationIntstockMultprice,
+	OperationIntstockStocklistByGroup,
+	OperationForeignInstitutionTotal,
+	OperationFrgnmemTradeEstimate,
+	OperationInvestorTradeByStockDaily,
+	OperationInquireInvestorTimeByMarket,
+	OperationInquireInvestorDailyByMarket,
+	OperationFrgnmemPchsTrend,
+	OperationFrgnmemTradeTrend,
+	OperationInquireMemberDaily,
+	OperationProgramTradeByStock,
+	OperationProgramTradeByStockDaily,
+	OperationInvestorTrendEstimate,
+	OperationInquireDailyTradeVolume,
+	OperationCompProgramTradeToday,
+	OperationCompProgramTradeDaily,
+	OperationInvestorProgramTradeToday,
+	OperationDailyCreditBalance,
+	OperationExpPriceTrend,
+	OperationDailyShortSale,
+	OperationOvertimeExpTransFluct,
+	OperationTradprtByamt,
+	OperationMktfunds,
+	OperationDailyLoanTrans,
+	OperationCaptureUplowprice,
+	OperationPbarTratio,
+	OperationVolumeRank,
+	OperationFluctuation,
+	OperationQuoteBalance,
+	OperationProfitAssetIndex,
+	OperationMarketCap,
+	OperationFinanceRatio,
+	OperationAfterHourBalance,
+	OperationPreferDisparateRatio,
+	OperationDisparity,
+	OperationMarketValue,
+	OperationVolumePower,
+	OperationTopInterestStock,
+	OperationExpTransUpdown,
+	OperationTradedByCompany,
+	OperationNearNewHighlow,
+	OperationDividendRate,
+	OperationBulkTransNum,
+	OperationCreditBalance,
+	OperationShortSale,
+	OperationOvertimeFluctuation,
+	OperationOvertimeVolume,
+	OperationHtsTopView,
+}
+
 var operationMetadata = map[string]OperationMetadata{
 	OperationInquirePrice: {
 		OperationID:     OperationInquirePrice,
 		Endpoint:        EndpointInquirePrice,
+		Method:          "GET",
+		Summary:         "주식현재가 시세[v1_국내주식-008]",
+		Description:     "국내 주식 현재가 시세를 조회합니다.",
 		Group:           GroupInquirePrice,
 		ServiceGroup:    ServiceGroupInquirePrice,
+		RoleHint:        "quote_snapshot",
 		RealTRID:        RealTRIDInquirePrice,
 		VirtualTRID:     VirtualTRIDInquirePrice,
 		SupportsVirtual: SupportsVirtualInquirePrice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J:KRX, NX:NXT, UN:통합", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드 (ex 005930 삼성전자)  // ETN은 종목코드 6자리 앞에 Q 입력 필수", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquirePrice2: {
 		OperationID:     OperationInquirePrice2,
 		Endpoint:        EndpointInquirePrice2,
+		Method:          "GET",
+		Summary:         "주식현재가 시세2[v1_국내주식-054]",
+		Description:     "주식현재가 시세2 API입니다.",
 		Group:           GroupInquirePrice2,
 		ServiceGroup:    ServiceGroupInquirePrice2,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDInquirePrice2,
 		VirtualTRID:     VirtualTRIDInquirePrice2,
 		SupportsVirtual: SupportsVirtualInquirePrice2,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J:KRX, NX:NXT, UN:통합", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "000660", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireCcnl: {
 		OperationID:     OperationInquireCcnl,
 		Endpoint:        EndpointInquireCcnl,
+		Method:          "GET",
+		Summary:         "주식현재가 체결[v1_국내주식-009]",
+		Description:     "국내 주식 현재가 체결 내역을 조회합니다.",
 		Group:           GroupInquireCcnl,
 		ServiceGroup:    ServiceGroupInquireCcnl,
+		RoleHint:        "trades",
 		RealTRID:        RealTRIDInquireCcnl,
 		VirtualTRID:     VirtualTRIDInquireCcnl,
 		SupportsVirtual: SupportsVirtualInquireCcnl,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J:KRX, NX:NXT, UN:통합", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드 (ex 005930 삼성전자)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireDailyPrice: {
 		OperationID:     OperationInquireDailyPrice,
 		Endpoint:        EndpointInquireDailyPrice,
+		Method:          "GET",
+		Summary:         "주식현재가 일자별[v1_국내주식-010]",
+		Description:     "국내 주식 현재가 일자별 시세를 조회합니다.",
 		Group:           GroupInquireDailyPrice,
 		ServiceGroup:    ServiceGroupInquireDailyPrice,
+		RoleHint:        "daily_bar",
 		RealTRID:        RealTRIDInquireDailyPrice,
 		VirtualTRID:     VirtualTRIDInquireDailyPrice,
 		SupportsVirtual: SupportsVirtualInquireDailyPrice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J:KRX, NX:NXT, UN:통합", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드 (ex 005930 삼성전자)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_PERIOD_DIV_CODE", FieldName: "FidPeriodDivCode", Flag: "period", Source: "default", Required: true, Default: "D", Canonical: "period", ValueKind: "period", Description: "'D : (일)최근 30거래일 \nW : (주)최근 30주 \nM : (월)최근 30개월'", Advanced: false, Completion: []string{"daily", "weekly", "monthly", "yearly", "D", "W", "M", "Y"}},
+			{Name: "FID_ORG_ADJ_PRC", FieldName: "FidOrgAdjPrc", Flag: "adjust-price", Source: "default", Required: true, Default: "0", Canonical: "adjust_price", ValueKind: "string", Description: "'0 : 수정주가미반영\n1 : 수정주가반영\n* 수정주가는 액면분할/액면병합 등 권리 발생 시 과거 시세를 현재 주가에 맞게 보정한 가격'", Advanced: true, Completion: []string{"0", "1"}},
+		},
 	},
 	OperationInquireAskingPriceExpCcn: {
 		OperationID:     OperationInquireAskingPriceExpCcn,
 		Endpoint:        EndpointInquireAskingPriceExpCcn,
+		Method:          "GET",
+		Summary:         "주식현재가 호가/예상체결[v1_국내주식-011]",
+		Description:     "국내 주식 현재가 호가와 예상 체결을 조회합니다.",
 		Group:           GroupInquireAskingPriceExpCcn,
 		ServiceGroup:    ServiceGroupInquireAskingPriceExpCcn,
+		RoleHint:        "orderbook",
 		RealTRID:        RealTRIDInquireAskingPriceExpCcn,
 		VirtualTRID:     VirtualTRIDInquireAskingPriceExpCcn,
 		SupportsVirtual: SupportsVirtualInquireAskingPriceExpCcn,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J:KRX, NX:NXT, UN:통합", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드 (ex 005930 삼성전자)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireInvestor: {
 		OperationID:     OperationInquireInvestor,
 		Endpoint:        EndpointInquireInvestor,
+		Method:          "GET",
+		Summary:         "주식현재가 투자자[v1_국내주식-012]",
+		Description:     "국내 주식 현재가 투자자 정보를 조회합니다.",
 		Group:           GroupInquireInvestor,
 		ServiceGroup:    ServiceGroupInquireInvestor,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDInquireInvestor,
 		VirtualTRID:     VirtualTRIDInquireInvestor,
 		SupportsVirtual: SupportsVirtualInquireInvestor,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J : KRX, NX : NXT, UN : 통합", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드 (ex 005930 삼성전자)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireMember: {
 		OperationID:     OperationInquireMember,
 		Endpoint:        EndpointInquireMember,
+		Method:          "GET",
+		Summary:         "주식현재가 회원사[v1_국내주식-013]",
+		Description:     "국내 주식 현재가 회원사 정보를 조회합니다.",
 		Group:           GroupInquireMember,
 		ServiceGroup:    ServiceGroupInquireMember,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDInquireMember,
 		VirtualTRID:     VirtualTRIDInquireMember,
 		SupportsVirtual: SupportsVirtualInquireMember,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J:KRX, NX:NXT, UN:통합", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목번호 (6자리)\nETN의 경우, Q로 시작 (EX. Q500001)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireDailyItemChartPrice: {
 		OperationID:     OperationInquireDailyItemChartPrice,
 		Endpoint:        EndpointInquireDailyItemChartPrice,
+		Method:          "GET",
+		Summary:         "국내주식기간별시세(일/주/월/년)[v1_국내주식-016]",
+		Description:     "국내 주식 일별 차트 가격을 조회합니다.",
 		Group:           GroupInquireDailyItemChartPrice,
 		ServiceGroup:    ServiceGroupInquireDailyItemChartPrice,
+		RoleHint:        "daily_bar",
 		RealTRID:        RealTRIDInquireDailyItemChartPrice,
 		VirtualTRID:     VirtualTRIDInquireDailyItemChartPrice,
 		SupportsVirtual: SupportsVirtualInquireDailyItemChartPrice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J:KRX, NX:NXT, UN:통합", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드 (ex 005930 삼성전자)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "조회 시작일자", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_2", FieldName: "FidInputDate2", Flag: "to", Source: "user", Required: true, Default: "", Canonical: "to", ValueKind: "date", Description: "조회 종료일자 (최대 100개)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_PERIOD_DIV_CODE", FieldName: "FidPeriodDivCode", Flag: "period", Source: "default", Required: true, Default: "D", Canonical: "period", ValueKind: "period", Description: "D:일봉 W:주봉, M:월봉, Y:년봉", Advanced: false, Completion: []string{"daily", "weekly", "monthly", "yearly", "D", "W", "M", "Y"}},
+			{Name: "FID_ORG_ADJ_PRC", FieldName: "FidOrgAdjPrc", Flag: "adjust-price", Source: "default", Required: true, Default: "0", Canonical: "adjust_price", ValueKind: "string", Description: "0:수정주가 1:원주가", Advanced: true, Completion: []string{"0", "1"}},
+		},
 	},
 	OperationInquireTimeItemChartPrice: {
 		OperationID:     OperationInquireTimeItemChartPrice,
 		Endpoint:        EndpointInquireTimeItemChartPrice,
+		Method:          "GET",
+		Summary:         "주식당일분봉조회[v1_국내주식-022]",
+		Description:     "국내 주식 시간대별 차트 가격을 조회합니다.",
 		Group:           GroupInquireTimeItemChartPrice,
 		ServiceGroup:    ServiceGroupInquireTimeItemChartPrice,
+		RoleHint:        "intraday_bar",
 		RealTRID:        RealTRIDInquireTimeItemChartPrice,
 		VirtualTRID:     VirtualTRIDInquireTimeItemChartPrice,
 		SupportsVirtual: SupportsVirtualInquireTimeItemChartPrice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J:KRX, NX:NXT, UN:통합", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드 (ex 005930 삼성전자)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_HOUR_1", FieldName: "FidInputHour1", Flag: "fid-input-hour-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력시간", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_PW_DATA_INCU_YN", FieldName: "FidPwDataIncuYn", Flag: "fid-pw-data-incu-yn", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "과거 데이터 포함 여부", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_ETC_CLS_CODE", FieldName: "FidEtcClsCode", Flag: "fid-etc-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "기타 구분 코드", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireTimeDailychartprice: {
 		OperationID:     OperationInquireTimeDailychartprice,
 		Endpoint:        EndpointInquireTimeDailychartprice,
+		Method:          "GET",
+		Summary:         "주식일별분봉조회 [국내주식-213]",
+		Description:     "주식일별분봉조회 API입니다. \n\n실전계좌의 경우, 한 번의 호출에 최대 120건까지 확인 가능하며, \nFID_INPUT_DATE_1, FID_INPUT_HOUR_1 이용하여 과거일자 분봉조회 가능합니다.\n\n※ 과거 분봉 조회 시, 당사 서버에서 보관하고 있는 만큼의 데이터만 확인이 가능합니다. (최대 1년 분봉 보관)",
 		Group:           GroupInquireTimeDailychartprice,
 		ServiceGroup:    ServiceGroupInquireTimeDailychartprice,
+		RoleHint:        "daily_bar",
 		RealTRID:        RealTRIDInquireTimeDailychartprice,
 		VirtualTRID:     VirtualTRIDInquireTimeDailychartprice,
 		SupportsVirtual: SupportsVirtualInquireTimeDailychartprice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J:KRX, NX:NXT, UN:통합", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드 (ex 005930 삼성전자)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_HOUR_1", FieldName: "FidInputHour1", Flag: "fid-input-hour-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 시간(ex 13시 130000)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "입력 날짜(20241023)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_PW_DATA_INCU_YN", FieldName: "FidPwDataIncuYn", Flag: "fid-pw-data-incu-yn", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "과거 데이터 포함 여부", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_FAKE_TICK_INCU_YN", FieldName: "FidFakeTickIncuYn", Flag: "fid-fake-tick-incu-yn", Source: "user", Required: false, Default: "", Canonical: "", ValueKind: "string", Description: "공백 필수 입력", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireTimeItemConclusion: {
 		OperationID:     OperationInquireTimeItemConclusion,
 		Endpoint:        EndpointInquireTimeItemConclusion,
+		Method:          "GET",
+		Summary:         "주식현재가 당일시간대별체결[v1_국내주식-023]",
+		Description:     "국내 주식 현재가 당일 시간대별 체결을 조회합니다.",
 		Group:           GroupInquireTimeItemConclusion,
 		ServiceGroup:    ServiceGroupInquireTimeItemConclusion,
+		RoleHint:        "trades",
 		RealTRID:        RealTRIDInquireTimeItemConclusion,
 		VirtualTRID:     VirtualTRIDInquireTimeItemConclusion,
 		SupportsVirtual: SupportsVirtualInquireTimeItemConclusion,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J:KRX, NX:NXT, UN:통합", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드 (ex 005930 삼성전자)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_HOUR_1", FieldName: "FidInputHour1", Flag: "fid-input-hour-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력시간", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireDailyOvertimeprice: {
 		OperationID:     OperationInquireDailyOvertimeprice,
 		Endpoint:        EndpointInquireDailyOvertimeprice,
+		Method:          "GET",
+		Summary:         "주식현재가 시간외일자별주가[v1_국내주식-026]",
+		Description:     "주식현재가 시간외일자별주가 API입니다.  (최근일 30건만 조회 가능)\n한국투자 HTS(eFriend Plus) &gt; [0232] 시간외 일자별주가의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupInquireDailyOvertimeprice,
 		ServiceGroup:    ServiceGroupInquireDailyOvertimeprice,
+		RoleHint:        "intraday_bar",
 		RealTRID:        RealTRIDInquireDailyOvertimeprice,
 		VirtualTRID:     VirtualTRIDInquireDailyOvertimeprice,
 		SupportsVirtual: SupportsVirtualInquireDailyOvertimeprice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J : 주식, ETF, ETN", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목번호 (6자리)\nETN의 경우, Q로 시작 (EX. Q500001)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireTimeOvertimeconclusion: {
 		OperationID:     OperationInquireTimeOvertimeconclusion,
 		Endpoint:        EndpointInquireTimeOvertimeconclusion,
+		Method:          "GET",
+		Summary:         "주식현재가 시간외시간별체결[v1_국내주식-025]",
+		Description:     "주식현재가 시간외시간별체결 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0231] 시간외 시간별체결의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupInquireTimeOvertimeconclusion,
 		ServiceGroup:    ServiceGroupInquireTimeOvertimeconclusion,
+		RoleHint:        "intraday_bar",
 		RealTRID:        RealTRIDInquireTimeOvertimeconclusion,
 		VirtualTRID:     VirtualTRIDInquireTimeOvertimeconclusion,
 		SupportsVirtual: SupportsVirtualInquireTimeOvertimeconclusion,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J : 주식, ETF, ETN", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목번호 (6자리)\nETN의 경우, Q로 시작 (EX. Q500001)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_HOUR_CLS_CODE", FieldName: "FidHourClsCode", Flag: "fid-hour-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "1 : 시간외 (Default)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireOvertimePrice: {
 		OperationID:     OperationInquireOvertimePrice,
 		Endpoint:        EndpointInquireOvertimePrice,
+		Method:          "GET",
+		Summary:         "국내주식 시간외현재가[국내주식-076]",
+		Description:     "국내주식 시간외현재가 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0230] 시간외 현재가 화면의 좌측 상단기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupInquireOvertimePrice,
 		ServiceGroup:    ServiceGroupInquireOvertimePrice,
+		RoleHint:        "intraday_bar",
 		RealTRID:        RealTRIDInquireOvertimePrice,
 		VirtualTRID:     VirtualTRIDInquireOvertimePrice,
 		SupportsVirtual: SupportsVirtualInquireOvertimePrice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (주식 J)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireOvertimeAskingPrice: {
 		OperationID:     OperationInquireOvertimeAskingPrice,
 		Endpoint:        EndpointInquireOvertimeAskingPrice,
+		Method:          "GET",
+		Summary:         "국내주식 시간외호가[국내주식-077]",
+		Description:     "국내주식 시간외호가 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0230] 시간외 현재가 화면의 '호가' 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupInquireOvertimeAskingPrice,
 		ServiceGroup:    ServiceGroupInquireOvertimeAskingPrice,
+		RoleHint:        "intraday_bar",
 		RealTRID:        RealTRIDInquireOvertimeAskingPrice,
 		VirtualTRID:     VirtualTRIDInquireOvertimeAskingPrice,
 		SupportsVirtual: SupportsVirtualInquireOvertimeAskingPrice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (주식 J)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+		},
 	},
 	OperationExpClosingPrice: {
 		OperationID:     OperationExpClosingPrice,
 		Endpoint:        EndpointExpClosingPrice,
+		Method:          "GET",
+		Summary:         "국내주식 장마감 예상체결가[국내주식-120]",
+		Description:     "국내주식 장마감 예상체결가 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0183] 장마감 예상체결가 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupExpClosingPrice,
 		ServiceGroup:    ServiceGroupExpClosingPrice,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDExpClosingPrice,
 		VirtualTRID:     VirtualTRIDExpClosingPrice,
 		SupportsVirtual: SupportsVirtualExpClosingPrice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_RANK_SORT_CLS_CODE", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체, 1:상한가마감예상, 2:하한가마감예상, 3:직전대비상승률상위 ,4:직전대비하락률상위", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (주식 J)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(11173)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200, 4001: KRX100", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_BLNG_CLS_CODE", FieldName: "FidBlngClsCode", Flag: "fid-blng-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체, 1:종가범위연장", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationETFETNQuotationsInquirePrice: {
 		OperationID:     OperationETFETNQuotationsInquirePrice,
 		Endpoint:        EndpointETFETNQuotationsInquirePrice,
+		Method:          "GET",
+		Summary:         "ETF/ETN 현재가[v1_국내주식-068]",
+		Description:     "ETF/ETN 현재가 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0240] ETF/ETN 현재가 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupETFETNQuotationsInquirePrice,
 		ServiceGroup:    ServiceGroupETFETNQuotationsInquirePrice,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDETFETNQuotationsInquirePrice,
 		VirtualTRID:     VirtualTRIDETFETNQuotationsInquirePrice,
 		SupportsVirtual: SupportsVirtualETFETNQuotationsInquirePrice,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+		},
 	},
 	OperationInquireComponentStockPrice: {
 		OperationID:     OperationInquireComponentStockPrice,
 		Endpoint:        EndpointInquireComponentStockPrice,
+		Method:          "GET",
+		Summary:         "ETF 구성종목시세[국내주식-073]",
+		Description:     "ETF 구성종목시세 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0245] ETF/ETN 구성종목시세 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupInquireComponentStockPrice,
 		ServiceGroup:    ServiceGroupInquireComponentStockPrice,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDInquireComponentStockPrice,
 		VirtualTRID:     VirtualTRIDInquireComponentStockPrice,
 		SupportsVirtual: SupportsVirtualInquireComponentStockPrice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (J)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key( 11216 )", Advanced: true, Completion: []string(nil)},
+		},
 	},
 	OperationNavComparisonTrend: {
 		OperationID:     OperationNavComparisonTrend,
 		Endpoint:        EndpointNavComparisonTrend,
+		Method:          "GET",
+		Summary:         "NAV 비교추이(종목)[v1_국내주식-069]",
+		Description:     "NAV 비교추이(종목) API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0244] ETF/ETN 비교추이(NAV/IIV) 좌측 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupNavComparisonTrend,
 		ServiceGroup:    ServiceGroupNavComparisonTrend,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDNavComparisonTrend,
 		VirtualTRID:     VirtualTRIDNavComparisonTrend,
 		SupportsVirtual: SupportsVirtualNavComparisonTrend,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationNavComparisonDailyTrend: {
 		OperationID:     OperationNavComparisonDailyTrend,
 		Endpoint:        EndpointNavComparisonDailyTrend,
+		Method:          "GET",
+		Summary:         "NAV 비교추이(일)[v1_국내주식-071]",
+		Description:     "NAV 비교추이(일) API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0244] ETF/ETN 비교추이(NAV/IIV) 좌측 화면 \"일별\" 비교추이 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n실전계좌의 경우, 한 번의 호출에 최대 100건까지 확인 가능합니다.",
 		Group:           GroupNavComparisonDailyTrend,
 		ServiceGroup:    ServiceGroupNavComparisonDailyTrend,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDNavComparisonDailyTrend,
 		VirtualTRID:     VirtualTRIDNavComparisonDailyTrend,
 		SupportsVirtual: SupportsVirtualNavComparisonDailyTrend,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J 입력", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드 (6자리)", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_date_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "조회 시작일자 (ex. 20240101)", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_date_2", FieldName: "FidInputDate2", Flag: "to", Source: "user", Required: true, Default: "", Canonical: "to", ValueKind: "date", Description: "조회 종료일자 (ex. 20240220)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationNavComparisonTimeTrend: {
 		OperationID:     OperationNavComparisonTimeTrend,
 		Endpoint:        EndpointNavComparisonTimeTrend,
+		Method:          "GET",
+		Summary:         "NAV 비교추이(분)[v1_국내주식-070]",
+		Description:     "NAV 비교추이(분) API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0244] ETF/ETN 비교추이(NAV/IIV) 좌측 화면 \"분별\" 비교추이 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n실전계좌의 경우, 한 번의 호출에 최근 30건까지 확인 가능합니다.",
 		Group:           GroupNavComparisonTimeTrend,
 		ServiceGroup:    ServiceGroupNavComparisonTimeTrend,
+		RoleHint:        "intraday_bar",
 		RealTRID:        RealTRIDNavComparisonTimeTrend,
 		VirtualTRID:     VirtualTRIDNavComparisonTimeTrend,
 		SupportsVirtual: SupportsVirtualNavComparisonTimeTrend,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_hour_cls_code", FieldName: "FidHourClsCode", Flag: "fid-hour-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "1분 :60, 3분: 180 … 120분:7200", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "E - 고정값", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireELWPrice: {
 		OperationID:     OperationInquireELWPrice,
 		Endpoint:        EndpointInquireELWPrice,
+		Method:          "GET",
+		Summary:         "ELW 현재가 시세[v1_국내주식-014]",
+		Description:     "ELW 현재가 시세 API입니다. ELW 관련 정보를 얻을 수 있습니다.",
 		Group:           GroupInquireELWPrice,
 		ServiceGroup:    ServiceGroupInquireELWPrice,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDInquireELWPrice,
 		VirtualTRID:     VirtualTRIDInquireELWPrice,
 		SupportsVirtual: SupportsVirtualInquireELWPrice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "W", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목번호 (6자리)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationNewlyListed: {
 		OperationID:     OperationNewlyListed,
 		Endpoint:        EndpointNewlyListed,
+		Method:          "GET",
+		Summary:         "ELW 신규상장종목 [국내주식-181]",
+		Description:     "ELW 신규상장종목 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0297] ELW 신규상장종목 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupNewlyListed,
 		ServiceGroup:    ServiceGroupNewlyListed,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDNewlyListed,
 		VirtualTRID:     VirtualTRIDNewlyListed,
 		SupportsVirtual: SupportsVirtualNewlyListed,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (W)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(11548)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_DIV_CLS_CODE", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "전체(02), 콜(00), 풋(01)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_UNAS_INPUT_ISCD", FieldName: "FidUnasInputISCD", Flag: "fid-unas-input-iscd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'ex) 000000(전체), 2001(코스피200)\n, 3003(코스닥150), 005930(삼성전자) '", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_2", FieldName: "FidInputISCD2", Flag: "fid-input-iscd-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'00003(한국투자증권), 00017(KB증권),\n 00005(미래에셋증권)'", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "날짜 (ex) 20240402)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_BLNC_CLS_CODE", FieldName: "FidBlncClsCode", Flag: "fid-blnc-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0(전체), 1(일반), 2(조기종료)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationSensitivity: {
 		OperationID:     OperationSensitivity,
 		Endpoint:        EndpointSensitivity,
+		Method:          "GET",
+		Summary:         "ELW 민감도 순위[국내주식-170]",
+		Description:     "ELW 민감도 순위 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0285] ELW 민감도 순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupSensitivity,
 		ServiceGroup:    ServiceGroupSensitivity,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDSensitivity,
 		VirtualTRID:     VirtualTRIDSensitivity,
 		SupportsVirtual: SupportsVirtualSensitivity,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (W)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(20285)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_UNAS_INPUT_ISCD", FieldName: "FidUnasInputISCD", Flag: "fid-unas-input-iscd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'000000(전체), 2001(코스피200)\n, 3003(코스닥150), 005930(삼성전자) '", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "'00000(전체), 00003(한국투자증권)\n, 00017(KB증권), 00005(미래에셋주식회사)'", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_DIV_CLS_CODE", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0(전체), 1(콜), 2(풋)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "가격(이상)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "가격(이하)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_VOL_1", FieldName: "FidInputVol1", Flag: "fid-input-vol-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래량(이상)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_VOL_2", FieldName: "FidInputVol2", Flag: "fid-input-vol-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래량(이하)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_RANK_SORT_CLS_CODE", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'0(이론가), 1(델타), 2(감마), 3(로), 4(베가) , 5(로)\n, 6(내재변동성), 7(90일변동성)'", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_RMNN_DYNU_1", FieldName: "FidInputRmnnDynu1", Flag: "fid-input-rmnn-dynu-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "잔존일수(이상)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "조회기준일", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_BLNG_CLS_CODE", FieldName: "FidBlngClsCode", Flag: "fid-blng-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0(전체), 1(일반), 2(조기종료)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationUdrlAssetPrice: {
 		OperationID:     OperationUdrlAssetPrice,
 		Endpoint:        EndpointUdrlAssetPrice,
+		Method:          "GET",
+		Summary:         "ELW 기초자산별 종목시세 [국내주식-186]",
+		Description:     "ELW 기초자산별 종목시세  API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0288] ELW 기초자산별 ELW 시세 화면의 \"우측 기초자산별 종목 리스트\" 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupUdrlAssetPrice,
 		ServiceGroup:    ServiceGroupUdrlAssetPrice,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDUdrlAssetPrice,
 		VirtualTRID:     VirtualTRIDUdrlAssetPrice,
 		SupportsVirtual: SupportsVirtualUdrlAssetPrice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분(W)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Uniquekey(11541)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_MRKT_CLS_CODE", FieldName: "FidMrktClsCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "전체(A),콜(C),풋(P)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "'00000(전체), 00003(한국투자증권)\n, 00017(KB증권), 00005(미래에셋주식회사)'", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_UNAS_INPUT_ISCD", FieldName: "FidUnasInputISCD", Flag: "fid-unas-input-iscd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "기초자산입력종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_VOL_CNT", FieldName: "FidVolCnt", Flag: "fid-vol-cnt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "전일거래량(정수량미만)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_TRGT_EXLS_CLS_CODE", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래불가종목제외(0:미체크,1:체크)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "가격~원이상", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "가격~월이하", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_VOL_1", FieldName: "FidInputVol1", Flag: "fid-input-vol-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래량~계약이상", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_VOL_2", FieldName: "FidInputVol2", Flag: "fid-input-vol-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래량~계약이하", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_RMNN_DYNU_1", FieldName: "FidInputRmnnDynu1", Flag: "fid-input-rmnn-dynu-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "잔존일(~일이상)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_RMNN_DYNU_2", FieldName: "FidInputRmnnDynu2", Flag: "fid-input-rmnn-dynu-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "잔존일(~일이하)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_OPTION", FieldName: "FidOption", Flag: "fid-option", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "옵션상태(0:없음,1:ATM,2:ITM,3:OTM)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_OPTION_1", FieldName: "FidInputOption1", Flag: "fid-input-option-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력옵션1", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_OPTION_2", FieldName: "FidInputOption2", Flag: "fid-input-option-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력옵션2", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationCondSearch: {
 		OperationID:     OperationCondSearch,
 		Endpoint:        EndpointCondSearch,
+		Method:          "GET",
+		Summary:         "ELW 종목검색 [국내주식-166]",
+		Description:     "ELW 종목검색 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0291] ELW 종목검색 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n한 번의 호출에 최대 100건까지 확인 가능합니다.",
 		Group:           GroupCondSearch,
 		ServiceGroup:    ServiceGroupCondSearch,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDCondSearch,
 		VirtualTRID:     VirtualTRIDCondSearch,
 		SupportsVirtual: SupportsVirtualCondSearch,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "ELW(W)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "화면번호(11510)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_RANK_SORT_CLS_CODE", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'정렬1정렬안함(0)종목코드(1)현재가(2)대비율(3)거래량(4)행사가격(5)\n전환비율(6)상장일(7)만기일(8)잔존일수(9)레버리지(10)'", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_CNT_1", FieldName: "FidInputCnt1", Flag: "fid-input-cnt-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "정렬1기준 - 상위(1)하위(2)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_RANK_SORT_CLS_CODE_2", FieldName: "FidRankSortClsCode2", Flag: "fid-rank-sort-cls-code-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "정렬2", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_CNT_2", FieldName: "FidInputCnt2", Flag: "fid-input-cnt-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "정렬2기준 - 상위(1)하위(2)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_RANK_SORT_CLS_CODE_3", FieldName: "FidRankSortClsCode3", Flag: "fid-rank-sort-cls-code-3", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "정렬3", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_CNT_3", FieldName: "FidInputCnt3", Flag: "fid-input-cnt-3", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "정렬3기준 - 상위(1)하위(2)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_TRGT_CLS_CODE", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:발행회사종목코드,1:기초자산종목코드,2:FID시장구분코드,3:FID입력날짜1(상장일),\n4:FID입력날짜2(만기일),5:LP회원사종목코드,6:행사가기초자산비교>=(1) <=(2), \n7:잔존일 이상 이하, 8:현재가, 9:전일대비율, 10:거래량, 11:최종거래일, 12:레버리지", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "발행사종목코드전체(00000)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_UNAS_INPUT_ISCD", FieldName: "FidUnasInputISCD", Flag: "fid-unas-input-iscd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "기초자산입력종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_MRKT_CLS_CODE", FieldName: "FidMrktClsCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "권리유형전체(A)콜(CO)풋(PO)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "상장일전체(0)금일(1)7일이하(2)8~30일(3)31~90일(4)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_2", FieldName: "FidInputDate2", Flag: "to", Source: "user", Required: true, Default: "", Canonical: "to", ValueKind: "date", Description: "만기일전체(0)1개월(1)1~2(2)2~3(3)3~6(4)6~9(5)9~12(6)12이상(7)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_2", FieldName: "FidInputISCD2", Flag: "fid-input-iscd-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력종목코드2", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_ETC_CLS_CODE", FieldName: "FidEtcClsCode", Flag: "fid-etc-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "행사가전체(0)>=(1)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_RMNN_DYNU_1", FieldName: "FidInputRmnnDynu1", Flag: "fid-input-rmnn-dynu-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "잔존일이상", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_RMNN_DYNU_2", FieldName: "FidInputRmnnDynu2", Flag: "fid-input-rmnn-dynu-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "잔존일이하", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_PRPR_CNT1", FieldName: "FidPrprCnt1", Flag: "fid-prpr-cnt1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "현재가이상", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_PRPR_CNT2", FieldName: "FidPrprCnt2", Flag: "fid-prpr-cnt2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "현재가이하", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_RSFL_RATE1", FieldName: "FidRsflRate1", Flag: "fid-rsfl-rate1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "전일대비율이상", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_RSFL_RATE2", FieldName: "FidRsflRate2", Flag: "fid-rsfl-rate2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "전일대비율이하", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_VOL1", FieldName: "FidVol1", Flag: "fid-vol1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래량이상", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_VOL2", FieldName: "FidVol2", Flag: "fid-vol2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래량이하", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_APLY_RANG_PRC_1", FieldName: "FidAplyRangPrc1", Flag: "fid-aply-rang-prc-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "최종거래일from", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_APLY_RANG_PRC_2", FieldName: "FidAplyRangPrc2", Flag: "fid-aply-rang-prc-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "최종거래일to", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_LVRG_VAL1", FieldName: "FidLvrgVal1", Flag: "fid-lvrg-val1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "레버리지값1", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_LVRG_VAL2", FieldName: "FidLvrgVal2", Flag: "fid-lvrg-val2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "레버리지값2", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_VOL3", FieldName: "FidVol3", Flag: "fid-vol3", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "LP종료일from", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_VOL4", FieldName: "FidVol4", Flag: "fid-vol4", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "LP종료일to", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INTS_VLTL1", FieldName: "FidIntsVltl1", Flag: "fid-ints-vltl1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "내재변동성이상", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INTS_VLTL2", FieldName: "FidIntsVltl2", Flag: "fid-ints-vltl2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "내재변동성이하", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_PRMM_VAL1", FieldName: "FidPrmmVal1", Flag: "fid-prmm-val1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "프리미엄이상", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_PRMM_VAL2", FieldName: "FidPrmmVal2", Flag: "fid-prmm-val2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "프리미엄이하", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_GEAR1", FieldName: "FidGear1", Flag: "fid-gear1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "기어링이상", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_GEAR2", FieldName: "FidGear2", Flag: "fid-gear2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "기어링이하", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_PRLS_QRYR_RATE1", FieldName: "FidPrlsQryrRate1", Flag: "fid-prls-qryr-rate1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "손익분기이상", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_PRLS_QRYR_RATE2", FieldName: "FidPrlsQryrRate2", Flag: "fid-prls-qryr-rate2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "손익분기이하", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_DELTA1", FieldName: "FidDelta1", Flag: "fid-delta1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "델타이상", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_DELTA2", FieldName: "FidDelta2", Flag: "fid-delta2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "델타이하", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_ACPR1", FieldName: "FidAcpr1", Flag: "fid-acpr1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "행사가1", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_ACPR2", FieldName: "FidAcpr2", Flag: "fid-acpr2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "행사가2", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_STCK_CNVR_RATE1", FieldName: "FidStckCnvrRate1", Flag: "fid-stck-cnvr-rate1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "전환비율이상", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_STCK_CNVR_RATE2", FieldName: "FidStckCnvrRate2", Flag: "fid-stck-cnvr-rate2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "전환비율이하", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_DIV_CLS_CODE", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체,1:일반,2:조기종료", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_PRIT1", FieldName: "FidPrit1", Flag: "fid-prit1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "패리티이상", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_PRIT2", FieldName: "FidPrit2", Flag: "fid-prit2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "패리티이하", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_CFP1", FieldName: "FidCfp1", Flag: "fid-cfp1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "배리어이상", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_CFP2", FieldName: "FidCfp2", Flag: "fid-cfp2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "배리어이하", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_NMIX_PRICE_1", FieldName: "FidInputNmixPrice1", Flag: "fid-input-nmix-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "LP보유비율이상", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_NMIX_PRICE_2", FieldName: "FidInputNmixPrice2", Flag: "fid-input-nmix-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "LP보유비율이하", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_EGEA_VAL1", FieldName: "FidEgeaVal1", Flag: "fid-egea-val1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "접근도이상", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_EGEA_VAL2", FieldName: "FidEgeaVal2", Flag: "fid-egea-val2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "접근도이하", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DVDN_ERT", FieldName: "FidInputDvdnErt", Flag: "fid-input-dvdn-ert", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "손익분기점이상", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_HIST_VLTL", FieldName: "FidInputHistVltl", Flag: "fid-input-hist-vltl", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "손익분기점이하", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_THETA1", FieldName: "FidTheta1", Flag: "fid-theta1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "MONEYNESS이상", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_THETA2", FieldName: "FidTheta2", Flag: "fid-theta2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "MONEYNESS이하", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationQuickChange: {
 		OperationID:     OperationQuickChange,
 		Endpoint:        EndpointQuickChange,
+		Method:          "GET",
+		Summary:         "ELW 당일급변종목[국내주식-171]",
+		Description:     "ELW 당일급변종목 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0287] ELW 당일급변종목 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupQuickChange,
 		ServiceGroup:    ServiceGroupQuickChange,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDQuickChange,
 		VirtualTRID:     VirtualTRIDQuickChange,
 		SupportsVirtual: SupportsVirtualQuickChange,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (W)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(20287)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_UNAS_INPUT_ISCD", FieldName: "FidUnasInputISCD", Flag: "fid-unas-input-iscd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'000000(전체), 2001(코스피200)\n, 3003(코스닥150), 005930(삼성전자) '", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "'00000(전체), 00003(한국투자증권)\n, 00017(KB증권), 00005(미래에셋주식회사)'", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_MRKT_CLS_CODE", FieldName: "FidMrktClsCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "Unique key(A)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_PRICE_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "가격(이상)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "가격(이하)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_VOL_1", FieldName: "FidInputVol1", Flag: "fid-input-vol-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래량(이상)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_VOL_2", FieldName: "FidInputVol2", Flag: "fid-input-vol-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래량(이하)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_HOUR_CLS_CODE", FieldName: "FidHourClsCode", Flag: "fid-hour-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "1(분), 2(일)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_HOUR_1", FieldName: "FidInputHour1", Flag: "fid-input-hour-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 일 또는 분", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_HOUR_2", FieldName: "FidInputHour2", Flag: "fid-input-hour-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "기준시간(분 선택 시)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_RANK_SORT_CLS_CODE", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'1(가격급등), 2(가격급락), 3(거래량급증)\n, 4(매수잔량급증), 5(매도잔량급증)'", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_BLNG_CLS_CODE", FieldName: "FidBlngClsCode", Flag: "fid-blng-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0(전체), 1(일반), 2(조기종료)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationUdrlAssetList: {
 		OperationID:     OperationUdrlAssetList,
 		Endpoint:        EndpointUdrlAssetList,
+		Method:          "GET",
+		Summary:         "ELW 기초자산 목록조회 [국내주식-185]",
+		Description:     "ELW 기초자산 목록조회 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0288] ELW 기초자산별 ELW 시세 화면 의 \"왼쪽 기초자산 목록\" 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupUdrlAssetList,
 		ServiceGroup:    ServiceGroupUdrlAssetList,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDUdrlAssetList,
 		VirtualTRID:     VirtualTRIDUdrlAssetList,
 		SupportsVirtual: SupportsVirtualUdrlAssetList,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "11541(Primary key)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_RANK_SORT_CLS_CODE", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0(종목명순), 1(콜발행종목순), 2(풋발행종목순), 3(전일대비 상승율순), 4(전일대비 하락율순), 5(현재가 크기순), 6(종목코드순)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "00000(전체), 00003(한국투자증권), 00017(KB증권), 00005(미래에셋)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationCompareStocks: {
 		OperationID:     OperationCompareStocks,
 		Endpoint:        EndpointCompareStocks,
+		Method:          "GET",
+		Summary:         "ELW 비교대상종목조회 [국내주식-183]",
+		Description:     "ELW 비교대상종목조회 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0288] ELW 기초자산별 ELW 시세의 좌측 화면 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupCompareStocks,
 		ServiceGroup:    ServiceGroupCompareStocks,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDCompareStocks,
 		VirtualTRID:     VirtualTRIDCompareStocks,
 		SupportsVirtual: SupportsVirtualCompareStocks,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "11517(Primary key)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드(ex)005930(삼성전자))", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationLpTradeTrend: {
 		OperationID:     OperationLpTradeTrend,
 		Endpoint:        EndpointLpTradeTrend,
+		Method:          "GET",
+		Summary:         "ELW LP매매추이 [국내주식-182]",
+		Description:     "ELW LP매매추이 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0376] ELW LP매매추이 화면 의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupLpTradeTrend,
 		ServiceGroup:    ServiceGroupLpTradeTrend,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDLpTradeTrend,
 		VirtualTRID:     VirtualTRIDLpTradeTrend,
 		SupportsVirtual: SupportsVirtualLpTradeTrend,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분(W)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "입력종목코드(ex 52K577(미래 K577KOSDAQ150콜)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationIndicatorTrendCcnl: {
 		OperationID:     OperationIndicatorTrendCcnl,
 		Endpoint:        EndpointIndicatorTrendCcnl,
+		Method:          "GET",
+		Summary:         "ELW 투자지표추이(체결) [국내주식-172]",
+		Description:     "ELW 투자지표추이(체결) API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0274] ELW 투자지표추이 화면에서 \"시간별 비교추이\" 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupIndicatorTrendCcnl,
 		ServiceGroup:    ServiceGroupIndicatorTrendCcnl,
+		RoleHint:        "trades",
 		RealTRID:        RealTRIDIndicatorTrendCcnl,
 		VirtualTRID:     VirtualTRIDIndicatorTrendCcnl,
 		SupportsVirtual: SupportsVirtualIndicatorTrendCcnl,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (W)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "ex) 58J297(KBJ297삼성전자콜)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationIndicatorTrendMinute: {
 		OperationID:     OperationIndicatorTrendMinute,
 		Endpoint:        EndpointIndicatorTrendMinute,
+		Method:          "GET",
+		Summary:         "ELW 투자지표추이(분별) [국내주식-174]",
+		Description:     "ELW 투자지표추이(분별) API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0274] ELW 투자지표추이 화면 데이터의 \"분별 비교추이\" 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupIndicatorTrendMinute,
 		ServiceGroup:    ServiceGroupIndicatorTrendMinute,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDIndicatorTrendMinute,
 		VirtualTRID:     VirtualTRIDIndicatorTrendMinute,
 		SupportsVirtual: SupportsVirtualIndicatorTrendMinute,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (W)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "ex) 58J297(KBJ297삼성전자콜)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_HOUR_CLS_CODE", FieldName: "FidHourClsCode", Flag: "fid-hour-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'60(1분), 180(3분), 300(5분), 600(10분), 1800(30분), 3600(60분), 7200(60분)\n'", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_PW_DATA_INCU_YN", FieldName: "FidPwDataIncuYn", Flag: "fid-pw-data-incu-yn", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "N(과거데이터포함X),Y(과거데이터포함O)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationIndicatorTrendDaily: {
 		OperationID:     OperationIndicatorTrendDaily,
 		Endpoint:        EndpointIndicatorTrendDaily,
+		Method:          "GET",
+		Summary:         "ELW 투자지표추이(일별) [국내주식-173]",
+		Description:     "ELW 투자지표추이(일별) API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0274] ELW 투자지표추이 화면에서 \"일자별 비교추이\" 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupIndicatorTrendDaily,
 		ServiceGroup:    ServiceGroupIndicatorTrendDaily,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDIndicatorTrendDaily,
 		VirtualTRID:     VirtualTRIDIndicatorTrendDaily,
 		SupportsVirtual: SupportsVirtualIndicatorTrendDaily,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "W", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "ex. 57K281", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationVolatilityTrendTick: {
 		OperationID:     OperationVolatilityTrendTick,
 		Endpoint:        EndpointVolatilityTrendTick,
+		Method:          "GET",
+		Summary:         "ELW 변동성 추이(틱) [국내주식-180]",
+		Description:     "ELW 변동성 추이(틱) API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0284] ELW 변동성 추이 화면의 \"틱 차트\" 변동성 추이 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupVolatilityTrendTick,
 		ServiceGroup:    ServiceGroupVolatilityTrendTick,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDVolatilityTrendTick,
 		VirtualTRID:     VirtualTRIDVolatilityTrendTick,
 		SupportsVirtual: SupportsVirtualVolatilityTrendTick,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "W(Unique key)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "ex) 58J297(KBJ297삼성전자콜)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationVolatilityTrendCcnl: {
 		OperationID:     OperationVolatilityTrendCcnl,
 		Endpoint:        EndpointVolatilityTrendCcnl,
+		Method:          "GET",
+		Summary:         "ELW 변동성추이(체결) [국내주식-177]",
+		Description:     "ELW 변동성 추이(체결) API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0284] ELW 변동성 추이 화면의 \"시간별\" 변동성 추이 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupVolatilityTrendCcnl,
 		ServiceGroup:    ServiceGroupVolatilityTrendCcnl,
+		RoleHint:        "trades",
 		RealTRID:        RealTRIDVolatilityTrendCcnl,
 		VirtualTRID:     VirtualTRIDVolatilityTrendCcnl,
 		SupportsVirtual: SupportsVirtualVolatilityTrendCcnl,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "W(Unique key)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "ex) 58J297(KBJ297삼성전자콜)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationVolatilityTrendDaily: {
 		OperationID:     OperationVolatilityTrendDaily,
 		Endpoint:        EndpointVolatilityTrendDaily,
+		Method:          "GET",
+		Summary:         "ELW 변동성 추이(일별) [국내주식-178]",
+		Description:     "ELW 변동성 추이(일별) API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0284] ELW 변동성 추이 화면의 \"일별\" 변동성 추이 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupVolatilityTrendDaily,
 		ServiceGroup:    ServiceGroupVolatilityTrendDaily,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDVolatilityTrendDaily,
 		VirtualTRID:     VirtualTRIDVolatilityTrendDaily,
 		SupportsVirtual: SupportsVirtualVolatilityTrendDaily,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (W)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "ex) 58J297(KBJ297삼성전자콜)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationSensitivityTrendCcnl: {
 		OperationID:     OperationSensitivityTrendCcnl,
 		Endpoint:        EndpointSensitivityTrendCcnl,
+		Method:          "GET",
+		Summary:         "ELW 민감도 추이(체결) [국내주식-175]",
+		Description:     "ELW 민감도 추이(체결) API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0283] ELW 민감도 추이 화면 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupSensitivityTrendCcnl,
 		ServiceGroup:    ServiceGroupSensitivityTrendCcnl,
+		RoleHint:        "trades",
 		RealTRID:        RealTRIDSensitivityTrendCcnl,
 		VirtualTRID:     VirtualTRIDSensitivityTrendCcnl,
 		SupportsVirtual: SupportsVirtualSensitivityTrendCcnl,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (W)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "ex) 58J297(KBJ297삼성전자콜)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationVolatilityTrendMinute: {
 		OperationID:     OperationVolatilityTrendMinute,
 		Endpoint:        EndpointVolatilityTrendMinute,
+		Method:          "GET",
+		Summary:         "ELW 변동성 추이(분별) [국내주식-179]",
+		Description:     "ELW 변동성 추이(분별) API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0284] ELW 변동성 추이 화면의 \"분별\" 변동성 추이 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupVolatilityTrendMinute,
 		ServiceGroup:    ServiceGroupVolatilityTrendMinute,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDVolatilityTrendMinute,
 		VirtualTRID:     VirtualTRIDVolatilityTrendMinute,
 		SupportsVirtual: SupportsVirtualVolatilityTrendMinute,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "W(Unique key)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "ex) 58J297(KBJ297삼성전자콜)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_HOUR_CLS_CODE", FieldName: "FidHourClsCode", Flag: "fid-hour-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'60(1분), 180(3분), 300(5분), 600(10분), 1800(30분), 3600(60분)\n'", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_PW_DATA_INCU_YN", FieldName: "FidPwDataIncuYn", Flag: "fid-pw-data-incu-yn", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "N(과거데이터포함X),Y(과거데이터포함O)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationSensitivityTrendDaily: {
 		OperationID:     OperationSensitivityTrendDaily,
 		Endpoint:        EndpointSensitivityTrendDaily,
+		Method:          "GET",
+		Summary:         "ELW 민감도 추이(일별) [국내주식-176]",
+		Description:     "ELW 민감도 추이(일별) API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0283] ELW 민감도 추이 화면의 \"일자별\" 민감도추이 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupSensitivityTrendDaily,
 		ServiceGroup:    ServiceGroupSensitivityTrendDaily,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDSensitivityTrendDaily,
 		VirtualTRID:     VirtualTRIDSensitivityTrendDaily,
 		SupportsVirtual: SupportsVirtualSensitivityTrendDaily,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (W)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "ex)(58J438(KBJ438삼성전자풋)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationExpirationStocks: {
 		OperationID:     OperationExpirationStocks,
 		Endpoint:        EndpointExpirationStocks,
+		Method:          "GET",
+		Summary:         "ELW 만기예정/만기종목 [국내주식-184]",
+		Description:     "ELW 만기예정/만기종목 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0290] ELW 만기예정/만기종목 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n최근 100건까지 데이터 조회 가능합니다.",
 		Group:           GroupExpirationStocks,
 		ServiceGroup:    ServiceGroupExpirationStocks,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDExpirationStocks,
 		VirtualTRID:     VirtualTRIDExpirationStocks,
 		SupportsVirtual: SupportsVirtualExpirationStocks,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "W 입력", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "11547 입력", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "입력날짜 ~ (ex) 20240402)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_2", FieldName: "FidInputDate2", Flag: "to", Source: "user", Required: true, Default: "", Canonical: "to", ValueKind: "date", Description: "~입력날짜 (ex) 20240408)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_DIV_CLS_CODE", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0(콜),1(풋),2(전체)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_ETC_CLS_CODE", FieldName: "FidEtcClsCode", Flag: "fid-etc-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 입력", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_UNAS_INPUT_ISCD", FieldName: "FidUnasInputISCD", Flag: "fid-unas-input-iscd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "000000(전체), 2001(KOSPI 200), 기초자산코드(종목코드 ex. 삼성전자-005930)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_2", FieldName: "FidInputISCD2", Flag: "fid-input-iscd-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "00000(전체), 00003(한국투자증권), 00017(KB증권), 00005(미래에셋증권)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_BLNG_CLS_CODE", FieldName: "FidBlngClsCode", Flag: "fid-blng-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0(전체),1(일반),2(조기종료)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_OPTION_1", FieldName: "FidInputOption1", Flag: "fid-input-option-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 입력", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationIndicator: {
 		OperationID:     OperationIndicator,
 		Endpoint:        EndpointIndicator,
+		Method:          "GET",
+		Summary:         "ELW 지표순위[국내주식-169]",
+		Description:     "ELW 지표순위 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0279] ELW 지표순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupIndicator,
 		ServiceGroup:    ServiceGroupIndicator,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDIndicator,
 		VirtualTRID:     VirtualTRIDIndicator,
 		SupportsVirtual: SupportsVirtualIndicator,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (W)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(20279)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_UNAS_INPUT_ISCD", FieldName: "FidUnasInputISCD", Flag: "fid-unas-input-iscd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'000000(전체), 2001(코스피200)\n, 3003(코스닥150), 005930(삼성전자) '", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "'00000(전체), 00003(한국투자증권)\n, 00017(KB증권), 00005(미래에셋주식회사)'", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_DIV_CLS_CODE", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0(전체), 1(콜), 2(풋)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "가격(이상)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "가격(이하)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_VOL_1", FieldName: "FidInputVol1", Flag: "fid-input-vol-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래량(이상)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_VOL_2", FieldName: "FidInputVol2", Flag: "fid-input-vol-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래량(이하)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_RANK_SORT_CLS_CODE", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0(전환비율), 1(레버리지), 2(행사가 ), 3(내재가치), 4(시간가치)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_BLNG_CLS_CODE", FieldName: "FidBlngClsCode", Flag: "fid-blng-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0(전체), 1(일반), 2(조기종료)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationUpdownRate: {
 		OperationID:     OperationUpdownRate,
 		Endpoint:        EndpointUpdownRate,
+		Method:          "GET",
+		Summary:         "ELW 상승률순위[국내주식-167]",
+		Description:     "ELW 상승률순위 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0277] ELW 상승률순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupUpdownRate,
 		ServiceGroup:    ServiceGroupUpdownRate,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDUpdownRate,
 		VirtualTRID:     VirtualTRIDUpdownRate,
 		SupportsVirtual: SupportsVirtualUpdownRate,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (W)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(20277)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_UNAS_INPUT_ISCD", FieldName: "FidUnasInputISCD", Flag: "fid-unas-input-iscd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'000000(전체), 2001(코스피200)\n, 3003(코스닥150), 005930(삼성전자) '", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "'00000(전체), 00003(한국투자증권)\n, 00017(KB증권), 00005(미래에셋주식회사)'", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_RMNN_DYNU_1", FieldName: "FidInputRmnnDynu1", Flag: "fid-input-rmnn-dynu-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'0(전체), 1(1개월이하), 2(1개월~2개월), \n3(2개월~3개월), 4(3개월~6개월),\n5(6개월~9개월),6(9개월~12개월), 7(12개월이상)'", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_DIV_CLS_CODE", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0(전체), 1(콜), 2(풋)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "사용자권한정보", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래소코드", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_VOL_1", FieldName: "FidInputVol1", Flag: "fid-input-vol-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "상승율/하락율 구분", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_VOL_2", FieldName: "FidInputVol2", Flag: "fid-input-vol-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "N일자값", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "거래량조건", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_RANK_SORT_CLS_CODE", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'0(상승율), 1(하락율), 2(시가대비상승율)\n, 3(시가대비하락율), 4(변동율)'", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_BLNG_CLS_CODE", FieldName: "FidBlngClsCode", Flag: "fid-blng-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0(전체)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_2", FieldName: "FidInputDate2", Flag: "to", Source: "user", Required: true, Default: "", Canonical: "to", ValueKind: "date", Description: "거래소코드", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationELWRankingVolumeRank: {
 		OperationID:     OperationELWRankingVolumeRank,
 		Endpoint:        EndpointELWRankingVolumeRank,
+		Method:          "GET",
+		Summary:         "ELW 거래량순위[국내주식-168]",
+		Description:     "ELW 거래량순위 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0278] ELW 거래량순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupELWRankingVolumeRank,
 		ServiceGroup:    ServiceGroupELWRankingVolumeRank,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDELWRankingVolumeRank,
 		VirtualTRID:     VirtualTRIDELWRankingVolumeRank,
 		SupportsVirtual: SupportsVirtualELWRankingVolumeRank,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "W", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "20278", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_UNAS_INPUT_ISCD", FieldName: "FidUnasInputISCD", Flag: "fid-unas-input-iscd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "000000", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "00000(전체), 00003(한국투자증권)\n, 00017(KB증권), 00005(미래에셋주식회사)'", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_RMNN_DYNU_1", FieldName: "FidInputRmnnDynu1", Flag: "fid-input-rmnn-dynu-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력잔존일수", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_DIV_CLS_CODE", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0(전체), 1(콜), 2(풋)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래가격1(이상)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래가격1(이하)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_VOL_1", FieldName: "FidInputVol1", Flag: "fid-input-vol-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래량1(이상)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_VOL_2", FieldName: "FidInputVol2", Flag: "fid-input-vol-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래량1(이하)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "입력날짜(기준가 조회기준)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_RANK_SORT_CLS_CODE", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 거래량순 1: 평균거래증가율 2: 평균거래회전율 3:거래금액순 4: 순매수잔량순 5: 순매도잔량순", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_BLNG_CLS_CODE", FieldName: "FidBlngClsCode", Flag: "fid-blng-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_2", FieldName: "FidInputISCD2", Flag: "fid-input-iscd-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0000", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_2", FieldName: "FidInputDate2", Flag: "to", Source: "user", Required: true, Default: "", Canonical: "to", ValueKind: "date", Description: "공백", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireIndexPrice: {
 		OperationID:     OperationInquireIndexPrice,
 		Endpoint:        EndpointInquireIndexPrice,
+		Method:          "GET",
+		Summary:         "국내업종 현재지수[v1_국내주식-063]",
+		Description:     "국내업종 현재지수 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0210] 업종 현재지수 화면 의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupInquireIndexPrice,
 		ServiceGroup:    ServiceGroupInquireIndexPrice,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDInquireIndexPrice,
 		VirtualTRID:     VirtualTRIDInquireIndexPrice,
 		SupportsVirtual: SupportsVirtualInquireIndexPrice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "업종(U)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "코스피(0001), 코스닥(1001), 코스피200(2001)\n...\n포탈 (FAQ : 종목정보 다운로드(국내) - 업종코드 참조)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireIndexDailyPrice: {
 		OperationID:     OperationInquireIndexDailyPrice,
 		Endpoint:        EndpointInquireIndexDailyPrice,
+		Method:          "GET",
+		Summary:         "국내업종 일자별지수[v1_국내주식-065]",
+		Description:     "국내업종 일자별지수 API입니다. 한 번의 조회에 100건까지 확인 가능합니다.\n한국투자 HTS(eFriend Plus) &gt; [0212] 업종 일자별지수 화면 의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupInquireIndexDailyPrice,
 		ServiceGroup:    ServiceGroupInquireIndexDailyPrice,
+		RoleHint:        "daily_bar",
 		RealTRID:        RealTRIDInquireIndexDailyPrice,
 		VirtualTRID:     VirtualTRIDInquireIndexDailyPrice,
 		SupportsVirtual: SupportsVirtualInquireIndexDailyPrice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_PERIOD_DIV_CODE", FieldName: "FidPeriodDivCode", Flag: "period", Source: "default", Required: true, Default: "D", Canonical: "period", ValueKind: "period", Description: "일/주/월 구분코드 ( D:일별 , W:주별, M:월별 )", Advanced: false, Completion: []string{"daily", "weekly", "monthly", "yearly", "D", "W", "M", "Y"}},
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (업종 U)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "코스피(0001), 코스닥(1001), 코스피200(2001)\n...\n포탈 (FAQ : 종목정보 다운로드(국내) - 업종코드 참조)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "입력 날짜(ex. 20240223)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireIndexTickprice: {
 		OperationID:     OperationInquireIndexTickprice,
 		Endpoint:        EndpointInquireIndexTickprice,
+		Method:          "GET",
+		Summary:         "국내업종 시간별지수(초)[국내주식-064]",
+		Description:     "국내업종 시간별지수(초) API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0211] 업종 시간별지수 화면에서 우측 '10초' 선택 시의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupInquireIndexTickprice,
 		ServiceGroup:    ServiceGroupInquireIndexTickprice,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDInquireIndexTickprice,
 		VirtualTRID:     VirtualTRIDInquireIndexTickprice,
 		SupportsVirtual: SupportsVirtualInquireIndexTickprice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0001:거래소, 1001:코스닥, 2001:코스피200, 3003:KSQ150", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (업종 U)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+		},
 	},
 	OperationInquireIndexTimeprice: {
 		OperationID:     OperationInquireIndexTimeprice,
 		Endpoint:        EndpointInquireIndexTimeprice,
+		Method:          "GET",
+		Summary:         "국내업종 시간별지수(분)[국내주식-119]",
+		Description:     "국내업종 시간별지수(분) API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0211] 업종 시간별지수 화면에서 우측 '1분' 선택 시의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupInquireIndexTimeprice,
 		ServiceGroup:    ServiceGroupInquireIndexTimeprice,
+		RoleHint:        "intraday_bar",
 		RealTRID:        RealTRIDInquireIndexTimeprice,
 		VirtualTRID:     VirtualTRIDInquireIndexTimeprice,
 		SupportsVirtual: SupportsVirtualInquireIndexTimeprice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_INPUT_HOUR_1", FieldName: "FidInputHour1", Flag: "fid-input-hour-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "초단위, 60(1분), 300(5분), 600(10분)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0001:거래소, 1001:코스닥, 2001:코스피200, 3003:KSQ150", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (업종 U)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+		},
 	},
 	OperationInquireTimeIndexchartprice: {
 		OperationID:     OperationInquireTimeIndexchartprice,
 		Endpoint:        EndpointInquireTimeIndexchartprice,
+		Method:          "GET",
+		Summary:         "업종 분봉조회[v1_국내주식-045]",
+		Description:     "업종 분봉조회 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0350] 업종 종합차트 화면의 분봉기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n실전계좌의 경우, 한 번의 호출에 최대 102건까지 확인 가능합니다.",
 		Group:           GroupInquireTimeIndexchartprice,
 		ServiceGroup:    ServiceGroupInquireTimeIndexchartprice,
+		RoleHint:        "daily_bar",
 		RealTRID:        RealTRIDInquireTimeIndexchartprice,
 		VirtualTRID:     VirtualTRIDInquireTimeIndexchartprice,
 		SupportsVirtual: SupportsVirtualInquireTimeIndexchartprice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "U", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_ETC_CLS_CODE", FieldName: "FidEtcClsCode", Flag: "fid-etc-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 기본 1:장마감,시간외 제외", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0001 : 종합\n0002 : 대형주\n...\n포탈 (FAQ : 종목정보 다운로드(국내) - 업종코드 참조)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_HOUR_1", FieldName: "FidInputHour1", Flag: "fid-input-hour-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "30, 60 -> 1분, 600-> 10분, 3600 -> 1시간", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_PW_DATA_INCU_YN", FieldName: "FidPwDataIncuYn", Flag: "fid-pw-data-incu-yn", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Y (과거) / N (당일)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireDailyIndexchartprice: {
 		OperationID:     OperationInquireDailyIndexchartprice,
 		Endpoint:        EndpointInquireDailyIndexchartprice,
+		Method:          "GET",
+		Summary:         "국내주식업종기간별시세(일/주/월/년)[v1_국내주식-021]",
+		Description:     "국내주식 업종기간별시세(일/주/월/년) API입니다.\n실전계좌/모의계좌의 경우, 한 번의 호출에 최대 50건까지 확인 가능합니다.",
 		Group:           GroupInquireDailyIndexchartprice,
 		ServiceGroup:    ServiceGroupInquireDailyIndexchartprice,
+		RoleHint:        "daily_bar",
 		RealTRID:        RealTRIDInquireDailyIndexchartprice,
 		VirtualTRID:     VirtualTRIDInquireDailyIndexchartprice,
 		SupportsVirtual: SupportsVirtualInquireDailyIndexchartprice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "업종 : U", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "'0001 : 종합\n0002 : 대형주\n...\n포탈 (FAQ : 종목정보 다운로드(국내) - 업종코드 참조)'", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "조회 시작일자 (ex. 20220501)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_2", FieldName: "FidInputDate2", Flag: "to", Source: "user", Required: true, Default: "", Canonical: "to", ValueKind: "date", Description: "조회 종료일자 (ex. 20220530)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_PERIOD_DIV_CODE", FieldName: "FidPeriodDivCode", Flag: "period", Source: "default", Required: true, Default: "D", Canonical: "period", ValueKind: "period", Description: "'\tD:일봉 W:주봉, M:월봉, Y:년봉'", Advanced: false, Completion: []string{"daily", "weekly", "monthly", "yearly", "D", "W", "M", "Y"}},
+		},
 	},
 	OperationInquireIndexCategoryPrice: {
 		OperationID:     OperationInquireIndexCategoryPrice,
 		Endpoint:        EndpointInquireIndexCategoryPrice,
+		Method:          "GET",
+		Summary:         "국내업종 구분별전체시세[v1_국내주식-066]",
+		Description:     "국내업종 구분별전체시세 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0214] 업종 전체시세 화면 의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupInquireIndexCategoryPrice,
 		ServiceGroup:    ServiceGroupInquireIndexCategoryPrice,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDInquireIndexCategoryPrice,
 		VirtualTRID:     VirtualTRIDInquireIndexCategoryPrice,
 		SupportsVirtual: SupportsVirtualInquireIndexCategoryPrice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (업종 U)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "코스피(0001), 코스닥(1001), 코스피200(2001)\n...\n포탈 (FAQ : 종목정보 다운로드(국내) - 업종코드 참조)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key( 20214 )", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_MRKT_CLS_CODE", FieldName: "FidMrktClsCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드(K:거래소, Q:코스닥, K2:코스피200)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_BLNG_CLS_CODE", FieldName: "FidBlngClsCode", Flag: "fid-blng-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "시장구분코드에 따라 아래와 같이 입력\n시장구분코드(K:거래소) 0:전업종, 1:기타구분, 2:자본금구분 3:상업별구분\n시장구분코드(Q:코스닥) 0:전업종, 1:기타구분, 2:벤처구분 3:일반구분\n시장구분코드(K2:코스닥) 0:전업종", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationExpIndexTrend: {
 		OperationID:     OperationExpIndexTrend,
 		Endpoint:        EndpointExpIndexTrend,
+		Method:          "GET",
+		Summary:         "국내주식 예상체결지수 추이[국내주식-121]",
+		Description:     "국내주식 예상체결지수 추이 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0184] 예상체결지수 추이 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupExpIndexTrend,
 		ServiceGroup:    ServiceGroupExpIndexTrend,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDExpIndexTrend,
 		VirtualTRID:     VirtualTRIDExpIndexTrend,
 		SupportsVirtual: SupportsVirtualExpIndexTrend,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_MKOP_CLS_CODE", FieldName: "FidMkopClsCode", Flag: "fid-mkop-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "1: 장시작전, 2: 장마감", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_HOUR_1", FieldName: "FidInputHour1", Flag: "fid-input-hour-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "10(10초), 30(30초), 60(1분), 600(10분)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:코스피, 1001:코스닥, 2001:코스피200, 4001: KRX100", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (주식 U)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+		},
 	},
 	OperationExpTotalIndex: {
 		OperationID:     OperationExpTotalIndex,
 		Endpoint:        EndpointExpTotalIndex,
+		Method:          "GET",
+		Summary:         "국내주식 예상체결 전체지수[국내주식-122]",
+		Description:     "국내주식 예상체결 전체지수 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0185] 예상체결 전체지수 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupExpTotalIndex,
 		ServiceGroup:    ServiceGroupExpTotalIndex,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDExpTotalIndex,
 		VirtualTRID:     VirtualTRIDExpTotalIndex,
 		SupportsVirtual: SupportsVirtualExpTotalIndex,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_mrkt_cls_code", FieldName: "FidMrktClsCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "0:전체 K:거래소 Q:코스닥", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (업종 U)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_cond_scr_div_code", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(11175)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200, 4001: KRX100", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_mkop_cls_code", FieldName: "FidMkopClsCode", Flag: "fid-mkop-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "1:장시작전, 2:장마감", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireViStatus: {
 		OperationID:     OperationInquireViStatus,
 		Endpoint:        EndpointInquireViStatus,
+		Method:          "GET",
+		Summary:         "변동성완화장치(VI) 현황 [v1_국내주식-055]",
+		Description:     "HTS(eFriend Plus) [0139] 변동성 완화장치(VI) 현황 데이터를 확인할 수 있는 API입니다.\n\n최근 30건까지 확인 가능합니다.",
 		Group:           GroupInquireViStatus,
 		ServiceGroup:    ServiceGroupInquireViStatus,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDInquireViStatus,
 		VirtualTRID:     VirtualTRIDInquireViStatus,
 		SupportsVirtual: SupportsVirtualInquireViStatus,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_DIV_CLS_CODE", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체 1:상승 2:하락", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "20139", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_MRKT_CLS_CODE", FieldName: "FidMrktClsCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "0:전체 K:거래소 Q:코스닥", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "FID 입력 종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_RANK_SORT_CLS_CODE", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체1:정적2:동적3:정적&동적", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "영업일", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_TRGT_CLS_CODE", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "FID 대상 구분 코드", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_TRGT_EXLS_CLS_CODE", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "FID 대상 제외 구분 코드", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationCompInterest: {
 		OperationID:     OperationCompInterest,
 		Endpoint:        EndpointCompInterest,
+		Method:          "GET",
+		Summary:         "금리 종합(국내채권/금리) [국내주식-155]",
+		Description:     "금리 종합(국내채권/금리) API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0702] 금리 종합 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n※ 11:30 이후에 신규데이터가 수신되는 점 참고하시기 바랍니다.",
 		Group:           GroupCompInterest,
 		ServiceGroup:    ServiceGroupCompInterest,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDCompInterest,
 		VirtualTRID:     VirtualTRIDCompInterest,
 		SupportsVirtual: SupportsVirtualCompInterest,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "Unique key(I)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(20702)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_DIV_CLS_CODE", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "1: 해외금리지표", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_DIV_CLS_CODE1", FieldName: "FidDivClsCode1", Flag: "fid-div-cls-code1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 : 전체", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationNewsTitle: {
 		OperationID:     OperationNewsTitle,
 		Endpoint:        EndpointNewsTitle,
+		Method:          "GET",
+		Summary:         "종합 시황/공시(제목) [국내주식-141]",
+		Description:     "종합 시황/공시(제목) API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0601] 종합 시황/공시 화면의 \"우측 상단 리스트\" 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupNewsTitle,
 		ServiceGroup:    ServiceGroupNewsTitle,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDNewsTitle,
 		VirtualTRID:     VirtualTRIDNewsTitle,
 		SupportsVirtual: SupportsVirtualNewsTitle,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_NEWS_OFER_ENTP_CODE", FieldName: "FidNewsOferEntpCode", Flag: "fid-news-ofer-entp-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 필수 입력", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_CLS_CODE", FieldName: "FidCondMrktClsCode", Flag: "fid-cond-mrkt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 필수 입력", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "공백: 전체, 종목코드 : 해당코드가 등록된 뉴스", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_TITL_CNTT", FieldName: "FidTitlCntt", Flag: "fid-titl-cntt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 필수 입력", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "공백: 현재기준, 조회일자(ex 00YYYYMMDD)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_HOUR_1", FieldName: "FidInputHour1", Flag: "fid-input-hour-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백: 현재기준, 조회시간(ex 0000HHMMSS)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_RANK_SORT_CLS_CODE", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 필수 입력", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_SRNO", FieldName: "FidInputSrno", Flag: "fid-input-srno", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 필수 입력", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationChkHoliday: {
 		OperationID:     OperationChkHoliday,
 		Endpoint:        EndpointChkHoliday,
+		Method:          "GET",
+		Summary:         "국내휴장일조회[국내주식-040]",
+		Description:     "(★중요) 국내휴장일조회(TCA0903R) 서비스는 당사 원장서비스와 연관되어 있어 \n단시간 내 다수 호출시 서비스에 영향을 줄 수 있어 가급적 1일 1회 호출 부탁드립니다.\n\n국내휴장일조회 API입니다.\n영업일, 거래일, 개장일, 결제일 여부를 조회할 수 있습니다.\n주문을 넣을 수 있는지 확인하고자 하실 경우 개장일여부(opnd_yn)을 사용하시면 됩니다.",
 		Group:           GroupChkHoliday,
 		ServiceGroup:    ServiceGroupChkHoliday,
+		RoleHint:        "read_only",
 		RealTRID:        RealTRIDChkHoliday,
 		VirtualTRID:     VirtualTRIDChkHoliday,
 		SupportsVirtual: SupportsVirtualChkHoliday,
+		Parameters: []ParameterMetadata{
+			{Name: "BASS_DT", FieldName: "BassDt", Flag: "bass-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "기준일자(YYYYMMDD)", Advanced: false, Completion: []string(nil)},
+			{Name: "CTX_AREA_NK", FieldName: "CtxAreaNk", Flag: "ctx-area-nk", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백으로 입력", Advanced: false, Completion: []string(nil)},
+			{Name: "CTX_AREA_FK", FieldName: "CtxAreaFk", Flag: "ctx-area-fk", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백으로 입력", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationMarketTime: {
 		OperationID:     OperationMarketTime,
 		Endpoint:        EndpointMarketTime,
+		Method:          "GET",
+		Summary:         "국내선물 영업일조회 [국내주식-160]",
+		Description:     "국내선물 영업일조회 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [1938] 시가총액순위 화면 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\nAPI호출 시 body 혹은 params로 입력하는 사항이 없습니다.",
 		Group:           GroupMarketTime,
 		ServiceGroup:    ServiceGroupMarketTime,
+		RoleHint:        "intraday_bar",
 		RealTRID:        RealTRIDMarketTime,
 		VirtualTRID:     VirtualTRIDMarketTime,
 		SupportsVirtual: SupportsVirtualMarketTime,
+		Parameters:      []ParameterMetadata{},
 	},
 	OperationSearchInfo: {
 		OperationID:     OperationSearchInfo,
 		Endpoint:        EndpointSearchInfo,
+		Method:          "GET",
+		Summary:         "상품기본조회[v1_국내주식-029]",
+		Description:     "국내 주식 상품 기본 정보를 조회합니다.",
 		Group:           GroupSearchInfo,
 		ServiceGroup:    ServiceGroupSearchInfo,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDSearchInfo,
 		VirtualTRID:     VirtualTRIDSearchInfo,
 		SupportsVirtual: SupportsVirtualSearchInfo,
+		Parameters: []ParameterMetadata{
+			{Name: "PDNO", FieldName: "Pdno", Flag: "product-no", Source: "user", Required: true, Default: "", Canonical: "product_no", ValueKind: "symbol", Description: "'주식(하이닉스) :  000660 (코드 : 300)\n선물(101S12) :  KR4101SC0009 (코드 : 301)\n미국(AAPL) : AAPL (코드 : 512)'", Advanced: false, Completion: []string(nil)},
+			{Name: "PRDT_TYPE_CD", FieldName: "PrdtTypeCd", Flag: "product-type", Source: "default", Required: true, Default: "300", Canonical: "product_type", ValueKind: "string", Description: "'300 주식\n301 선물옵션\n302 채권\n512  미국 나스닥 / 513  미국 뉴욕 / 529  미국 아멕스 \n515  일본\n501  홍콩 / 543  홍콩CNY / 558  홍콩USD\n507  베트남 하노이 / 508  베트남 호치민\n551  중국 상해A / 552  중국 심천A'", Advanced: false, Completion: []string{"300", "301", "302", "512", "513", "529"}},
+		},
 	},
 	OperationSearchStockInfo: {
 		OperationID:     OperationSearchStockInfo,
 		Endpoint:        EndpointSearchStockInfo,
+		Method:          "GET",
+		Summary:         "주식기본조회[v1_국내주식-067]",
+		Description:     "국내 주식 종목 기본 정보를 조회합니다.",
 		Group:           GroupSearchStockInfo,
 		ServiceGroup:    ServiceGroupSearchStockInfo,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDSearchStockInfo,
 		VirtualTRID:     VirtualTRIDSearchStockInfo,
 		SupportsVirtual: SupportsVirtualSearchStockInfo,
+		Parameters: []ParameterMetadata{
+			{Name: "PRDT_TYPE_CD", FieldName: "PrdtTypeCd", Flag: "product-type", Source: "default", Required: true, Default: "300", Canonical: "product_type", ValueKind: "string", Description: "300: 주식, ETF, ETN, ELW \n301 : 선물옵션 \n302 : 채권 \n306 : ELS'", Advanced: false, Completion: []string{"300", "301", "302", "512", "513", "529"}},
+			{Name: "PDNO", FieldName: "Pdno", Flag: "product-no", Source: "user", Required: true, Default: "", Canonical: "product_no", ValueKind: "symbol", Description: "종목번호 (6자리)\nETN의 경우, Q로 시작 (EX. Q500001)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationBalanceSheet: {
 		OperationID:     OperationBalanceSheet,
 		Endpoint:        EndpointBalanceSheet,
+		Method:          "GET",
+		Summary:         "국내주식 대차대조표[v1_국내주식-078]",
+		Description:     "국내주식 대차대조표 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0635] 재무분석종합 화면의 하단 '1. 대차대조표' 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupBalanceSheet,
 		ServiceGroup:    ServiceGroupBalanceSheet,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDBalanceSheet,
 		VirtualTRID:     VirtualTRIDBalanceSheet,
 		SupportsVirtual: SupportsVirtualBalanceSheet,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_DIV_CLS_CODE", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 년, 1: 분기", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "000660 : 종목코드", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationIncomeStatement: {
 		OperationID:     OperationIncomeStatement,
 		Endpoint:        EndpointIncomeStatement,
+		Method:          "GET",
+		Summary:         "국내주식 손익계산서[v1_국내주식-079]",
+		Description:     "국내주식 손익계산서 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0635] 재무분석종합 화면의 하단 '2. 손익계산서' 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupIncomeStatement,
 		ServiceGroup:    ServiceGroupIncomeStatement,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDIncomeStatement,
 		VirtualTRID:     VirtualTRIDIncomeStatement,
 		SupportsVirtual: SupportsVirtualIncomeStatement,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_DIV_CLS_CODE", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 년, 1: 분기\n\n※ 분기데이터는 연단위 누적합산", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "000660 : 종목코드", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationFinancialRatio: {
 		OperationID:     OperationFinancialRatio,
 		Endpoint:        EndpointFinancialRatio,
+		Method:          "GET",
+		Summary:         "국내주식 재무비율[v1_국내주식-080]",
+		Description:     "국내주식 재무비율 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0635] 재무분석종합 화면의 우측의 '재무 비율' 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupFinancialRatio,
 		ServiceGroup:    ServiceGroupFinancialRatio,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDFinancialRatio,
 		VirtualTRID:     VirtualTRIDFinancialRatio,
 		SupportsVirtual: SupportsVirtualFinancialRatio,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_DIV_CLS_CODE", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 년, 1: 분기", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "000660 : 종목코드", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationProfitRatio: {
 		OperationID:     OperationProfitRatio,
 		Endpoint:        EndpointProfitRatio,
+		Method:          "GET",
+		Summary:         "국내주식 수익성비율[v1_국내주식-081]",
+		Description:     "국내주식 수익성비율 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0635] 재무분석종합 화면의 하단 '4. 수익성비율' 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupProfitRatio,
 		ServiceGroup:    ServiceGroupProfitRatio,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDProfitRatio,
 		VirtualTRID:     VirtualTRIDProfitRatio,
 		SupportsVirtual: SupportsVirtualProfitRatio,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "000660 : 종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_DIV_CLS_CODE", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 년, 1: 분기", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+		},
 	},
 	OperationOtherMajorRatios: {
 		OperationID:     OperationOtherMajorRatios,
 		Endpoint:        EndpointOtherMajorRatios,
+		Method:          "GET",
+		Summary:         "국내주식 기타주요비율[v1_국내주식-082]",
+		Description:     "국내주식 기타주요비율 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0635] 재무분석종합 화면의 하단 '9. 기타주요비율' 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupOtherMajorRatios,
 		ServiceGroup:    ServiceGroupOtherMajorRatios,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDOtherMajorRatios,
 		VirtualTRID:     VirtualTRIDOtherMajorRatios,
 		SupportsVirtual: SupportsVirtualOtherMajorRatios,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "000660 : 종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_div_cls_code", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 년, 1: 분기", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+		},
 	},
 	OperationStabilityRatio: {
 		OperationID:     OperationStabilityRatio,
 		Endpoint:        EndpointStabilityRatio,
+		Method:          "GET",
+		Summary:         "국내주식 안정성비율[v1_국내주식-083]",
+		Description:     "국내주식 안정성비율 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0635] 재무분석종합 화면의 하단 '5. 안정성비율' 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupStabilityRatio,
 		ServiceGroup:    ServiceGroupStabilityRatio,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDStabilityRatio,
 		VirtualTRID:     VirtualTRIDStabilityRatio,
 		SupportsVirtual: SupportsVirtualStabilityRatio,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "000660 : 종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_div_cls_code", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 년, 1: 분기", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+		},
 	},
 	OperationGrowthRatio: {
 		OperationID:     OperationGrowthRatio,
 		Endpoint:        EndpointGrowthRatio,
+		Method:          "GET",
+		Summary:         "국내주식 성장성비율[v1_국내주식-085]",
+		Description:     "국내주식 성장성비율 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0635] 재무분석종합 화면의 하단 '7.성장성비율' 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupGrowthRatio,
 		ServiceGroup:    ServiceGroupGrowthRatio,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDGrowthRatio,
 		VirtualTRID:     VirtualTRIDGrowthRatio,
 		SupportsVirtual: SupportsVirtualGrowthRatio,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "ex : 000660", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_div_cls_code", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 년, 1: 분기", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (주식 J)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+		},
 	},
 	OperationCreditByCompany: {
 		OperationID:     OperationCreditByCompany,
 		Endpoint:        EndpointCreditByCompany,
+		Method:          "GET",
+		Summary:         "국내주식 당사 신용가능종목[국내주식-111]",
+		Description:     "국내주식 당사 신용가능종목 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0477] 당사 신용가능 종목 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n최대 100건 확인 가능하며, 다음 조회가 불가합니다.",
 		Group:           GroupCreditByCompany,
 		ServiceGroup:    ServiceGroupCreditByCompany,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDCreditByCompany,
 		VirtualTRID:     VirtualTRIDCreditByCompany,
 		SupportsVirtual: SupportsVirtualCreditByCompany,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_rank_sort_cls_code", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:코드순, 1:이름순", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_slct_yn", FieldName: "FidSlctYn", Flag: "fid-slct-yn", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:신용주문가능, 1: 신용주문불가", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200, 4001: KRX100", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_scr_div_code", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(20477)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (주식 J)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+		},
 	},
 	OperationDividend: {
 		OperationID:     OperationDividend,
 		Endpoint:        EndpointDividend,
+		Method:          "GET",
+		Summary:         "예탁원정보(배당일정)[국내주식-145]",
+		Description:     "예탁원정보(배당일정) API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0658] 배당 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n※ 예탁원에서 제공한 자료이므로 정보용으로만 사용하시기 바랍니다.\n'주식배당지급일'은 배당주식의 주식교부일자를 말합니다. 배당주식의 계좌입고는 배당주식 상장일인데 일반적으로 주권교부일의 익영업일입니다.",
 		Group:           GroupDividend,
 		ServiceGroup:    ServiceGroupDividend,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDDividend,
 		VirtualTRID:     VirtualTRIDDividend,
 		SupportsVirtual: SupportsVirtualDividend,
+		Parameters: []ParameterMetadata{
+			{Name: "CTS", FieldName: "Cts", Flag: "cts", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+			{Name: "GB1", FieldName: "Gb1", Flag: "gb1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:배당전체, 1:결산배당, 2:중간배당", Advanced: false, Completion: []string(nil)},
+			{Name: "F_DT", FieldName: "FDt", Flag: "f-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "일자 ~", Advanced: false, Completion: []string(nil)},
+			{Name: "T_DT", FieldName: "TDt", Flag: "t-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "~ 일자", Advanced: false, Completion: []string(nil)},
+			{Name: "SHT_CD", FieldName: "ShtCd", Flag: "sht-cd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백: 전체,  특정종목 조회시 : 종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "HIGH_GB", FieldName: "HighGb", Flag: "high-gb", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationPurreq: {
 		OperationID:     OperationPurreq,
 		Endpoint:        EndpointPurreq,
+		Method:          "GET",
+		Summary:         "예탁원정보(주식매수청구일정)[국내주식-146]",
+		Description:     "예탁원정보(주식매수청구일정) API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0663] 주식매수청구 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n※ 예탁원에서 제공한 자료이므로 정보용으로만 사용하시기 바랍니다.",
 		Group:           GroupPurreq,
 		ServiceGroup:    ServiceGroupPurreq,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDPurreq,
 		VirtualTRID:     VirtualTRIDPurreq,
 		SupportsVirtual: SupportsVirtualPurreq,
+		Parameters: []ParameterMetadata{
+			{Name: "SHT_CD", FieldName: "ShtCd", Flag: "sht-cd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백: 전체,  특정종목 조회시 : 종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "T_DT", FieldName: "TDt", Flag: "t-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "~ 일자", Advanced: false, Completion: []string(nil)},
+			{Name: "F_DT", FieldName: "FDt", Flag: "f-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "일자 ~", Advanced: false, Completion: []string(nil)},
+			{Name: "CTS", FieldName: "Cts", Flag: "cts", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationMergerSplit: {
 		OperationID:     OperationMergerSplit,
 		Endpoint:        EndpointMergerSplit,
+		Method:          "GET",
+		Summary:         "예탁원정보(합병/분할일정)[국내주식-147]",
+		Description:     "예탁원정보(합병/분할일정) API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0664] 합병/분할 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n※ 예탁원에서 제공한 자료이므로 정보용으로만 사용하시기 바랍니다.",
 		Group:           GroupMergerSplit,
 		ServiceGroup:    ServiceGroupMergerSplit,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDMergerSplit,
 		VirtualTRID:     VirtualTRIDMergerSplit,
 		SupportsVirtual: SupportsVirtualMergerSplit,
+		Parameters: []ParameterMetadata{
+			{Name: "CTS", FieldName: "Cts", Flag: "cts", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+			{Name: "F_DT", FieldName: "FDt", Flag: "f-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "일자 ~", Advanced: false, Completion: []string(nil)},
+			{Name: "T_DT", FieldName: "TDt", Flag: "t-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "~ 일자", Advanced: false, Completion: []string(nil)},
+			{Name: "SHT_CD", FieldName: "ShtCd", Flag: "sht-cd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백: 전체,  특정종목 조회시 : 종목코드", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationRevSplit: {
 		OperationID:     OperationRevSplit,
 		Endpoint:        EndpointRevSplit,
+		Method:          "GET",
+		Summary:         "예탁원정보(액면교체일정)[국내주식-148]",
+		Description:     "예탁원정보(액면교체일정) API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0657] 액면교체 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n※ 예탁원에서 제공한 자료이므로 정보용으로만 사용하시기 바랍니다.",
 		Group:           GroupRevSplit,
 		ServiceGroup:    ServiceGroupRevSplit,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDRevSplit,
 		VirtualTRID:     VirtualTRIDRevSplit,
 		SupportsVirtual: SupportsVirtualRevSplit,
+		Parameters: []ParameterMetadata{
+			{Name: "SHT_CD", FieldName: "ShtCd", Flag: "sht-cd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백: 전체,  특정종목 조회시 : 종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "CTS", FieldName: "Cts", Flag: "cts", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+			{Name: "F_DT", FieldName: "FDt", Flag: "f-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "일자 ~", Advanced: false, Completion: []string(nil)},
+			{Name: "T_DT", FieldName: "TDt", Flag: "t-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "~ 일자", Advanced: false, Completion: []string(nil)},
+			{Name: "MARKET_GB", FieldName: "MarketGb", Flag: "market-gb", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체, 1:코스피, 2:코스닥", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationCapDcrs: {
 		OperationID:     OperationCapDcrs,
 		Endpoint:        EndpointCapDcrs,
+		Method:          "GET",
+		Summary:         "예탁원정보(자본감소일정)[국내주식-149]",
+		Description:     "예탁원정보(자본감소일정) API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0665] 자본감소 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n※ 예탁원에서 제공한 자료이므로 정보용으로만 사용하시기 바랍니다.",
 		Group:           GroupCapDcrs,
 		ServiceGroup:    ServiceGroupCapDcrs,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDCapDcrs,
 		VirtualTRID:     VirtualTRIDCapDcrs,
 		SupportsVirtual: SupportsVirtualCapDcrs,
+		Parameters: []ParameterMetadata{
+			{Name: "CTS", FieldName: "Cts", Flag: "cts", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+			{Name: "F_DT", FieldName: "FDt", Flag: "f-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "일자 ~", Advanced: false, Completion: []string(nil)},
+			{Name: "T_DT", FieldName: "TDt", Flag: "t-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "~ 일자", Advanced: false, Completion: []string(nil)},
+			{Name: "SHT_CD", FieldName: "ShtCd", Flag: "sht-cd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백: 전체,  특정종목 조회시 : 종목코드", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationListInfo: {
 		OperationID:     OperationListInfo,
 		Endpoint:        EndpointListInfo,
+		Method:          "GET",
+		Summary:         "예탁원정보(상장정보일정)[국내주식-150]",
+		Description:     "예탁원정보(상장정보일정) API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0666] 상장정보 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n※ 예탁원에서 제공한 자료이므로 정보용으로만 사용하시기 바랍니다.",
 		Group:           GroupListInfo,
 		ServiceGroup:    ServiceGroupListInfo,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDListInfo,
 		VirtualTRID:     VirtualTRIDListInfo,
 		SupportsVirtual: SupportsVirtualListInfo,
+		Parameters: []ParameterMetadata{
+			{Name: "SHT_CD", FieldName: "ShtCd", Flag: "sht-cd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백: 전체,  특정종목 조회시 : 종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "T_DT", FieldName: "TDt", Flag: "t-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "~ 일자", Advanced: false, Completion: []string(nil)},
+			{Name: "F_DT", FieldName: "FDt", Flag: "f-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "일자 ~", Advanced: false, Completion: []string(nil)},
+			{Name: "CTS", FieldName: "Cts", Flag: "cts", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationPubOffer: {
 		OperationID:     OperationPubOffer,
 		Endpoint:        EndpointPubOffer,
+		Method:          "GET",
+		Summary:         "예탁원정보(공모주청약일정)[국내주식-151]",
+		Description:     "예탁원정보(공모주청약일정) API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0667] 공모주청약 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n※ 예탁원에서 제공한 자료이므로 정보용으로만 사용하시기 바랍니다.",
 		Group:           GroupPubOffer,
 		ServiceGroup:    ServiceGroupPubOffer,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDPubOffer,
 		VirtualTRID:     VirtualTRIDPubOffer,
 		SupportsVirtual: SupportsVirtualPubOffer,
+		Parameters: []ParameterMetadata{
+			{Name: "SHT_CD", FieldName: "ShtCd", Flag: "sht-cd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백: 전체,  특정종목 조회시 : 종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "CTS", FieldName: "Cts", Flag: "cts", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+			{Name: "F_DT", FieldName: "FDt", Flag: "f-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "일자 ~", Advanced: false, Completion: []string(nil)},
+			{Name: "T_DT", FieldName: "TDt", Flag: "t-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "~ 일자", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationForfeit: {
 		OperationID:     OperationForfeit,
 		Endpoint:        EndpointForfeit,
+		Method:          "GET",
+		Summary:         "예탁원정보(실권주일정)[국내주식-152]",
+		Description:     "예탁원정보(실권주일정) API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0668] 실권주 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n※ 예탁원에서 제공한 자료이므로 정보용으로만 사용하시기 바랍니다.",
 		Group:           GroupForfeit,
 		ServiceGroup:    ServiceGroupForfeit,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDForfeit,
 		VirtualTRID:     VirtualTRIDForfeit,
 		SupportsVirtual: SupportsVirtualForfeit,
+		Parameters: []ParameterMetadata{
+			{Name: "SHT_CD", FieldName: "ShtCd", Flag: "sht-cd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백: 전체,  특정종목 조회시 : 종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "T_DT", FieldName: "TDt", Flag: "t-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "~ 일자", Advanced: false, Completion: []string(nil)},
+			{Name: "F_DT", FieldName: "FDt", Flag: "f-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "일자 ~", Advanced: false, Completion: []string(nil)},
+			{Name: "CTS", FieldName: "Cts", Flag: "cts", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationMandDeposit: {
 		OperationID:     OperationMandDeposit,
 		Endpoint:        EndpointMandDeposit,
+		Method:          "GET",
+		Summary:         "예탁원정보(의무예치일정)[국내주식-153]",
+		Description:     "예탁원정보(의무예치일정) API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0758] 의무예치 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n※ 예탁원에서 제공한 자료이므로 정보용으로만 사용하시기 바랍니다.",
 		Group:           GroupMandDeposit,
 		ServiceGroup:    ServiceGroupMandDeposit,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDMandDeposit,
 		VirtualTRID:     VirtualTRIDMandDeposit,
 		SupportsVirtual: SupportsVirtualMandDeposit,
+		Parameters: []ParameterMetadata{
+			{Name: "T_DT", FieldName: "TDt", Flag: "t-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "~ 일자", Advanced: false, Completion: []string(nil)},
+			{Name: "SHT_CD", FieldName: "ShtCd", Flag: "sht-cd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백: 전체,  특정종목 조회시 : 종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "F_DT", FieldName: "FDt", Flag: "f-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "일자 ~", Advanced: false, Completion: []string(nil)},
+			{Name: "CTS", FieldName: "Cts", Flag: "cts", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationPaidinCapin: {
 		OperationID:     OperationPaidinCapin,
 		Endpoint:        EndpointPaidinCapin,
+		Method:          "GET",
+		Summary:         "예탁원정보(유상증자일정) [국내주식-143]",
+		Description:     "예탁원정보(유상증자일정) API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0655] 유상증자 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n※ 예탁원에서 제공한 자료이므로 정보용으로만 사용하시기 바랍니다.",
 		Group:           GroupPaidinCapin,
 		ServiceGroup:    ServiceGroupPaidinCapin,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDPaidinCapin,
 		VirtualTRID:     VirtualTRIDPaidinCapin,
 		SupportsVirtual: SupportsVirtualPaidinCapin,
+		Parameters: []ParameterMetadata{
+			{Name: "CTS", FieldName: "Cts", Flag: "cts", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+			{Name: "GB1", FieldName: "Gb1", Flag: "gb1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "1(청약일별), 2(기준일별)", Advanced: false, Completion: []string(nil)},
+			{Name: "F_DT", FieldName: "FDt", Flag: "f-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "일자 ~", Advanced: false, Completion: []string(nil)},
+			{Name: "T_DT", FieldName: "TDt", Flag: "t-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "~ 일자", Advanced: false, Completion: []string(nil)},
+			{Name: "SHT_CD", FieldName: "ShtCd", Flag: "sht-cd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백(전체),  특정종목 조회시(종목코드)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationBonusIssue: {
 		OperationID:     OperationBonusIssue,
 		Endpoint:        EndpointBonusIssue,
+		Method:          "GET",
+		Summary:         "예탁원정보(무상증자일정) [국내주식-144]",
+		Description:     "예탁원정보(무상증자일정) API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0656] 무상증자 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n※ 예탁원에서 제공한 자료이므로 정보용으로만 사용하시기 바랍니다.",
 		Group:           GroupBonusIssue,
 		ServiceGroup:    ServiceGroupBonusIssue,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDBonusIssue,
 		VirtualTRID:     VirtualTRIDBonusIssue,
 		SupportsVirtual: SupportsVirtualBonusIssue,
+		Parameters: []ParameterMetadata{
+			{Name: "CTS", FieldName: "Cts", Flag: "cts", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+			{Name: "F_DT", FieldName: "FDt", Flag: "f-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "일자 ~", Advanced: false, Completion: []string(nil)},
+			{Name: "T_DT", FieldName: "TDt", Flag: "t-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "~ 일자", Advanced: false, Completion: []string(nil)},
+			{Name: "SHT_CD", FieldName: "ShtCd", Flag: "sht-cd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백: 전체,  특정종목 조회시 : 종목코드", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationSharehldMeet: {
 		OperationID:     OperationSharehldMeet,
 		Endpoint:        EndpointSharehldMeet,
+		Method:          "GET",
+		Summary:         "예탁원정보(주주총회일정) [국내주식-154]",
+		Description:     "예탁원정보(주주총회일정) API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0759] 주주총회 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n※ 예탁원에서 제공한 자료이므로 정보용으로만 사용하시기 바랍니다.",
 		Group:           GroupSharehldMeet,
 		ServiceGroup:    ServiceGroupSharehldMeet,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDSharehldMeet,
 		VirtualTRID:     VirtualTRIDSharehldMeet,
 		SupportsVirtual: SupportsVirtualSharehldMeet,
+		Parameters: []ParameterMetadata{
+			{Name: "CTS", FieldName: "Cts", Flag: "cts", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+			{Name: "F_DT", FieldName: "FDt", Flag: "f-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "일자 ~", Advanced: false, Completion: []string(nil)},
+			{Name: "T_DT", FieldName: "TDt", Flag: "t-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "~ 일자", Advanced: false, Completion: []string(nil)},
+			{Name: "SHT_CD", FieldName: "ShtCd", Flag: "sht-cd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백: 전체,  특정종목 조회시 : 종목코드", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationEstimatePerform: {
 		OperationID:     OperationEstimatePerform,
 		Endpoint:        EndpointEstimatePerform,
+		Method:          "GET",
+		Summary:         "국내주식 종목추정실적 [국내주식-187]",
+		Description:     "국내주식 종목추정실적 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0613] 종목추정실적 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. \n \n※ 본 화면의 추정실적 및 투자의견은 당월 초의 애널리스트의 의견사항이므로 월중 변동 사항이 있을 수 있음을 유의하시기 바랍니다.\n※ 종목별 수익추정은 리서치본부에서 매월 발표되는 거래소, 코스닥 160여개 기업에 한정합니다. 구체적인 종목 리스트는 추정종목리스트를 참고하기 바랍니다.",
 		Group:           GroupEstimatePerform,
 		ServiceGroup:    ServiceGroupEstimatePerform,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDEstimatePerform,
 		VirtualTRID:     VirtualTRIDEstimatePerform,
 		SupportsVirtual: SupportsVirtualEstimatePerform,
+		Parameters: []ParameterMetadata{
+			{Name: "SHT_CD", FieldName: "ShtCd", Flag: "sht-cd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "ex) 265520", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationLendableByCompany: {
 		OperationID:     OperationLendableByCompany,
 		Endpoint:        EndpointLendableByCompany,
+		Method:          "GET",
+		Summary:         "당사 대주가능 종목 [국내주식-195]",
+		Description:     "당사 대주가능 종목 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0490] 당사 대주가능 종목 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n※ 본 API는 다음조회가 불가합니다.",
 		Group:           GroupLendableByCompany,
 		ServiceGroup:    ServiceGroupLendableByCompany,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDLendableByCompany,
 		VirtualTRID:     VirtualTRIDLendableByCompany,
 		SupportsVirtual: SupportsVirtualLendableByCompany,
+		Parameters: []ParameterMetadata{
+			{Name: "EXCG_DVSN_CD", FieldName: "ExcgDvsnCd", Flag: "excg-dvsn-cd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "00(전체), 02(거래소), 03(코스닥)", Advanced: false, Completion: []string(nil)},
+			{Name: "PDNO", FieldName: "Pdno", Flag: "product-no", Source: "user", Required: true, Default: "", Canonical: "product_no", ValueKind: "symbol", Description: "공백 : 전체조회, 종목코드 입력 시 해당종목만 조회", Advanced: false, Completion: []string(nil)},
+			{Name: "THCO_STLN_PSBL_YN", FieldName: "ThcoStlnPsblYn", Flag: "thco-stln-psbl-yn", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Y", Advanced: false, Completion: []string(nil)},
+			{Name: "INQR_DVSN_1", FieldName: "InqrDvsn1", Flag: "inqr-dvsn-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체조회, 1: 종목코드순 정렬", Advanced: false, Completion: []string(nil)},
+			{Name: "CTX_AREA_FK200", FieldName: "CtxAreaFk200", Flag: "ctx-area-fk200", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "미입력 (다음조회 불가)", Advanced: false, Completion: []string(nil)},
+			{Name: "CTX_AREA_NK100", FieldName: "CtxAreaNk100", Flag: "ctx-area-nk100", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "미입력 (다음조회 불가)", Advanced: true, Completion: []string(nil)},
+		},
 	},
 	OperationInvestOpinion: {
 		OperationID:     OperationInvestOpinion,
 		Endpoint:        EndpointInvestOpinion,
+		Method:          "GET",
+		Summary:         "국내주식 종목투자의견 [국내주식-188]",
+		Description:     "국내주식 종목투자의견 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0605] 종목투자의견 화면 의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n한 번의 호출에 100건까지 조회가 가능하기에, 일자 파라미터(FID_INPUT_DATE_1, FID_INPUT_DATE_2)를 조절하여 다음 데이터 조회하시기 바랍니다.",
 		Group:           GroupInvestOpinion,
 		ServiceGroup:    ServiceGroupInvestOpinion,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDInvestOpinion,
 		VirtualTRID:     VirtualTRIDInvestOpinion,
 		SupportsVirtual: SupportsVirtualInvestOpinion,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J(시장 구분 코드)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "16633(Primary key)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드(ex) 005930(삼성전자))", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "이후 ~(ex) 0020231113)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_2", FieldName: "FidInputDate2", Flag: "to", Source: "user", Required: true, Default: "", Canonical: "to", ValueKind: "date", Description: "~ 이전(ex) 0020240513)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInvestOpbysec: {
 		OperationID:     OperationInvestOpbysec,
 		Endpoint:        EndpointInvestOpbysec,
+		Method:          "GET",
+		Summary:         "국내주식 증권사별 투자의견 [국내주식-189]",
+		Description:     "국내주식 증권사별 투자의견 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0608] 증권사별 투자의견 화면 의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n한 번의 호출에 20건까지 조회가 가능하기에, 일자 파라미터(FID_INPUT_DATE_1, FID_INPUT_DATE_2)를 조절하여 다음 데이터 조회하시기 바랍니다.",
 		Group:           GroupInvestOpbysec,
 		ServiceGroup:    ServiceGroupInvestOpbysec,
+		RoleHint:        "instrument",
 		RealTRID:        RealTRIDInvestOpbysec,
 		VirtualTRID:     VirtualTRIDInvestOpbysec,
 		SupportsVirtual: SupportsVirtualInvestOpbysec,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J(시장 구분 코드)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "16634(Primary key)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "회원사코드 (kis developers 포탈 사이트 포럼-> FAQ -> 종목정보 다운로드(국내) 참조)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_DIV_CLS_CODE", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "전체(0) 매수(1) 중립(2) 매도(3)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "이후 ~", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_2", FieldName: "FidInputDate2", Flag: "to", Source: "user", Required: true, Default: "", Canonical: "to", ValueKind: "date", Description: "~ 이전", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationPsearchTitle: {
 		OperationID:     OperationPsearchTitle,
 		Endpoint:        EndpointPsearchTitle,
+		Method:          "GET",
+		Summary:         "종목조건검색 목록조회[국내주식-038]",
+		Description:     "HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API입니다.\n종목조건검색 목록조회 API(/uapi/domestic-stock/v1/quotations/psearch-title)의 output인 'seq'을 종목조건검색조회 API(/uapi/domestic-stock/v1/quotations/psearch-result)의 input으로 사용하시면 됩니다.\n\n※ 시스템 안정성을 위해 API로 제공되는 조건검색 결과의 경우 조건당 100건으로 제한을 둔 점 양해 부탁드립니다.\n\n※ [0110] 화면의 '대상변경' 설정사항은 HTS [0110] 사용자 조건검색 화면에만 적용됨에 유의 부탁드립니다.\n\n※ '조회가 계속 됩니다. (다음을 누르십시오.)' 오류 발생 시 해결방법\n→ HTS(efriend Plus) [0110] 조건검색 화면에서 조건을 등록하신 후, 왼쪽 하단의 \"사용자조건 서버저장\" 클릭하셔서 등록한 조건들을 서버로 보낸 후 다시 API 호출 시도 부탁드립니다.",
 		Group:           GroupPsearchTitle,
 		ServiceGroup:    ServiceGroupPsearchTitle,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDPsearchTitle,
 		VirtualTRID:     VirtualTRIDPsearchTitle,
 		SupportsVirtual: SupportsVirtualPsearchTitle,
+		Parameters: []ParameterMetadata{
+			{Name: "user_id", FieldName: "UserID", Flag: "user-id", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "사용자 HTS ID", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationPsearchResult: {
 		OperationID:     OperationPsearchResult,
 		Endpoint:        EndpointPsearchResult,
+		Method:          "GET",
+		Summary:         "종목조건검색조회 [국내주식-039]",
+		Description:     "HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API입니다.\n종목조건검색 목록조회 API(/uapi/domestic-stock/v1/quotations/psearch-title)의 output인 'seq'을 종목조건검색조회 API(/uapi/domestic-stock/v1/quotations/psearch-result)의 input으로 사용하시면 됩니다.\n\n※ 시스템 안정성을 위해 API로 제공되는 조건검색 결과의 경우 조건당 100건으로 제한을 둔 점 양해 부탁드립니다.\n\n※ [0110] 화면의 '대상변경' 설정사항은 HTS [0110] 사용자 조건검색 화면에만 적용됨에 유의 부탁드립니다.\n\n※ '조회가 계속 됩니다. (다음을 누르십시오.)' 오류 발생 시 해결방법\n→ HTS(efriend Plus) [0110] 조건검색 화면에서 조건을 등록하신 후, 왼쪽 하단의 \"사용자조건 서버저장\" 클릭하셔서 등록한 조건들을 서버로 보낸 후 다시 API 호출 시도 부탁드립니다.\n\n※ {\"rt_cd\":\"1\",\"msg_cd\":\"MCA05918\",\"msg1\":\"종목코드 오류입니다.\"} 메시지 발생 이유\n→ 조건검색 결과 검색된 종목이 0개인 경우 위 응답값을 수신하게 됩니다.",
 		Group:           GroupPsearchResult,
 		ServiceGroup:    ServiceGroupPsearchResult,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDPsearchResult,
 		VirtualTRID:     VirtualTRIDPsearchResult,
 		SupportsVirtual: SupportsVirtualPsearchResult,
+		Parameters: []ParameterMetadata{
+			{Name: "user_id", FieldName: "UserID", Flag: "user-id", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "사용자 HTS ID", Advanced: false, Completion: []string(nil)},
+			{Name: "seq", FieldName: "Seq", Flag: "seq", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "종목조건검색 목록조회 API의 output인 'seq'을 이용\n(0 부터 시작)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationIntstockGrouplist: {
 		OperationID:     OperationIntstockGrouplist,
 		Endpoint:        EndpointIntstockGrouplist,
+		Method:          "GET",
+		Summary:         "관심종목 그룹조회 [국내주식-204]",
+		Description:     "관심종목 그룹조회 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0161] 관심종목 화면 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n① 관심종목 그룹조회 → ② 관심종목 그룹별 종목조회 → ③ 관심종목(멀티종목) 시세조회 순서대로 호출하셔서 관심종목 시세 조회 가능합니다.\n\n※ 한 번의 호출에 최대 30종목의 시세 확인 가능합니다.\n\n한국투자증권 Github 에서 관심종목 복수시세조회 파이썬 샘플코드를 참고하실 수 있습니다.\nhttps://github.com/koreainvestment/open-trading-api/blob/main/rest/get_interest_stocks_price.py",
 		Group:           GroupIntstockGrouplist,
 		ServiceGroup:    ServiceGroupIntstockGrouplist,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDIntstockGrouplist,
 		VirtualTRID:     VirtualTRIDIntstockGrouplist,
 		SupportsVirtual: SupportsVirtualIntstockGrouplist,
+		Parameters: []ParameterMetadata{
+			{Name: "TYPE", FieldName: "Type", Flag: "type", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(1)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_ETC_CLS_CODE", FieldName: "FidEtcClsCode", Flag: "fid-etc-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(00)", Advanced: false, Completion: []string(nil)},
+			{Name: "USER_ID", FieldName: "UserID", Flag: "user-id", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "HTS_ID 입력", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationIntstockMultprice: {
 		OperationID:     OperationIntstockMultprice,
 		Endpoint:        EndpointIntstockMultprice,
+		Method:          "GET",
+		Summary:         "관심종목(멀티종목) 시세조회 [국내주식-205]",
+		Description:     "관심종목(멀티종목) 시세조회 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0161] 관심종목 화면 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupIntstockMultprice,
 		ServiceGroup:    ServiceGroupIntstockMultprice,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDIntstockMultprice,
 		VirtualTRID:     VirtualTRIDIntstockMultprice,
 		SupportsVirtual: SupportsVirtualIntstockMultprice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE_1", FieldName: "FidCondMrktDivCode1", Flag: "fid-cond-mrkt-div-code-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "그룹별종목조회 결과 fid_mrkt_cls_code(시장구분) 1 입력\nJ: KRX, NX: NXT, UN: 통합\nex) J", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_1", FieldName: "FidInputISCD1", Flag: "fid-input-iscd-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "그룹별종목조회 결과 jong_code(종목코드) 1 입력\nex) 005930", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_2", FieldName: "FidCondMrktDivCode2", Flag: "fid-cond-mrkt-div-code-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드2", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_2", FieldName: "FidInputISCD2", Flag: "fid-input-iscd-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드2", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_3", FieldName: "FidCondMrktDivCode3", Flag: "fid-cond-mrkt-div-code-3", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드3", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_3", FieldName: "FidInputISCD3", Flag: "fid-input-iscd-3", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드3", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_4", FieldName: "FidCondMrktDivCode4", Flag: "fid-cond-mrkt-div-code-4", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드4", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_4", FieldName: "FidInputISCD4", Flag: "fid-input-iscd-4", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드4", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_5", FieldName: "FidCondMrktDivCode5", Flag: "fid-cond-mrkt-div-code-5", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드5", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_5", FieldName: "FidInputISCD5", Flag: "fid-input-iscd-5", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드5", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_6", FieldName: "FidCondMrktDivCode6", Flag: "fid-cond-mrkt-div-code-6", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드6", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_6", FieldName: "FidInputISCD6", Flag: "fid-input-iscd-6", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드6", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_7", FieldName: "FidCondMrktDivCode7", Flag: "fid-cond-mrkt-div-code-7", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드7", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_7", FieldName: "FidInputISCD7", Flag: "fid-input-iscd-7", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드7", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_8", FieldName: "FidCondMrktDivCode8", Flag: "fid-cond-mrkt-div-code-8", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드8", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_8", FieldName: "FidInputISCD8", Flag: "fid-input-iscd-8", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드8", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_9", FieldName: "FidCondMrktDivCode9", Flag: "fid-cond-mrkt-div-code-9", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드9", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_9", FieldName: "FidInputISCD9", Flag: "fid-input-iscd-9", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드9", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_10", FieldName: "FidCondMrktDivCode10", Flag: "fid-cond-mrkt-div-code-10", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드10", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_10", FieldName: "FidInputISCD10", Flag: "fid-input-iscd-10", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드10", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_11", FieldName: "FidCondMrktDivCode11", Flag: "fid-cond-mrkt-div-code-11", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드11", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_11", FieldName: "FidInputISCD11", Flag: "fid-input-iscd-11", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드11", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_12", FieldName: "FidCondMrktDivCode12", Flag: "fid-cond-mrkt-div-code-12", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드12", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_12", FieldName: "FidInputISCD12", Flag: "fid-input-iscd-12", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드12", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_13", FieldName: "FidCondMrktDivCode13", Flag: "fid-cond-mrkt-div-code-13", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드13", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_13", FieldName: "FidInputISCD13", Flag: "fid-input-iscd-13", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드13", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_14", FieldName: "FidCondMrktDivCode14", Flag: "fid-cond-mrkt-div-code-14", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드14", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_14", FieldName: "FidInputISCD14", Flag: "fid-input-iscd-14", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드14", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_15", FieldName: "FidCondMrktDivCode15", Flag: "fid-cond-mrkt-div-code-15", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드15", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_15", FieldName: "FidInputISCD15", Flag: "fid-input-iscd-15", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드15", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_16", FieldName: "FidCondMrktDivCode16", Flag: "fid-cond-mrkt-div-code-16", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드16", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_16", FieldName: "FidInputISCD16", Flag: "fid-input-iscd-16", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드16", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_17", FieldName: "FidCondMrktDivCode17", Flag: "fid-cond-mrkt-div-code-17", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드17", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_17", FieldName: "FidInputISCD17", Flag: "fid-input-iscd-17", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드17", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_18", FieldName: "FidCondMrktDivCode18", Flag: "fid-cond-mrkt-div-code-18", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드18", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_18", FieldName: "FidInputISCD18", Flag: "fid-input-iscd-18", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드18", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_19", FieldName: "FidCondMrktDivCode19", Flag: "fid-cond-mrkt-div-code-19", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드19", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_19", FieldName: "FidInputISCD19", Flag: "fid-input-iscd-19", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드19", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_20", FieldName: "FidCondMrktDivCode20", Flag: "fid-cond-mrkt-div-code-20", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드20", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_20", FieldName: "FidInputISCD20", Flag: "fid-input-iscd-20", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드20", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_21", FieldName: "FidCondMrktDivCode21", Flag: "fid-cond-mrkt-div-code-21", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드21", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_21", FieldName: "FidInputISCD21", Flag: "fid-input-iscd-21", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드21", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_22", FieldName: "FidCondMrktDivCode22", Flag: "fid-cond-mrkt-div-code-22", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드22", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_22", FieldName: "FidInputISCD22", Flag: "fid-input-iscd-22", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드22", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_23", FieldName: "FidCondMrktDivCode23", Flag: "fid-cond-mrkt-div-code-23", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드23", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_23", FieldName: "FidInputISCD23", Flag: "fid-input-iscd-23", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드23", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_24", FieldName: "FidCondMrktDivCode24", Flag: "fid-cond-mrkt-div-code-24", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드24", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_24", FieldName: "FidInputISCD24", Flag: "fid-input-iscd-24", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드24", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_25", FieldName: "FidCondMrktDivCode25", Flag: "fid-cond-mrkt-div-code-25", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드25", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_25", FieldName: "FidInputISCD25", Flag: "fid-input-iscd-25", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드25", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_26", FieldName: "FidCondMrktDivCode26", Flag: "fid-cond-mrkt-div-code-26", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드26", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_26", FieldName: "FidInputISCD26", Flag: "fid-input-iscd-26", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드26", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_27", FieldName: "FidCondMrktDivCode27", Flag: "fid-cond-mrkt-div-code-27", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드27", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_27", FieldName: "FidInputISCD27", Flag: "fid-input-iscd-27", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드27", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_28", FieldName: "FidCondMrktDivCode28", Flag: "fid-cond-mrkt-div-code-28", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드28", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_28", FieldName: "FidInputISCD28", Flag: "fid-input-iscd-28", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드28", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_29", FieldName: "FidCondMrktDivCode29", Flag: "fid-cond-mrkt-div-code-29", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드29", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_29", FieldName: "FidInputISCD29", Flag: "fid-input-iscd-29", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드29", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE_30", FieldName: "FidCondMrktDivCode30", Flag: "fid-cond-mrkt-div-code-30", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조건 시장 분류 코드30", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_30", FieldName: "FidInputISCD30", Flag: "fid-input-iscd-30", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력 종목코드30", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationIntstockStocklistByGroup: {
 		OperationID:     OperationIntstockStocklistByGroup,
 		Endpoint:        EndpointIntstockStocklistByGroup,
+		Method:          "GET",
+		Summary:         "관심종목 그룹별 종목조회 [국내주식-203]",
+		Description:     "관심종목 그룹별 종목조회 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0161] 관심종목 화면 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n① 관심종목 그룹조회 → ② 관심종목 그룹별 종목조회 → ③ 관심종목(멀티종목) 시세조회 순서대로 호출하셔서 관심종목 시세 조회 가능합니다.\n\n※ 한 번의 호출에 최대 30종목의 시세 확인 가능합니다.\n\n한국투자증권 Github 에서 관심종목 복수시세조회 파이썬 샘플코드를 참고하실 수 있습니다.\nhttps://github.com/koreainvestment/open-trading-api/blob/main/rest/get_interest_stocks_price.py",
 		Group:           GroupIntstockStocklistByGroup,
 		ServiceGroup:    ServiceGroupIntstockStocklistByGroup,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDIntstockStocklistByGroup,
 		VirtualTRID:     VirtualTRIDIntstockStocklistByGroup,
 		SupportsVirtual: SupportsVirtualIntstockStocklistByGroup,
+		Parameters: []ParameterMetadata{
+			{Name: "TYPE", FieldName: "Type", Flag: "type", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(1)", Advanced: false, Completion: []string(nil)},
+			{Name: "USER_ID", FieldName: "UserID", Flag: "user-id", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "HTS_ID 입력", Advanced: false, Completion: []string(nil)},
+			{Name: "DATA_RANK", FieldName: "DataRank", Flag: "data-rank", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+			{Name: "INTER_GRP_CODE", FieldName: "InterGrpCode", Flag: "inter-grp-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "관심그룹 조회 결과의 그룹 값 입력", Advanced: false, Completion: []string(nil)},
+			{Name: "INTER_GRP_NAME", FieldName: "InterGrpName", Flag: "inter-grp-name", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+			{Name: "HTS_KOR_ISNM", FieldName: "HtsKorIsnm", Flag: "hts-kor-isnm", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+			{Name: "CNTG_CLS_CODE", FieldName: "CntgClsCode", Flag: "cntg-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_ETC_CLS_CODE", FieldName: "FidEtcClsCode", Flag: "fid-etc-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(4)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationForeignInstitutionTotal: {
 		OperationID:     OperationForeignInstitutionTotal,
 		Endpoint:        EndpointForeignInstitutionTotal,
+		Method:          "GET",
+		Summary:         "국내기관_외국인 매매종목가집계[국내주식-037]",
+		Description:     "국내기관_외국인 매매종목가집계 API입니다.\n\nHTS(efriend Plus) [0440] 외국인/기관 매매종목 가집계 화면을 API로 구현한 사항으로 화면을 함께 보시면 기능 이해가 쉽습니다.\n\n증권사 직원이 장중에 집계/입력한 자료를 단순 누계한 수치로서, \n입력시간은 외국인 09:30, 11:20, 13:20, 14:30 / 기관종합 10:00, 11:20, 13:20, 14:30 이며, \n입력한 시간은 ±10분정도 차이가 발생할 수 있으며, 장운영 사정에 다라 변동될 수 있습니다.",
 		Group:           GroupForeignInstitutionTotal,
 		ServiceGroup:    ServiceGroupForeignInstitutionTotal,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDForeignInstitutionTotal,
 		VirtualTRID:     VirtualTRIDForeignInstitutionTotal,
 		SupportsVirtual: SupportsVirtualForeignInstitutionTotal,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "V(Default)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "16449(Default)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:코스피, 1001:코스닥\n...\n포탈 (FAQ : 종목정보 다운로드(국내) - 업종코드 참조)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_DIV_CLS_CODE", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 수량정열, 1: 금액정열", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_RANK_SORT_CLS_CODE", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 순매수상위, 1: 순매도상위", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_ETC_CLS_CODE", FieldName: "FidEtcClsCode", Flag: "fid-etc-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체 1:외국인 2:기관계 3:기타", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationFrgnmemTradeEstimate: {
 		OperationID:     OperationFrgnmemTradeEstimate,
 		Endpoint:        EndpointFrgnmemTradeEstimate,
+		Method:          "GET",
+		Summary:         "외국계 매매종목 가집계 [국내주식-161]",
+		Description:     "외국계 매매종목 가집계 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0430] 외국계 매매종목 가집계 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupFrgnmemTradeEstimate,
 		ServiceGroup:    ServiceGroupFrgnmemTradeEstimate,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDFrgnmemTradeEstimate,
 		VirtualTRID:     VirtualTRIDFrgnmemTradeEstimate,
 		SupportsVirtual: SupportsVirtualFrgnmemTradeEstimate,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (J)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Uniquekey (16441)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000(전체), 1001(코스피), 2001(코스닥)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_RANK_SORT_CLS_CODE", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0(금액순), 1(수량순)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_RANK_SORT_CLS_CODE_2", FieldName: "FidRankSortClsCode2", Flag: "fid-rank-sort-cls-code-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0(매수순), 1(매도순)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInvestorTradeByStockDaily: {
 		OperationID:     OperationInvestorTradeByStockDaily,
 		Endpoint:        EndpointInvestorTradeByStockDaily,
+		Method:          "GET",
+		Summary:         "종목별 투자자매매동향(일별)",
+		Description:     "국내주식 종목별 투자자매매동향(일별) API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0416] 종목별 일별동향 화면 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n※ 단위 : 금액(백만원) 수량(주)\n\n당일 데이터는 15:40이후에 데이터가 가집계 및 산출되어 15:40부터 조회가능하며,\n데이터 산출의 경우 산출 시간대는 일정하지 않을 수 있음을 참고 부탁드립니다.\n추가로 API를 통한 00:00 ~ 15:40 이외의 시간은 당일 조회가 제한되는 점 이용에 참고 부탁드립니다.",
 		Group:           GroupInvestorTradeByStockDaily,
 		ServiceGroup:    ServiceGroupInvestorTradeByStockDaily,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDInvestorTradeByStockDaily,
 		VirtualTRID:     VirtualTRIDInvestorTradeByStockDaily,
 		SupportsVirtual: SupportsVirtualInvestorTradeByStockDaily,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J:KRX, NX:NXT, UN:통합", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목번호 (6자리)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "입력 날짜(20250812) (해당일 조회는 장 종료 후 정상 조회 가능)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_ORG_ADJ_PRC", FieldName: "FidOrgAdjPrc", Flag: "adjust-price", Source: "default", Required: true, Default: "0", Canonical: "adjust_price", ValueKind: "string", Description: "공란 입력", Advanced: true, Completion: []string{"0", "1"}},
+			{Name: "FID_ETC_CLS_CODE", FieldName: "FidEtcClsCode", Flag: "fid-etc-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "\"1\" 입력", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireInvestorTimeByMarket: {
 		OperationID:     OperationInquireInvestorTimeByMarket,
 		Endpoint:        EndpointInquireInvestorTimeByMarket,
+		Method:          "GET",
+		Summary:         "시장별 투자자매매동향(시세)[v1_국내주식-074]",
+		Description:     "시장별 투자자매매동향(시세성) API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0403] 시장별 시간동향 의 상단 표 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupInquireInvestorTimeByMarket,
 		ServiceGroup:    ServiceGroupInquireInvestorTimeByMarket,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDInquireInvestorTimeByMarket,
 		VirtualTRID:     VirtualTRIDInquireInvestorTimeByMarket,
 		SupportsVirtual: SupportsVirtualInquireInvestorTimeByMarket,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "코스피: KSP, 코스닥:KSQ,\n선물,콜옵션,풋옵션 : K2I, 주식선물:999,\nETF: ETF, ELW:ELW, ETN: ETN, \n미니: MKI, 위클리월 : WKM, 위클리목: WKI\n코스닥150: KQI", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_iscd_2", FieldName: "FidInputISCD2", Flag: "fid-input-iscd-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "- fid_input_iscd: KSP(코스피) 혹은 KSQ(코스닥)인 경우\n코스피(0001_종합, .…0027_제조업 )\n코스닥(1001_종합, …. 1041_IT부품)\n...\n포탈 (FAQ : 종목정보 다운로드(국내) - 업종코드 참조)\n\n- fid_input_iscd가 K2I인 경우\nF001(선물)\nOC01(콜옵션)\nOP01(풋옵션)\n\n- fid_input_iscd가 999인 경우\nS001(주식선물)\n\n- fid_input_iscd가 ETF인 경우\nT000(ETF)\n\n- fid_input_iscd가 ELW인 경우\nW000(ELW)\n\n- fid_input_iscd가 ETN인 경우\nE199(ETN)\n\n- fid_input_iscd가 MKI인 경우\nF004(미니선물)\nOC02(미니콜옵션)\nOP02(미니풋옵션)\n\n- fid_input_iscd가 WKM인 경우\nOC05(위클리콜(월))\nOP05(위클리풋(월))\n\n- fid_input_iscd가 WKI인 경우\nOC04(위클리콜(목))\nOP04(위클리풋(목))   \n\n- fid_input_iscd가 KQI인 경우\nF002(코스닥150선물)\nOC03(코스닥150콜옵션)\nOP03(코스닥150풋옵션)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireInvestorDailyByMarket: {
 		OperationID:     OperationInquireInvestorDailyByMarket,
 		Endpoint:        EndpointInquireInvestorDailyByMarket,
+		Method:          "GET",
+		Summary:         "시장별 투자자매매동향(일별) [국내주식-075]",
+		Description:     "시장별 투자자매매동향(일별) API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0404] 시장별 일별동향 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupInquireInvestorDailyByMarket,
 		ServiceGroup:    ServiceGroupInquireInvestorDailyByMarket,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDInquireInvestorDailyByMarket,
 		VirtualTRID:     VirtualTRIDInquireInvestorDailyByMarket,
 		SupportsVirtual: SupportsVirtualInquireInvestorDailyByMarket,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (업종 U)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "코스피, 코스닥 : 업종분류코드 (종목정보파일 - 업종코드 참조)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "ex. 20240517", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_1", FieldName: "FidInputISCD1", Flag: "fid-input-iscd-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "코스피(KSP), 코스닥(KSQ)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_2", FieldName: "FidInputDate2", Flag: "to", Source: "user", Required: true, Default: "", Canonical: "to", ValueKind: "date", Description: "입력 날짜1과 동일날짜 입력", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_2", FieldName: "FidInputISCD2", Flag: "fid-input-iscd-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "코스피, 코스닥 : 업종분류코드 (종목정보파일 - 업종코드 참조)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationFrgnmemPchsTrend: {
 		OperationID:     OperationFrgnmemPchsTrend,
 		Endpoint:        EndpointFrgnmemPchsTrend,
+		Method:          "GET",
+		Summary:         "종목별 외국계 순매수추이 [국내주식-164]",
+		Description:     "종목별 외국계 순매수추이 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0433] 종목별 외국계 순매수추이 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupFrgnmemPchsTrend,
 		ServiceGroup:    ServiceGroupFrgnmemPchsTrend,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDFrgnmemPchsTrend,
 		VirtualTRID:     VirtualTRIDFrgnmemPchsTrend,
 		SupportsVirtual: SupportsVirtualFrgnmemPchsTrend,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드(ex) 005930(삼성전자))", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_2", FieldName: "FidInputISCD2", Flag: "fid-input-iscd-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "외국계 전체(99999)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J (KRX만 지원)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+		},
 	},
 	OperationFrgnmemTradeTrend: {
 		OperationID:     OperationFrgnmemTradeTrend,
 		Endpoint:        EndpointFrgnmemTradeTrend,
+		Method:          "GET",
+		Summary:         "회원사 실시간 매매동향(틱) [국내주식-163]",
+		Description:     "회원사 실시간 매매동향(틱) API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0432] 회원사 실시간 매매동향 화면 의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n최근 100건까지 데이터 조회 가능합니다.",
 		Group:           GroupFrgnmemTradeTrend,
 		ServiceGroup:    ServiceGroupFrgnmemTradeTrend,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDFrgnmemTradeTrend,
 		VirtualTRID:     VirtualTRIDFrgnmemTradeTrend,
 		SupportsVirtual: SupportsVirtualFrgnmemTradeTrend,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J 고정 입력", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "20432(primary key)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "ex. 005930(삼성전자) \n\n※ FID_INPUT_ISCD(종목코드) 혹은 FID_MRKT_CLS_CODE(시장구분코드) 둘 중 하나만 입력", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_2", FieldName: "FidInputISCD2", Flag: "fid-input-iscd-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "ex. 99999(전체)\n\n※ 회원사코드 (kis developers 포탈 사이트 포럼-> FAQ -> 종목정보 다운로드(국내) 참조)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_MRKT_CLS_CODE", FieldName: "FidMrktClsCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "A(전체),K(코스피), Q(코스닥), K2(코스피200), W(ELW)\n\n※ FID_INPUT_ISCD(종목코드) 혹은 FID_MRKT_CLS_CODE(시장구분코드) 둘 중 하나만 입력", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_VOL_CNT", FieldName: "FidVolCnt", Flag: "fid-vol-cnt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래량 ~", Advanced: true, Completion: []string(nil)},
+		},
 	},
 	OperationInquireMemberDaily: {
 		OperationID:     OperationInquireMemberDaily,
 		Endpoint:        EndpointInquireMemberDaily,
+		Method:          "GET",
+		Summary:         "주식현재가 회원사 종목매매동향 [국내주식-197]",
+		Description:     "주식현재가 회원사 종목매매동향 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0454] 증권사 종목매매동향 화면을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupInquireMemberDaily,
 		ServiceGroup:    ServiceGroupInquireMemberDaily,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDInquireMemberDaily,
 		VirtualTRID:     VirtualTRIDInquireMemberDaily,
 		SupportsVirtual: SupportsVirtualInquireMemberDaily,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J: KRX, NX: NXT, UN: 통합", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "주식종목코드입력", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD_2", FieldName: "FidInputISCD2", Flag: "fid-input-iscd-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "회원사코드 (kis developers 포탈 사이트 포럼-> FAQ -> 종목정보 다운로드(국내) > 회원사 참조)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "날짜 ~", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_2", FieldName: "FidInputDate2", Flag: "to", Source: "user", Required: true, Default: "", Canonical: "to", ValueKind: "date", Description: "~ 날짜", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_SCTN_CLS_CODE", FieldName: "FidSctnClsCode", Flag: "fid-sctn-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationProgramTradeByStock: {
 		OperationID:     OperationProgramTradeByStock,
 		Endpoint:        EndpointProgramTradeByStock,
+		Method:          "GET",
+		Summary:         "종목별 프로그램매매추이(체결)[v1_국내주식-044]",
+		Description:     "국내주식 종목별 프로그램매매추이(체결) API입니다.\n\n한국투자 HTS(eFriend Plus) &gt; [0465] 종목별 프로그램 매매추이 화면(혹은 한국투자 MTS &gt; 국내 현재가 &gt; 기타수급 &gt; 프로그램) 의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupProgramTradeByStock,
 		ServiceGroup:    ServiceGroupProgramTradeByStock,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDProgramTradeByStock,
 		VirtualTRID:     VirtualTRIDProgramTradeByStock,
 		SupportsVirtual: SupportsVirtualProgramTradeByStock,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "KRX : J , NXT : NX, 통합 : UN", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationProgramTradeByStockDaily: {
 		OperationID:     OperationProgramTradeByStockDaily,
 		Endpoint:        EndpointProgramTradeByStockDaily,
+		Method:          "GET",
+		Summary:         "종목별 프로그램매매추이(일별) [국내주식-113]",
+		Description:     "국내주식 종목별 프로그램매매추이(일별) API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0465] 종목별 프로그램 매매추이 화면(혹은 한국투자 MTS &gt; 국내 현재가 &gt; 기타수급 &gt; 프로그램) 의 \"일자별\" 클릭 시 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupProgramTradeByStockDaily,
 		ServiceGroup:    ServiceGroupProgramTradeByStockDaily,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDProgramTradeByStockDaily,
 		VirtualTRID:     VirtualTRIDProgramTradeByStockDaily,
 		SupportsVirtual: SupportsVirtualProgramTradeByStockDaily,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "KRX : J , NXT : NX, 통합 : UN", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "기준일 (ex 0020240308), 미입력시 당일부터 조회", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInvestorTrendEstimate: {
 		OperationID:     OperationInvestorTrendEstimate,
 		Endpoint:        EndpointInvestorTrendEstimate,
+		Method:          "GET",
+		Summary:         "종목별 외인기관 추정가집계[v1_국내주식-046]",
+		Description:     "국내주식 종목별 외국인, 기관 추정가집계 API입니다.\n\n한국투자 MTS &gt; 국내 현재가 &gt; 투자자 &gt; 투자자동향 탭 &gt; 왼쪽구분을 '추정(주)'로 선택 시 확인 가능한 데이터를 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n증권사 직원이 장중에 집계/입력한 자료를 단순 누계한 수치로서,\n입력시간은 외국인 09:30, 11:20, 13:20, 14:30 / 기관종합 10:00, 11:20, 13:20, 14:30 이며, 사정에 따라 변동될 수 있습니다.",
 		Group:           GroupInvestorTrendEstimate,
 		ServiceGroup:    ServiceGroupInvestorTrendEstimate,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDInvestorTrendEstimate,
 		VirtualTRID:     VirtualTRIDInvestorTrendEstimate,
 		SupportsVirtual: SupportsVirtualInvestorTrendEstimate,
+		Parameters: []ParameterMetadata{
+			{Name: "MKSC_SHRN_ISCD", FieldName: "MkscShrnISCD", Flag: "mksc-shrn-iscd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "종목코드", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInquireDailyTradeVolume: {
 		OperationID:     OperationInquireDailyTradeVolume,
 		Endpoint:        EndpointInquireDailyTradeVolume,
+		Method:          "GET",
+		Summary:         "종목별일별매수매도체결량 [v1_국내주식-056]",
+		Description:     "종목별일별매수매도체결량 API입니다. 실전계좌의 경우, 한 번의 호출에 최대 100건까지 확인 가능합니다.\n국내주식 종목의 일별 매수체결량, 매도체결량 데이터를 확인할 수 있습니다.",
 		Group:           GroupInquireDailyTradeVolume,
 		ServiceGroup:    ServiceGroupInquireDailyTradeVolume,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDInquireDailyTradeVolume,
 		VirtualTRID:     VirtualTRIDInquireDailyTradeVolume,
 		SupportsVirtual: SupportsVirtualInquireDailyTradeVolume,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J: KRX, NX: NXT, UN: 통합", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "005930", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "from", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_2", FieldName: "FidInputDate2", Flag: "to", Source: "user", Required: true, Default: "", Canonical: "to", ValueKind: "date", Description: "to", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_PERIOD_DIV_CODE", FieldName: "FidPeriodDivCode", Flag: "period", Source: "default", Required: true, Default: "D", Canonical: "period", ValueKind: "period", Description: "D", Advanced: false, Completion: []string{"daily", "weekly", "monthly", "yearly", "D", "W", "M", "Y"}},
+		},
 	},
 	OperationCompProgramTradeToday: {
 		OperationID:     OperationCompProgramTradeToday,
 		Endpoint:        EndpointCompProgramTradeToday,
+		Method:          "GET",
+		Summary:         "프로그램매매 종합현황(시간) [국내주식-114]",
+		Description:     "프로그램매매 종합현황(시간) API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0460] 프로그램매매 종합현황 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n※ 장시간(09:00~15:30) 동안의 최근 30분간의 데이터 확인이 가능하며, 다음조회가 불가합니다.\n※ 장시간(09:00~15:30) 이후에는 bsop_hour 에 153000 ~ 170000 까지의 시간데이터가 출력되지만 데이터는 모두 동일한 장마감 데이터인 점 유의 부탁드립니다.",
 		Group:           GroupCompProgramTradeToday,
 		ServiceGroup:    ServiceGroupCompProgramTradeToday,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDCompProgramTradeToday,
 		VirtualTRID:     VirtualTRIDCompProgramTradeToday,
 		SupportsVirtual: SupportsVirtualCompProgramTradeToday,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "KRX : J , NXT : NX, 통합 : UN", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_MRKT_CLS_CODE", FieldName: "FidMrktClsCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "K:코스피, Q:코스닥", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_SCTN_CLS_CODE", FieldName: "FidSctnClsCode", Flag: "fid-sctn-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 입력", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "공백 입력", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE1", FieldName: "FidCondMrktDivCode1", Flag: "fid-cond-mrkt-div-code1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 입력", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_HOUR_1", FieldName: "FidInputHour1", Flag: "fid-input-hour-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 입력", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationCompProgramTradeDaily: {
 		OperationID:     OperationCompProgramTradeDaily,
 		Endpoint:        EndpointCompProgramTradeDaily,
+		Method:          "GET",
+		Summary:         "프로그램매매 종합현황(일별)[국내주식-115]",
+		Description:     "프로그램매매 종합현황(일별) API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0460] 프로그램매매 종합현황 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n* 8개월 이상 과거 조회는 불가하며 에러메시지가 발생합니다.",
 		Group:           GroupCompProgramTradeDaily,
 		ServiceGroup:    ServiceGroupCompProgramTradeDaily,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDCompProgramTradeDaily,
 		VirtualTRID:     VirtualTRIDCompProgramTradeDaily,
 		SupportsVirtual: SupportsVirtualCompProgramTradeDaily,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J : KRX, NX : NXT, UN : 통합", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_MRKT_CLS_CODE", FieldName: "FidMrktClsCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "K:코스피, Q:코스닥", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "공백 입력, 입력 시 ~ 입력일자까지 조회됨\n* 8개월 이상 과거 조회 불가", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_2", FieldName: "FidInputDate2", Flag: "to", Source: "user", Required: true, Default: "", Canonical: "to", ValueKind: "date", Description: "공백 입력", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationInvestorProgramTradeToday: {
 		OperationID:     OperationInvestorProgramTradeToday,
 		Endpoint:        EndpointInvestorProgramTradeToday,
+		Method:          "GET",
+		Summary:         "프로그램매매 투자자매매동향(당일) [국내주식-116]",
+		Description:     "프로그램매매 투자자매매동향(당일) API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0466] 프로그램매매 투자자별 동향 화면 의 \"당일동향\" 표의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupInvestorProgramTradeToday,
 		ServiceGroup:    ServiceGroupInvestorProgramTradeToday,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDInvestorProgramTradeToday,
 		VirtualTRID:     VirtualTRIDInvestorProgramTradeToday,
 		SupportsVirtual: SupportsVirtualInvestorProgramTradeToday,
+		Parameters: []ParameterMetadata{
+			{Name: "EXCH_DIV_CLS_CODE", FieldName: "ExchDivClsCode", Flag: "exch-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "J : KRX, NX : NXT, UN : 통합", Advanced: false, Completion: []string(nil)},
+			{Name: "MRKT_DIV_CLS_CODE", FieldName: "MrktDivClsCode", Flag: "mrkt-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "1:코스피, 4:코스닥", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationDailyCreditBalance: {
 		OperationID:     OperationDailyCreditBalance,
 		Endpoint:        EndpointDailyCreditBalance,
+		Method:          "GET",
+		Summary:         "국내주식 신용잔고 일별추이[국내주식-110]",
+		Description:     "국내주식 신용잔고 일별추이 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0476] 국내주식 신용잔고 일별추이 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n한 번의 호출에 최대 30건 확인 가능하며, fid_input_date_1 을 입력하여 다음 조회가 가능합니다.\n\n※ 상환수량은 \"매도상환수량+현금상환수량\"의 합계 수치입니다.",
 		Group:           GroupDailyCreditBalance,
 		ServiceGroup:    ServiceGroupDailyCreditBalance,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDDailyCreditBalance,
 		VirtualTRID:     VirtualTRIDDailyCreditBalance,
 		SupportsVirtual: SupportsVirtualDailyCreditBalance,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (주식 J)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_cond_scr_div_code", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(20476)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드 (ex 005930)", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_date_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "결제일자 (ex 20240313)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationExpPriceTrend: {
 		OperationID:     OperationExpPriceTrend,
 		Endpoint:        EndpointExpPriceTrend,
+		Method:          "GET",
+		Summary:         "국내주식 예상체결가 추이[국내주식-118]",
+		Description:     "국내주식 예상체결가 추이 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0184] 예상체결지수 추이 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n최대 30건 확인 가능하며, 다음 조회가 불가합니다.",
 		Group:           GroupExpPriceTrend,
 		ServiceGroup:    ServiceGroupExpPriceTrend,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDExpPriceTrend,
 		VirtualTRID:     VirtualTRIDExpPriceTrend,
 		SupportsVirtual: SupportsVirtualExpPriceTrend,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_mkop_cls_code", FieldName: "FidMkopClsCode", Flag: "fid-mkop-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체, 4:체결량 0 제외", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (주식 J)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드(ex. 005930)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationDailyShortSale: {
 		OperationID:     OperationDailyShortSale,
 		Endpoint:        EndpointDailyShortSale,
+		Method:          "GET",
+		Summary:         "국내주식 공매도 일별추이[국내주식-134]",
+		Description:     "",
 		Group:           GroupDailyShortSale,
 		ServiceGroup:    ServiceGroupDailyShortSale,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDDailyShortSale,
 		VirtualTRID:     VirtualTRIDDailyShortSale,
 		SupportsVirtual: SupportsVirtualDailyShortSale,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_INPUT_DATE_2", FieldName: "FidInputDate2", Flag: "to", Source: "user", Required: true, Default: "", Canonical: "to", ValueKind: "date", Description: "~ 누적", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (주식 J)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "공백시 전체 (기간 ~)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationOvertimeExpTransFluct: {
 		OperationID:     OperationOvertimeExpTransFluct,
 		Endpoint:        EndpointOvertimeExpTransFluct,
+		Method:          "GET",
+		Summary:         "국내주식 시간외예상체결등락률 [국내주식-140]",
+		Description:     "국내주식 시간외예상체결등락률 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0236] 시간외 예상체결등락률 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupOvertimeExpTransFluct,
 		ServiceGroup:    ServiceGroupOvertimeExpTransFluct,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDOvertimeExpTransFluct,
 		VirtualTRID:     VirtualTRIDOvertimeExpTransFluct,
 		SupportsVirtual: SupportsVirtualOvertimeExpTransFluct,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (J: 주식)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(11186)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000(전체), 0001(코스피), 1001(코스닥)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_RANK_SORT_CLS_CODE", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0(상승률), 1(상승폭), 2(보합), 3(하락률), 4(하락폭)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_DIV_CLS_CODE", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'0(전체), 1(관리종목), 2(투자주의), 3(투자경고),\n 4(투자위험예고), 5(투자위험), 6(보통주), 7(우선주)'", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "가격 ~", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_VOL_1", FieldName: "FidInputVol1", Flag: "fid-input-vol-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래량 ~", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationTradprtByamt: {
 		OperationID:     OperationTradprtByamt,
 		Endpoint:        EndpointTradprtByamt,
+		Method:          "GET",
+		Summary:         "국내주식 체결금액별 매매비중 [국내주식-192]",
+		Description:     "국내주식 체결금액별 매매비중 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0135] 체결금액별 매매비중 화면의 \"상단 표\" 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupTradprtByamt,
 		ServiceGroup:    ServiceGroupTradprtByamt,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDTradprtByamt,
 		VirtualTRID:     VirtualTRIDTradprtByamt,
 		SupportsVirtual: SupportsVirtualTradprtByamt,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J: KRX, NX: NXT, UN: 통합", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Uniquekey(11119)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "종목코드(ex)(005930 (삼성전자))", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationMktfunds: {
 		OperationID:     OperationMktfunds,
 		Endpoint:        EndpointMktfunds,
+		Method:          "GET",
+		Summary:         "국내 증시자금 종합 [국내주식-193]",
+		Description:     "국내 증시자금 종합 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0470] 증시자금 종합 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다. (단위: 억원)\n\n※ 해당자료는 금융투자협회의 자료를 제공하고 있으며, 오류와 지연이 발생할 수 있습니다.\n※ 위 정보에 의한 투자판단의 최종책임은 정보이용자에게 있으며, 당사와 한국금융투자협회는 어떠한 법적인 책임도 지지 않사오니 투자에 참고로만 이용하시기 바랍니다.",
 		Group:           GroupMktfunds,
 		ServiceGroup:    ServiceGroupMktfunds,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDMktfunds,
 		VirtualTRID:     VirtualTRIDMktfunds,
 		SupportsVirtual: SupportsVirtualMktfunds,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_INPUT_DATE_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "입력날짜1", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationDailyLoanTrans: {
 		OperationID:     OperationDailyLoanTrans,
 		Endpoint:        EndpointDailyLoanTrans,
+		Method:          "GET",
+		Summary:         "종목별 일별 대차거래추이 [국내주식-135]",
+		Description:     "종목별 일별 대차거래추이 API입니다.\n한 번의 조회에 최대 100건까지 조회 가능하며, start_date, end_date 를 수정하여 다음 조회가 가능합니다.",
 		Group:           GroupDailyLoanTrans,
 		ServiceGroup:    ServiceGroupDailyLoanTrans,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDDailyLoanTrans,
 		VirtualTRID:     VirtualTRIDDailyLoanTrans,
 		SupportsVirtual: SupportsVirtualDailyLoanTrans,
+		Parameters: []ParameterMetadata{
+			{Name: "MRKT_DIV_CLS_CODE", FieldName: "MrktDivClsCode", Flag: "mrkt-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "1(코스피), 2(코스닥), 3(종목)", Advanced: false, Completion: []string(nil)},
+			{Name: "MKSC_SHRN_ISCD", FieldName: "MkscShrnISCD", Flag: "mksc-shrn-iscd", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "START_DATE", FieldName: "StartDate", Flag: "start-date", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "조회기간 ~", Advanced: false, Completion: []string(nil)},
+			{Name: "END_DATE", FieldName: "EndDate", Flag: "end-date", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "~ 조회기간", Advanced: false, Completion: []string(nil)},
+			{Name: "CTS", FieldName: "Cts", Flag: "cts", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "이전조회KEY", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationCaptureUplowprice: {
 		OperationID:     OperationCaptureUplowprice,
 		Endpoint:        EndpointCaptureUplowprice,
+		Method:          "GET",
+		Summary:         "국내주식 상하한가 포착 [국내주식-190]",
+		Description:     "국내주식 상하한가 포착 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0917] 실시간 상하한가 포착 화면 의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupCaptureUplowprice,
 		ServiceGroup:    ServiceGroupCaptureUplowprice,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDCaptureUplowprice,
 		VirtualTRID:     VirtualTRIDCaptureUplowprice,
 		SupportsVirtual: SupportsVirtualCaptureUplowprice,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분(J)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "11300(Unique key)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_PRC_CLS_CODE", FieldName: "FidPrcClsCode", Flag: "fid-prc-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0(상한가),1(하한가)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_DIV_CLS_CODE", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'0(상하한가종목),6(8%상하한가 근접), 5(10%상하한가 근접), 1(15%상하한가 근접),2(20%상하한가 근접),\n3(25%상하한가 근접)'", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "전체(0000), 코스피(0001),코스닥(1001)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_TRGT_CLS_CODE", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 입력", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_TRGT_EXLS_CLS_CODE", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 입력", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 입력", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 입력", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_VOL_CNT", FieldName: "FidVolCnt", Flag: "fid-vol-cnt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 입력", Advanced: true, Completion: []string(nil)},
+		},
 	},
 	OperationPbarTratio: {
 		OperationID:     OperationPbarTratio,
 		Endpoint:        EndpointPbarTratio,
+		Method:          "GET",
+		Summary:         "국내주식 매물대/거래비중 [국내주식-196]",
+		Description:     "국내주식 매물대/거래비중 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0113] 당일가격대별 매물대 화면의 데이터 중 일부를 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupPbarTratio,
 		ServiceGroup:    ServiceGroupPbarTratio,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDPbarTratio,
 		VirtualTRID:     VirtualTRIDPbarTratio,
 		SupportsVirtual: SupportsVirtualPbarTratio,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J:KRX, NX:NXT, UN:통합", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "주식단축종목코드", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Uniquekey(20113)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_HOUR_1", FieldName: "FidInputHour1", Flag: "fid-input-hour-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationVolumeRank: {
 		OperationID:     OperationVolumeRank,
 		Endpoint:        EndpointVolumeRank,
+		Method:          "GET",
+		Summary:         "거래량순위[v1_국내주식-047]",
+		Description:     "국내 주식 거래량 순위를 조회합니다.",
 		Group:           GroupVolumeRank,
 		ServiceGroup:    ServiceGroupVolumeRank,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDVolumeRank,
 		VirtualTRID:     VirtualTRIDVolumeRank,
 		SupportsVirtual: SupportsVirtualVolumeRank,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "J:KRX, NX:NXT", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "20171", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000(전체) 기타(업종코드)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_DIV_CLS_CODE", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0(전체) 1(보통주) 2(우선주)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_BLNG_CLS_CODE", FieldName: "FidBlngClsCode", Flag: "fid-blng-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 평균거래량 1:거래증가율 2:평균거래회전율 3:거래금액순 4:평균거래금액회전율", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_TRGT_CLS_CODE", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "1 or 0 9자리 (차례대로 증거금 30% 40% 50% 60% 100% 신용보증금 30% 40% 50% 60%)\nex) \"111111111\"", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_TRGT_EXLS_CLS_CODE", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "1 or 0 10자리 (차례대로 투자위험/경고/주의 관리종목 정리매매 불성실공시 우선주 거래정지 ETF ETN 신용주문불가 SPAC)\nex) \"0000000000\"", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "가격 ~\nex) \"0\"\n\n전체 가격 대상 조회 시 FID_INPUT_PRICE_1, FID_INPUT_PRICE_2 모두 \"\"(공란) 입력", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "~ 가격\nex) \"1000000\"\n\n전체 가격 대상 조회 시 FID_INPUT_PRICE_1, FID_INPUT_PRICE_2 모두 \"\"(공란) 입력", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_VOL_CNT", FieldName: "FidVolCnt", Flag: "fid-vol-cnt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래량 ~\nex) \"100000\"\n\n전체 거래량 대상 조회 시 FID_VOL_CNT \"\"(공란) 입력", Advanced: true, Completion: []string(nil)},
+		},
 	},
 	OperationFluctuation: {
 		OperationID:     OperationFluctuation,
 		Endpoint:        EndpointFluctuation,
+		Method:          "GET",
+		Summary:         "국내주식 등락률 순위[v1_국내주식-088]",
+		Description:     "국내 주식 등락률 순위를 조회합니다.",
 		Group:           GroupFluctuation,
 		ServiceGroup:    ServiceGroupFluctuation,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDFluctuation,
 		VirtualTRID:     VirtualTRIDFluctuation,
 		SupportsVirtual: SupportsVirtualFluctuation,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_rsfl_rate2", FieldName: "FidRsflRate2", Flag: "fid-rsfl-rate2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 입력 시 전체 (~ 비율", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (J:KRX, NX:NXT)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_cond_scr_div_code", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key( 20170 )", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000(전체) 코스피(0001), 코스닥(1001), 코스피200(2001)", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_rank_sort_cls_code", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:상승율순 1:하락율순 2:시가대비상승율 3:시가대비하락율 4:변동율", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_cnt_1", FieldName: "FidInputCnt1", Flag: "fid-input-cnt-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체 , 누적일수 입력", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_prc_cls_code", FieldName: "FidPrcClsCode", Flag: "fid-prc-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'fid_rank_sort_cls_code :0 상승율 순일때 (0:저가대비, 1:종가대비)\nfid_rank_sort_cls_code :1 하락율 순일때 (0:고가대비, 1:종가대비)\nfid_rank_sort_cls_code : 기타 (0:전체)'", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_price_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 입력 시 전체 (가격 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_price_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 입력 시 전체 (~ 가격)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_vol_cnt", FieldName: "FidVolCnt", Flag: "fid-vol-cnt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 입력 시 전체 (거래량 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_trgt_cls_code", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_exls_cls_code", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_div_cls_code", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_rsfl_rate1", FieldName: "FidRsflRate1", Flag: "fid-rsfl-rate1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 입력 시 전체 (비율 ~)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationQuoteBalance: {
 		OperationID:     OperationQuoteBalance,
 		Endpoint:        EndpointQuoteBalance,
+		Method:          "GET",
+		Summary:         "국내주식 호가잔량 순위[국내주식-089]",
+		Description:     "국내주식 호가잔량 순위 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0172] 호가잔량 순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n최대 30건 확인 가능하며, 다음 조회가 불가합니다.\n\n※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다.\n종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로,\n자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.",
 		Group:           GroupQuoteBalance,
 		ServiceGroup:    ServiceGroupQuoteBalance,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDQuoteBalance,
 		VirtualTRID:     VirtualTRIDQuoteBalance,
 		SupportsVirtual: SupportsVirtualQuoteBalance,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_vol_cnt", FieldName: "FidVolCnt", Flag: "fid-vol-cnt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (거래량 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (J:KRX, NX:NXT)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_cond_scr_div_code", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key( 20172 )", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000(전체) 코스피(0001), 코스닥(1001), 코스피200(2001)", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_rank_sort_cls_code", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 순매수잔량순, 1:순매도잔량순, 2:매수비율순, 3:매도비율순", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_div_cls_code", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_cls_code", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_exls_cls_code", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_price_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (가격 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_price_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (~ 가격)", Advanced: true, Completion: []string(nil)},
+		},
 	},
 	OperationProfitAssetIndex: {
 		OperationID:     OperationProfitAssetIndex,
 		Endpoint:        EndpointProfitAssetIndex,
+		Method:          "GET",
+		Summary:         "국내주식 수익자산지표 순위[v1_국내주식-090]",
+		Description:     "국내주식 수익자산지표 순위 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0173] 수익자산지표 순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n최대 30건 확인 가능하며, 다음 조회가 불가합니다.\n\n※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다.\n종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로,\n자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.",
 		Group:           GroupProfitAssetIndex,
 		ServiceGroup:    ServiceGroupProfitAssetIndex,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDProfitAssetIndex,
 		VirtualTRID:     VirtualTRIDProfitAssetIndex,
 		SupportsVirtual: SupportsVirtualProfitAssetIndex,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (J:KRX, NX:NXT)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_trgt_cls_code", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_scr_div_code", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key( 20173 )", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_div_cls_code", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_price_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (가격 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_price_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (~ 가격)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_vol_cnt", FieldName: "FidVolCnt", Flag: "fid-vol-cnt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (거래량 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_option_1", FieldName: "FidInputOption1", Flag: "fid-input-option-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "회계연도 (2023)", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_option_2", FieldName: "FidInputOption2", Flag: "fid-input-option-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 1/4분기 , 1: 반기, 2: 3/4분기, 3: 결산", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_rank_sort_cls_code", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:매출이익 1:영업이익 2:경상이익 3:당기순이익 4:자산총계 5:부채총계 6:자본총계", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_blng_cls_code", FieldName: "FidBlngClsCode", Flag: "fid-blng-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_exls_cls_code", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationMarketCap: {
 		OperationID:     OperationMarketCap,
 		Endpoint:        EndpointMarketCap,
+		Method:          "GET",
+		Summary:         "국내주식 시가총액 상위[v1_국내주식-091]",
+		Description:     "국내 주식 시가총액 상위 순위를 조회합니다.",
 		Group:           GroupMarketCap,
 		ServiceGroup:    ServiceGroupMarketCap,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDMarketCap,
 		VirtualTRID:     VirtualTRIDMarketCap,
 		SupportsVirtual: SupportsVirtualMarketCap,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_input_price_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (~ 가격)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (J:KRX, NX:NXT)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_cond_scr_div_code", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key( 20174 )", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_div_cls_code", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 전체,  1:보통주,  2:우선주", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_cls_code", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_exls_cls_code", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_price_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (가격 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_vol_cnt", FieldName: "FidVolCnt", Flag: "fid-vol-cnt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (거래량 ~)", Advanced: true, Completion: []string(nil)},
+		},
 	},
 	OperationFinanceRatio: {
 		OperationID:     OperationFinanceRatio,
 		Endpoint:        EndpointFinanceRatio,
+		Method:          "GET",
+		Summary:         "국내주식 재무비율 순위[v1_국내주식-092]",
+		Description:     "국내주식 재무비율 순위 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0175] 재무비율순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n최대 30건 확인 가능하며, 다음 조회가 불가합니다.\n\n※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다.\n종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로,\n자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.",
 		Group:           GroupFinanceRatio,
 		ServiceGroup:    ServiceGroupFinanceRatio,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDFinanceRatio,
 		VirtualTRID:     VirtualTRIDFinanceRatio,
 		SupportsVirtual: SupportsVirtualFinanceRatio,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_trgt_cls_code", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (J:KRX, NX:NXT)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_cond_scr_div_code", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key( 20175 )", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_div_cls_code", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_price_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (가격 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_price_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (~ 가격)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_vol_cnt", FieldName: "FidVolCnt", Flag: "fid-vol-cnt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (거래량 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_option_1", FieldName: "FidInputOption1", Flag: "fid-input-option-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "회계년도 입력 (ex 2023)", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_option_2", FieldName: "FidInputOption2", Flag: "fid-input-option-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 1/4분기 , 1: 반기, 2: 3/4분기, 3: 결산", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_rank_sort_cls_code", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "7: 수익성 분석, 11 : 안정성 분석, 15: 성장성 분석, 20: 활동성 분석", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_blng_cls_code", FieldName: "FidBlngClsCode", Flag: "fid-blng-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_exls_cls_code", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationAfterHourBalance: {
 		OperationID:     OperationAfterHourBalance,
 		Endpoint:        EndpointAfterHourBalance,
+		Method:          "GET",
+		Summary:         "국내주식 시간외잔량 순위[v1_국내주식-093]",
+		Description:     "국내주식 시간외잔량 순위 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0176] 시간외잔량 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n최대 30건 확인 가능하며, 다음 조회가 불가합니다.\n\n※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다.\n종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로,\n자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.",
 		Group:           GroupAfterHourBalance,
 		ServiceGroup:    ServiceGroupAfterHourBalance,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDAfterHourBalance,
 		VirtualTRID:     VirtualTRIDAfterHourBalance,
 		SupportsVirtual: SupportsVirtualAfterHourBalance,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_input_price_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (가격 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (주식 J)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_cond_scr_div_code", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key( 20176 )", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_rank_sort_cls_code", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "1: 장전 시간외, 2: 장후 시간외, 3:매도잔량, 4:매수잔량", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_div_cls_code", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_exls_cls_code", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_cls_code", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_vol_cnt", FieldName: "FidVolCnt", Flag: "fid-vol-cnt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (거래량 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_price_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (~ 가격)", Advanced: true, Completion: []string(nil)},
+		},
 	},
 	OperationPreferDisparateRatio: {
 		OperationID:     OperationPreferDisparateRatio,
 		Endpoint:        EndpointPreferDisparateRatio,
+		Method:          "GET",
+		Summary:         "국내주식 우선주/괴리율 상위[v1_국내주식-094]",
+		Description:     "국내주식 우선주/괴리율 상위 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0177] 우선주/괴리율 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n최대 30건 확인 가능하며, 다음 조회가 불가합니다.\n\n※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다.\n종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로,\n자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.",
 		Group:           GroupPreferDisparateRatio,
 		ServiceGroup:    ServiceGroupPreferDisparateRatio,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDPreferDisparateRatio,
 		VirtualTRID:     VirtualTRIDPreferDisparateRatio,
 		SupportsVirtual: SupportsVirtualPreferDisparateRatio,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_vol_cnt", FieldName: "FidVolCnt", Flag: "fid-vol-cnt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (거래량 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (J:KRX, NX:NXT)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_cond_scr_div_code", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key( 20177 )", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_div_cls_code", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_cls_code", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_exls_cls_code", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_price_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (가격 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_price_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (~ 가격)", Advanced: true, Completion: []string(nil)},
+		},
 	},
 	OperationDisparity: {
 		OperationID:     OperationDisparity,
 		Endpoint:        EndpointDisparity,
+		Method:          "GET",
+		Summary:         "국내주식 이격도 순위[v1_국내주식-095]",
+		Description:     "국내주식 이격도 순위 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0178] 이격도 순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n최대 30건 확인 가능하며, 다음 조회가 불가합니다.\n\n※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다.\n종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로,\n자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.",
 		Group:           GroupDisparity,
 		ServiceGroup:    ServiceGroupDisparity,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDDisparity,
 		VirtualTRID:     VirtualTRIDDisparity,
 		SupportsVirtual: SupportsVirtualDisparity,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_input_price_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (~ 가격)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (J:KRX, NX:NXT)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_cond_scr_div_code", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key( 20178 )", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_div_cls_code", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 전체, 1:관리종목, 2:투자주의, 3:투자경고, 4:투자위험예고, 5:투자위험, 6:보톧주, 7:우선주", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_rank_sort_cls_code", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 이격도상위순, 1:이격도하위순", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_hour_cls_code", FieldName: "FidHourClsCode", Flag: "fid-hour-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "5:이격도5, 10:이격도10, 20:이격도20, 60:이격도60, 120:이격도120", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_cls_code", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_exls_cls_code", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_price_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (가격 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_vol_cnt", FieldName: "FidVolCnt", Flag: "fid-vol-cnt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (거래량 ~)", Advanced: true, Completion: []string(nil)},
+		},
 	},
 	OperationMarketValue: {
 		OperationID:     OperationMarketValue,
 		Endpoint:        EndpointMarketValue,
+		Method:          "GET",
+		Summary:         "국내주식 시장가치 순위[v1_국내주식-096]",
+		Description:     "국내 주식 시장가치 순위를 조회합니다.",
 		Group:           GroupMarketValue,
 		ServiceGroup:    ServiceGroupMarketValue,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDMarketValue,
 		VirtualTRID:     VirtualTRIDMarketValue,
 		SupportsVirtual: SupportsVirtualMarketValue,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_trgt_cls_code", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (J:KRX, NX:NXT)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_cond_scr_div_code", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key( 20179 )", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_div_cls_code", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 전체, 1:관리종목, 2:투자주의, 3:투자경고, 4:투자위험예고, 5:투자위험, 6:보톧주, 7:우선주", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_price_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (가격 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_price_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (~ 가격)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_vol_cnt", FieldName: "FidVolCnt", Flag: "fid-vol-cnt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (거래량 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_option_1", FieldName: "FidInputOption1", Flag: "fid-input-option-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "회계연도 입력 (ex 2023)", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_option_2", FieldName: "FidInputOption2", Flag: "fid-input-option-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 1/4분기 , 1: 반기, 2: 3/4분기, 3: 결산", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_rank_sort_cls_code", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'가치분석(23:PER, 24:PBR, 25:PCR, 26:PSR, 27: EPS, 28:EVA,\n29: EBITDA, 30: EV/EBITDA, 31:EBITDA/금융비율'", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_blng_cls_code", FieldName: "FidBlngClsCode", Flag: "fid-blng-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_exls_cls_code", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationVolumePower: {
 		OperationID:     OperationVolumePower,
 		Endpoint:        EndpointVolumePower,
+		Method:          "GET",
+		Summary:         "국내주식 체결강도 상위[v1_국내주식-101]",
+		Description:     "국내 주식 체결강도 상위 순위를 조회합니다.",
 		Group:           GroupVolumePower,
 		ServiceGroup:    ServiceGroupVolumePower,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDVolumePower,
 		VirtualTRID:     VirtualTRIDVolumePower,
 		SupportsVirtual: SupportsVirtualVolumePower,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_trgt_exls_cls_code", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (J:KRX, NX:NXT)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_cond_scr_div_code", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key( 20168 )", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_div_cls_code", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 전체,  1: 보통주 2: 우선주", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_price_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (가격 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_price_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (~ 가격)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_vol_cnt", FieldName: "FidVolCnt", Flag: "fid-vol-cnt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (거래량 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_trgt_cls_code", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationTopInterestStock: {
 		OperationID:     OperationTopInterestStock,
 		Endpoint:        EndpointTopInterestStock,
+		Method:          "GET",
+		Summary:         "국내주식 관심종목등록 상위[v1_국내주식-102]",
+		Description:     "국내주식 관심종목등록 상위 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0180] 관심종목등록상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n최대 30건 확인 가능하며, 다음 조회가 불가합니다.\n\n※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다.\n종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로,\n자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.",
 		Group:           GroupTopInterestStock,
 		ServiceGroup:    ServiceGroupTopInterestStock,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDTopInterestStock,
 		VirtualTRID:     VirtualTRIDTopInterestStock,
 		SupportsVirtual: SupportsVirtualTopInterestStock,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_input_iscd_2", FieldName: "FidInputISCD2", Flag: "fid-input-iscd-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "000000 : 필수입력값", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (J:KRX, NX:NXT)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_cond_scr_div_code", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(20180)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_cls_code", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_exls_cls_code", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0 : 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_price_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (가격 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_price_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (~ 가격)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_vol_cnt", FieldName: "FidVolCnt", Flag: "fid-vol-cnt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (거래량 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_div_cls_code", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 전체 1: 관리종목 2: 투자주의 3: 투자경고 4: 투자위험예고 5: 투자위험 6: 보통주 7: 우선주", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_cnt_1", FieldName: "FidInputCnt1", Flag: "fid-input-cnt-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "순위검색 입력값(1: 1위부터, 10:10위부터)", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationExpTransUpdown: {
 		OperationID:     OperationExpTransUpdown,
 		Endpoint:        EndpointExpTransUpdown,
+		Method:          "GET",
+		Summary:         "국내주식 예상체결 상승/하락상위[v1_국내주식-103]",
+		Description:     "국내주식 예상체결 상승/하락상위 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0182] 예상체결 상승/하락상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n최대 30건 확인 가능하며, 다음 조회가 불가합니다.\n\n※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다.\n종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로,\n자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.",
 		Group:           GroupExpTransUpdown,
 		ServiceGroup:    ServiceGroupExpTransUpdown,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDExpTransUpdown,
 		VirtualTRID:     VirtualTRIDExpTransUpdown,
 		SupportsVirtual: SupportsVirtualExpTransUpdown,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_rank_sort_cls_code", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:상승률1:상승폭2:보합3:하락율4:하락폭5:체결량6:거래대금", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (주식 J)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_cond_scr_div_code", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(20182)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200, 4001: KRX100", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_div_cls_code", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체 1:보통주 2:우선주", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_aply_rang_prc_1", FieldName: "FidAplyRangPrc1", Flag: "fid-aply-rang-prc-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (가격 ~)", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_vol_cnt", FieldName: "FidVolCnt", Flag: "fid-vol-cnt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (거래량 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_pbmn", FieldName: "FidPbmn", Flag: "fid-pbmn", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (거래대금 ~) 천원단위", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_blng_cls_code", FieldName: "FidBlngClsCode", Flag: "fid-blng-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_mkop_cls_code", FieldName: "FidMkopClsCode", Flag: "fid-mkop-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:장전예상1:장마감예상", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationTradedByCompany: {
 		OperationID:     OperationTradedByCompany,
 		Endpoint:        EndpointTradedByCompany,
+		Method:          "GET",
+		Summary:         "국내주식 당사매매종목 상위[v1_국내주식-104]",
+		Description:     "국내주식 당사매매종목 상위 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0186] 당사매매종목 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n최대 30건 확인 가능하며, 다음 조회가 불가합니다.\n\n※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다.\n종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로,\n자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.",
 		Group:           GroupTradedByCompany,
 		ServiceGroup:    ServiceGroupTradedByCompany,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDTradedByCompany,
 		VirtualTRID:     VirtualTRIDTradedByCompany,
 		SupportsVirtual: SupportsVirtualTradedByCompany,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_trgt_exls_cls_code", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (J:KRX, NX:NXT)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_cond_scr_div_code", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(20186)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_div_cls_code", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체, 1:관리종목, 2:투자주의, 3:투자경고, 4:투자위험예고, 5:투자위험, 6:보통주, 7:우선주", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_rank_sort_cls_code", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:매도상위,1:매수상위", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_date_1", FieldName: "FidInputDate1", Flag: "from", Source: "user", Required: true, Default: "", Canonical: "from", ValueKind: "date", Description: "기간~", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_date_2", FieldName: "FidInputDate2", Flag: "to", Source: "user", Required: true, Default: "", Canonical: "to", ValueKind: "date", Description: "~기간", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200, 4001: KRX100", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_cls_code", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_aply_rang_vol", FieldName: "FidAplyRangVol", Flag: "fid-aply-rang-vol", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 전체, 100: 100주 이상", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_aply_rang_prc_2", FieldName: "FidAplyRangPrc2", Flag: "fid-aply-rang-prc-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "~ 가격", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_aply_rang_prc_1", FieldName: "FidAplyRangPrc1", Flag: "fid-aply-rang-prc-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "가격 ~", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationNearNewHighlow: {
 		OperationID:     OperationNearNewHighlow,
 		Endpoint:        EndpointNearNewHighlow,
+		Method:          "GET",
+		Summary:         "국내주식 신고/신저근접종목 상위[v1_국내주식-105]",
+		Description:     "국내주식 신고/신저근접종목 상위 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0187] 신고/신저 근접종목 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n최대 30건 확인 가능하며, 다음 조회가 불가합니다.\n\n※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다.\n종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로,\n자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.",
 		Group:           GroupNearNewHighlow,
 		ServiceGroup:    ServiceGroupNearNewHighlow,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDNearNewHighlow,
 		VirtualTRID:     VirtualTRIDNearNewHighlow,
 		SupportsVirtual: SupportsVirtualNearNewHighlow,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_aply_rang_vol", FieldName: "FidAplyRangVol", Flag: "fid-aply-rang-vol", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 전체, 100: 100주 이상", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (주식 J)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_cond_scr_div_code", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(20187)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_div_cls_code", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체, 1:관리종목, 2:투자주의, 3:투자경고", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_cnt_1", FieldName: "FidInputCnt1", Flag: "fid-input-cnt-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "괴리율 최소", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_cnt_2", FieldName: "FidInputCnt2", Flag: "fid-input-cnt-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "괴리율 최대", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_prc_cls_code", FieldName: "FidPrcClsCode", Flag: "fid-prc-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:신고근접, 1:신저근접", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200, 4001: KRX100", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_cls_code", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0: 전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_exls_cls_code", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체, 1:관리종목, 2:투자주의, 3:투자경고, 4:투자위험예고, 5:투자위험, 6:보통주, 7:우선주", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_aply_rang_prc_1", FieldName: "FidAplyRangPrc1", Flag: "fid-aply-rang-prc-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "가격 ~", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_aply_rang_prc_2", FieldName: "FidAplyRangPrc2", Flag: "fid-aply-rang-prc-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "~ 가격", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationDividendRate: {
 		OperationID:     OperationDividendRate,
 		Endpoint:        EndpointDividendRate,
+		Method:          "GET",
+		Summary:         "국내주식 배당률 상위[국내주식-106]",
+		Description:     "국내주식 배당률 상위 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0188] 배당률 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n최대 30건 확인 가능하며, 다음 조회가 불가합니다.\n\n※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다.\n종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로,\n자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.",
 		Group:           GroupDividendRate,
 		ServiceGroup:    ServiceGroupDividendRate,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDDividendRate,
 		VirtualTRID:     VirtualTRIDDividendRate,
 		SupportsVirtual: SupportsVirtualDividendRate,
+		Parameters: []ParameterMetadata{
+			{Name: "CTS_AREA", FieldName: "CtsArea", Flag: "cts-area", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+			{Name: "GB1", FieldName: "Gb1", Flag: "gb1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체, 1:코스피,  2: 코스피200, 3: 코스닥,", Advanced: false, Completion: []string(nil)},
+			{Name: "UPJONG", FieldName: "Upjong", Flag: "upjong", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'코스피(0001:종합, 0002:대형주.…0027:제조업 ), \n코스닥(1001:종합, …. 1041:IT부품\n코스피200 (2001:KOSPI200, 2007:KOSPI100, 2008:KOSPI50)'", Advanced: false, Completion: []string(nil)},
+			{Name: "GB2", FieldName: "Gb2", Flag: "gb2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체, 6:보통주, 7:우선주", Advanced: false, Completion: []string(nil)},
+			{Name: "GB3", FieldName: "Gb3", Flag: "gb3", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "1:주식배당, 2: 현금배당", Advanced: false, Completion: []string(nil)},
+			{Name: "F_DT", FieldName: "FDt", Flag: "f-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "기준일From", Advanced: false, Completion: []string(nil)},
+			{Name: "T_DT", FieldName: "TDt", Flag: "t-dt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "기준일To", Advanced: false, Completion: []string(nil)},
+			{Name: "GB4", FieldName: "Gb4", Flag: "gb4", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체, 1:결산배당, 2:중간배당", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationBulkTransNum: {
 		OperationID:     OperationBulkTransNum,
 		Endpoint:        EndpointBulkTransNum,
+		Method:          "GET",
+		Summary:         "국내주식 대량체결건수 상위[국내주식-107]",
+		Description:     "국내주식 대량체결건수 상위 API입니다.\n한국투자 HTS(eFriend Plus) &gt; [0169] 대량체결건수 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n최대 30건 확인 가능하며, 다음 조회가 불가합니다.\n\n※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다.\n종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로,\n자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.",
 		Group:           GroupBulkTransNum,
 		ServiceGroup:    ServiceGroupBulkTransNum,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDBulkTransNum,
 		VirtualTRID:     VirtualTRIDBulkTransNum,
 		SupportsVirtual: SupportsVirtualBulkTransNum,
+		Parameters: []ParameterMetadata{
+			{Name: "fid_aply_rang_prc_2", FieldName: "FidAplyRangPrc2", Flag: "fid-aply-rang-prc-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "~ 가격", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_cond_mrkt_div_code", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (J:KRX, NX:NXT)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "fid_cond_scr_div_code", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(11909)", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_input_iscd", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200, 4001: KRX100", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_rank_sort_cls_code", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:매수상위, 1:매도상위", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_div_cls_code", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_price_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "건별금액 ~", Advanced: true, Completion: []string(nil)},
+			{Name: "fid_aply_rang_prc_1", FieldName: "FidAplyRangPrc1", Flag: "fid-aply-rang-prc-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "가격 ~", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_input_iscd_2", FieldName: "FidInputISCD2", Flag: "fid-input-iscd-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백:전체종목, 개별종목 조회시 종목코드 (000660)", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_exls_cls_code", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_trgt_cls_code", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0:전체", Advanced: false, Completion: []string(nil)},
+			{Name: "fid_vol_cnt", FieldName: "FidVolCnt", Flag: "fid-vol-cnt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래량 ~", Advanced: true, Completion: []string(nil)},
+		},
 	},
 	OperationCreditBalance: {
 		OperationID:     OperationCreditBalance,
 		Endpoint:        EndpointCreditBalance,
+		Method:          "GET",
+		Summary:         "국내주식 신용잔고 상위[국내주식-109]",
+		Description:     "국내주식 신용잔고 상위 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0475] 신용잔고 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n최대 30건 확인 가능하며, 다음 조회가 불가합니다.\n\n※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다.\n종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로,\n자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.",
 		Group:           GroupCreditBalance,
 		ServiceGroup:    ServiceGroupCreditBalance,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDCreditBalance,
 		VirtualTRID:     VirtualTRIDCreditBalance,
 		SupportsVirtual: SupportsVirtualCreditBalance,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(11701)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:거래소, 1001:코스닥, 2001:코스피200,", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_OPTION", FieldName: "FidOption", Flag: "fid-option", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "2~999", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (주식 J)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_RANK_SORT_CLS_CODE", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'(융자)0:잔고비율 상위, 1: 잔고수량 상위, 2: 잔고금액 상위, 3: 잔고비율 증가상위, 4: 잔고비율 감소상위 \n(대주)5:잔고비율 상위, 6: 잔고수량 상위, 7: 잔고금액 상위, 8: 잔고비율 증가상위, 9: 잔고비율 감소상위 '", Advanced: true, Completion: []string(nil)},
+		},
 	},
 	OperationShortSale: {
 		OperationID:     OperationShortSale,
 		Endpoint:        EndpointShortSale,
+		Method:          "GET",
+		Summary:         "국내주식 공매도 상위종목[국내주식-133]",
+		Description:     "공매도 상위종목 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0482] 공매도 상위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n최대 30건 확인 가능하며, 다음 조회가 불가합니다.\n\n※ 30건 이상의 목록 조회가 필요한 경우, 대안으로 종목조건검색 API를 이용해서 원하는 종목 100개까지 검색할 수 있는 기능을 제공하고 있습니다.\n종목조건검색 API는 HTS(efriend Plus) [0110] 조건검색에서 등록 및 서버저장한 나의 조건 목록을 확인할 수 있는 API로,\n자세한 사용 방법은 공지사항 - [조건검색 필독] 조건검색 API 이용안내 참고 부탁드립니다.",
 		Group:           GroupShortSale,
 		ServiceGroup:    ServiceGroupShortSale,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDShortSale,
 		VirtualTRID:     VirtualTRIDShortSale,
 		SupportsVirtual: SupportsVirtualShortSale,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_APLY_RANG_VOL", FieldName: "FidAplyRangVol", Flag: "fid-aply-rang-vol", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (주식 J)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(20482)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000:전체, 0001:코스피, 1001:코스닥, 2001:코스피200, 4001: KRX100, 3003: 코스닥150", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_PERIOD_DIV_CODE", FieldName: "FidPeriodDivCode", Flag: "period", Source: "default", Required: true, Default: "D", Canonical: "period", ValueKind: "period", Description: "조회구분 (일/월) D: 일, M:월", Advanced: false, Completion: []string{"daily", "weekly", "monthly", "yearly", "D", "W", "M", "Y"}},
+			{Name: "FID_INPUT_CNT_1", FieldName: "FidInputCnt1", Flag: "fid-input-cnt-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "'조회가간(일수):\n조회구분(D) 0:1일, 1:2일, 2:3일, 3:4일, 4:1주일, 9:2주일, 14:3주일, \n조회구분(M) 1:1개월,  2:2개월, 3:3개월'", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_TRGT_EXLS_CLS_CODE", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_TRGT_CLS_CODE", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_APLY_RANG_PRC_1", FieldName: "FidAplyRangPrc1", Flag: "fid-aply-rang-prc-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "가격 ~", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_APLY_RANG_PRC_2", FieldName: "FidAplyRangPrc2", Flag: "fid-aply-rang-prc-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "~ 가격", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationOvertimeFluctuation: {
 		OperationID:     OperationOvertimeFluctuation,
 		Endpoint:        EndpointOvertimeFluctuation,
+		Method:          "GET",
+		Summary:         "국내주식 시간외등락율순위 [국내주식-138]",
+		Description:     "국내주식 시간외등락율순위 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0234] 시간외 등락률순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n최대 30건 확인 가능하며, 다음 조회가 불가합니다.",
 		Group:           GroupOvertimeFluctuation,
 		ServiceGroup:    ServiceGroupOvertimeFluctuation,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDOvertimeFluctuation,
 		VirtualTRID:     VirtualTRIDOvertimeFluctuation,
 		SupportsVirtual: SupportsVirtualOvertimeFluctuation,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (J: 주식)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_MRKT_CLS_CODE", FieldName: "FidMrktClsCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "공백 입력", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(20234)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000(전체), 0001(코스피), 1001(코스닥)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_DIV_CLS_CODE", FieldName: "FidDivClsCode", Flag: "fid-div-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "1(상한가), 2(상승률), 3(보합),4(하한가),5(하락률)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (가격 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (~ 가격)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_VOL_CNT", FieldName: "FidVolCnt", Flag: "fid-vol-cnt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "입력값 없을때 전체 (거래량 ~)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_TRGT_CLS_CODE", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 입력", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_TRGT_EXLS_CLS_CODE", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백 입력", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationOvertimeVolume: {
 		OperationID:     OperationOvertimeVolume,
 		Endpoint:        EndpointOvertimeVolume,
+		Method:          "GET",
+		Summary:         "국내주식 시간외거래량순위 [국내주식-139]",
+		Description:     "국내주식 시간외거래량순위 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0235] 시간외 거래량순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n최대 30건 확인 가능하며, 다음 조회가 불가합니다.",
 		Group:           GroupOvertimeVolume,
 		ServiceGroup:    ServiceGroupOvertimeVolume,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDOvertimeVolume,
 		VirtualTRID:     VirtualTRIDOvertimeVolume,
 		SupportsVirtual: SupportsVirtualOvertimeVolume,
+		Parameters: []ParameterMetadata{
+			{Name: "FID_COND_MRKT_DIV_CODE", FieldName: "FidCondMrktDivCode", Flag: "market", Source: "default", Required: true, Default: "J", Canonical: "market", ValueKind: "market", Description: "시장구분코드 (J: 주식)", Advanced: false, Completion: []string{"krx", "nxt", "unified", "J", "NX", "UN"}},
+			{Name: "FID_COND_SCR_DIV_CODE", FieldName: "FidCondScrDivCode", Flag: "fid-cond-scr-div-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "Unique key(20235)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_ISCD", FieldName: "FidInputISCD", Flag: "symbol", Source: "user", Required: true, Default: "", Canonical: "symbol", ValueKind: "symbol", Description: "0000(전체), 0001(코스피), 1001(코스닥)", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_RANK_SORT_CLS_CODE", FieldName: "FidRankSortClsCode", Flag: "fid-rank-sort-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "0(매수잔량),  1(매도잔량), 2(거래량)", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_1", FieldName: "FidInputPrice1", Flag: "fid-input-price-1", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "가격 ~", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_INPUT_PRICE_2", FieldName: "FidInputPrice2", Flag: "fid-input-price-2", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "~ 가격", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_VOL_CNT", FieldName: "FidVolCnt", Flag: "fid-vol-cnt", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "거래량 ~", Advanced: true, Completion: []string(nil)},
+			{Name: "FID_TRGT_CLS_CODE", FieldName: "FidTrgtClsCode", Flag: "fid-trgt-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+			{Name: "FID_TRGT_EXLS_CLS_CODE", FieldName: "FidTrgtExlsClsCode", Flag: "fid-trgt-exls-cls-code", Source: "user", Required: true, Default: "", Canonical: "", ValueKind: "string", Description: "공백", Advanced: false, Completion: []string(nil)},
+		},
 	},
 	OperationHtsTopView: {
 		OperationID:     OperationHtsTopView,
 		Endpoint:        EndpointHtsTopView,
+		Method:          "GET",
+		Summary:         "HTS조회상위20종목 [국내주식-214]",
+		Description:     "HTS조회상위20종목 API입니다. \n한국투자 HTS(eFriend Plus) &gt; [0158] 조회종목상위 화면의 \"종목명\", \"종목코드\" 표시 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
 		Group:           GroupHtsTopView,
 		ServiceGroup:    ServiceGroupHtsTopView,
+		RoleHint:        "market_scan",
 		RealTRID:        RealTRIDHtsTopView,
 		VirtualTRID:     VirtualTRIDHtsTopView,
 		SupportsVirtual: SupportsVirtualHtsTopView,
+		Parameters:      []ParameterMetadata{},
 	},
 }
 
-func LookupOperationMetadata(operationID string) (OperationMetadata, bool) {
+var operationInvokers = map[string]rawInvoker{
+	OperationInquirePrice:                  invokeRawInquirePrice,
+	OperationInquirePrice2:                 invokeRawInquirePrice2,
+	OperationInquireCcnl:                   invokeRawInquireCcnl,
+	OperationInquireDailyPrice:             invokeRawInquireDailyPrice,
+	OperationInquireAskingPriceExpCcn:      invokeRawInquireAskingPriceExpCcn,
+	OperationInquireInvestor:               invokeRawInquireInvestor,
+	OperationInquireMember:                 invokeRawInquireMember,
+	OperationInquireDailyItemChartPrice:    invokeRawInquireDailyItemChartPrice,
+	OperationInquireTimeItemChartPrice:     invokeRawInquireTimeItemChartPrice,
+	OperationInquireTimeDailychartprice:    invokeRawInquireTimeDailychartprice,
+	OperationInquireTimeItemConclusion:     invokeRawInquireTimeItemConclusion,
+	OperationInquireDailyOvertimeprice:     invokeRawInquireDailyOvertimeprice,
+	OperationInquireTimeOvertimeconclusion: invokeRawInquireTimeOvertimeconclusion,
+	OperationInquireOvertimePrice:          invokeRawInquireOvertimePrice,
+	OperationInquireOvertimeAskingPrice:    invokeRawInquireOvertimeAskingPrice,
+	OperationExpClosingPrice:               invokeRawExpClosingPrice,
+	OperationETFETNQuotationsInquirePrice:  invokeRawETFETNQuotationsInquirePrice,
+	OperationInquireComponentStockPrice:    invokeRawInquireComponentStockPrice,
+	OperationNavComparisonTrend:            invokeRawNavComparisonTrend,
+	OperationNavComparisonDailyTrend:       invokeRawNavComparisonDailyTrend,
+	OperationNavComparisonTimeTrend:        invokeRawNavComparisonTimeTrend,
+	OperationInquireELWPrice:               invokeRawInquireELWPrice,
+	OperationNewlyListed:                   invokeRawNewlyListed,
+	OperationSensitivity:                   invokeRawSensitivity,
+	OperationUdrlAssetPrice:                invokeRawUdrlAssetPrice,
+	OperationCondSearch:                    invokeRawCondSearch,
+	OperationQuickChange:                   invokeRawQuickChange,
+	OperationUdrlAssetList:                 invokeRawUdrlAssetList,
+	OperationCompareStocks:                 invokeRawCompareStocks,
+	OperationLpTradeTrend:                  invokeRawLpTradeTrend,
+	OperationIndicatorTrendCcnl:            invokeRawIndicatorTrendCcnl,
+	OperationIndicatorTrendMinute:          invokeRawIndicatorTrendMinute,
+	OperationIndicatorTrendDaily:           invokeRawIndicatorTrendDaily,
+	OperationVolatilityTrendTick:           invokeRawVolatilityTrendTick,
+	OperationVolatilityTrendCcnl:           invokeRawVolatilityTrendCcnl,
+	OperationVolatilityTrendDaily:          invokeRawVolatilityTrendDaily,
+	OperationSensitivityTrendCcnl:          invokeRawSensitivityTrendCcnl,
+	OperationVolatilityTrendMinute:         invokeRawVolatilityTrendMinute,
+	OperationSensitivityTrendDaily:         invokeRawSensitivityTrendDaily,
+	OperationExpirationStocks:              invokeRawExpirationStocks,
+	OperationIndicator:                     invokeRawIndicator,
+	OperationUpdownRate:                    invokeRawUpdownRate,
+	OperationELWRankingVolumeRank:          invokeRawELWRankingVolumeRank,
+	OperationInquireIndexPrice:             invokeRawInquireIndexPrice,
+	OperationInquireIndexDailyPrice:        invokeRawInquireIndexDailyPrice,
+	OperationInquireIndexTickprice:         invokeRawInquireIndexTickprice,
+	OperationInquireIndexTimeprice:         invokeRawInquireIndexTimeprice,
+	OperationInquireTimeIndexchartprice:    invokeRawInquireTimeIndexchartprice,
+	OperationInquireDailyIndexchartprice:   invokeRawInquireDailyIndexchartprice,
+	OperationInquireIndexCategoryPrice:     invokeRawInquireIndexCategoryPrice,
+	OperationExpIndexTrend:                 invokeRawExpIndexTrend,
+	OperationExpTotalIndex:                 invokeRawExpTotalIndex,
+	OperationInquireViStatus:               invokeRawInquireViStatus,
+	OperationCompInterest:                  invokeRawCompInterest,
+	OperationNewsTitle:                     invokeRawNewsTitle,
+	OperationChkHoliday:                    invokeRawChkHoliday,
+	OperationMarketTime:                    invokeRawMarketTime,
+	OperationSearchInfo:                    invokeRawSearchInfo,
+	OperationSearchStockInfo:               invokeRawSearchStockInfo,
+	OperationBalanceSheet:                  invokeRawBalanceSheet,
+	OperationIncomeStatement:               invokeRawIncomeStatement,
+	OperationFinancialRatio:                invokeRawFinancialRatio,
+	OperationProfitRatio:                   invokeRawProfitRatio,
+	OperationOtherMajorRatios:              invokeRawOtherMajorRatios,
+	OperationStabilityRatio:                invokeRawStabilityRatio,
+	OperationGrowthRatio:                   invokeRawGrowthRatio,
+	OperationCreditByCompany:               invokeRawCreditByCompany,
+	OperationDividend:                      invokeRawDividend,
+	OperationPurreq:                        invokeRawPurreq,
+	OperationMergerSplit:                   invokeRawMergerSplit,
+	OperationRevSplit:                      invokeRawRevSplit,
+	OperationCapDcrs:                       invokeRawCapDcrs,
+	OperationListInfo:                      invokeRawListInfo,
+	OperationPubOffer:                      invokeRawPubOffer,
+	OperationForfeit:                       invokeRawForfeit,
+	OperationMandDeposit:                   invokeRawMandDeposit,
+	OperationPaidinCapin:                   invokeRawPaidinCapin,
+	OperationBonusIssue:                    invokeRawBonusIssue,
+	OperationSharehldMeet:                  invokeRawSharehldMeet,
+	OperationEstimatePerform:               invokeRawEstimatePerform,
+	OperationLendableByCompany:             invokeRawLendableByCompany,
+	OperationInvestOpinion:                 invokeRawInvestOpinion,
+	OperationInvestOpbysec:                 invokeRawInvestOpbysec,
+	OperationPsearchTitle:                  invokeRawPsearchTitle,
+	OperationPsearchResult:                 invokeRawPsearchResult,
+	OperationIntstockGrouplist:             invokeRawIntstockGrouplist,
+	OperationIntstockMultprice:             invokeRawIntstockMultprice,
+	OperationIntstockStocklistByGroup:      invokeRawIntstockStocklistByGroup,
+	OperationForeignInstitutionTotal:       invokeRawForeignInstitutionTotal,
+	OperationFrgnmemTradeEstimate:          invokeRawFrgnmemTradeEstimate,
+	OperationInvestorTradeByStockDaily:     invokeRawInvestorTradeByStockDaily,
+	OperationInquireInvestorTimeByMarket:   invokeRawInquireInvestorTimeByMarket,
+	OperationInquireInvestorDailyByMarket:  invokeRawInquireInvestorDailyByMarket,
+	OperationFrgnmemPchsTrend:              invokeRawFrgnmemPchsTrend,
+	OperationFrgnmemTradeTrend:             invokeRawFrgnmemTradeTrend,
+	OperationInquireMemberDaily:            invokeRawInquireMemberDaily,
+	OperationProgramTradeByStock:           invokeRawProgramTradeByStock,
+	OperationProgramTradeByStockDaily:      invokeRawProgramTradeByStockDaily,
+	OperationInvestorTrendEstimate:         invokeRawInvestorTrendEstimate,
+	OperationInquireDailyTradeVolume:       invokeRawInquireDailyTradeVolume,
+	OperationCompProgramTradeToday:         invokeRawCompProgramTradeToday,
+	OperationCompProgramTradeDaily:         invokeRawCompProgramTradeDaily,
+	OperationInvestorProgramTradeToday:     invokeRawInvestorProgramTradeToday,
+	OperationDailyCreditBalance:            invokeRawDailyCreditBalance,
+	OperationExpPriceTrend:                 invokeRawExpPriceTrend,
+	OperationDailyShortSale:                invokeRawDailyShortSale,
+	OperationOvertimeExpTransFluct:         invokeRawOvertimeExpTransFluct,
+	OperationTradprtByamt:                  invokeRawTradprtByamt,
+	OperationMktfunds:                      invokeRawMktfunds,
+	OperationDailyLoanTrans:                invokeRawDailyLoanTrans,
+	OperationCaptureUplowprice:             invokeRawCaptureUplowprice,
+	OperationPbarTratio:                    invokeRawPbarTratio,
+	OperationVolumeRank:                    invokeRawVolumeRank,
+	OperationFluctuation:                   invokeRawFluctuation,
+	OperationQuoteBalance:                  invokeRawQuoteBalance,
+	OperationProfitAssetIndex:              invokeRawProfitAssetIndex,
+	OperationMarketCap:                     invokeRawMarketCap,
+	OperationFinanceRatio:                  invokeRawFinanceRatio,
+	OperationAfterHourBalance:              invokeRawAfterHourBalance,
+	OperationPreferDisparateRatio:          invokeRawPreferDisparateRatio,
+	OperationDisparity:                     invokeRawDisparity,
+	OperationMarketValue:                   invokeRawMarketValue,
+	OperationVolumePower:                   invokeRawVolumePower,
+	OperationTopInterestStock:              invokeRawTopInterestStock,
+	OperationExpTransUpdown:                invokeRawExpTransUpdown,
+	OperationTradedByCompany:               invokeRawTradedByCompany,
+	OperationNearNewHighlow:                invokeRawNearNewHighlow,
+	OperationDividendRate:                  invokeRawDividendRate,
+	OperationBulkTransNum:                  invokeRawBulkTransNum,
+	OperationCreditBalance:                 invokeRawCreditBalance,
+	OperationShortSale:                     invokeRawShortSale,
+	OperationOvertimeFluctuation:           invokeRawOvertimeFluctuation,
+	OperationOvertimeVolume:                invokeRawOvertimeVolume,
+	OperationHtsTopView:                    invokeRawHtsTopView,
+}
+
+func Operations() []OperationMetadata {
+	out := make([]OperationMetadata, 0, len(operationOrder))
+	for _, operationID := range operationOrder {
+		metadata, ok := operationMetadata[operationID]
+		if !ok {
+			continue
+		}
+		metadata.Parameters = cloneParameters(metadata.Parameters)
+		out = append(out, metadata)
+	}
+	return out
+}
+
+func LookupOperation(operationID string) (OperationMetadata, bool) {
 	metadata, ok := operationMetadata[operationID]
+	metadata.Parameters = cloneParameters(metadata.Parameters)
 	return metadata, ok
+}
+
+func LookupOperationMetadata(operationID string) (OperationMetadata, bool) {
+	return LookupOperation(operationID)
+}
+
+func RequestTemplate(operationID string) (map[string]string, error) {
+	metadata, ok := operationMetadata[operationID]
+	if !ok {
+		return nil, fmt.Errorf("kis raw operation %q is not registered", operationID)
+	}
+	template := make(map[string]string, len(metadata.Parameters))
+	for _, parameter := range metadata.Parameters {
+		template[parameter.Name] = parameter.Default
+	}
+	return template, nil
+}
+
+func Invoke(ctx context.Context, executor Executor, operationID string, input map[string]string) (any, error) {
+	invoker, ok := operationInvokers[operationID]
+	if !ok {
+		return nil, fmt.Errorf("kis raw operation %q is not registered", operationID)
+	}
+	return invoker(ctx, executor, input)
+}
+
+func cloneParameters(parameters []ParameterMetadata) []ParameterMetadata {
+	out := make([]ParameterMetadata, len(parameters))
+	copy(out, parameters)
+	for i := range out {
+		out[i].Completion = append([]string(nil), out[i].Completion...)
+	}
+	return out
+}
+
+func applyInput(metadata OperationMetadata, input map[string]string) (map[string]string, error) {
+	known := make(map[string]ParameterMetadata, len(metadata.Parameters))
+	out := make(map[string]string, len(metadata.Parameters))
+	for _, parameter := range metadata.Parameters {
+		known[parameter.Name] = parameter
+		if parameter.Default != "" {
+			out[parameter.Name] = normalizeInputValue(parameter, parameter.Default)
+		}
+	}
+	for key, value := range input {
+		parameter, ok := known[key]
+		if !ok {
+			return nil, fmt.Errorf("kis raw operation %s does not accept parameter %s", metadata.OperationID, key)
+		}
+		out[key] = normalizeInputValue(parameter, value)
+	}
+	for _, parameter := range metadata.Parameters {
+		if parameter.Required && strings.TrimSpace(out[parameter.Name]) == "" {
+			return nil, fmt.Errorf("kis raw operation %s requires parameter %s (--%s)", metadata.OperationID, parameter.Name, parameter.Flag)
+		}
+		if _, ok := out[parameter.Name]; !ok {
+			out[parameter.Name] = ""
+		}
+	}
+	return out, nil
+}
+
+func normalizeInputValue(parameter ParameterMetadata, value string) string {
+	trimmed := strings.TrimSpace(value)
+	switch parameter.ValueKind {
+	case "market":
+		switch strings.ToLower(trimmed) {
+		case "krx":
+			return "J"
+		case "nxt":
+			return "NX"
+		case "unified", "integrated":
+			return "UN"
+		}
+	case "period":
+		switch strings.ToLower(trimmed) {
+		case "daily", "day", "d":
+			return "D"
+		case "weekly", "week", "w":
+			return "W"
+		case "monthly", "month", "m":
+			return "M"
+		case "yearly", "year", "annual", "y":
+			return "Y"
+		}
+	}
+	return trimmed
+}
+
+func invokeRawInquirePrice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquirePrice], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquirePrice(ctx, executor, InquirePriceRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawInquirePrice2(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquirePrice2], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquirePrice2(ctx, executor, InquirePrice2Request{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawInquireCcnl(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireCcnl], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireCcnl(ctx, executor, InquireCcnlRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawInquireDailyPrice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireDailyPrice], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireDailyPrice(ctx, executor, InquireDailyPriceRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidPeriodDivCode:   query["FID_PERIOD_DIV_CODE"],
+		FidOrgAdjPrc:       query["FID_ORG_ADJ_PRC"],
+	})
+}
+
+func invokeRawInquireAskingPriceExpCcn(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireAskingPriceExpCcn], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireAskingPriceExpCcn(ctx, executor, InquireAskingPriceExpCcnRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawInquireInvestor(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireInvestor], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireInvestor(ctx, executor, InquireInvestorRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawInquireMember(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireMember], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireMember(ctx, executor, InquireMemberRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawInquireDailyItemChartPrice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireDailyItemChartPrice], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireDailyItemChartPrice(ctx, executor, InquireDailyItemChartPriceRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidInputDate1:      query["FID_INPUT_DATE_1"],
+		FidInputDate2:      query["FID_INPUT_DATE_2"],
+		FidPeriodDivCode:   query["FID_PERIOD_DIV_CODE"],
+		FidOrgAdjPrc:       query["FID_ORG_ADJ_PRC"],
+	})
+}
+
+func invokeRawInquireTimeItemChartPrice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireTimeItemChartPrice], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireTimeItemChartPrice(ctx, executor, InquireTimeItemChartPriceRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidInputHour1:      query["FID_INPUT_HOUR_1"],
+		FidPwDataIncuYn:    query["FID_PW_DATA_INCU_YN"],
+		FidEtcClsCode:      query["FID_ETC_CLS_CODE"],
+	})
+}
+
+func invokeRawInquireTimeDailychartprice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireTimeDailychartprice], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireTimeDailychartprice(ctx, executor, InquireTimeDailychartpriceRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidInputHour1:      query["FID_INPUT_HOUR_1"],
+		FidInputDate1:      query["FID_INPUT_DATE_1"],
+		FidPwDataIncuYn:    query["FID_PW_DATA_INCU_YN"],
+		FidFakeTickIncuYn:  query["FID_FAKE_TICK_INCU_YN"],
+	})
+}
+
+func invokeRawInquireTimeItemConclusion(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireTimeItemConclusion], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireTimeItemConclusion(ctx, executor, InquireTimeItemConclusionRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidInputHour1:      query["FID_INPUT_HOUR_1"],
+	})
+}
+
+func invokeRawInquireDailyOvertimeprice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireDailyOvertimeprice], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireDailyOvertimeprice(ctx, executor, InquireDailyOvertimepriceRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawInquireTimeOvertimeconclusion(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireTimeOvertimeconclusion], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireTimeOvertimeconclusion(ctx, executor, InquireTimeOvertimeconclusionRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidHourClsCode:     query["FID_HOUR_CLS_CODE"],
+	})
+}
+
+func invokeRawInquireOvertimePrice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireOvertimePrice], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireOvertimePrice(ctx, executor, InquireOvertimePriceRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawInquireOvertimeAskingPrice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireOvertimeAskingPrice], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireOvertimeAskingPrice(ctx, executor, InquireOvertimeAskingPriceRequest{
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+	})
+}
+
+func invokeRawExpClosingPrice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationExpClosingPrice], input)
+	if err != nil {
+		return nil, err
+	}
+	return ExpClosingPrice(ctx, executor, ExpClosingPriceRequest{
+		FidRankSortClsCode: query["FID_RANK_SORT_CLS_CODE"],
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidBlngClsCode:     query["FID_BLNG_CLS_CODE"],
+	})
+}
+
+func invokeRawETFETNQuotationsInquirePrice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationETFETNQuotationsInquirePrice], input)
+	if err != nil {
+		return nil, err
+	}
+	return ETFETNQuotationsInquirePrice(ctx, executor, ETFETNQuotationsInquirePriceRequest{
+		FidInputISCD:       query["fid_input_iscd"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+	})
+}
+
+func invokeRawInquireComponentStockPrice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireComponentStockPrice], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireComponentStockPrice(ctx, executor, InquireComponentStockPriceRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+	})
+}
+
+func invokeRawNavComparisonTrend(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationNavComparisonTrend], input)
+	if err != nil {
+		return nil, err
+	}
+	return NavComparisonTrend(ctx, executor, NavComparisonTrendRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawNavComparisonDailyTrend(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationNavComparisonDailyTrend], input)
+	if err != nil {
+		return nil, err
+	}
+	return NavComparisonDailyTrend(ctx, executor, NavComparisonDailyTrendRequest{
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+		FidInputDate1:      query["fid_input_date_1"],
+		FidInputDate2:      query["fid_input_date_2"],
+	})
+}
+
+func invokeRawNavComparisonTimeTrend(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationNavComparisonTimeTrend], input)
+	if err != nil {
+		return nil, err
+	}
+	return NavComparisonTimeTrend(ctx, executor, NavComparisonTimeTrendRequest{
+		FidHourClsCode:     query["fid_hour_cls_code"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+	})
+}
+
+func invokeRawInquireELWPrice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireELWPrice], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireELWPrice(ctx, executor, InquireELWPriceRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawNewlyListed(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationNewlyListed], input)
+	if err != nil {
+		return nil, err
+	}
+	return NewlyListed(ctx, executor, NewlyListedRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidDivClsCode:      query["FID_DIV_CLS_CODE"],
+		FidUnasInputISCD:   query["FID_UNAS_INPUT_ISCD"],
+		FidInputISCD2:      query["FID_INPUT_ISCD_2"],
+		FidInputDate1:      query["FID_INPUT_DATE_1"],
+		FidBlncClsCode:     query["FID_BLNC_CLS_CODE"],
+	})
+}
+
+func invokeRawSensitivity(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationSensitivity], input)
+	if err != nil {
+		return nil, err
+	}
+	return Sensitivity(ctx, executor, SensitivityRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidUnasInputISCD:   query["FID_UNAS_INPUT_ISCD"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidDivClsCode:      query["FID_DIV_CLS_CODE"],
+		FidInputPrice1:     query["FID_INPUT_PRICE_1"],
+		FidInputPrice2:     query["FID_INPUT_PRICE_2"],
+		FidInputVol1:       query["FID_INPUT_VOL_1"],
+		FidInputVol2:       query["FID_INPUT_VOL_2"],
+		FidRankSortClsCode: query["FID_RANK_SORT_CLS_CODE"],
+		FidInputRmnnDynu1:  query["FID_INPUT_RMNN_DYNU_1"],
+		FidInputDate1:      query["FID_INPUT_DATE_1"],
+		FidBlngClsCode:     query["FID_BLNG_CLS_CODE"],
+	})
+}
+
+func invokeRawUdrlAssetPrice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationUdrlAssetPrice], input)
+	if err != nil {
+		return nil, err
+	}
+	return UdrlAssetPrice(ctx, executor, UdrlAssetPriceRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidMrktClsCode:     query["FID_MRKT_CLS_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidUnasInputISCD:   query["FID_UNAS_INPUT_ISCD"],
+		FidVolCnt:          query["FID_VOL_CNT"],
+		FidTrgtExlsClsCode: query["FID_TRGT_EXLS_CLS_CODE"],
+		FidInputPrice1:     query["FID_INPUT_PRICE_1"],
+		FidInputPrice2:     query["FID_INPUT_PRICE_2"],
+		FidInputVol1:       query["FID_INPUT_VOL_1"],
+		FidInputVol2:       query["FID_INPUT_VOL_2"],
+		FidInputRmnnDynu1:  query["FID_INPUT_RMNN_DYNU_1"],
+		FidInputRmnnDynu2:  query["FID_INPUT_RMNN_DYNU_2"],
+		FidOption:          query["FID_OPTION"],
+		FidInputOption1:    query["FID_INPUT_OPTION_1"],
+		FidInputOption2:    query["FID_INPUT_OPTION_2"],
+	})
+}
+
+func invokeRawCondSearch(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationCondSearch], input)
+	if err != nil {
+		return nil, err
+	}
+	return CondSearch(ctx, executor, CondSearchRequest{
+		FidCondMrktDivCode:  query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:   query["FID_COND_SCR_DIV_CODE"],
+		FidRankSortClsCode:  query["FID_RANK_SORT_CLS_CODE"],
+		FidInputCnt1:        query["FID_INPUT_CNT_1"],
+		FidRankSortClsCode2: query["FID_RANK_SORT_CLS_CODE_2"],
+		FidInputCnt2:        query["FID_INPUT_CNT_2"],
+		FidRankSortClsCode3: query["FID_RANK_SORT_CLS_CODE_3"],
+		FidInputCnt3:        query["FID_INPUT_CNT_3"],
+		FidTrgtClsCode:      query["FID_TRGT_CLS_CODE"],
+		FidInputISCD:        query["FID_INPUT_ISCD"],
+		FidUnasInputISCD:    query["FID_UNAS_INPUT_ISCD"],
+		FidMrktClsCode:      query["FID_MRKT_CLS_CODE"],
+		FidInputDate1:       query["FID_INPUT_DATE_1"],
+		FidInputDate2:       query["FID_INPUT_DATE_2"],
+		FidInputISCD2:       query["FID_INPUT_ISCD_2"],
+		FidEtcClsCode:       query["FID_ETC_CLS_CODE"],
+		FidInputRmnnDynu1:   query["FID_INPUT_RMNN_DYNU_1"],
+		FidInputRmnnDynu2:   query["FID_INPUT_RMNN_DYNU_2"],
+		FidPrprCnt1:         query["FID_PRPR_CNT1"],
+		FidPrprCnt2:         query["FID_PRPR_CNT2"],
+		FidRsflRate1:        query["FID_RSFL_RATE1"],
+		FidRsflRate2:        query["FID_RSFL_RATE2"],
+		FidVol1:             query["FID_VOL1"],
+		FidVol2:             query["FID_VOL2"],
+		FidAplyRangPrc1:     query["FID_APLY_RANG_PRC_1"],
+		FidAplyRangPrc2:     query["FID_APLY_RANG_PRC_2"],
+		FidLvrgVal1:         query["FID_LVRG_VAL1"],
+		FidLvrgVal2:         query["FID_LVRG_VAL2"],
+		FidVol3:             query["FID_VOL3"],
+		FidVol4:             query["FID_VOL4"],
+		FidIntsVltl1:        query["FID_INTS_VLTL1"],
+		FidIntsVltl2:        query["FID_INTS_VLTL2"],
+		FidPrmmVal1:         query["FID_PRMM_VAL1"],
+		FidPrmmVal2:         query["FID_PRMM_VAL2"],
+		FidGear1:            query["FID_GEAR1"],
+		FidGear2:            query["FID_GEAR2"],
+		FidPrlsQryrRate1:    query["FID_PRLS_QRYR_RATE1"],
+		FidPrlsQryrRate2:    query["FID_PRLS_QRYR_RATE2"],
+		FidDelta1:           query["FID_DELTA1"],
+		FidDelta2:           query["FID_DELTA2"],
+		FidAcpr1:            query["FID_ACPR1"],
+		FidAcpr2:            query["FID_ACPR2"],
+		FidStckCnvrRate1:    query["FID_STCK_CNVR_RATE1"],
+		FidStckCnvrRate2:    query["FID_STCK_CNVR_RATE2"],
+		FidDivClsCode:       query["FID_DIV_CLS_CODE"],
+		FidPrit1:            query["FID_PRIT1"],
+		FidPrit2:            query["FID_PRIT2"],
+		FidCfp1:             query["FID_CFP1"],
+		FidCfp2:             query["FID_CFP2"],
+		FidInputNmixPrice1:  query["FID_INPUT_NMIX_PRICE_1"],
+		FidInputNmixPrice2:  query["FID_INPUT_NMIX_PRICE_2"],
+		FidEgeaVal1:         query["FID_EGEA_VAL1"],
+		FidEgeaVal2:         query["FID_EGEA_VAL2"],
+		FidInputDvdnErt:     query["FID_INPUT_DVDN_ERT"],
+		FidInputHistVltl:    query["FID_INPUT_HIST_VLTL"],
+		FidTheta1:           query["FID_THETA1"],
+		FidTheta2:           query["FID_THETA2"],
+	})
+}
+
+func invokeRawQuickChange(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationQuickChange], input)
+	if err != nil {
+		return nil, err
+	}
+	return QuickChange(ctx, executor, QuickChangeRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidUnasInputISCD:   query["FID_UNAS_INPUT_ISCD"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidMrktClsCode:     query["FID_MRKT_CLS_CODE"],
+		FidInputPrice1:     query["FID_INPUT_PRICE_1"],
+		FidInputPrice2:     query["FID_INPUT_PRICE_2"],
+		FidInputVol1:       query["FID_INPUT_VOL_1"],
+		FidInputVol2:       query["FID_INPUT_VOL_2"],
+		FidHourClsCode:     query["FID_HOUR_CLS_CODE"],
+		FidInputHour1:      query["FID_INPUT_HOUR_1"],
+		FidInputHour2:      query["FID_INPUT_HOUR_2"],
+		FidRankSortClsCode: query["FID_RANK_SORT_CLS_CODE"],
+		FidBlngClsCode:     query["FID_BLNG_CLS_CODE"],
+	})
+}
+
+func invokeRawUdrlAssetList(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationUdrlAssetList], input)
+	if err != nil {
+		return nil, err
+	}
+	return UdrlAssetList(ctx, executor, UdrlAssetListRequest{
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidRankSortClsCode: query["FID_RANK_SORT_CLS_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawCompareStocks(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationCompareStocks], input)
+	if err != nil {
+		return nil, err
+	}
+	return CompareStocks(ctx, executor, CompareStocksRequest{
+		FidCondScrDivCode: query["FID_COND_SCR_DIV_CODE"],
+		FidInputISCD:      query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawLpTradeTrend(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationLpTradeTrend], input)
+	if err != nil {
+		return nil, err
+	}
+	return LpTradeTrend(ctx, executor, LpTradeTrendRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawIndicatorTrendCcnl(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationIndicatorTrendCcnl], input)
+	if err != nil {
+		return nil, err
+	}
+	return IndicatorTrendCcnl(ctx, executor, IndicatorTrendCcnlRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawIndicatorTrendMinute(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationIndicatorTrendMinute], input)
+	if err != nil {
+		return nil, err
+	}
+	return IndicatorTrendMinute(ctx, executor, IndicatorTrendMinuteRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidHourClsCode:     query["FID_HOUR_CLS_CODE"],
+		FidPwDataIncuYn:    query["FID_PW_DATA_INCU_YN"],
+	})
+}
+
+func invokeRawIndicatorTrendDaily(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationIndicatorTrendDaily], input)
+	if err != nil {
+		return nil, err
+	}
+	return IndicatorTrendDaily(ctx, executor, IndicatorTrendDailyRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawVolatilityTrendTick(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationVolatilityTrendTick], input)
+	if err != nil {
+		return nil, err
+	}
+	return VolatilityTrendTick(ctx, executor, VolatilityTrendTickRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawVolatilityTrendCcnl(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationVolatilityTrendCcnl], input)
+	if err != nil {
+		return nil, err
+	}
+	return VolatilityTrendCcnl(ctx, executor, VolatilityTrendCcnlRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawVolatilityTrendDaily(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationVolatilityTrendDaily], input)
+	if err != nil {
+		return nil, err
+	}
+	return VolatilityTrendDaily(ctx, executor, VolatilityTrendDailyRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawSensitivityTrendCcnl(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationSensitivityTrendCcnl], input)
+	if err != nil {
+		return nil, err
+	}
+	return SensitivityTrendCcnl(ctx, executor, SensitivityTrendCcnlRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawVolatilityTrendMinute(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationVolatilityTrendMinute], input)
+	if err != nil {
+		return nil, err
+	}
+	return VolatilityTrendMinute(ctx, executor, VolatilityTrendMinuteRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidHourClsCode:     query["FID_HOUR_CLS_CODE"],
+		FidPwDataIncuYn:    query["FID_PW_DATA_INCU_YN"],
+	})
+}
+
+func invokeRawSensitivityTrendDaily(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationSensitivityTrendDaily], input)
+	if err != nil {
+		return nil, err
+	}
+	return SensitivityTrendDaily(ctx, executor, SensitivityTrendDailyRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawExpirationStocks(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationExpirationStocks], input)
+	if err != nil {
+		return nil, err
+	}
+	return ExpirationStocks(ctx, executor, ExpirationStocksRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidInputDate1:      query["FID_INPUT_DATE_1"],
+		FidInputDate2:      query["FID_INPUT_DATE_2"],
+		FidDivClsCode:      query["FID_DIV_CLS_CODE"],
+		FidEtcClsCode:      query["FID_ETC_CLS_CODE"],
+		FidUnasInputISCD:   query["FID_UNAS_INPUT_ISCD"],
+		FidInputISCD2:      query["FID_INPUT_ISCD_2"],
+		FidBlngClsCode:     query["FID_BLNG_CLS_CODE"],
+		FidInputOption1:    query["FID_INPUT_OPTION_1"],
+	})
+}
+
+func invokeRawIndicator(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationIndicator], input)
+	if err != nil {
+		return nil, err
+	}
+	return Indicator(ctx, executor, IndicatorRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidUnasInputISCD:   query["FID_UNAS_INPUT_ISCD"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidDivClsCode:      query["FID_DIV_CLS_CODE"],
+		FidInputPrice1:     query["FID_INPUT_PRICE_1"],
+		FidInputPrice2:     query["FID_INPUT_PRICE_2"],
+		FidInputVol1:       query["FID_INPUT_VOL_1"],
+		FidInputVol2:       query["FID_INPUT_VOL_2"],
+		FidRankSortClsCode: query["FID_RANK_SORT_CLS_CODE"],
+		FidBlngClsCode:     query["FID_BLNG_CLS_CODE"],
+	})
+}
+
+func invokeRawUpdownRate(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationUpdownRate], input)
+	if err != nil {
+		return nil, err
+	}
+	return UpdownRate(ctx, executor, UpdownRateRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidUnasInputISCD:   query["FID_UNAS_INPUT_ISCD"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidInputRmnnDynu1:  query["FID_INPUT_RMNN_DYNU_1"],
+		FidDivClsCode:      query["FID_DIV_CLS_CODE"],
+		FidInputPrice1:     query["FID_INPUT_PRICE_1"],
+		FidInputPrice2:     query["FID_INPUT_PRICE_2"],
+		FidInputVol1:       query["FID_INPUT_VOL_1"],
+		FidInputVol2:       query["FID_INPUT_VOL_2"],
+		FidInputDate1:      query["FID_INPUT_DATE_1"],
+		FidRankSortClsCode: query["FID_RANK_SORT_CLS_CODE"],
+		FidBlngClsCode:     query["FID_BLNG_CLS_CODE"],
+		FidInputDate2:      query["FID_INPUT_DATE_2"],
+	})
+}
+
+func invokeRawELWRankingVolumeRank(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationELWRankingVolumeRank], input)
+	if err != nil {
+		return nil, err
+	}
+	return ELWRankingVolumeRank(ctx, executor, ELWRankingVolumeRankRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidUnasInputISCD:   query["FID_UNAS_INPUT_ISCD"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidInputRmnnDynu1:  query["FID_INPUT_RMNN_DYNU_1"],
+		FidDivClsCode:      query["FID_DIV_CLS_CODE"],
+		FidInputPrice1:     query["FID_INPUT_PRICE_1"],
+		FidInputPrice2:     query["FID_INPUT_PRICE_2"],
+		FidInputVol1:       query["FID_INPUT_VOL_1"],
+		FidInputVol2:       query["FID_INPUT_VOL_2"],
+		FidInputDate1:      query["FID_INPUT_DATE_1"],
+		FidRankSortClsCode: query["FID_RANK_SORT_CLS_CODE"],
+		FidBlngClsCode:     query["FID_BLNG_CLS_CODE"],
+		FidInputISCD2:      query["FID_INPUT_ISCD_2"],
+		FidInputDate2:      query["FID_INPUT_DATE_2"],
+	})
+}
+
+func invokeRawInquireIndexPrice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireIndexPrice], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireIndexPrice(ctx, executor, InquireIndexPriceRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawInquireIndexDailyPrice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireIndexDailyPrice], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireIndexDailyPrice(ctx, executor, InquireIndexDailyPriceRequest{
+		FidPeriodDivCode:   query["FID_PERIOD_DIV_CODE"],
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidInputDate1:      query["FID_INPUT_DATE_1"],
+	})
+}
+
+func invokeRawInquireIndexTickprice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireIndexTickprice], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireIndexTickprice(ctx, executor, InquireIndexTickpriceRequest{
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+	})
+}
+
+func invokeRawInquireIndexTimeprice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireIndexTimeprice], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireIndexTimeprice(ctx, executor, InquireIndexTimepriceRequest{
+		FidInputHour1:      query["FID_INPUT_HOUR_1"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+	})
+}
+
+func invokeRawInquireTimeIndexchartprice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireTimeIndexchartprice], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireTimeIndexchartprice(ctx, executor, InquireTimeIndexchartpriceRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidEtcClsCode:      query["FID_ETC_CLS_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidInputHour1:      query["FID_INPUT_HOUR_1"],
+		FidPwDataIncuYn:    query["FID_PW_DATA_INCU_YN"],
+	})
+}
+
+func invokeRawInquireDailyIndexchartprice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireDailyIndexchartprice], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireDailyIndexchartprice(ctx, executor, InquireDailyIndexchartpriceRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidInputDate1:      query["FID_INPUT_DATE_1"],
+		FidInputDate2:      query["FID_INPUT_DATE_2"],
+		FidPeriodDivCode:   query["FID_PERIOD_DIV_CODE"],
+	})
+}
+
+func invokeRawInquireIndexCategoryPrice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireIndexCategoryPrice], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireIndexCategoryPrice(ctx, executor, InquireIndexCategoryPriceRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidMrktClsCode:     query["FID_MRKT_CLS_CODE"],
+		FidBlngClsCode:     query["FID_BLNG_CLS_CODE"],
+	})
+}
+
+func invokeRawExpIndexTrend(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationExpIndexTrend], input)
+	if err != nil {
+		return nil, err
+	}
+	return ExpIndexTrend(ctx, executor, ExpIndexTrendRequest{
+		FidMkopClsCode:     query["FID_MKOP_CLS_CODE"],
+		FidInputHour1:      query["FID_INPUT_HOUR_1"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+	})
+}
+
+func invokeRawExpTotalIndex(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationExpTotalIndex], input)
+	if err != nil {
+		return nil, err
+	}
+	return ExpTotalIndex(ctx, executor, ExpTotalIndexRequest{
+		FidMrktClsCode:     query["fid_mrkt_cls_code"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidCondScrDivCode:  query["fid_cond_scr_div_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+		FidMkopClsCode:     query["fid_mkop_cls_code"],
+	})
+}
+
+func invokeRawInquireViStatus(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireViStatus], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireViStatus(ctx, executor, InquireViStatusRequest{
+		FidDivClsCode:      query["FID_DIV_CLS_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidMrktClsCode:     query["FID_MRKT_CLS_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidRankSortClsCode: query["FID_RANK_SORT_CLS_CODE"],
+		FidInputDate1:      query["FID_INPUT_DATE_1"],
+		FidTrgtClsCode:     query["FID_TRGT_CLS_CODE"],
+		FidTrgtExlsClsCode: query["FID_TRGT_EXLS_CLS_CODE"],
+	})
+}
+
+func invokeRawCompInterest(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationCompInterest], input)
+	if err != nil {
+		return nil, err
+	}
+	return CompInterest(ctx, executor, CompInterestRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidDivClsCode:      query["FID_DIV_CLS_CODE"],
+		FidDivClsCode1:     query["FID_DIV_CLS_CODE1"],
+	})
+}
+
+func invokeRawNewsTitle(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationNewsTitle], input)
+	if err != nil {
+		return nil, err
+	}
+	return NewsTitle(ctx, executor, NewsTitleRequest{
+		FidNewsOferEntpCode: query["FID_NEWS_OFER_ENTP_CODE"],
+		FidCondMrktClsCode:  query["FID_COND_MRKT_CLS_CODE"],
+		FidInputISCD:        query["FID_INPUT_ISCD"],
+		FidTitlCntt:         query["FID_TITL_CNTT"],
+		FidInputDate1:       query["FID_INPUT_DATE_1"],
+		FidInputHour1:       query["FID_INPUT_HOUR_1"],
+		FidRankSortClsCode:  query["FID_RANK_SORT_CLS_CODE"],
+		FidInputSrno:        query["FID_INPUT_SRNO"],
+	})
+}
+
+func invokeRawChkHoliday(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationChkHoliday], input)
+	if err != nil {
+		return nil, err
+	}
+	return ChkHoliday(ctx, executor, ChkHolidayRequest{
+		BassDt:    query["BASS_DT"],
+		CtxAreaNk: query["CTX_AREA_NK"],
+		CtxAreaFk: query["CTX_AREA_FK"],
+	})
+}
+
+func invokeRawMarketTime(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationMarketTime], input)
+	if err != nil {
+		return nil, err
+	}
+	_ = query
+	return MarketTime(ctx, executor, MarketTimeRequest{})
+}
+
+func invokeRawSearchInfo(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationSearchInfo], input)
+	if err != nil {
+		return nil, err
+	}
+	return SearchInfo(ctx, executor, SearchInfoRequest{
+		Pdno:       query["PDNO"],
+		PrdtTypeCd: query["PRDT_TYPE_CD"],
+	})
+}
+
+func invokeRawSearchStockInfo(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationSearchStockInfo], input)
+	if err != nil {
+		return nil, err
+	}
+	return SearchStockInfo(ctx, executor, SearchStockInfoRequest{
+		PrdtTypeCd: query["PRDT_TYPE_CD"],
+		Pdno:       query["PDNO"],
+	})
+}
+
+func invokeRawBalanceSheet(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationBalanceSheet], input)
+	if err != nil {
+		return nil, err
+	}
+	return BalanceSheet(ctx, executor, BalanceSheetRequest{
+		FidDivClsCode:      query["FID_DIV_CLS_CODE"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+	})
+}
+
+func invokeRawIncomeStatement(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationIncomeStatement], input)
+	if err != nil {
+		return nil, err
+	}
+	return IncomeStatement(ctx, executor, IncomeStatementRequest{
+		FidDivClsCode:      query["FID_DIV_CLS_CODE"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+	})
+}
+
+func invokeRawFinancialRatio(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationFinancialRatio], input)
+	if err != nil {
+		return nil, err
+	}
+	return FinancialRatio(ctx, executor, FinancialRatioRequest{
+		FidDivClsCode:      query["FID_DIV_CLS_CODE"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+	})
+}
+
+func invokeRawProfitRatio(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationProfitRatio], input)
+	if err != nil {
+		return nil, err
+	}
+	return ProfitRatio(ctx, executor, ProfitRatioRequest{
+		FidInputISCD:       query["fid_input_iscd"],
+		FidDivClsCode:      query["FID_DIV_CLS_CODE"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+	})
+}
+
+func invokeRawOtherMajorRatios(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationOtherMajorRatios], input)
+	if err != nil {
+		return nil, err
+	}
+	return OtherMajorRatios(ctx, executor, OtherMajorRatiosRequest{
+		FidInputISCD:       query["fid_input_iscd"],
+		FidDivClsCode:      query["fid_div_cls_code"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+	})
+}
+
+func invokeRawStabilityRatio(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationStabilityRatio], input)
+	if err != nil {
+		return nil, err
+	}
+	return StabilityRatio(ctx, executor, StabilityRatioRequest{
+		FidInputISCD:       query["fid_input_iscd"],
+		FidDivClsCode:      query["fid_div_cls_code"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+	})
+}
+
+func invokeRawGrowthRatio(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationGrowthRatio], input)
+	if err != nil {
+		return nil, err
+	}
+	return GrowthRatio(ctx, executor, GrowthRatioRequest{
+		FidInputISCD:       query["fid_input_iscd"],
+		FidDivClsCode:      query["fid_div_cls_code"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+	})
+}
+
+func invokeRawCreditByCompany(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationCreditByCompany], input)
+	if err != nil {
+		return nil, err
+	}
+	return CreditByCompany(ctx, executor, CreditByCompanyRequest{
+		FidRankSortClsCode: query["fid_rank_sort_cls_code"],
+		FidSlctYn:          query["fid_slct_yn"],
+		FidInputISCD:       query["fid_input_iscd"],
+		FidCondScrDivCode:  query["fid_cond_scr_div_code"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+	})
+}
+
+func invokeRawDividend(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationDividend], input)
+	if err != nil {
+		return nil, err
+	}
+	return Dividend(ctx, executor, DividendRequest{
+		Cts:    query["CTS"],
+		Gb1:    query["GB1"],
+		FDt:    query["F_DT"],
+		TDt:    query["T_DT"],
+		ShtCd:  query["SHT_CD"],
+		HighGb: query["HIGH_GB"],
+	})
+}
+
+func invokeRawPurreq(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationPurreq], input)
+	if err != nil {
+		return nil, err
+	}
+	return Purreq(ctx, executor, PurreqRequest{
+		ShtCd: query["SHT_CD"],
+		TDt:   query["T_DT"],
+		FDt:   query["F_DT"],
+		Cts:   query["CTS"],
+	})
+}
+
+func invokeRawMergerSplit(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationMergerSplit], input)
+	if err != nil {
+		return nil, err
+	}
+	return MergerSplit(ctx, executor, MergerSplitRequest{
+		Cts:   query["CTS"],
+		FDt:   query["F_DT"],
+		TDt:   query["T_DT"],
+		ShtCd: query["SHT_CD"],
+	})
+}
+
+func invokeRawRevSplit(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationRevSplit], input)
+	if err != nil {
+		return nil, err
+	}
+	return RevSplit(ctx, executor, RevSplitRequest{
+		ShtCd:    query["SHT_CD"],
+		Cts:      query["CTS"],
+		FDt:      query["F_DT"],
+		TDt:      query["T_DT"],
+		MarketGb: query["MARKET_GB"],
+	})
+}
+
+func invokeRawCapDcrs(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationCapDcrs], input)
+	if err != nil {
+		return nil, err
+	}
+	return CapDcrs(ctx, executor, CapDcrsRequest{
+		Cts:   query["CTS"],
+		FDt:   query["F_DT"],
+		TDt:   query["T_DT"],
+		ShtCd: query["SHT_CD"],
+	})
+}
+
+func invokeRawListInfo(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationListInfo], input)
+	if err != nil {
+		return nil, err
+	}
+	return ListInfo(ctx, executor, ListInfoRequest{
+		ShtCd: query["SHT_CD"],
+		TDt:   query["T_DT"],
+		FDt:   query["F_DT"],
+		Cts:   query["CTS"],
+	})
+}
+
+func invokeRawPubOffer(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationPubOffer], input)
+	if err != nil {
+		return nil, err
+	}
+	return PubOffer(ctx, executor, PubOfferRequest{
+		ShtCd: query["SHT_CD"],
+		Cts:   query["CTS"],
+		FDt:   query["F_DT"],
+		TDt:   query["T_DT"],
+	})
+}
+
+func invokeRawForfeit(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationForfeit], input)
+	if err != nil {
+		return nil, err
+	}
+	return Forfeit(ctx, executor, ForfeitRequest{
+		ShtCd: query["SHT_CD"],
+		TDt:   query["T_DT"],
+		FDt:   query["F_DT"],
+		Cts:   query["CTS"],
+	})
+}
+
+func invokeRawMandDeposit(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationMandDeposit], input)
+	if err != nil {
+		return nil, err
+	}
+	return MandDeposit(ctx, executor, MandDepositRequest{
+		TDt:   query["T_DT"],
+		ShtCd: query["SHT_CD"],
+		FDt:   query["F_DT"],
+		Cts:   query["CTS"],
+	})
+}
+
+func invokeRawPaidinCapin(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationPaidinCapin], input)
+	if err != nil {
+		return nil, err
+	}
+	return PaidinCapin(ctx, executor, PaidinCapinRequest{
+		Cts:   query["CTS"],
+		Gb1:   query["GB1"],
+		FDt:   query["F_DT"],
+		TDt:   query["T_DT"],
+		ShtCd: query["SHT_CD"],
+	})
+}
+
+func invokeRawBonusIssue(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationBonusIssue], input)
+	if err != nil {
+		return nil, err
+	}
+	return BonusIssue(ctx, executor, BonusIssueRequest{
+		Cts:   query["CTS"],
+		FDt:   query["F_DT"],
+		TDt:   query["T_DT"],
+		ShtCd: query["SHT_CD"],
+	})
+}
+
+func invokeRawSharehldMeet(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationSharehldMeet], input)
+	if err != nil {
+		return nil, err
+	}
+	return SharehldMeet(ctx, executor, SharehldMeetRequest{
+		Cts:   query["CTS"],
+		FDt:   query["F_DT"],
+		TDt:   query["T_DT"],
+		ShtCd: query["SHT_CD"],
+	})
+}
+
+func invokeRawEstimatePerform(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationEstimatePerform], input)
+	if err != nil {
+		return nil, err
+	}
+	return EstimatePerform(ctx, executor, EstimatePerformRequest{
+		ShtCd: query["SHT_CD"],
+	})
+}
+
+func invokeRawLendableByCompany(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationLendableByCompany], input)
+	if err != nil {
+		return nil, err
+	}
+	return LendableByCompany(ctx, executor, LendableByCompanyRequest{
+		ExcgDvsnCd:     query["EXCG_DVSN_CD"],
+		Pdno:           query["PDNO"],
+		ThcoStlnPsblYn: query["THCO_STLN_PSBL_YN"],
+		InqrDvsn1:      query["INQR_DVSN_1"],
+		CtxAreaFk200:   query["CTX_AREA_FK200"],
+		CtxAreaNk100:   query["CTX_AREA_NK100"],
+	})
+}
+
+func invokeRawInvestOpinion(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInvestOpinion], input)
+	if err != nil {
+		return nil, err
+	}
+	return InvestOpinion(ctx, executor, InvestOpinionRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidInputDate1:      query["FID_INPUT_DATE_1"],
+		FidInputDate2:      query["FID_INPUT_DATE_2"],
+	})
+}
+
+func invokeRawInvestOpbysec(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInvestOpbysec], input)
+	if err != nil {
+		return nil, err
+	}
+	return InvestOpbysec(ctx, executor, InvestOpbysecRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidDivClsCode:      query["FID_DIV_CLS_CODE"],
+		FidInputDate1:      query["FID_INPUT_DATE_1"],
+		FidInputDate2:      query["FID_INPUT_DATE_2"],
+	})
+}
+
+func invokeRawPsearchTitle(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationPsearchTitle], input)
+	if err != nil {
+		return nil, err
+	}
+	return PsearchTitle(ctx, executor, PsearchTitleRequest{
+		UserID: query["user_id"],
+	})
+}
+
+func invokeRawPsearchResult(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationPsearchResult], input)
+	if err != nil {
+		return nil, err
+	}
+	return PsearchResult(ctx, executor, PsearchResultRequest{
+		UserID: query["user_id"],
+		Seq:    query["seq"],
+	})
+}
+
+func invokeRawIntstockGrouplist(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationIntstockGrouplist], input)
+	if err != nil {
+		return nil, err
+	}
+	return IntstockGrouplist(ctx, executor, IntstockGrouplistRequest{
+		Type:          query["TYPE"],
+		FidEtcClsCode: query["FID_ETC_CLS_CODE"],
+		UserID:        query["USER_ID"],
+	})
+}
+
+func invokeRawIntstockMultprice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationIntstockMultprice], input)
+	if err != nil {
+		return nil, err
+	}
+	return IntstockMultprice(ctx, executor, IntstockMultpriceRequest{
+		FidCondMrktDivCode1:  query["FID_COND_MRKT_DIV_CODE_1"],
+		FidInputISCD1:        query["FID_INPUT_ISCD_1"],
+		FidCondMrktDivCode2:  query["FID_COND_MRKT_DIV_CODE_2"],
+		FidInputISCD2:        query["FID_INPUT_ISCD_2"],
+		FidCondMrktDivCode3:  query["FID_COND_MRKT_DIV_CODE_3"],
+		FidInputISCD3:        query["FID_INPUT_ISCD_3"],
+		FidCondMrktDivCode4:  query["FID_COND_MRKT_DIV_CODE_4"],
+		FidInputISCD4:        query["FID_INPUT_ISCD_4"],
+		FidCondMrktDivCode5:  query["FID_COND_MRKT_DIV_CODE_5"],
+		FidInputISCD5:        query["FID_INPUT_ISCD_5"],
+		FidCondMrktDivCode6:  query["FID_COND_MRKT_DIV_CODE_6"],
+		FidInputISCD6:        query["FID_INPUT_ISCD_6"],
+		FidCondMrktDivCode7:  query["FID_COND_MRKT_DIV_CODE_7"],
+		FidInputISCD7:        query["FID_INPUT_ISCD_7"],
+		FidCondMrktDivCode8:  query["FID_COND_MRKT_DIV_CODE_8"],
+		FidInputISCD8:        query["FID_INPUT_ISCD_8"],
+		FidCondMrktDivCode9:  query["FID_COND_MRKT_DIV_CODE_9"],
+		FidInputISCD9:        query["FID_INPUT_ISCD_9"],
+		FidCondMrktDivCode10: query["FID_COND_MRKT_DIV_CODE_10"],
+		FidInputISCD10:       query["FID_INPUT_ISCD_10"],
+		FidCondMrktDivCode11: query["FID_COND_MRKT_DIV_CODE_11"],
+		FidInputISCD11:       query["FID_INPUT_ISCD_11"],
+		FidCondMrktDivCode12: query["FID_COND_MRKT_DIV_CODE_12"],
+		FidInputISCD12:       query["FID_INPUT_ISCD_12"],
+		FidCondMrktDivCode13: query["FID_COND_MRKT_DIV_CODE_13"],
+		FidInputISCD13:       query["FID_INPUT_ISCD_13"],
+		FidCondMrktDivCode14: query["FID_COND_MRKT_DIV_CODE_14"],
+		FidInputISCD14:       query["FID_INPUT_ISCD_14"],
+		FidCondMrktDivCode15: query["FID_COND_MRKT_DIV_CODE_15"],
+		FidInputISCD15:       query["FID_INPUT_ISCD_15"],
+		FidCondMrktDivCode16: query["FID_COND_MRKT_DIV_CODE_16"],
+		FidInputISCD16:       query["FID_INPUT_ISCD_16"],
+		FidCondMrktDivCode17: query["FID_COND_MRKT_DIV_CODE_17"],
+		FidInputISCD17:       query["FID_INPUT_ISCD_17"],
+		FidCondMrktDivCode18: query["FID_COND_MRKT_DIV_CODE_18"],
+		FidInputISCD18:       query["FID_INPUT_ISCD_18"],
+		FidCondMrktDivCode19: query["FID_COND_MRKT_DIV_CODE_19"],
+		FidInputISCD19:       query["FID_INPUT_ISCD_19"],
+		FidCondMrktDivCode20: query["FID_COND_MRKT_DIV_CODE_20"],
+		FidInputISCD20:       query["FID_INPUT_ISCD_20"],
+		FidCondMrktDivCode21: query["FID_COND_MRKT_DIV_CODE_21"],
+		FidInputISCD21:       query["FID_INPUT_ISCD_21"],
+		FidCondMrktDivCode22: query["FID_COND_MRKT_DIV_CODE_22"],
+		FidInputISCD22:       query["FID_INPUT_ISCD_22"],
+		FidCondMrktDivCode23: query["FID_COND_MRKT_DIV_CODE_23"],
+		FidInputISCD23:       query["FID_INPUT_ISCD_23"],
+		FidCondMrktDivCode24: query["FID_COND_MRKT_DIV_CODE_24"],
+		FidInputISCD24:       query["FID_INPUT_ISCD_24"],
+		FidCondMrktDivCode25: query["FID_COND_MRKT_DIV_CODE_25"],
+		FidInputISCD25:       query["FID_INPUT_ISCD_25"],
+		FidCondMrktDivCode26: query["FID_COND_MRKT_DIV_CODE_26"],
+		FidInputISCD26:       query["FID_INPUT_ISCD_26"],
+		FidCondMrktDivCode27: query["FID_COND_MRKT_DIV_CODE_27"],
+		FidInputISCD27:       query["FID_INPUT_ISCD_27"],
+		FidCondMrktDivCode28: query["FID_COND_MRKT_DIV_CODE_28"],
+		FidInputISCD28:       query["FID_INPUT_ISCD_28"],
+		FidCondMrktDivCode29: query["FID_COND_MRKT_DIV_CODE_29"],
+		FidInputISCD29:       query["FID_INPUT_ISCD_29"],
+		FidCondMrktDivCode30: query["FID_COND_MRKT_DIV_CODE_30"],
+		FidInputISCD30:       query["FID_INPUT_ISCD_30"],
+	})
+}
+
+func invokeRawIntstockStocklistByGroup(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationIntstockStocklistByGroup], input)
+	if err != nil {
+		return nil, err
+	}
+	return IntstockStocklistByGroup(ctx, executor, IntstockStocklistByGroupRequest{
+		Type:          query["TYPE"],
+		UserID:        query["USER_ID"],
+		DataRank:      query["DATA_RANK"],
+		InterGrpCode:  query["INTER_GRP_CODE"],
+		InterGrpName:  query["INTER_GRP_NAME"],
+		HtsKorIsnm:    query["HTS_KOR_ISNM"],
+		CntgClsCode:   query["CNTG_CLS_CODE"],
+		FidEtcClsCode: query["FID_ETC_CLS_CODE"],
+	})
+}
+
+func invokeRawForeignInstitutionTotal(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationForeignInstitutionTotal], input)
+	if err != nil {
+		return nil, err
+	}
+	return ForeignInstitutionTotal(ctx, executor, ForeignInstitutionTotalRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidDivClsCode:      query["FID_DIV_CLS_CODE"],
+		FidRankSortClsCode: query["FID_RANK_SORT_CLS_CODE"],
+		FidEtcClsCode:      query["FID_ETC_CLS_CODE"],
+	})
+}
+
+func invokeRawFrgnmemTradeEstimate(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationFrgnmemTradeEstimate], input)
+	if err != nil {
+		return nil, err
+	}
+	return FrgnmemTradeEstimate(ctx, executor, FrgnmemTradeEstimateRequest{
+		FidCondMrktDivCode:  query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:   query["FID_COND_SCR_DIV_CODE"],
+		FidInputISCD:        query["FID_INPUT_ISCD"],
+		FidRankSortClsCode:  query["FID_RANK_SORT_CLS_CODE"],
+		FidRankSortClsCode2: query["FID_RANK_SORT_CLS_CODE_2"],
+	})
+}
+
+func invokeRawInvestorTradeByStockDaily(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInvestorTradeByStockDaily], input)
+	if err != nil {
+		return nil, err
+	}
+	return InvestorTradeByStockDaily(ctx, executor, InvestorTradeByStockDailyRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidInputDate1:      query["FID_INPUT_DATE_1"],
+		FidOrgAdjPrc:       query["FID_ORG_ADJ_PRC"],
+		FidEtcClsCode:      query["FID_ETC_CLS_CODE"],
+	})
+}
+
+func invokeRawInquireInvestorTimeByMarket(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireInvestorTimeByMarket], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireInvestorTimeByMarket(ctx, executor, InquireInvestorTimeByMarketRequest{
+		FidInputISCD:  query["fid_input_iscd"],
+		FidInputISCD2: query["fid_input_iscd_2"],
+	})
+}
+
+func invokeRawInquireInvestorDailyByMarket(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireInvestorDailyByMarket], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireInvestorDailyByMarket(ctx, executor, InquireInvestorDailyByMarketRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidInputDate1:      query["FID_INPUT_DATE_1"],
+		FidInputISCD1:      query["FID_INPUT_ISCD_1"],
+		FidInputDate2:      query["FID_INPUT_DATE_2"],
+		FidInputISCD2:      query["FID_INPUT_ISCD_2"],
+	})
+}
+
+func invokeRawFrgnmemPchsTrend(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationFrgnmemPchsTrend], input)
+	if err != nil {
+		return nil, err
+	}
+	return FrgnmemPchsTrend(ctx, executor, FrgnmemPchsTrendRequest{
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidInputISCD2:      query["FID_INPUT_ISCD_2"],
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+	})
+}
+
+func invokeRawFrgnmemTradeTrend(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationFrgnmemTradeTrend], input)
+	if err != nil {
+		return nil, err
+	}
+	return FrgnmemTradeTrend(ctx, executor, FrgnmemTradeTrendRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidInputISCD2:      query["FID_INPUT_ISCD_2"],
+		FidMrktClsCode:     query["FID_MRKT_CLS_CODE"],
+		FidVolCnt:          query["FID_VOL_CNT"],
+	})
+}
+
+func invokeRawInquireMemberDaily(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireMemberDaily], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireMemberDaily(ctx, executor, InquireMemberDailyRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidInputISCD2:      query["FID_INPUT_ISCD_2"],
+		FidInputDate1:      query["FID_INPUT_DATE_1"],
+		FidInputDate2:      query["FID_INPUT_DATE_2"],
+		FidSctnClsCode:     query["FID_SCTN_CLS_CODE"],
+	})
+}
+
+func invokeRawProgramTradeByStock(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationProgramTradeByStock], input)
+	if err != nil {
+		return nil, err
+	}
+	return ProgramTradeByStock(ctx, executor, ProgramTradeByStockRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawProgramTradeByStockDaily(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationProgramTradeByStockDaily], input)
+	if err != nil {
+		return nil, err
+	}
+	return ProgramTradeByStockDaily(ctx, executor, ProgramTradeByStockDailyRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidInputDate1:      query["FID_INPUT_DATE_1"],
+	})
+}
+
+func invokeRawInvestorTrendEstimate(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInvestorTrendEstimate], input)
+	if err != nil {
+		return nil, err
+	}
+	return InvestorTrendEstimate(ctx, executor, InvestorTrendEstimateRequest{
+		MkscShrnISCD: query["MKSC_SHRN_ISCD"],
+	})
+}
+
+func invokeRawInquireDailyTradeVolume(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInquireDailyTradeVolume], input)
+	if err != nil {
+		return nil, err
+	}
+	return InquireDailyTradeVolume(ctx, executor, InquireDailyTradeVolumeRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidInputDate1:      query["FID_INPUT_DATE_1"],
+		FidInputDate2:      query["FID_INPUT_DATE_2"],
+		FidPeriodDivCode:   query["FID_PERIOD_DIV_CODE"],
+	})
+}
+
+func invokeRawCompProgramTradeToday(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationCompProgramTradeToday], input)
+	if err != nil {
+		return nil, err
+	}
+	return CompProgramTradeToday(ctx, executor, CompProgramTradeTodayRequest{
+		FidCondMrktDivCode:  query["FID_COND_MRKT_DIV_CODE"],
+		FidMrktClsCode:      query["FID_MRKT_CLS_CODE"],
+		FidSctnClsCode:      query["FID_SCTN_CLS_CODE"],
+		FidInputISCD:        query["FID_INPUT_ISCD"],
+		FidCondMrktDivCode1: query["FID_COND_MRKT_DIV_CODE1"],
+		FidInputHour1:       query["FID_INPUT_HOUR_1"],
+	})
+}
+
+func invokeRawCompProgramTradeDaily(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationCompProgramTradeDaily], input)
+	if err != nil {
+		return nil, err
+	}
+	return CompProgramTradeDaily(ctx, executor, CompProgramTradeDailyRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidMrktClsCode:     query["FID_MRKT_CLS_CODE"],
+		FidInputDate1:      query["FID_INPUT_DATE_1"],
+		FidInputDate2:      query["FID_INPUT_DATE_2"],
+	})
+}
+
+func invokeRawInvestorProgramTradeToday(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationInvestorProgramTradeToday], input)
+	if err != nil {
+		return nil, err
+	}
+	return InvestorProgramTradeToday(ctx, executor, InvestorProgramTradeTodayRequest{
+		ExchDivClsCode: query["EXCH_DIV_CLS_CODE"],
+		MrktDivClsCode: query["MRKT_DIV_CLS_CODE"],
+	})
+}
+
+func invokeRawDailyCreditBalance(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationDailyCreditBalance], input)
+	if err != nil {
+		return nil, err
+	}
+	return DailyCreditBalance(ctx, executor, DailyCreditBalanceRequest{
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidCondScrDivCode:  query["fid_cond_scr_div_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+		FidInputDate1:      query["fid_input_date_1"],
+	})
+}
+
+func invokeRawExpPriceTrend(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationExpPriceTrend], input)
+	if err != nil {
+		return nil, err
+	}
+	return ExpPriceTrend(ctx, executor, ExpPriceTrendRequest{
+		FidMkopClsCode:     query["fid_mkop_cls_code"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+	})
+}
+
+func invokeRawDailyShortSale(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationDailyShortSale], input)
+	if err != nil {
+		return nil, err
+	}
+	return DailyShortSale(ctx, executor, DailyShortSaleRequest{
+		FidInputDate2:      query["FID_INPUT_DATE_2"],
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidInputDate1:      query["FID_INPUT_DATE_1"],
+	})
+}
+
+func invokeRawOvertimeExpTransFluct(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationOvertimeExpTransFluct], input)
+	if err != nil {
+		return nil, err
+	}
+	return OvertimeExpTransFluct(ctx, executor, OvertimeExpTransFluctRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidRankSortClsCode: query["FID_RANK_SORT_CLS_CODE"],
+		FidDivClsCode:      query["FID_DIV_CLS_CODE"],
+		FidInputPrice1:     query["FID_INPUT_PRICE_1"],
+		FidInputPrice2:     query["FID_INPUT_PRICE_2"],
+		FidInputVol1:       query["FID_INPUT_VOL_1"],
+	})
+}
+
+func invokeRawTradprtByamt(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationTradprtByamt], input)
+	if err != nil {
+		return nil, err
+	}
+	return TradprtByamt(ctx, executor, TradprtByamtRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+	})
+}
+
+func invokeRawMktfunds(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationMktfunds], input)
+	if err != nil {
+		return nil, err
+	}
+	return Mktfunds(ctx, executor, MktfundsRequest{
+		FidInputDate1: query["FID_INPUT_DATE_1"],
+	})
+}
+
+func invokeRawDailyLoanTrans(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationDailyLoanTrans], input)
+	if err != nil {
+		return nil, err
+	}
+	return DailyLoanTrans(ctx, executor, DailyLoanTransRequest{
+		MrktDivClsCode: query["MRKT_DIV_CLS_CODE"],
+		MkscShrnISCD:   query["MKSC_SHRN_ISCD"],
+		StartDate:      query["START_DATE"],
+		EndDate:        query["END_DATE"],
+		Cts:            query["CTS"],
+	})
+}
+
+func invokeRawCaptureUplowprice(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationCaptureUplowprice], input)
+	if err != nil {
+		return nil, err
+	}
+	return CaptureUplowprice(ctx, executor, CaptureUplowpriceRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidPrcClsCode:      query["FID_PRC_CLS_CODE"],
+		FidDivClsCode:      query["FID_DIV_CLS_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidTrgtClsCode:     query["FID_TRGT_CLS_CODE"],
+		FidTrgtExlsClsCode: query["FID_TRGT_EXLS_CLS_CODE"],
+		FidInputPrice1:     query["FID_INPUT_PRICE_1"],
+		FidInputPrice2:     query["FID_INPUT_PRICE_2"],
+		FidVolCnt:          query["FID_VOL_CNT"],
+	})
+}
+
+func invokeRawPbarTratio(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationPbarTratio], input)
+	if err != nil {
+		return nil, err
+	}
+	return PbarTratio(ctx, executor, PbarTratioRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidInputHour1:      query["FID_INPUT_HOUR_1"],
+	})
+}
+
+func invokeRawVolumeRank(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationVolumeRank], input)
+	if err != nil {
+		return nil, err
+	}
+	return VolumeRank(ctx, executor, VolumeRankRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidDivClsCode:      query["FID_DIV_CLS_CODE"],
+		FidBlngClsCode:     query["FID_BLNG_CLS_CODE"],
+		FidTrgtClsCode:     query["FID_TRGT_CLS_CODE"],
+		FidTrgtExlsClsCode: query["FID_TRGT_EXLS_CLS_CODE"],
+		FidInputPrice1:     query["FID_INPUT_PRICE_1"],
+		FidInputPrice2:     query["FID_INPUT_PRICE_2"],
+		FidVolCnt:          query["FID_VOL_CNT"],
+	})
+}
+
+func invokeRawFluctuation(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationFluctuation], input)
+	if err != nil {
+		return nil, err
+	}
+	return Fluctuation(ctx, executor, FluctuationRequest{
+		FidRsflRate2:       query["fid_rsfl_rate2"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidCondScrDivCode:  query["fid_cond_scr_div_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+		FidRankSortClsCode: query["fid_rank_sort_cls_code"],
+		FidInputCnt1:       query["fid_input_cnt_1"],
+		FidPrcClsCode:      query["fid_prc_cls_code"],
+		FidInputPrice1:     query["fid_input_price_1"],
+		FidInputPrice2:     query["fid_input_price_2"],
+		FidVolCnt:          query["fid_vol_cnt"],
+		FidTrgtClsCode:     query["fid_trgt_cls_code"],
+		FidTrgtExlsClsCode: query["fid_trgt_exls_cls_code"],
+		FidDivClsCode:      query["fid_div_cls_code"],
+		FidRsflRate1:       query["fid_rsfl_rate1"],
+	})
+}
+
+func invokeRawQuoteBalance(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationQuoteBalance], input)
+	if err != nil {
+		return nil, err
+	}
+	return QuoteBalance(ctx, executor, QuoteBalanceRequest{
+		FidVolCnt:          query["fid_vol_cnt"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidCondScrDivCode:  query["fid_cond_scr_div_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+		FidRankSortClsCode: query["fid_rank_sort_cls_code"],
+		FidDivClsCode:      query["fid_div_cls_code"],
+		FidTrgtClsCode:     query["fid_trgt_cls_code"],
+		FidTrgtExlsClsCode: query["fid_trgt_exls_cls_code"],
+		FidInputPrice1:     query["fid_input_price_1"],
+		FidInputPrice2:     query["fid_input_price_2"],
+	})
+}
+
+func invokeRawProfitAssetIndex(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationProfitAssetIndex], input)
+	if err != nil {
+		return nil, err
+	}
+	return ProfitAssetIndex(ctx, executor, ProfitAssetIndexRequest{
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidTrgtClsCode:     query["fid_trgt_cls_code"],
+		FidCondScrDivCode:  query["fid_cond_scr_div_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+		FidDivClsCode:      query["fid_div_cls_code"],
+		FidInputPrice1:     query["fid_input_price_1"],
+		FidInputPrice2:     query["fid_input_price_2"],
+		FidVolCnt:          query["fid_vol_cnt"],
+		FidInputOption1:    query["fid_input_option_1"],
+		FidInputOption2:    query["fid_input_option_2"],
+		FidRankSortClsCode: query["fid_rank_sort_cls_code"],
+		FidBlngClsCode:     query["fid_blng_cls_code"],
+		FidTrgtExlsClsCode: query["fid_trgt_exls_cls_code"],
+	})
+}
+
+func invokeRawMarketCap(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationMarketCap], input)
+	if err != nil {
+		return nil, err
+	}
+	return MarketCap(ctx, executor, MarketCapRequest{
+		FidInputPrice2:     query["fid_input_price_2"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidCondScrDivCode:  query["fid_cond_scr_div_code"],
+		FidDivClsCode:      query["fid_div_cls_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+		FidTrgtClsCode:     query["fid_trgt_cls_code"],
+		FidTrgtExlsClsCode: query["fid_trgt_exls_cls_code"],
+		FidInputPrice1:     query["fid_input_price_1"],
+		FidVolCnt:          query["fid_vol_cnt"],
+	})
+}
+
+func invokeRawFinanceRatio(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationFinanceRatio], input)
+	if err != nil {
+		return nil, err
+	}
+	return FinanceRatio(ctx, executor, FinanceRatioRequest{
+		FidTrgtClsCode:     query["fid_trgt_cls_code"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidCondScrDivCode:  query["fid_cond_scr_div_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+		FidDivClsCode:      query["fid_div_cls_code"],
+		FidInputPrice1:     query["fid_input_price_1"],
+		FidInputPrice2:     query["fid_input_price_2"],
+		FidVolCnt:          query["fid_vol_cnt"],
+		FidInputOption1:    query["fid_input_option_1"],
+		FidInputOption2:    query["fid_input_option_2"],
+		FidRankSortClsCode: query["fid_rank_sort_cls_code"],
+		FidBlngClsCode:     query["fid_blng_cls_code"],
+		FidTrgtExlsClsCode: query["fid_trgt_exls_cls_code"],
+	})
+}
+
+func invokeRawAfterHourBalance(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationAfterHourBalance], input)
+	if err != nil {
+		return nil, err
+	}
+	return AfterHourBalance(ctx, executor, AfterHourBalanceRequest{
+		FidInputPrice1:     query["fid_input_price_1"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidCondScrDivCode:  query["fid_cond_scr_div_code"],
+		FidRankSortClsCode: query["fid_rank_sort_cls_code"],
+		FidDivClsCode:      query["fid_div_cls_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+		FidTrgtExlsClsCode: query["fid_trgt_exls_cls_code"],
+		FidTrgtClsCode:     query["fid_trgt_cls_code"],
+		FidVolCnt:          query["fid_vol_cnt"],
+		FidInputPrice2:     query["fid_input_price_2"],
+	})
+}
+
+func invokeRawPreferDisparateRatio(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationPreferDisparateRatio], input)
+	if err != nil {
+		return nil, err
+	}
+	return PreferDisparateRatio(ctx, executor, PreferDisparateRatioRequest{
+		FidVolCnt:          query["fid_vol_cnt"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidCondScrDivCode:  query["fid_cond_scr_div_code"],
+		FidDivClsCode:      query["fid_div_cls_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+		FidTrgtClsCode:     query["fid_trgt_cls_code"],
+		FidTrgtExlsClsCode: query["fid_trgt_exls_cls_code"],
+		FidInputPrice1:     query["fid_input_price_1"],
+		FidInputPrice2:     query["fid_input_price_2"],
+	})
+}
+
+func invokeRawDisparity(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationDisparity], input)
+	if err != nil {
+		return nil, err
+	}
+	return Disparity(ctx, executor, DisparityRequest{
+		FidInputPrice2:     query["fid_input_price_2"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidCondScrDivCode:  query["fid_cond_scr_div_code"],
+		FidDivClsCode:      query["fid_div_cls_code"],
+		FidRankSortClsCode: query["fid_rank_sort_cls_code"],
+		FidHourClsCode:     query["fid_hour_cls_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+		FidTrgtClsCode:     query["fid_trgt_cls_code"],
+		FidTrgtExlsClsCode: query["fid_trgt_exls_cls_code"],
+		FidInputPrice1:     query["fid_input_price_1"],
+		FidVolCnt:          query["fid_vol_cnt"],
+	})
+}
+
+func invokeRawMarketValue(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationMarketValue], input)
+	if err != nil {
+		return nil, err
+	}
+	return MarketValue(ctx, executor, MarketValueRequest{
+		FidTrgtClsCode:     query["fid_trgt_cls_code"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidCondScrDivCode:  query["fid_cond_scr_div_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+		FidDivClsCode:      query["fid_div_cls_code"],
+		FidInputPrice1:     query["fid_input_price_1"],
+		FidInputPrice2:     query["fid_input_price_2"],
+		FidVolCnt:          query["fid_vol_cnt"],
+		FidInputOption1:    query["fid_input_option_1"],
+		FidInputOption2:    query["fid_input_option_2"],
+		FidRankSortClsCode: query["fid_rank_sort_cls_code"],
+		FidBlngClsCode:     query["fid_blng_cls_code"],
+		FidTrgtExlsClsCode: query["fid_trgt_exls_cls_code"],
+	})
+}
+
+func invokeRawVolumePower(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationVolumePower], input)
+	if err != nil {
+		return nil, err
+	}
+	return VolumePower(ctx, executor, VolumePowerRequest{
+		FidTrgtExlsClsCode: query["fid_trgt_exls_cls_code"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidCondScrDivCode:  query["fid_cond_scr_div_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+		FidDivClsCode:      query["fid_div_cls_code"],
+		FidInputPrice1:     query["fid_input_price_1"],
+		FidInputPrice2:     query["fid_input_price_2"],
+		FidVolCnt:          query["fid_vol_cnt"],
+		FidTrgtClsCode:     query["fid_trgt_cls_code"],
+	})
+}
+
+func invokeRawTopInterestStock(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationTopInterestStock], input)
+	if err != nil {
+		return nil, err
+	}
+	return TopInterestStock(ctx, executor, TopInterestStockRequest{
+		FidInputISCD2:      query["fid_input_iscd_2"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidCondScrDivCode:  query["fid_cond_scr_div_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+		FidTrgtClsCode:     query["fid_trgt_cls_code"],
+		FidTrgtExlsClsCode: query["fid_trgt_exls_cls_code"],
+		FidInputPrice1:     query["fid_input_price_1"],
+		FidInputPrice2:     query["fid_input_price_2"],
+		FidVolCnt:          query["fid_vol_cnt"],
+		FidDivClsCode:      query["fid_div_cls_code"],
+		FidInputCnt1:       query["fid_input_cnt_1"],
+	})
+}
+
+func invokeRawExpTransUpdown(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationExpTransUpdown], input)
+	if err != nil {
+		return nil, err
+	}
+	return ExpTransUpdown(ctx, executor, ExpTransUpdownRequest{
+		FidRankSortClsCode: query["fid_rank_sort_cls_code"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidCondScrDivCode:  query["fid_cond_scr_div_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+		FidDivClsCode:      query["fid_div_cls_code"],
+		FidAplyRangPrc1:    query["fid_aply_rang_prc_1"],
+		FidVolCnt:          query["fid_vol_cnt"],
+		FidPbmn:            query["fid_pbmn"],
+		FidBlngClsCode:     query["fid_blng_cls_code"],
+		FidMkopClsCode:     query["fid_mkop_cls_code"],
+	})
+}
+
+func invokeRawTradedByCompany(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationTradedByCompany], input)
+	if err != nil {
+		return nil, err
+	}
+	return TradedByCompany(ctx, executor, TradedByCompanyRequest{
+		FidTrgtExlsClsCode: query["fid_trgt_exls_cls_code"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidCondScrDivCode:  query["fid_cond_scr_div_code"],
+		FidDivClsCode:      query["fid_div_cls_code"],
+		FidRankSortClsCode: query["fid_rank_sort_cls_code"],
+		FidInputDate1:      query["fid_input_date_1"],
+		FidInputDate2:      query["fid_input_date_2"],
+		FidInputISCD:       query["fid_input_iscd"],
+		FidTrgtClsCode:     query["fid_trgt_cls_code"],
+		FidAplyRangVol:     query["fid_aply_rang_vol"],
+		FidAplyRangPrc2:    query["fid_aply_rang_prc_2"],
+		FidAplyRangPrc1:    query["fid_aply_rang_prc_1"],
+	})
+}
+
+func invokeRawNearNewHighlow(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationNearNewHighlow], input)
+	if err != nil {
+		return nil, err
+	}
+	return NearNewHighlow(ctx, executor, NearNewHighlowRequest{
+		FidAplyRangVol:     query["fid_aply_rang_vol"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidCondScrDivCode:  query["fid_cond_scr_div_code"],
+		FidDivClsCode:      query["fid_div_cls_code"],
+		FidInputCnt1:       query["fid_input_cnt_1"],
+		FidInputCnt2:       query["fid_input_cnt_2"],
+		FidPrcClsCode:      query["fid_prc_cls_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+		FidTrgtClsCode:     query["fid_trgt_cls_code"],
+		FidTrgtExlsClsCode: query["fid_trgt_exls_cls_code"],
+		FidAplyRangPrc1:    query["fid_aply_rang_prc_1"],
+		FidAplyRangPrc2:    query["fid_aply_rang_prc_2"],
+	})
+}
+
+func invokeRawDividendRate(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationDividendRate], input)
+	if err != nil {
+		return nil, err
+	}
+	return DividendRate(ctx, executor, DividendRateRequest{
+		CtsArea: query["CTS_AREA"],
+		Gb1:     query["GB1"],
+		Upjong:  query["UPJONG"],
+		Gb2:     query["GB2"],
+		Gb3:     query["GB3"],
+		FDt:     query["F_DT"],
+		TDt:     query["T_DT"],
+		Gb4:     query["GB4"],
+	})
+}
+
+func invokeRawBulkTransNum(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationBulkTransNum], input)
+	if err != nil {
+		return nil, err
+	}
+	return BulkTransNum(ctx, executor, BulkTransNumRequest{
+		FidAplyRangPrc2:    query["fid_aply_rang_prc_2"],
+		FidCondMrktDivCode: query["fid_cond_mrkt_div_code"],
+		FidCondScrDivCode:  query["fid_cond_scr_div_code"],
+		FidInputISCD:       query["fid_input_iscd"],
+		FidRankSortClsCode: query["fid_rank_sort_cls_code"],
+		FidDivClsCode:      query["fid_div_cls_code"],
+		FidInputPrice1:     query["fid_input_price_1"],
+		FidAplyRangPrc1:    query["fid_aply_rang_prc_1"],
+		FidInputISCD2:      query["fid_input_iscd_2"],
+		FidTrgtExlsClsCode: query["fid_trgt_exls_cls_code"],
+		FidTrgtClsCode:     query["fid_trgt_cls_code"],
+		FidVolCnt:          query["fid_vol_cnt"],
+	})
+}
+
+func invokeRawCreditBalance(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationCreditBalance], input)
+	if err != nil {
+		return nil, err
+	}
+	return CreditBalance(ctx, executor, CreditBalanceRequest{
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidOption:          query["FID_OPTION"],
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidRankSortClsCode: query["FID_RANK_SORT_CLS_CODE"],
+	})
+}
+
+func invokeRawShortSale(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationShortSale], input)
+	if err != nil {
+		return nil, err
+	}
+	return ShortSale(ctx, executor, ShortSaleRequest{
+		FidAplyRangVol:     query["FID_APLY_RANG_VOL"],
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidPeriodDivCode:   query["FID_PERIOD_DIV_CODE"],
+		FidInputCnt1:       query["FID_INPUT_CNT_1"],
+		FidTrgtExlsClsCode: query["FID_TRGT_EXLS_CLS_CODE"],
+		FidTrgtClsCode:     query["FID_TRGT_CLS_CODE"],
+		FidAplyRangPrc1:    query["FID_APLY_RANG_PRC_1"],
+		FidAplyRangPrc2:    query["FID_APLY_RANG_PRC_2"],
+	})
+}
+
+func invokeRawOvertimeFluctuation(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationOvertimeFluctuation], input)
+	if err != nil {
+		return nil, err
+	}
+	return OvertimeFluctuation(ctx, executor, OvertimeFluctuationRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidMrktClsCode:     query["FID_MRKT_CLS_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidDivClsCode:      query["FID_DIV_CLS_CODE"],
+		FidInputPrice1:     query["FID_INPUT_PRICE_1"],
+		FidInputPrice2:     query["FID_INPUT_PRICE_2"],
+		FidVolCnt:          query["FID_VOL_CNT"],
+		FidTrgtClsCode:     query["FID_TRGT_CLS_CODE"],
+		FidTrgtExlsClsCode: query["FID_TRGT_EXLS_CLS_CODE"],
+	})
+}
+
+func invokeRawOvertimeVolume(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationOvertimeVolume], input)
+	if err != nil {
+		return nil, err
+	}
+	return OvertimeVolume(ctx, executor, OvertimeVolumeRequest{
+		FidCondMrktDivCode: query["FID_COND_MRKT_DIV_CODE"],
+		FidCondScrDivCode:  query["FID_COND_SCR_DIV_CODE"],
+		FidInputISCD:       query["FID_INPUT_ISCD"],
+		FidRankSortClsCode: query["FID_RANK_SORT_CLS_CODE"],
+		FidInputPrice1:     query["FID_INPUT_PRICE_1"],
+		FidInputPrice2:     query["FID_INPUT_PRICE_2"],
+		FidVolCnt:          query["FID_VOL_CNT"],
+		FidTrgtClsCode:     query["FID_TRGT_CLS_CODE"],
+		FidTrgtExlsClsCode: query["FID_TRGT_EXLS_CLS_CODE"],
+	})
+}
+
+func invokeRawHtsTopView(ctx context.Context, executor Executor, input map[string]string) (any, error) {
+	query, err := applyInput(operationMetadata[OperationHtsTopView], input)
+	if err != nil {
+		return nil, err
+	}
+	_ = query
+	return HtsTopView(ctx, executor, HtsTopViewRequest{})
 }

@@ -343,6 +343,16 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "00(전체), 02(거래소), 03(코스닥)",
+              "flag": "excg-dvsn-cd",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -371,6 +381,16 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "product_no",
+              "default": "",
+              "description": "공백 : 전체조회, 종목코드 입력 시 해당종목만 조회",
+              "flag": "product-no",
+              "required": true,
+              "source": "user",
+              "valueKind": "symbol"
             }
           },
           {
@@ -399,6 +419,16 @@
               "propertyOrder": "003",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "Y",
+              "flag": "thco-stln-psbl-yn",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -427,6 +457,16 @@
               "propertyOrder": "004",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "0 : 전체조회, 1: 종목코드순 정렬",
+              "flag": "inqr-dvsn-1",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -455,6 +495,16 @@
               "propertyOrder": "005",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "미입력 (다음조회 불가)",
+              "flag": "ctx-area-fk200",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -483,6 +533,16 @@
               "propertyOrder": "006",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "",
+              "default": "",
+              "description": "미입력 (다음조회 불가)",
+              "flag": "ctx-area-nk100",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           }
         ],

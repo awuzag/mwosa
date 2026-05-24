@@ -208,6 +208,16 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "공백",
+              "flag": "cts-area",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -236,6 +246,16 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "0:전체, 1:코스피,  2: 코스피200, 3: 코스닥,",
+              "flag": "gb1",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -264,6 +284,16 @@
               "propertyOrder": "003",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "'코스피(0001:종합, 0002:대형주.…0027:제조업 ), \n코스닥(1001:종합, …. 1041:IT부품\n코스피200 (2001:KOSPI200, 2007:KOSPI100, 2008:KOSPI50)'",
+              "flag": "upjong",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -292,6 +322,16 @@
               "propertyOrder": "004",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "0:전체, 6:보통주, 7:우선주",
+              "flag": "gb2",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -320,6 +360,16 @@
               "propertyOrder": "005",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "1:주식배당, 2: 현금배당",
+              "flag": "gb3",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -348,6 +398,16 @@
               "propertyOrder": "006",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "기준일From",
+              "flag": "f-dt",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -376,6 +436,16 @@
               "propertyOrder": "007",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "기준일To",
+              "flag": "t-dt",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -404,6 +474,16 @@
               "propertyOrder": "008",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "0:전체, 1:결산배당, 2:중간배당",
+              "flag": "gb4",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           }
         ],

@@ -264,6 +264,16 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "1(코스피), 2(코스닥), 3(종목)",
+              "flag": "mrkt-div-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -292,6 +302,16 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "종목코드",
+              "flag": "mksc-shrn-iscd",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -320,6 +340,16 @@
               "propertyOrder": "003",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "조회기간 ~",
+              "flag": "start-date",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -348,6 +378,16 @@
               "propertyOrder": "004",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "~ 조회기간",
+              "flag": "end-date",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -376,6 +416,16 @@
               "propertyOrder": "005",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "이전조회KEY",
+              "flag": "cts",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           }
         ],

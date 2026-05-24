@@ -409,6 +409,16 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "ex) 265520",
+              "flag": "sht-cd",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           }
         ],

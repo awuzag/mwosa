@@ -191,6 +191,16 @@
               "propertyOrder": "001",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "Unique key(1)",
+              "flag": "type",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -219,6 +229,16 @@
               "propertyOrder": "002",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "Unique key(00)",
+              "flag": "fid-etc-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           },
           {
@@ -247,6 +267,16 @@
               "propertyOrder": "003",
               "propertyType": "A0001",
               "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "HTS_ID 입력",
+              "flag": "user-id",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
             }
           }
         ],
