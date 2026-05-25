@@ -115,6 +115,93 @@ func TestFetchRawUsesGeneratedRegistryAndKeepsProviderNativeResponse(t *testing.
 	require.IsType(t, kisclient.InquirePriceResponse{}, result.Response)
 }
 
+func TestFetchRawWaitsBeforeProviderNativeCall(t *testing.T) {
+	client := &fakeKISClient{
+		rawResponse: kisclient.InquirePriceResponse{RtCd: "0", MsgCd: "ok", Msg1: "ok"},
+	}
+	limiter := &fakeReadLimiter{}
+	p := NewWithClient(client, true, WithReadRateLimiter(limiter))
+
+	_, err := p.FetchRaw(context.Background(), RawRequest{
+		OperationID: provider.OperationID("inquire-price"),
+		Input:       map[string]string{"FID_INPUT_ISCD": "005930"},
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, 1, client.rawCalls)
+	require.Len(t, limiter.requests, 1)
+	require.Equal(t, "inquire-price", limiter.requests[0].Operation)
+	require.Equal(t, "/uapi/domestic-stock/v1/quotations/inquire-price", limiter.requests[0].Endpoint)
+}
+
+func TestFetchRawRetriesKISRateLimitError(t *testing.T) {
+	client := &fakeKISClient{
+		rawErrors: []error{
+			&kisclient.RateLimitError{
+				Request: kisclient.RateLimitRequest{
+					Provider:  kisclient.ProviderKIS,
+					Group:     "quote",
+					Operation: "inquire-price",
+					TRID:      "FHKST01010100",
+					Endpoint:  "/uapi/domestic-stock/v1/quotations/inquire-price",
+				},
+				Code:    kisclient.RateLimitMsgCD,
+				Message: "초당 거래건수를 초과하였습니다.",
+			},
+		},
+		rawResponse: kisclient.InquirePriceResponse{RtCd: "0", MsgCd: "ok", Msg1: "ok"},
+	}
+	limiter := &fakeReadLimiter{}
+	var sleeps []time.Duration
+	p := NewWithClient(client, true,
+		WithReadRateLimiter(limiter),
+		WithRateLimitPolicy(RateLimitPolicy{ReadRPS: 15, Burst: 1, MaxAttempts: 2, BaseDelay: 10 * time.Millisecond, MaxDelay: 10 * time.Millisecond}),
+		WithRateLimitSleeper(func(_ context.Context, d time.Duration) error {
+			sleeps = append(sleeps, d)
+			return nil
+		}),
+	)
+
+	result, err := p.FetchRaw(context.Background(), RawRequest{
+		OperationID: provider.OperationID("inquire-price"),
+		Input:       map[string]string{"FID_INPUT_ISCD": "005930"},
+	})
+
+	require.NoError(t, err)
+	require.Equal(t, 2, client.rawCalls)
+	require.Len(t, limiter.requests, 2)
+	require.Len(t, sleeps, 1)
+	require.Equal(t, 10*time.Millisecond, sleeps[0])
+	require.IsType(t, kisclient.InquirePriceResponse{}, result.Response)
+}
+
+func TestFetchRawStopsRetryWhenContextIsCancelled(t *testing.T) {
+	client := &fakeKISClient{
+		rawErrors: []error{
+			&kisclient.RateLimitError{
+				Request: kisclient.RateLimitRequest{Provider: kisclient.ProviderKIS, Operation: "inquire-price"},
+				Code:    kisclient.RateLimitMsgCD,
+			},
+		},
+	}
+	cancelled := context.Canceled
+	p := NewWithClient(client, true,
+		WithReadRateLimiter(&fakeReadLimiter{}),
+		WithRateLimitPolicy(RateLimitPolicy{ReadRPS: 15, Burst: 1, MaxAttempts: 2, BaseDelay: 10 * time.Millisecond, MaxDelay: 10 * time.Millisecond}),
+		WithRateLimitSleeper(func(context.Context, time.Duration) error {
+			return cancelled
+		}),
+	)
+
+	_, err := p.FetchRaw(context.Background(), RawRequest{
+		OperationID: provider.OperationID("inquire-price"),
+		Input:       map[string]string{"FID_INPUT_ISCD": "005930"},
+	})
+
+	require.ErrorIs(t, err, cancelled)
+	require.Equal(t, 1, client.rawCalls)
+}
+
 func TestListConstituentsReturnsOnlyCompositionMembers(t *testing.T) {
 	client := &fakeKISClient{
 		etfComponents: kisclient.ETFComponentStockPriceResult{
@@ -627,6 +714,7 @@ type fakeKISClient struct {
 	product                 kisclient.SearchInfoResponse
 	stock                   kisclient.SearchStockInfoResponse
 	rawResponse             any
+	rawErrors               []error
 	rawInput                map[string]string
 	lastTimeTradesInputHour string
 }
@@ -659,6 +747,11 @@ func (c *fakeKISClient) RawRequestTemplate(operationID string) (map[string]strin
 func (c *fakeKISClient) InvokeRaw(_ context.Context, _ string, input map[string]string) (any, error) {
 	c.rawCalls++
 	c.rawInput = input
+	if len(c.rawErrors) > 0 {
+		err := c.rawErrors[0]
+		c.rawErrors = c.rawErrors[1:]
+		return nil, err
+	}
 	if c.rawResponse != nil {
 		return c.rawResponse, nil
 	}
@@ -762,4 +855,14 @@ func (c *fakeTokenCache) Put(_ context.Context, token CachedToken) error {
 	c.puts = append(c.puts, token)
 	c.tokens[token.Key] = token
 	return nil
+}
+
+type fakeReadLimiter struct {
+	requests []kisclient.RateLimitRequest
+	err      error
+}
+
+func (l *fakeReadLimiter) Wait(_ context.Context, request kisclient.RateLimitRequest) error {
+	l.requests = append(l.requests, request)
+	return l.err
 }

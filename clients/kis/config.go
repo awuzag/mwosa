@@ -86,6 +86,7 @@ type config struct {
 	customerType   string
 	httpClient     *http.Client
 	account        string
+	rateLimiter    Limiter
 }
 
 func defaultConfig() config {
@@ -203,6 +204,14 @@ func WithCustomerType(customerType string) Option {
 func WithAccount(account string) Option {
 	return func(c *config) error {
 		c.account = strings.TrimSpace(account)
+		return nil
+	}
+}
+
+// WithRateLimiter installs a no-wait request limiter for KIS API calls.
+func WithRateLimiter(limiter Limiter) Option {
+	return func(c *config) error {
+		c.rateLimiter = limiter
 		return nil
 	}
 }

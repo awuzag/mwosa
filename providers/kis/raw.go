@@ -88,7 +88,15 @@ func (p *Provider) FetchRaw(ctx context.Context, req RawRequest) (RawResult, err
 	if err := p.ensureAccessToken(ctx); err != nil {
 		return RawResult{}, errb.Wrap(err)
 	}
-	response, err := p.client.InvokeRaw(ctx, string(req.OperationID), req.Input)
+	response, err := withReadRetry(ctx, p, kisclient.RateLimitRequest{
+		Provider:  kisclient.ProviderKIS,
+		Group:     metadata.Group,
+		Operation: string(req.OperationID),
+		TRID:      firstNonEmpty(metadata.RealTRID, metadata.VirtualTRID),
+		Endpoint:  metadata.Endpoint,
+	}, func(ctx context.Context) (any, error) {
+		return p.client.InvokeRaw(ctx, string(req.OperationID), req.Input)
+	})
 	if err != nil {
 		return RawResult{}, errb.Wrapf(err, "fetch kis raw API")
 	}

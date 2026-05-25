@@ -30,6 +30,7 @@ type Config struct {
 	CustomerType   string
 	Account        string
 	TokenCache     TokenCache
+	RateLimit      RateLimitPolicy
 }
 
 type marketDataClient interface {
@@ -71,6 +72,9 @@ type Provider struct {
 	tokenCacheKey       TokenCacheKey
 	tokenExpiryBuffer   time.Duration
 	now                 func() time.Time
+	rateLimitPolicy     RateLimitPolicy
+	readLimiter         ReadRateLimiter
+	sleep               rateLimitSleeper
 
 	groups []provider.GroupRoleProvider
 }
@@ -143,6 +147,12 @@ func New(config Config) (*Provider, error) {
 	if strings.TrimSpace(config.Account) != "" {
 		options = append(options, kisclient.WithAccount(config.Account))
 	}
+	providerOptions := []ProviderOption{
+		WithTokenCache(config.TokenCache, newTokenCacheKey(config.AppKey, config.Virtual)),
+	}
+	if !config.RateLimit.isZero() {
+		providerOptions = append(providerOptions, WithRateLimitPolicy(config.RateLimit))
+	}
 
 	client, err := kisclient.New(options...)
 	if err != nil {
@@ -151,7 +161,7 @@ func New(config Config) (*Provider, error) {
 	return NewWithClient(
 		kisClientAdapter{client: client},
 		strings.TrimSpace(config.AccessToken) != "",
-		WithTokenCache(config.TokenCache, newTokenCacheKey(config.AppKey, config.Virtual)),
+		providerOptions...,
 	), nil
 }
 
@@ -165,11 +175,17 @@ func NewWithClient(client marketDataClient, accessTokenProvided bool, options ..
 		accessTokenProvided: accessTokenProvided,
 		tokenExpiryBuffer:   defaultTokenExpiryBuffer,
 		now:                 time.Now,
+		rateLimitPolicy:     defaultRateLimitPolicy(),
+		sleep:               sleepContext,
 	}
 	for _, option := range options {
 		if option != nil {
 			option(p)
 		}
+	}
+	p.rateLimitPolicy = p.rateLimitPolicy.normalized()
+	if p.readLimiter == nil {
+		p.readLimiter = newTokenBucketReadLimiter(p.rateLimitPolicy, p.now, p.sleep)
 	}
 	p.groups = []provider.GroupRoleProvider{
 		newQuoteGroup(p.fetchQuoteSnapshot, p.fetchDailyBars, p.fetchIntradayBars, p.fetchOrderbookSnapshot, p.listMarketTrades, p.listConstituents),
@@ -189,6 +205,26 @@ func WithClock(now func() time.Time) ProviderOption {
 	return func(p *Provider) {
 		if now != nil {
 			p.now = now
+		}
+	}
+}
+
+func WithRateLimitPolicy(policy RateLimitPolicy) ProviderOption {
+	return func(p *Provider) {
+		p.rateLimitPolicy = policy.normalized()
+	}
+}
+
+func WithReadRateLimiter(limiter ReadRateLimiter) ProviderOption {
+	return func(p *Provider) {
+		p.readLimiter = limiter
+	}
+}
+
+func WithRateLimitSleeper(sleeper func(context.Context, time.Duration) error) ProviderOption {
+	return func(p *Provider) {
+		if sleeper != nil {
+			p.sleep = sleeper
 		}
 	}
 }
@@ -266,9 +302,11 @@ func (p *Provider) fetchQuoteSnapshot(ctx context.Context, input quote.SnapshotI
 
 	switch input.SecurityType {
 	case provider.SecurityTypeStock:
-		price, err := p.client.Quote().Price(ctx, kisclient.InquirePriceRequest{
-			FidCondMrktDivCode: "J",
-			FidInputISCD:       symbol,
+		price, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISQuote, provider.OperationKISPrice, "/uapi/domestic-stock/v1/quotations/inquire-price"), func(ctx context.Context) (kisclient.InquirePriceResponse, error) {
+			return p.client.Quote().Price(ctx, kisclient.InquirePriceRequest{
+				FidCondMrktDivCode: "J",
+				FidInputISCD:       symbol,
+			})
 		})
 		if err != nil {
 			return quote.SnapshotResult{}, errb.With("operation", provider.OperationKISPrice).Wrapf(err, "fetch kis quote")
@@ -279,7 +317,9 @@ func (p *Provider) fetchQuoteSnapshot(ctx context.Context, input quote.SnapshotI
 			Price:    price.Output.StckPrpr,
 		}, nil
 	case provider.SecurityTypeETF, provider.SecurityTypeETN:
-		price, err := p.client.ETFETNPrice(ctx, symbol)
+		price, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISQuote, provider.OperationKISETFETNPrice, "/uapi/etfetn/v1/quotations/inquire-price"), func(ctx context.Context) (kisclient.ETFETNPrice, error) {
+			return p.client.ETFETNPrice(ctx, symbol)
+		})
 		if err != nil {
 			return quote.SnapshotResult{}, errb.With("operation", provider.OperationKISETFETNPrice).Wrapf(err, "fetch kis ETF/ETN quote")
 		}
@@ -317,13 +357,15 @@ func (p *Provider) fetchDailyBars(ctx context.Context, input dailybar.FetchInput
 		return dailybar.FetchResult{}, errb.Wrap(err)
 	}
 
-	bars, err := p.client.Quote().Daily(ctx, kisclient.InquireDailyItemChartPriceRequest{
-		FidCondMrktDivCode: "J",
-		FidInputISCD:       symbol,
-		FidInputDate1:      from,
-		FidInputDate2:      to,
-		FidPeriodDivCode:   "D",
-		FidOrgAdjPrc:       "0",
+	bars, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISQuote, provider.OperationKISDaily, "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice"), func(ctx context.Context) (kisclient.InquireDailyItemChartPriceResponse, error) {
+		return p.client.Quote().Daily(ctx, kisclient.InquireDailyItemChartPriceRequest{
+			FidCondMrktDivCode: "J",
+			FidInputISCD:       symbol,
+			FidInputDate1:      from,
+			FidInputDate2:      to,
+			FidPeriodDivCode:   "D",
+			FidOrgAdjPrc:       "0",
+		})
 	})
 	if err != nil {
 		return dailybar.FetchResult{}, errb.With("operation", provider.OperationKISDaily).Wrapf(err, "fetch kis daily bars")
@@ -364,11 +406,13 @@ func (p *Provider) fetchIntradayBars(ctx context.Context, input intradaybar.Fetc
 	if inputHour == "" {
 		inputHour = "153000"
 	}
-	bars, err := p.client.Quote().Intraday(ctx, kisclient.InquireTimeItemChartPriceRequest{
-		FidCondMrktDivCode: "J",
-		FidInputISCD:       symbol,
-		FidInputHour1:      inputHour,
-		FidPwDataIncuYn:    "Y",
+	bars, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISQuote, provider.OperationKISIntraday, "/uapi/domestic-stock/v1/quotations/inquire-time-itemchartprice"), func(ctx context.Context) (kisclient.InquireTimeItemChartPriceResponse, error) {
+		return p.client.Quote().Intraday(ctx, kisclient.InquireTimeItemChartPriceRequest{
+			FidCondMrktDivCode: "J",
+			FidInputISCD:       symbol,
+			FidInputHour1:      inputHour,
+			FidPwDataIncuYn:    "Y",
+		})
 	})
 	if err != nil {
 		return intradaybar.FetchResult{}, errb.With("operation", provider.OperationKISIntraday).Wrapf(err, "fetch kis intraday bars")
@@ -405,9 +449,11 @@ func (p *Provider) fetchOrderbookSnapshot(ctx context.Context, input orderbook.S
 		return orderbook.SnapshotResult{}, errb.Wrap(err)
 	}
 
-	book, err := p.client.Quote().Orderbook(ctx, kisclient.InquireAskingPriceExpCcnRequest{
-		FidCondMrktDivCode: "J",
-		FidInputISCD:       symbol,
+	book, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISQuote, provider.OperationKISOrderbook, "/uapi/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn"), func(ctx context.Context) (kisclient.InquireAskingPriceExpCcnResponse, error) {
+		return p.client.Quote().Orderbook(ctx, kisclient.InquireAskingPriceExpCcnRequest{
+			FidCondMrktDivCode: "J",
+			FidInputISCD:       symbol,
+		})
 	})
 	if err != nil {
 		return orderbook.SnapshotResult{}, errb.With("operation", provider.OperationKISOrderbook).Wrapf(err, "fetch kis orderbook")
@@ -443,10 +489,12 @@ func (p *Provider) listMarketTrades(ctx context.Context, input tradesrole.ListIn
 
 	at := normalizeKISTime(input.At)
 	if at != "" {
-		trades, err := p.client.Quote().TimeTrades(ctx, kisclient.InquireTimeItemConclusionRequest{
-			FidCondMrktDivCode: "J",
-			FidInputISCD:       symbol,
-			FidInputHour1:      at,
+		trades, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISQuote, provider.OperationKISTimeTrades, "/uapi/domestic-stock/v1/quotations/inquire-time-itemconclusion"), func(ctx context.Context) (kisclient.InquireTimeItemConclusionResponse, error) {
+			return p.client.Quote().TimeTrades(ctx, kisclient.InquireTimeItemConclusionRequest{
+				FidCondMrktDivCode: "J",
+				FidInputISCD:       symbol,
+				FidInputHour1:      at,
+			})
 		})
 		if err != nil {
 			return tradesrole.ListResult{}, errb.With("operation", provider.OperationKISTimeTrades).Wrapf(err, "fetch kis time trades")
@@ -464,9 +512,11 @@ func (p *Provider) listMarketTrades(ctx context.Context, input tradesrole.ListIn
 		}, nil
 	}
 
-	trades, err := p.client.Quote().Trades(ctx, kisclient.InquireCcnlRequest{
-		FidCondMrktDivCode: "J",
-		FidInputISCD:       symbol,
+	trades, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISQuote, provider.OperationKISTrades, "/uapi/domestic-stock/v1/quotations/inquire-ccnl"), func(ctx context.Context) (kisclient.InquireCcnlResponse, error) {
+		return p.client.Quote().Trades(ctx, kisclient.InquireCcnlRequest{
+			FidCondMrktDivCode: "J",
+			FidInputISCD:       symbol,
+		})
 	})
 	if err != nil {
 		return tradesrole.ListResult{}, errb.With("operation", provider.OperationKISTrades).Wrapf(err, "fetch kis trades")
@@ -503,7 +553,9 @@ func (p *Provider) listConstituents(ctx context.Context, input composition.ListI
 		return composition.ListResult{}, errb.Wrap(err)
 	}
 
-	result, err := p.client.ETFComponentStockPrices(ctx, symbol)
+	result, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISQuote, provider.OperationKISETFComponentStockPrice, "/uapi/etfetn/v1/quotations/inquire-component-stock-price"), func(ctx context.Context) (kisclient.ETFComponentStockPriceResult, error) {
+		return p.client.ETFComponentStockPrices(ctx, symbol)
+	})
 	if err != nil {
 		return composition.ListResult{}, errb.With("operation", provider.OperationKISETFComponentStockPrice).Wrapf(err, "fetch kis ETF component stock prices")
 	}
@@ -555,9 +607,11 @@ func (p *Provider) searchInstruments(ctx context.Context, input instrument.Searc
 	}
 
 	instrumentService := p.client.Instrument()
-	product, err := instrumentService.Product(ctx, kisclient.SearchInfoRequest{
-		Pdno:       query,
-		PrdtTypeCd: kisclient.DefaultDomesticStockProductType,
+	product, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISInstrument, provider.OperationKISProduct, "/uapi/domestic-stock/v1/quotations/search-info"), func(ctx context.Context) (kisclient.SearchInfoResponse, error) {
+		return instrumentService.Product(ctx, kisclient.SearchInfoRequest{
+			Pdno:       query,
+			PrdtTypeCd: kisclient.DefaultDomesticStockProductType,
+		})
 	})
 	if err != nil {
 		return instrument.SearchResult{}, errb.With("operation", provider.OperationKISProduct).Wrapf(err, "fetch kis product")
@@ -565,9 +619,11 @@ func (p *Provider) searchInstruments(ctx context.Context, input instrument.Searc
 	item := instrumentFromSearchInfo(product.Output, input.SecurityType)
 	operations := []provider.OperationID{provider.OperationKISProduct}
 	if input.SecurityType == provider.SecurityTypeStock {
-		stock, err := instrumentService.Stock(ctx, kisclient.SearchStockInfoRequest{
-			Pdno:       query,
-			PrdtTypeCd: kisclient.DefaultDomesticStockProductType,
+		stock, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISInstrument, provider.OperationKISStock, "/uapi/domestic-stock/v1/quotations/search-stock-info"), func(ctx context.Context) (kisclient.SearchStockInfoResponse, error) {
+			return instrumentService.Stock(ctx, kisclient.SearchStockInfoRequest{
+				Pdno:       query,
+				PrdtTypeCd: kisclient.DefaultDomesticStockProductType,
+			})
 		})
 		if err != nil {
 			return instrument.SearchResult{}, errb.With("operation", provider.OperationKISStock).Wrapf(err, "fetch kis stock")

@@ -16,6 +16,7 @@ type rawAPIExecutor struct {
 	virtual      bool
 	http         *resty.Client
 	accessToken  func() string
+	rateLimiter  Limiter
 }
 
 func (c *Client) rawAPIExecutor() rawAPIExecutor {
@@ -29,6 +30,7 @@ func (c *Client) rawAPIExecutor() rawAPIExecutor {
 		virtual:      c.virtual,
 		http:         c.http,
 		accessToken:  c.currentAccessToken,
+		rateLimiter:  c.rateLimiter,
 	}
 }
 
@@ -52,7 +54,7 @@ func (r rawAPIExecutor) ExecuteKIS(ctx context.Context, request rawapi.Request, 
 		"tr_id", trID,
 	)
 
-	restyRequest, err := r.request(ctx, request.Group, request.Operation, trID, errb)
+	restyRequest, err := r.request(ctx, request.Group, request.Operation, trID, request.Path, errb)
 	if err != nil {
 		return err
 	}
@@ -75,13 +77,22 @@ func (r rawAPIExecutor) ExecuteKIS(ctx context.Context, request rawapi.Request, 
 		RTCD:  status.RTCD,
 		MsgCD: status.MsgCD,
 		Msg1:  status.Msg1,
-	}, errb, request.Group, request.Operation, trID)
+	}, errb, newRateLimitRequest(request.Group, request.Operation, trID, request.Path))
 }
 
-func (r rawAPIExecutor) request(ctx context.Context, group string, operation string, trID string, errb oops.OopsErrorBuilder) (*resty.Request, error) {
+func (r rawAPIExecutor) request(ctx context.Context, group string, operation string, trID string, endpoint string, errb oops.OopsErrorBuilder) (*resty.Request, error) {
 	token := r.accessToken()
 	if token == "" {
 		return nil, errb.New("kis request: provider=" + ProviderKIS + " group=" + group + " operation=" + operation + " tr_id=" + trID + " access token is required")
+	}
+	if r.rateLimiter != nil {
+		request := newRateLimitRequest(group, operation, trID, endpoint)
+		if err := r.rateLimiter.Allow(ctx, request); err != nil {
+			return nil, errb.With(
+				"endpoint", request.Endpoint,
+				"limit", request.Limit,
+			).Wrapf(err, "check kis rate limit")
+		}
 	}
 	return r.http.R().
 		SetContext(ctx).
