@@ -49,22 +49,23 @@ func TestDailyBuildsKISRequestAndParsesBars(t *testing.T) {
 	defer server.Close()
 
 	client := newTestClient(t, server.URL, "token")
-	bars, err := client.Daily(context.Background(), "005930",
-		WithPeriod("D"),
-		WithDateRange("20250101", "20250131"),
-		WithOriginalPrice(),
-	)
+	response, err := client.Quote().Daily(context.Background(), InquireDailyItemChartPriceRequest{
+		FidCondMrktDivCode: "J",
+		FidInputISCD:       "005930",
+		FidInputDate1:      "20250101",
+		FidInputDate2:      "20250131",
+		FidPeriodDivCode:   "D",
+		FidOrgAdjPrc:       "1",
+	})
 	require.NoError(t, err)
-	require.Len(t, bars, 1)
-	assert.Equal(t, "20250131", bars[0].Date)
-	assert.Equal(t, "70000", bars[0].Close)
-	assert.Equal(t, "1000000", bars[0].Volume)
-	assert.Equal(t, "70000", bars[0].Raw.Close)
+	require.Len(t, response.Output2, 1)
+	assert.Equal(t, "20250131", response.Output2[0].StckBsopDate)
+	assert.Equal(t, "70000", response.Output2[0].StckClpr)
+	assert.Equal(t, "1000000", response.Output2[0].AcmlVol)
 }
 
-func TestDailyRequiresDateRange(t *testing.T) {
-	client := newTestClient(t, "http://127.0.0.1", "token")
-	_, err := client.Daily(context.Background(), "005930")
+func TestDailyServiceUsesRawAPIExecutorBoundary(t *testing.T) {
+	_, err := (QuoteService{}).Daily(context.Background(), InquireDailyItemChartPriceRequest{})
 	require.Error(t, err)
-	assert.Contains(t, err.Error(), "start date is required")
+	assert.Contains(t, err.Error(), "runtime is required")
 }

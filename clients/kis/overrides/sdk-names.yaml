@@ -1,0 +1,186 @@
+version: 1
+operations:
+  inquire-price:
+    enabled: true
+    access_url: /uapi/domestic-stock/v1/quotations/inquire-price
+    split_path: apis/domestic-stock/quotation/inquire-price.json
+    go_name: InquirePrice
+    raw_function: InquirePrice
+    group_method: Price
+    service_group: Quote
+    group: quote
+    role_hint: quote_snapshot
+    security_type: oauth2-access-token
+    doc:
+      summary: 국내 주식 현재가 시세를 조회합니다.
+  inquire-daily-itemchartprice:
+    enabled: true
+    access_url: /uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice
+    split_path: apis/domestic-stock/quotation/inquire-daily-itemchartprice.json
+    go_name: InquireDailyItemChartPrice
+    raw_function: InquireDailyItemChartPrice
+    group_method: Daily
+    service_group: Quote
+    group: quote
+    role_hint: daily_bar
+    security_type: oauth2-access-token
+    doc:
+      summary: 국내 주식 일별 차트 가격을 조회합니다.
+  inquire-time-itemchartprice:
+    enabled: true
+    access_url: /uapi/domestic-stock/v1/quotations/inquire-time-itemchartprice
+    split_path: apis/domestic-stock/quotation/inquire-time-itemchartprice.json
+    go_name: InquireTimeItemChartPrice
+    raw_function: InquireTimeItemChartPrice
+    group_method: Intraday
+    service_group: Quote
+    group: quote
+    role_hint: intraday_bar
+    security_type: oauth2-access-token
+    doc:
+      summary: 국내 주식 시간대별 차트 가격을 조회합니다.
+  fluctuation:
+    enabled: true
+    access_url: /uapi/domestic-stock/v1/ranking/fluctuation
+    split_path: apis/domestic-stock/ranking/fluctuation.json
+    go_name: Fluctuation
+    raw_function: Fluctuation
+    group_method: Fluctuation
+    service_group: Ranking
+    group: ranking
+    role_hint: market_scan
+    security_type: oauth2-access-token
+    doc:
+      summary: 국내 주식 등락률 순위를 조회합니다.
+  volume-rank:
+    enabled: true
+    access_url: /uapi/domestic-stock/v1/quotations/volume-rank
+    split_path: apis/domestic-stock/ranking/volume-rank.json
+    go_name: VolumeRank
+    raw_function: VolumeRank
+    group_method: Volume
+    service_group: Ranking
+    group: ranking
+    role_hint: market_scan
+    security_type: oauth2-access-token
+    doc:
+      summary: 국내 주식 거래량 순위를 조회합니다.
+  inquire-ccnl:
+    enabled: true
+    access_url: /uapi/domestic-stock/v1/quotations/inquire-ccnl
+    go_name: InquireCcnl
+    raw_function: InquireCcnl
+    group_method: Trades
+    service_group: Quote
+    group: quote
+    role_hint: trades
+    doc:
+      summary: 국내 주식 현재가 체결 내역을 조회합니다.
+  inquire-daily-price:
+    enabled: true
+    access_url: /uapi/domestic-stock/v1/quotations/inquire-daily-price
+    go_name: InquireDailyPrice
+    raw_function: InquireDailyPrice
+    group_method: DailyPrice
+    service_group: Quote
+    group: quote
+    role_hint: daily_bar
+    doc:
+      summary: 국내 주식 현재가 일자별 시세를 조회합니다.
+  inquire-asking-price-exp-ccn:
+    enabled: true
+    access_url: /uapi/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn
+    go_name: InquireAskingPriceExpCcn
+    raw_function: InquireAskingPriceExpCcn
+    group_method: Orderbook
+    service_group: Quote
+    group: quote
+    role_hint: orderbook
+    doc:
+      summary: 국내 주식 현재가 호가와 예상 체결을 조회합니다.
+  inquire-investor:
+    enabled: true
+    access_url: /uapi/domestic-stock/v1/quotations/inquire-investor
+    go_name: InquireInvestor
+    raw_function: InquireInvestor
+    group_method: Investor
+    service_group: Quote
+    group: quote
+    role_hint: market_scan
+    doc:
+      summary: 국내 주식 현재가 투자자 정보를 조회합니다.
+  inquire-member:
+    enabled: true
+    access_url: /uapi/domestic-stock/v1/quotations/inquire-member
+    go_name: InquireMember
+    raw_function: InquireMember
+    group_method: Member
+    service_group: Quote
+    group: quote
+    role_hint: market_scan
+    doc:
+      summary: 국내 주식 현재가 회원사 정보를 조회합니다.
+  inquire-time-itemconclusion:
+    enabled: true
+    access_url: /uapi/domestic-stock/v1/quotations/inquire-time-itemconclusion
+    go_name: InquireTimeItemConclusion
+    raw_function: InquireTimeItemConclusion
+    group_method: TimeTrades
+    service_group: Quote
+    group: quote
+    role_hint: trades
+    doc:
+      summary: 국내 주식 현재가 당일 시간대별 체결을 조회합니다.
+  market-cap:
+    enabled: true
+    access_url: /uapi/domestic-stock/v1/ranking/market-cap
+    go_name: MarketCap
+    raw_function: MarketCap
+    group_method: MarketCap
+    service_group: Ranking
+    group: ranking
+    role_hint: market_scan
+    doc:
+      summary: 국내 주식 시가총액 상위 순위를 조회합니다.
+  market-value:
+    enabled: true
+    access_url: /uapi/domestic-stock/v1/ranking/market-value
+    go_name: MarketValue
+    raw_function: MarketValue
+    group_method: MarketValue
+    service_group: Ranking
+    group: ranking
+    role_hint: market_scan
+    doc:
+      summary: 국내 주식 시장가치 순위를 조회합니다.
+  volume-power:
+    enabled: true
+    access_url: /uapi/domestic-stock/v1/ranking/volume-power
+    go_name: VolumePower
+    raw_function: VolumePower
+    group_method: VolumePower
+    service_group: Ranking
+    group: ranking
+    role_hint: market_scan
+    doc:
+      summary: 국내 주식 체결강도 상위 순위를 조회합니다.
+  search-info:
+    enabled: true
+    access_url: /uapi/domestic-stock/v1/quotations/search-info
+    go_name: SearchInfo
+    group_method: Product
+    service_group: Instrument
+    group: instrument
+    role_hint: instrument
+    doc:
+      summary: 국내 주식 상품 기본 정보를 조회합니다.
+  search-stock-info:
+    enabled: true
+    access_url: /uapi/domestic-stock/v1/quotations/search-stock-info
+    go_name: SearchStockInfo
+    group_method: Stock
+    service_group: Instrument
+    group: instrument
+    role_hint: instrument
+    doc:
+      summary: 국내 주식 종목 기본 정보를 조회합니다.

@@ -1,0 +1,609 @@
+{
+  "components": {
+    "schemas": {
+      "NewsTitleResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "msg1": {
+            "description": "응답메세지",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답메세지",
+              "propertyLength": "80",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "msg_cd": {
+            "description": "응답코드",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답코드",
+              "propertyLength": "8",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "output": {
+            "additionalProperties": false,
+            "properties": {
+              "cntt_usiq_srno": {
+                "description": "내용 조회용 일련번호",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "내용 조회용 일련번호",
+                  "propertyLength": "20",
+                  "propertyOrder": "004.001",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "data_dt": {
+                "description": "작성일자",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "작성일자",
+                  "propertyLength": "8",
+                  "propertyOrder": "004.003",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "data_tm": {
+                "description": "작성시간",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "작성시간",
+                  "propertyLength": "6",
+                  "propertyOrder": "004.004",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "dorg": {
+                "description": "자료원",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "자료원",
+                  "propertyLength": "20",
+                  "propertyOrder": "004.007",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "hts_pbnt_titl_cntt": {
+                "description": "HTS 공시 제목 내용",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "HTS 공시 제목 내용",
+                  "propertyLength": "400",
+                  "propertyOrder": "004.005",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "iscd1": {
+                "description": "종목 코드1",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "종목 코드1",
+                  "propertyLength": "9",
+                  "propertyOrder": "004.008",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "iscd2": {
+                "description": "종목 코드2",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "종목 코드2",
+                  "propertyLength": "9",
+                  "propertyOrder": "004.009",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "iscd3": {
+                "description": "종목 코드3",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "종목 코드3",
+                  "propertyLength": "9",
+                  "propertyOrder": "004.010",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "iscd4": {
+                "description": "종목 코드4",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "종목 코드4",
+                  "propertyLength": "9",
+                  "propertyOrder": "004.011",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "iscd5": {
+                "description": "종목 코드5",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "종목 코드5",
+                  "propertyLength": "9",
+                  "propertyOrder": "004.012",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "news_lrdv_code": {
+                "description": "뉴스 대구분",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "1:0:종합\n1:FGHIN:공시\n2:F:거래소\n3:01:수시공시\n3:02:공정공시\n3:03:시장조치\n3:04:신고사항\n3:05:정기공시 \n3:06:특수공시  \n3:07:발행공시  \n3:08:지분공시\n3:09:워런트공시\n3:10:의결권행사공시\n3:11:공정위공시\n3:12:선물시장공시\n3:A1:시장조치안내\n3:A2:상장안내\n3:A3:안내사항\n3:A4:투자유의사항\n3:A5:수익증권\n3:A6:투자자참고사항\n3:A7:뮤츄얼펀드\n2:G:코스닥\n3:01:수시공시\n3:02:공정공시\n3:03:시장조치\n3:04:신고사항\n3:05:정기공시 \n3:06:특수공시  \n3:07:발행공시  \n3:08:지분공시\n3:09:워런트공시\n3:10:의결권행사공시\n3:11:공정위공시\n3:12:선물시장공시\n3:A1:시장조치안내\n3:A2:상장안내\n3:A3:안내사항\n3:A4:투자유의사항\n3:A5:수익증권\n3:A6:투자자참고사항\n3:A7:뮤츄얼펀드\n2:N:코넥스\n3:01:수시공시\n3:02:공정공시\n3:03:시장조치\n3:04:신고사항\n3:05:정기공시 \n3:06:특수공시  \n3:07:발행공시  \n3:08:지분공시\n3:09:워런트공시\n3:10:의결권행사공시\n3:11:공정위공시\n3:12:선물시장공시\n3:A1:시장조치안내\n3:A2:상장안내\n3:A3:안내사항\n3:A4:투자유의사항\n3:A5:수익증권\n3:A6:투자자참고사항\n3:A7:뮤츄얼펀드\n2:H:K-OTC\n2:I:기타\n1:6:연합뉴스\n3:01:정치\n3:02:경제\n3:03:증권/금융\n3:04:산업\n3:05:사회\n3:06:사건사고\n3:07:문화\n3:08:생활건강\n3:09:IT. 과학\n3:10:북한\n3:11:국제\n3:12:스포츠\n3:13:기타\n1:2:한경\n3:01:증권\n3:04:경제\n3:03:부동산\n3:07:IT/과학\n3:08:정치\n3:09:국제\n3:10:사회\n3:11:생활/문화\n3:00:오피니언\n3:12:스포츠\n3:20:연예\n3:18:보도자료\n1:A:매경\n3:01:경제\n3:02:금융\n3:03:산업/기업\n3:04:중기/벤쳐/과기\n3:05:증권\n3:06:부동산\n3:07:정치\n3:08:사회\n3:09:인물/동정\n3:10:국제\n3:11:문화\n3:12:레저/스포츠\n3:13:사설/칼럼\n3:14:기획/분석\n3:15:섹션\n3:16:English News\n3:17:매경이코노미\n3:18:mbn\n3:90:기타\n1:4:이데일리\n3:B1:채권시황\n3:B2:신종채권\n3:F1:외환시황\n3:G1:보도자료\n3:H1:정책뉴스\n3:H2:금융뉴스\n3:H3:금융금리/수익율\n3:I1:IPO뉴스\n3:J1:뉴욕\n3:J2:아시아/유럽\n3:J3:월드마켓\n3:J4:국제기업/산업\n3:J5:경제흐름\n3:L1:기업뉴스\n3:L2:IT\n3:L3:벤처\n3:L4:e3비즈월드\n3:S1:주식시황\n3:S2:거래소\n3:S3:코스닥\u0026장외\n3:S4:루머\n3:S5:증권가\n1:5:머니투데이\n3:A01:주식\n3:A02:선물옵션\n3:A05:해외증시\n3:A06:외환\n3:A07:채권\n3:A08:펀드\n3:B01:경제\n3:B02:산업\n3:B03:정보과학\n3:B04:국제\n3:B05:금융보험\n3:B07:부동산\n3:B08:성공학\n3:B09:재테크\n3:B10:바이오\n1:9:뉴스핌\n3:01:주식\n3:02:채권\n3:03:외환\n3:04:국제\n3:05:금융/제테크\n3:06:산업\n3:07:경제\n3:08:광장\n3:09:전문가기고\n3:90:기타\n1:8:아시아경제\n3:A0:증권\n3:B0:금융\n3:C0:부동산\n3:D0:산업\n3:E0:경제\n3:F0:정치,사회\n3:G0:사설,칼럼\n3:H0:인사,동정,부고\n3:I0:루머\u0026팩트\n3:J0:국내뉴스\n3:K0:아시아시각\n3:L0:골프\n3:M0:모닝브리핑\n3:N0:연예\n3:10:국제\n3:20:중국\n3:30:인도\n3:40:일본\n3:50:이머징마켓\n1:B:헤럴드경제 \n3:01:뉴스\n3:02:기업\n3:03:재테크\n3:04:스타\n3:05:문화\n3:90:기타\n1:C:파이낸셜\n3:01:증권\n3:02:금융\n3:03:부동산\n3:04:산업\n3:05:경제\n3:06:정보과학\n3:07:유통\n3:08:국제\n3:09:정치\n3:10:전국/사회\n3:11:문화\n3:12:스포츠\n3:13:교육\n3:14:피플\n3:15:사설/컬럼\n3:16:기획/연재\n3:17:fn재테크\n3:18:광고\n3:90:기타\n1:D:이투데이\n3:21:증권\n3:51:금융\n3:22:정치/정책\n3:31:글로벌\n3:23:산업\n3:24:부동산\n3:26:라이프\n3:25:칼럼/인물\n3:41:연예/스포츠\n3:90:기타\n1:U:서울경제\n3:31:증권\n3:32:부동산\n3:33:경제/금융\n3:34:산업/기업\n3:35:IT/과학\n3:36:정치\n3:37:사회\n3:38:국제\n3:39:칼럼\n3:3A:인사/동정/부음\n3:3B:문화/건강/레저\n3:3C:골프/스포츠\n1:V:조선경제i\n3:1:뉴스\n3:2:Market\n3:4:부동산\n3:6:글로벌경제\n3:8:위클리비즈\n3:B:자동차\n3:C:녹색BIZ\n1:7:인포스탁\n3:01:거래소종목\n3:02:코스닥종목\n3:03:해외증시\n3:04:선물동향\n3:00:기타\n1:X:CEO스코어\n3:01:경제\n3:02:산업\n3:03:금융\n3:04:공기업\n3:05:전자\n3:06:통신\n3:07:게임,인터넷\n3:08:자동차\n3:09:조선,철강\n3:10:식음료\n3:11:유통\n3:12:건설\n3:13:제약\n3:14:화학,에너지\n3:15:생활산업\n3:16:기타\n1:S:컨슈머타임스\n3:01:종합\n3:02:파이낸셜컨슈머\n3:03:컨슈머리뷰\n3:04:정치,사회\n3:05:스포츠,연예\n3:06:컨슈머뷰티\n3:07:오피니언\n3:09:기타\n1:Z:인베스트조선\n3:01:증권/금융\n1:d:NSP통신\n3:11:IT/과학\n3:12:금융/증권\n3:13:부동산\n3:14:자동차\n3:15:연예/문화\n3:16:생활경제\n3:17:물류/유통\n3:18:인사/동정\n3:19:정치/사회\n3:20:기업\n3:21:의학/건강\n3:23:신상품/리뷰\n3:24:해명/반론\n1:a:IRGO\n3:10:IR정보\n3:20:IR일정\n3:50:IR FOCUS\n1:Y:eFriend Air\n3:01:종목상담\n3:02:VOD\n1:J:동향\n1:L:한투리서치",
+                  "name": "뉴스 대구분",
+                  "propertyLength": "8",
+                  "propertyOrder": "004.006",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "news_ofer_entp_code": {
+                "description": "뉴스 제공 업체 코드",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "'2'  /* 한경  news  */\n'3'  /* 사용안함 */\n'4'  /* 이데일리    */\n'5'  /* 머니투데이  */\n'6'  /* 연합뉴스    */\n'7'  /* 인포스탁    */\n'8'  /* 아시아경제  */\n'9'  /* 뉴스핌      */\n'A'  /* 매일경제    */\n'B'  /* 헤럴드경제  */\n'C'  /* 파이낸셜    */\n'D'  /* 이투데이    */\n'F'  /* 장내공시    */\n'G'  /* 코스닥공시  */\n'H'  /* 프리보드공시*/\n'I'  /* 기타공시    */\n'N'  /* 코넥스공시  */\n'J'  /*  동향       */ /*  'L'   리서치 */\n'K'  /* 청약안내 전송             */\n'M'  /* 타사 추천종목             */\n'O'  /* edaily  fx                */\n'U'  /* 서울 경제 */\n'V'  /* 조선 경제 */\n'X'  /* CEO스코어               */\n'Y'  /* 이프렌드 Air 뉴스       */\n'Z'  /* 인베스트조선            */\n'd'  /* NSP통신              */",
+                  "name": "뉴스 제공 업체 코드",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.002",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              }
+            },
+            "required": [
+              "cntt_usiq_srno",
+              "news_ofer_entp_code",
+              "data_dt",
+              "data_tm",
+              "hts_pbnt_titl_cntt",
+              "news_lrdv_code",
+              "dorg",
+              "iscd1",
+              "iscd2",
+              "iscd3",
+              "iscd4",
+              "iscd5"
+            ],
+            "type": "object"
+          },
+          "rt_cd": {
+            "description": "성공 실패 여부",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "성공 실패 여부",
+              "propertyLength": "1",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        },
+        "required": [
+          "rt_cd",
+          "msg_cd",
+          "msg1",
+          "output"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "KISOAuth": {
+        "bearerFormat": "KIS OAuth access token",
+        "description": "Issued by KIS /oauth2/tokenP and injected by the handwritten runtime.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "KIS Domestic Stock OpenAPI - news-title",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/uapi/domestic-stock/v1/quotations/news-title": {
+      "get": {
+        "description": "종합 시황/공시(제목) API입니다. \n한국투자 HTS(eFriend Plus) \u0026gt; [0601] 종합 시황/공시 화면의 \"우측 상단 리스트\" 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
+        "operationId": "news-title",
+        "parameters": [
+          {
+            "description": "공백 필수 입력",
+            "in": "query",
+            "name": "FID_NEWS_OFER_ENTP_CODE",
+            "required": true,
+            "schema": {
+              "description": "뉴스 제공 업체 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공백 필수 입력",
+                "name": "뉴스 제공 업체 코드",
+                "propertyLength": "40",
+                "propertyOrder": "001",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공백 필수 입력",
+              "name": "뉴스 제공 업체 코드",
+              "propertyLength": "40",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "공백 필수 입력",
+              "flag": "fid-news-ofer-entp-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "공백 필수 입력",
+            "in": "query",
+            "name": "FID_COND_MRKT_CLS_CODE",
+            "required": true,
+            "schema": {
+              "description": "조건 시장 구분 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공백 필수 입력",
+                "name": "조건 시장 구분 코드",
+                "propertyLength": "6",
+                "propertyOrder": "002",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공백 필수 입력",
+              "name": "조건 시장 구분 코드",
+              "propertyLength": "6",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "공백 필수 입력",
+              "flag": "fid-cond-mrkt-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "공백: 전체, 종목코드 : 해당코드가 등록된 뉴스",
+            "in": "query",
+            "name": "FID_INPUT_ISCD",
+            "required": true,
+            "schema": {
+              "description": "입력 종목코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공백: 전체, 종목코드 : 해당코드가 등록된 뉴스",
+                "name": "입력 종목코드",
+                "propertyLength": "12",
+                "propertyOrder": "003",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공백: 전체, 종목코드 : 해당코드가 등록된 뉴스",
+              "name": "입력 종목코드",
+              "propertyLength": "12",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "symbol",
+              "default": "",
+              "description": "공백: 전체, 종목코드 : 해당코드가 등록된 뉴스",
+              "flag": "symbol",
+              "required": true,
+              "source": "user",
+              "valueKind": "symbol"
+            }
+          },
+          {
+            "description": "공백 필수 입력",
+            "in": "query",
+            "name": "FID_TITL_CNTT",
+            "required": true,
+            "schema": {
+              "description": "제목 내용",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공백 필수 입력",
+                "name": "제목 내용",
+                "propertyLength": "132",
+                "propertyOrder": "004",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공백 필수 입력",
+              "name": "제목 내용",
+              "propertyLength": "132",
+              "propertyOrder": "004",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "공백 필수 입력",
+              "flag": "fid-titl-cntt",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "공백: 현재기준, 조회일자(ex 00YYYYMMDD)",
+            "in": "query",
+            "name": "FID_INPUT_DATE_1",
+            "required": true,
+            "schema": {
+              "description": "입력 날짜",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공백: 현재기준, 조회일자(ex 00YYYYMMDD)",
+                "name": "입력 날짜",
+                "propertyLength": "10",
+                "propertyOrder": "005",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공백: 현재기준, 조회일자(ex 00YYYYMMDD)",
+              "name": "입력 날짜",
+              "propertyLength": "10",
+              "propertyOrder": "005",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "from",
+              "default": "",
+              "description": "공백: 현재기준, 조회일자(ex 00YYYYMMDD)",
+              "flag": "from",
+              "required": true,
+              "source": "user",
+              "valueKind": "date"
+            }
+          },
+          {
+            "description": "공백: 현재기준, 조회시간(ex 0000HHMMSS)",
+            "in": "query",
+            "name": "FID_INPUT_HOUR_1",
+            "required": true,
+            "schema": {
+              "description": "입력 시간",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공백: 현재기준, 조회시간(ex 0000HHMMSS)",
+                "name": "입력 시간",
+                "propertyLength": "10",
+                "propertyOrder": "006",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공백: 현재기준, 조회시간(ex 0000HHMMSS)",
+              "name": "입력 시간",
+              "propertyLength": "10",
+              "propertyOrder": "006",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "공백: 현재기준, 조회시간(ex 0000HHMMSS)",
+              "flag": "fid-input-hour-1",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "공백 필수 입력",
+            "in": "query",
+            "name": "FID_RANK_SORT_CLS_CODE",
+            "required": true,
+            "schema": {
+              "description": "순위 정렬 구분 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공백 필수 입력",
+                "name": "순위 정렬 구분 코드",
+                "propertyLength": "2",
+                "propertyOrder": "007",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공백 필수 입력",
+              "name": "순위 정렬 구분 코드",
+              "propertyLength": "2",
+              "propertyOrder": "007",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "",
+              "default": "",
+              "description": "공백 필수 입력",
+              "flag": "fid-rank-sort-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "공백 필수 입력",
+            "in": "query",
+            "name": "FID_INPUT_SRNO",
+            "required": true,
+            "schema": {
+              "description": "입력 일련번호",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공백 필수 입력",
+                "name": "입력 일련번호",
+                "propertyLength": "20",
+                "propertyOrder": "008",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공백 필수 입력",
+              "name": "입력 일련번호",
+              "propertyLength": "20",
+              "propertyOrder": "008",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "공백 필수 입력",
+              "flag": "fid-input-srno",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/NewsTitleResponse"
+                }
+              }
+            },
+            "description": "KIS business response envelope"
+          }
+        },
+        "security": [
+          {
+            "KISOAuth": []
+          }
+        ],
+        "summary": "종합 시황/공시(제목) [국내주식-141]",
+        "tags": [
+          "Market"
+        ],
+        "x-kis": {
+          "accessUrl": "/uapi/domestic-stock/v1/quotations/news-title",
+          "apiId": "fbfe7300-7096-4938-840b-9f7c328cc5fd",
+          "apiName": "종합 시황/공시(제목) [국내주식-141]",
+          "apiSummary": "종합 시황/공시(제목) API입니다. \r\n한국투자 HTS(eFriend Plus) \u0026gt; [0601] 종합 시황/공시 화면의 \"우측 상단 리스트\" 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
+          "catalogSchemaVersion": 1,
+          "collectionId": "409bcd22-e5f5-40df-a839-372691060ce5",
+          "collectionName": "[국내주식] 업종/기타",
+          "group": "market",
+          "lastModifiedDate": "2026-03-30T13:36:16+09:00",
+          "oauth": true,
+          "realDomain": "https://openapi.koreainvestment.com:9443",
+          "realTrId": "FHKST01011800",
+          "roleCandidate": "read_only",
+          "securityType": "oauth2-access-token",
+          "serviceGroup": "Market",
+          "source": {
+            "categoryApi": "https://apiportal.koreainvestment.com/api/apis/public/api-list/{collectionId}",
+            "detailApi": "https://apiportal.koreainvestment.com/api/apis/public/detail?accessUrl={accessUrl}",
+            "detailPageTemplate": "https://apiportal.koreainvestment.com/apiservice-apiservice?{accessUrl}",
+            "portal": "https://apiportal.koreainvestment.com/apiservice-category"
+          },
+          "sourceDetailUrl": "https://apiportal.koreainvestment.com/apiservice-apiservice?/uapi/domestic-stock/v1/quotations/news-title",
+          "supportsReal": true,
+          "supportsVirtual": false,
+          "virtualDomain": "모의투자 미지원",
+          "virtualTrId": "모의투자 미지원"
+        }
+      }
+    }
+  }
+}

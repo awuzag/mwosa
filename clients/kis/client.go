@@ -20,7 +20,9 @@ type Client struct {
 	appSecret    string
 	customerType string
 	account      string
+	virtual      bool
 	http         *resty.Client
+	rateLimiter  Limiter
 
 	tokenMu sync.RWMutex
 	token   tokenState
@@ -63,17 +65,22 @@ func New(options ...Option) (*Client, error) {
 		appSecret:    cfg.appSecret,
 		customerType: cfg.customerType,
 		account:      cfg.account,
+		virtual:      cfg.virtual,
 		http:         restyClient,
+		rateLimiter:  cfg.rateLimiter,
 		token: tokenState{
 			accessToken: cfg.accessToken,
 		},
 	}, nil
 }
 
-func (c *Client) request(ctx context.Context, group string, operation string, trID string, errb oops.OopsErrorBuilder) (*resty.Request, error) {
+func (c *Client) request(ctx context.Context, group string, operation string, trID string, endpoint string, errb oops.OopsErrorBuilder) (*resty.Request, error) {
 	token := c.currentAccessToken()
 	if token == "" {
 		return nil, errb.New("kis request: provider=" + ProviderKIS + " group=" + group + " operation=" + operation + " tr_id=" + trID + " access token is required")
+	}
+	if err := c.allow(ctx, newRateLimitRequest(group, operation, trID, endpoint), errb); err != nil {
+		return nil, err
 	}
 	return c.http.R().
 		SetContext(ctx).
@@ -82,6 +89,19 @@ func (c *Client) request(ctx context.Context, group string, operation string, tr
 		SetHeader("appsecret", c.appSecret).
 		SetHeader("tr_id", trID).
 		SetHeader("custtype", c.customerType), nil
+}
+
+func (c *Client) allow(ctx context.Context, request RateLimitRequest, errb oops.OopsErrorBuilder) error {
+	if c.rateLimiter == nil {
+		return nil
+	}
+	if err := c.rateLimiter.Allow(ctx, request); err != nil {
+		return errb.With(
+			"endpoint", request.Endpoint,
+			"limit", request.Limit,
+		).Wrapf(err, "check kis rate limit")
+	}
+	return nil
 }
 
 func (c *Client) currentAccessToken() string {
@@ -136,11 +156,19 @@ func checkHTTP(response *resty.Response, errb oops.OopsErrorBuilder, group strin
 	return nil
 }
 
-func checkKIS(response responseFields, errb oops.OopsErrorBuilder, group string, operation string, trID string) error {
+func checkKIS(response responseFields, errb oops.OopsErrorBuilder, request RateLimitRequest) error {
 	if response.RTCD == "" && response.MsgCD == "" && response.Msg1 == "" {
 		return errb.New("kis response envelope missing status fields")
 	}
 	if response.RTCD != "0" {
+		if response.MsgCD == RateLimitMsgCD {
+			return errb.With(
+				"rt_cd", response.RTCD,
+				"msg_cd", response.MsgCD,
+				"msg1", response.Msg1,
+				"endpoint", request.Endpoint,
+			).Wrap(kisRateLimitError(request, response.MsgCD, response.Msg1))
+		}
 		return errb.With(
 			"rt_cd", response.RTCD,
 			"msg_cd", response.MsgCD,
@@ -148,9 +176,9 @@ func checkKIS(response responseFields, errb oops.OopsErrorBuilder, group string,
 		).Errorf(
 			"kis business error: provider=%s group=%s operation=%s tr_id=%s rt_cd=%s msg_cd=%s msg1=%s",
 			ProviderKIS,
-			group,
-			operation,
-			trID,
+			request.Group,
+			request.Operation,
+			request.TRID,
 			response.RTCD,
 			response.MsgCD,
 			response.Msg1,

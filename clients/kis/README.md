@@ -41,32 +41,48 @@ Token issuance is explicit:
 token, err := client.Token(ctx)
 ```
 
-Method arguments should stay minimal. When an endpoint needs extra request
-fields, prefer endpoint-specific options instead of widening the primary
-signature.
+Generated market-data APIs are grouped behind short services. The generated
+request structs keep provider-native KIS field names visible without widening
+the client root surface.
 
 ```go
-price, err := client.Price(ctx, "005930")
+price, err := client.Quote().Price(ctx, kis.InquirePriceRequest{
+	FidInputIscd: "005930",
+})
 
-bars, err := client.Daily(ctx, "005930",
-	kis.WithPeriod("D"),
-	kis.WithDateRange("20250101", "20250131"),
-)
+bars, err := client.Quote().Daily(ctx, kis.InquireDailyItemChartPriceRequest{
+	FidInputIscd: "005930",
+	FidPeriodDivCode: "D",
+})
 
-minutes, err := client.Intraday(ctx, "005930",
-	kis.WithInputHour("100000"),
-	kis.WithPastData(true),
-)
+minutes, err := client.Quote().Intraday(ctx, kis.InquireTimeItemChartPriceRequest{
+	FidInputIscd: "005930",
+	FidInputHour1: "100000",
+	FidPwDataIncuYn: "Y",
+})
 
-book, err := client.Orderbook(ctx, "005930")
+book, err := client.Quote().Orderbook(ctx, kis.InquireAskingPriceExpCcnRequest{
+	FidInputIscd: "005930",
+})
 
-trades, err := client.Trades(ctx, "005930")
+trades, err := client.Quote().Trades(ctx, kis.InquireCcnlRequest{
+	FidInputIscd: "005930",
+})
 
-timedTrades, err := client.TimeTrades(ctx, "005930", "141200")
+timedTrades, err := client.Quote().TimeTrades(ctx, kis.InquireTimeItemConclusionRequest{
+	FidInputIscd: "005930",
+	FidInputHour1: "141200",
+})
 
-product, err := client.Product(ctx, "005930")
+product, err := client.Instrument().Product(ctx, kis.SearchInfoRequest{
+	Pdno: "005930",
+	PrdtTypeCd: kis.DefaultDomesticStockProductType,
+})
 
-stock, err := client.Stock(ctx, "005930")
+stock, err := client.Instrument().Stock(ctx, kis.SearchStockInfoRequest{
+	Pdno: "005930",
+	PrdtTypeCd: kis.DefaultDomesticStockProductType,
+})
 
 etf, err := client.ETFETNPrice(ctx, "069500")
 ```
@@ -76,14 +92,14 @@ Implemented REST market-data APIs:
 | Method | KIS API | TR ID |
 | --- | --- | --- |
 | `Token` | `/oauth2/tokenP` | |
-| `Price` | `/uapi/domestic-stock/v1/quotations/inquire-price` | `FHKST01010100` |
-| `Daily` | `/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice` | `FHKST03010100` |
-| `Intraday` | `/uapi/domestic-stock/v1/quotations/inquire-time-itemchartprice` | `FHKST03010200` |
-| `Orderbook` | `/uapi/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn` | `FHKST01010200` |
-| `Trades` | `/uapi/domestic-stock/v1/quotations/inquire-ccnl` | `FHKST01010300` |
-| `TimeTrades` | `/uapi/domestic-stock/v1/quotations/inquire-time-itemconclusion` | `FHPST01060000` |
-| `Product` | `/uapi/domestic-stock/v1/quotations/search-info` | `CTPF1604R` |
-| `Stock` | `/uapi/domestic-stock/v1/quotations/search-stock-info` | `CTPF1002R` |
+| `Quote().Price` | `/uapi/domestic-stock/v1/quotations/inquire-price` | `FHKST01010100` |
+| `Quote().Daily` | `/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice` | `FHKST03010100` |
+| `Quote().Intraday` | `/uapi/domestic-stock/v1/quotations/inquire-time-itemchartprice` | `FHKST03010200` |
+| `Quote().Orderbook` | `/uapi/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn` | `FHKST01010200` |
+| `Quote().Trades` | `/uapi/domestic-stock/v1/quotations/inquire-ccnl` | `FHKST01010300` |
+| `Quote().TimeTrades` | `/uapi/domestic-stock/v1/quotations/inquire-time-itemconclusion` | `FHPST01060000` |
+| `Instrument().Product` | `/uapi/domestic-stock/v1/quotations/search-info` | `CTPF1604R` |
+| `Instrument().Stock` | `/uapi/domestic-stock/v1/quotations/search-stock-info` | `CTPF1002R` |
 | `ETFETNPrice` | `/uapi/etfetn/v1/quotations/inquire-price` | `FHPST02400000` |
 
 ## E2E tests

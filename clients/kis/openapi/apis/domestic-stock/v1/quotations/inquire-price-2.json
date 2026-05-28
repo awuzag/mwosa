@@ -1,0 +1,977 @@
+{
+  "components": {
+    "schemas": {
+      "InquirePrice2Response": {
+        "additionalProperties": false,
+        "properties": {
+          "msg1": {
+            "description": "응답메세지",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답메세지",
+              "propertyLength": "80",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "msg_cd": {
+            "description": "응답코드",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답코드",
+              "propertyLength": "8",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "output": {
+            "additionalProperties": false,
+            "properties": {
+              "acml_tr_pbmn": {
+                "description": "누적 거래 대금",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "누적 거래 대금",
+                  "propertyLength": "18",
+                  "propertyOrder": "004.045",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "acml_vol": {
+                "description": "누적 거래량",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "누적 거래량",
+                  "propertyLength": "18",
+                  "propertyOrder": "004.046",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bstp_cls_code": {
+                "description": "업종 구분 코드",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "업종 구분 코드",
+                  "propertyLength": "4",
+                  "propertyOrder": "004.037",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "bstp_kor_isnm": {
+                "description": "업종 한글 종목명",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "※ 거래소 정보로 특정 종목은 업종구분이 없어 데이터 미회신",
+                  "name": "업종 한글 종목명",
+                  "propertyLength": "40",
+                  "propertyOrder": "004.048",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "crdt_able_yn": {
+                "description": "신용 가능 여부",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "신용 가능 여부",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.004",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "crdt_rate": {
+                "description": "신용 비율",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "신용 비율",
+                  "propertyLength": "84",
+                  "propertyOrder": "004.008",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "divi_app_cls_code": {
+                "description": "동시호가배분처리코드",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "11:매수상한배분 12:매수하한배분 13: 매도상한배분 14:매도하한배분",
+                  "name": "동시호가배분처리코드",
+                  "propertyLength": "2",
+                  "propertyOrder": "004.021",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "elw_pblc_yn": {
+                "description": "ELW 발행 여부",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "ELW 발행 여부",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.006",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "fcam_mod_cls_name": {
+                "description": "액면가 변경 구분 명",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "특정 경우에만 데이터 출력",
+                  "name": "액면가 변경 구분 명",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.040",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "flng_cls_name": {
+                "description": "락 구분 이름",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "특정 경우에만 데이터 출력",
+                  "name": "락 구분 이름",
+                  "propertyLength": "40",
+                  "propertyOrder": "004.033",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "hgpr_vrss_prpr": {
+                "description": "최고가 대비 현재가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "최고가 대비 현재가",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.014",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "hgpr_vrss_prpr_sign": {
+                "description": "최고가 대비 현재가 부호",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "최고가 대비 현재가 부호",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.015",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "insn_pbnt_yn": {
+                "description": "불성실 공시 여부",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "불성실 공시 여부",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.039",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "invt_caful_yn": {
+                "description": "투자유의여부",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "투자유의여부",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.024",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "low_current_yn": {
+                "description": "저유동성 종목 여부",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "저유동성 종목 여부",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.027",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "lwpr_vrss_prpr": {
+                "description": "최저가 대비 현재가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "최저가 대비 현재가",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.010",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "lwpr_vrss_prpr_sign": {
+                "description": "최저가 대비 현재가 부호",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "최저가 대비 현재가 부호",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.011",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "mang_issu_yn": {
+                "description": "관리 종목 여부",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "관리 종목 여부",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.020",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "marg_rate": {
+                "description": "증거금 비율",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "증거금 비율",
+                  "propertyLength": "84",
+                  "propertyOrder": "004.009",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "mrkt_warn_cls_code": {
+                "description": "시장경고코드",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "00: 없음 01: 투자주의 02:투자경고 03:투자위험",
+                  "name": "시장경고코드",
+                  "propertyLength": "2",
+                  "propertyOrder": "004.023",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "mrkt_warn_cls_name": {
+                "description": "시장 경고 구분 명",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "특정 경우에만 데이터 출력\n\"투자환기\" / \"투자경고\"",
+                  "name": "시장 경고 구분 명",
+                  "propertyLength": "40",
+                  "propertyOrder": "004.035",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "mxpr_llam_cls_code": {
+                "description": "상하한가 구분 코드",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "특정 경우에만 데이터 출력",
+                  "name": "상하한가 구분 코드",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.003",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "new_hgpr_lwpr_cls_code": {
+                "description": "신 고가 저가 구분 코드",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "특정 경우에만 데이터 출력",
+                  "name": "신 고가 저가 구분 코드",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.002",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "new_lstn_cls_name": {
+                "description": "신규 상장 구분 명",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "신규 상장 구분 명",
+                  "propertyLength": "40",
+                  "propertyOrder": "004.031",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "oprc_rang_cont_yn": {
+                "description": "시가 범위 연장 여부",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시가 범위 연장 여부",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.051",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "oprc_vrss_prpr": {
+                "description": "시가2 대비 현재가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시가2 대비 현재가",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.018",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "oprc_vrss_prpr_sign": {
+                "description": "시가2 대비 현재가 부호",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시가2 대비 현재가 부호",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.019",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "prdy_clpr_vrss_hgpr_rate": {
+                "description": "전일 종가 대비 최고가 비율",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "전일 종가 대비 최고가 비율",
+                  "propertyLength": "84",
+                  "propertyOrder": "004.016",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "prdy_clpr_vrss_lwpr_rate": {
+                "description": "전일 종가 대비 최저가 비율",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "전일 종가 대비 최저가 비율",
+                  "propertyLength": "84",
+                  "propertyOrder": "004.012",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "prdy_clpr_vrss_oprc_rate": {
+                "description": "전일 종가 대비 시가2 비율",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "전일 종가 대비 시가2 비율",
+                  "propertyLength": "84",
+                  "propertyOrder": "004.007",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "prdy_ctrt": {
+                "description": "전일 대비율",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "전일 대비율",
+                  "propertyLength": "82",
+                  "propertyOrder": "004.044",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "prdy_vol": {
+                "description": "전일 거래량",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "전일 거래량",
+                  "propertyLength": "18",
+                  "propertyOrder": "004.054",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "prdy_vrss": {
+                "description": "전일 대비",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "전일 대비",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.042",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "prdy_vrss_sign": {
+                "description": "전일 대비 부호",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "전일 대비 부호",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.043",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "prdy_vrss_vol_rate": {
+                "description": "전일 대비 거래량 비율",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "전일 대비 거래량 비율",
+                  "propertyLength": "84",
+                  "propertyOrder": "004.047",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "revl_issu_reas_name": {
+                "description": "재평가 종목 사유 명",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "특정 경우에만 데이터 출력",
+                  "name": "재평가 종목 사유 명",
+                  "propertyLength": "40",
+                  "propertyOrder": "004.034",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "rprs_mrkt_kor_name": {
+                "description": "대표 시장 한글 명",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "대표 시장 한글 명",
+                  "propertyLength": "40",
+                  "propertyOrder": "004.001",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "short_over_cls_code": {
+                "description": "단기과열구분코드",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "단기과열구분코드",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.029",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "short_over_yn": {
+                "description": "단기과열여부",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "단기과열여부",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.022",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "sltr_yn": {
+                "description": "정리매매 여부",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "정리매매 여부",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.049",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "ssts_hot_yn": {
+                "description": "공매도과열 여부",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "공매도과열 여부",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.026",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "stange_runup_yn": {
+                "description": "이상급등여부",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "이상급등여부",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.025",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "stck_hgpr": {
+                "description": "주식 최고가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "주식 최고가",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.017",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "stck_llam": {
+                "description": "주식 하한가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "주식 하한가",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.030",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "stck_lwpr": {
+                "description": "주식 최저가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "주식 최저가",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.013",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "stck_mxpr": {
+                "description": "주식 상한가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "주식 상한가",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.005",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "stck_oprc": {
+                "description": "주식 시가2",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "주식 시가2",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.053",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "stck_prdy_clpr": {
+                "description": "주식 전일 종가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "주식 전일 종가",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.038",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "stck_prpr": {
+                "description": "주식 현재가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "주식 현재가",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.041",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "stck_sdpr": {
+                "description": "주식 기준가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "주식 기준가",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.036",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "trht_yn": {
+                "description": "거래정지 여부",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "거래정지 여부",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.050",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "vi_cls_code": {
+                "description": "VI적용구분코드",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "VI적용구분코드",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.028",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "vlnt_deal_cls_name": {
+                "description": "임의 매매 구분 명",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "임의 매매 구분 명",
+                  "propertyLength": "16",
+                  "propertyOrder": "004.032",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "vlnt_fin_cls_code": {
+                "description": "임의 종료 구분 코드",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "임의 종료 구분 코드",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.052",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              }
+            },
+            "required": [
+              "rprs_mrkt_kor_name",
+              "new_hgpr_lwpr_cls_code",
+              "mxpr_llam_cls_code",
+              "crdt_able_yn",
+              "stck_mxpr",
+              "elw_pblc_yn",
+              "prdy_clpr_vrss_oprc_rate",
+              "crdt_rate",
+              "marg_rate",
+              "lwpr_vrss_prpr",
+              "lwpr_vrss_prpr_sign",
+              "prdy_clpr_vrss_lwpr_rate",
+              "stck_lwpr",
+              "hgpr_vrss_prpr",
+              "hgpr_vrss_prpr_sign",
+              "prdy_clpr_vrss_hgpr_rate",
+              "stck_hgpr",
+              "oprc_vrss_prpr",
+              "oprc_vrss_prpr_sign",
+              "mang_issu_yn",
+              "divi_app_cls_code",
+              "short_over_yn",
+              "mrkt_warn_cls_code",
+              "invt_caful_yn",
+              "stange_runup_yn",
+              "ssts_hot_yn",
+              "low_current_yn",
+              "vi_cls_code",
+              "short_over_cls_code",
+              "stck_llam",
+              "new_lstn_cls_name",
+              "vlnt_deal_cls_name",
+              "flng_cls_name",
+              "revl_issu_reas_name",
+              "mrkt_warn_cls_name",
+              "stck_sdpr",
+              "bstp_cls_code",
+              "stck_prdy_clpr",
+              "insn_pbnt_yn",
+              "fcam_mod_cls_name",
+              "stck_prpr",
+              "prdy_vrss",
+              "prdy_vrss_sign",
+              "prdy_ctrt",
+              "acml_tr_pbmn",
+              "acml_vol",
+              "prdy_vrss_vol_rate",
+              "bstp_kor_isnm",
+              "sltr_yn",
+              "trht_yn",
+              "oprc_rang_cont_yn",
+              "vlnt_fin_cls_code",
+              "stck_oprc",
+              "prdy_vol"
+            ],
+            "type": "object"
+          },
+          "rt_cd": {
+            "description": "성공 실패 여부",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "성공 실패 여부",
+              "propertyLength": "1",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        },
+        "required": [
+          "rt_cd",
+          "msg_cd",
+          "msg1",
+          "output"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "KISOAuth": {
+        "bearerFormat": "KIS OAuth access token",
+        "description": "Issued by KIS /oauth2/tokenP and injected by the handwritten runtime.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "KIS Domestic Stock OpenAPI - inquire-price-2",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/uapi/domestic-stock/v1/quotations/inquire-price-2": {
+      "get": {
+        "description": "주식현재가 시세2 API입니다.",
+        "operationId": "inquire-price-2",
+        "parameters": [
+          {
+            "description": "J:KRX, NX:NXT, UN:통합",
+            "in": "query",
+            "name": "FID_COND_MRKT_DIV_CODE",
+            "required": true,
+            "schema": {
+              "description": "FID 조건 시장 분류 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "J:KRX, NX:NXT, UN:통합",
+                "name": "FID 조건 시장 분류 코드",
+                "propertyLength": "2",
+                "propertyOrder": "001",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "J:KRX, NX:NXT, UN:통합",
+              "name": "FID 조건 시장 분류 코드",
+              "propertyLength": "2",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "market",
+              "completion": [
+                "krx",
+                "nxt",
+                "unified",
+                "J",
+                "NX",
+                "UN"
+              ],
+              "default": "J",
+              "description": "J:KRX, NX:NXT, UN:통합",
+              "flag": "market",
+              "required": true,
+              "source": "default",
+              "valueKind": "market"
+            }
+          },
+          {
+            "description": "000660",
+            "in": "query",
+            "name": "FID_INPUT_ISCD",
+            "required": true,
+            "schema": {
+              "description": "FID 입력 종목코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "000660",
+                "name": "FID 입력 종목코드",
+                "propertyLength": "12",
+                "propertyOrder": "002",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "000660",
+              "name": "FID 입력 종목코드",
+              "propertyLength": "12",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "symbol",
+              "default": "",
+              "description": "000660",
+              "flag": "symbol",
+              "required": true,
+              "source": "user",
+              "valueKind": "symbol"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InquirePrice2Response"
+                }
+              }
+            },
+            "description": "KIS business response envelope"
+          }
+        },
+        "security": [
+          {
+            "KISOAuth": []
+          }
+        ],
+        "summary": "주식현재가 시세2[v1_국내주식-054]",
+        "tags": [
+          "Quote"
+        ],
+        "x-kis": {
+          "accessUrl": "/uapi/domestic-stock/v1/quotations/inquire-price-2",
+          "apiId": "995f745a-aa8a-491b-85ef-0d4697094b58",
+          "apiName": "주식현재가 시세2[v1_국내주식-054]",
+          "apiSummary": "주식현재가 시세2 API입니다.",
+          "catalogSchemaVersion": 1,
+          "collectionId": "1031d032-6747-414b-bdf2-fd419c0c98ce",
+          "collectionName": "[국내주식] 기본시세",
+          "group": "quote",
+          "lastModifiedDate": "2026-03-30T11:43:26+09:00",
+          "oauth": true,
+          "realDomain": "https://openapi.koreainvestment.com:9443",
+          "realTrId": "FHPST01010000",
+          "roleCandidate": "read_only",
+          "securityType": "oauth2-access-token",
+          "serviceGroup": "Quote",
+          "source": {
+            "categoryApi": "https://apiportal.koreainvestment.com/api/apis/public/api-list/{collectionId}",
+            "detailApi": "https://apiportal.koreainvestment.com/api/apis/public/detail?accessUrl={accessUrl}",
+            "detailPageTemplate": "https://apiportal.koreainvestment.com/apiservice-apiservice?{accessUrl}",
+            "portal": "https://apiportal.koreainvestment.com/apiservice-category"
+          },
+          "sourceDetailUrl": "https://apiportal.koreainvestment.com/apiservice-apiservice?/uapi/domestic-stock/v1/quotations/inquire-price-2",
+          "supportsReal": true,
+          "supportsVirtual": false,
+          "virtualDomain": "모의투자 미지원",
+          "virtualTrId": "모의투자 미지원"
+        }
+      }
+    }
+  }
+}

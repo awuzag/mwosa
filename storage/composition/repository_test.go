@@ -36,7 +36,7 @@ func TestRepositoryStoresAndReadsCompositionAggregate(t *testing.T) {
 	})
 	require.NoError(t, err)
 	require.Equal(t, provider.ProviderKIS, got.Source.Provider)
-	require.Equal(t, provider.GroupKISDomesticStockQuotation, got.Source.Group)
+	require.Equal(t, provider.GroupKISQuote, got.Source.Group)
 	require.Equal(t, provider.OperationKISETFComponentStockPrice, got.Source.Operation)
 	require.Equal(t, "069500", got.Subject.Symbol)
 	require.Equal(t, "KODEX 200", got.Subject.Name)
@@ -100,7 +100,7 @@ func sampleComposition() compositionrole.Composition {
 	return compositionrole.Composition{
 		Source: compositionrole.SourceRef{
 			Provider:  provider.ProviderKIS,
-			Group:     provider.GroupKISDomesticStockQuotation,
+			Group:     provider.GroupKISQuote,
 			Operation: provider.OperationKISETFComponentStockPrice,
 		},
 		Subject: compositionrole.InstrumentRef{

@@ -40,7 +40,7 @@ func (c *Client) ETFComponentStockPrices(ctx context.Context, symbol string) (ET
 	symbol = strings.TrimSpace(symbol)
 	errb := oops.In("kis_client").With(
 		"provider", ProviderKIS,
-		"group", GroupDomesticStockQuotation,
+		"group", GroupQuote,
 		"operation", OperationETFComponentStockPrice,
 		"endpoint", "/uapi/etfetn/v1/quotations/inquire-component-stock-price",
 		"tr_id", trIDETFComponentStockPrice,
@@ -51,7 +51,8 @@ func (c *Client) ETFComponentStockPrices(ctx context.Context, symbol string) (ET
 	}
 
 	var envelope etfComponentStockPriceEnvelope
-	request, err := c.request(ctx, GroupDomesticStockQuotation, OperationETFComponentStockPrice, trIDETFComponentStockPrice, errb)
+	endpoint := "/uapi/etfetn/v1/quotations/inquire-component-stock-price"
+	request, err := c.request(ctx, GroupQuote, OperationETFComponentStockPrice, trIDETFComponentStockPrice, endpoint, errb)
 	if err != nil {
 		return ETFComponentStockPriceResult{}, err
 	}
@@ -61,14 +62,14 @@ func (c *Client) ETFComponentStockPrices(ctx context.Context, symbol string) (ET
 		"fid_cond_scr_div_code":  "11216",
 	}).
 		SetResult(&envelope).
-		Get("/uapi/etfetn/v1/quotations/inquire-component-stock-price")
+		Get(endpoint)
 	if err != nil {
 		return ETFComponentStockPriceResult{}, errb.Wrapf(err, "request kis ETF component stock prices")
 	}
-	if err := checkHTTP(response, errb, GroupDomesticStockQuotation, OperationETFComponentStockPrice, trIDETFComponentStockPrice); err != nil {
+	if err := checkHTTP(response, errb, GroupQuote, OperationETFComponentStockPrice, trIDETFComponentStockPrice); err != nil {
 		return ETFComponentStockPriceResult{}, err
 	}
-	if err := checkKIS(envelope.responseFields, errb, GroupDomesticStockQuotation, OperationETFComponentStockPrice, trIDETFComponentStockPrice); err != nil {
+	if err := checkKIS(envelope.responseFields, errb, newRateLimitRequest(GroupQuote, OperationETFComponentStockPrice, trIDETFComponentStockPrice, endpoint)); err != nil {
 		return ETFComponentStockPriceResult{}, err
 	}
 	result, err := etfComponentStockPriceResultFromEnvelope(symbol, envelope)

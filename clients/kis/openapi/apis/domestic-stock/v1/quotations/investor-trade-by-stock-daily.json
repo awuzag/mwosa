@@ -1,0 +1,1863 @@
+{
+  "components": {
+    "schemas": {
+      "InvestorTradeByStockDailyResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "msg1": {
+            "description": "응답메세지",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답메세지",
+              "propertyLength": "80",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "msg_cd": {
+            "description": "응답코드",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답코드",
+              "propertyLength": "8",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "output1": {
+            "additionalProperties": false,
+            "properties": {
+              "acml_vol": {
+                "description": "누적 거래량",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "누적 거래량",
+                  "propertyLength": "18",
+                  "propertyOrder": "004.005",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "prdy_ctrt": {
+                "description": "전일 대비율",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "전일 대비율",
+                  "propertyLength": "82",
+                  "propertyOrder": "004.004",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "prdy_vol": {
+                "description": "전일 거래량",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "전일 거래량",
+                  "propertyLength": "18",
+                  "propertyOrder": "004.006",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "prdy_vrss": {
+                "description": "전일 대비",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "전일 대비",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.002",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "prdy_vrss_sign": {
+                "description": "전일 대비 부호",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "전일 대비 부호",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.003",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "rprs_mrkt_kor_name": {
+                "description": "대표 시장 한글 명",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "대표 시장 한글 명",
+                  "propertyLength": "40",
+                  "propertyOrder": "004.007",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              },
+              "stck_prpr": {
+                "description": "주식 현재가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "주식 현재가",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.001",
+                  "propertyType": "A0001",
+                  "required": true
+                }
+              }
+            },
+            "required": [
+              "stck_prpr",
+              "prdy_vrss",
+              "prdy_vrss_sign",
+              "prdy_ctrt",
+              "acml_vol",
+              "prdy_vol",
+              "rprs_mrkt_kor_name"
+            ],
+            "type": "object"
+          },
+          "output2": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "acml_tr_pbmn": {
+                  "description": "누적 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위 : 백만원",
+                    "name": "누적 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.007",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "acml_vol": {
+                  "description": "누적 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위 : 주",
+                    "name": "누적 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.006",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "bank_ntby_qty": {
+                  "description": "은행 순매수 수량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "은행 순매수 수량",
+                    "propertyLength": "12",
+                    "propertyOrder": "005.019",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "bank_ntby_tr_pbmn": {
+                  "description": "은행 순매수 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "은행 순매수 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.034",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "bank_seln_tr_pbmn": {
+                  "description": "은행 매도 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "은행 매도 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.075",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "bank_seln_vol": {
+                  "description": "은행 매도 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "은행 매도 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.073",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "bank_shnu_tr_pbmn": {
+                  "description": "은행 매수2 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "은행 매수2 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.076",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "bank_shnu_vol": {
+                  "description": "은행 매수2 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "은행 매수2 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.074",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "bold_yn": {
+                  "description": "BOLD 여부",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "BOLD 여부",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.101",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etc_corp_ntby_tr_pbmn": {
+                  "description": "기타 법인 순매수 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기타 법인 순매수 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.039",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etc_corp_ntby_vol": {
+                  "description": "기타 법인 순매수 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기타 법인 순매수 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.024",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etc_corp_seln_tr_pbmn": {
+                  "description": "기타 법인 매도 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기타 법인 매도 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.099",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etc_corp_seln_vol": {
+                  "description": "기타 법인 매도 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기타 법인 매도 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.097",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etc_corp_shnu_tr_pbmn": {
+                  "description": "기타 법인 매수2 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기타 법인 매수2 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.100",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etc_corp_shnu_vol": {
+                  "description": "기타 법인 매수2 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기타 법인 매수2 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.098",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etc_ntby_qty": {
+                  "description": "기타 순매수 수량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기타 순매수 수량",
+                    "propertyLength": "12",
+                    "propertyOrder": "005.023",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etc_ntby_tr_pbmn": {
+                  "description": "기타 순매수 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기타 순매수 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.038",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etc_orgt_ntby_tr_pbmn": {
+                  "description": "기타 단체 순매수 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기타 단체 순매수 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.040",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etc_orgt_ntby_vol": {
+                  "description": "기타 단체 순매수 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기타 단체 순매수 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.025",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etc_orgt_seln_tr_pbmn": {
+                  "description": "기타 단체 매도 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기타 단체 매도 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.095",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etc_orgt_seln_vol": {
+                  "description": "기타 단체 매도 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기타 단체 매도 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.093",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etc_orgt_shnu_tr_pbmn": {
+                  "description": "기타 단체 매수2 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기타 단체 매수2 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.096",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etc_orgt_shnu_vol": {
+                  "description": "기타 단체 매수2 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기타 단체 매수2 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.094",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etc_seln_tr_pbmn": {
+                  "description": "기타 매도 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기타 매도 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.091",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etc_seln_vol": {
+                  "description": "기타 매도 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기타 매도 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.089",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etc_shnu_tr_pbmn": {
+                  "description": "기타 매수2 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기타 매수2 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.092",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "etc_shnu_vol": {
+                  "description": "기타 매수2 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기타 매수2 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.090",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "frgn_nreg_askp_pbmn": {
+                  "description": "외국인 비등록 매도 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "외국인 비등록 매도 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.051",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "frgn_nreg_askp_qty": {
+                  "description": "외국인 비등록 매도 수량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "외국인 비등록 매도 수량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.049",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "frgn_nreg_bidp_pbmn": {
+                  "description": "외국인 비등록 매수 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "외국인 비등록 매수 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.052",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "frgn_nreg_bidp_qty": {
+                  "description": "외국인 비등록 매수 수량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "외국인 비등록 매수 수량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.050",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "frgn_nreg_ntby_pbmn": {
+                  "description": "외국인 비등록 순매수 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "외국인 비등록 순매수 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.028",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "frgn_nreg_ntby_qty": {
+                  "description": "외국인 비등록 순매수 수량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "외국인 비등록 순매수 수량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.013",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "frgn_ntby_qty": {
+                  "description": "외국인 순매수 수량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위 : 주",
+                    "name": "외국인 순매수 수량",
+                    "propertyLength": "12",
+                    "propertyOrder": "005.011",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "frgn_ntby_tr_pbmn": {
+                  "description": "외국인 순매수 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "외국인 순매수 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.027",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "frgn_reg_askp_pbmn": {
+                  "description": "외국인 등록 매도 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "외국인 등록 매도 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.047",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "frgn_reg_askp_qty": {
+                  "description": "외국인 등록 매도 수량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "외국인 등록 매도 수량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.045",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "frgn_reg_bidp_pbmn": {
+                  "description": "외국인 등록 매수 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "외국인 등록 매수 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.048",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "frgn_reg_bidp_qty": {
+                  "description": "외국인 등록 매수 수량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "외국인 등록 매수 수량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.046",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "frgn_reg_ntby_pbmn": {
+                  "description": "외국인 등록 순매수 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "단위 : 백만원",
+                    "name": "외국인 등록 순매수 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.026",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "frgn_reg_ntby_qty": {
+                  "description": "외국인 등록 순매수 수량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "외국인 등록 순매수 수량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.012",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "frgn_seln_tr_pbmn": {
+                  "description": "외국인 매도 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "외국인 매도 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.043",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "frgn_seln_vol": {
+                  "description": "외국인 매도 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "외국인 매도 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.041",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "frgn_shnu_tr_pbmn": {
+                  "description": "외국인 매수2 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "외국인 매수2 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.044",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "frgn_shnu_vol": {
+                  "description": "외국인 매수2 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "외국인 매수2 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.042",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "fund_ntby_qty": {
+                  "description": "기금 순매수 수량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기금 순매수 수량",
+                    "propertyLength": "12",
+                    "propertyOrder": "005.022",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "fund_ntby_tr_pbmn": {
+                  "description": "기금 순매수 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기금 순매수 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.037",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "fund_seln_tr_pbmn": {
+                  "description": "기금 매도 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기금 매도 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.087",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "fund_seln_vol": {
+                  "description": "기금 매도 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기금 매도 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.085",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "fund_shnu_tr_pbmn": {
+                  "description": "기금 매수2 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기금 매수2 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.088",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "fund_shnu_vol": {
+                  "description": "기금 매수2 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기금 매수2 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.086",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "insu_ntby_qty": {
+                  "description": "보험 순매수 수량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "보험 순매수 수량",
+                    "propertyLength": "12",
+                    "propertyOrder": "005.020",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "insu_ntby_tr_pbmn": {
+                  "description": "보험 순매수 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "보험 순매수 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.035",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "insu_seln_tr_pbmn": {
+                  "description": "보험 매도 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "보험 매도 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.079",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "insu_seln_vol": {
+                  "description": "보험 매도 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "보험 매도 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.077",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "insu_shnu_tr_pbmn": {
+                  "description": "보험 매수2 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "보험 매수2 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.080",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "insu_shnu_vol": {
+                  "description": "보험 매수2 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "보험 매수2 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.078",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "ivtr_ntby_qty": {
+                  "description": "투자신탁 순매수 수량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "투자신탁 순매수 수량",
+                    "propertyLength": "12",
+                    "propertyOrder": "005.017",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "ivtr_ntby_tr_pbmn": {
+                  "description": "투자신탁 순매수 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "투자신탁 순매수 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.033",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "ivtr_seln_tr_pbmn": {
+                  "description": "투자신탁 매도 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "투자신탁 매도 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.067",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "ivtr_seln_vol": {
+                  "description": "투자신탁 매도 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "투자신탁 매도 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.065",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "ivtr_shnu_tr_pbmn": {
+                  "description": "투자신탁 매수2 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "투자신탁 매수2 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.068",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "ivtr_shnu_vol": {
+                  "description": "투자신탁 매수2 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "투자신탁 매수2 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.066",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "mrbn_ntby_qty": {
+                  "description": "종금 순매수 수량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "종금 순매수 수량",
+                    "propertyLength": "12",
+                    "propertyOrder": "005.021",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "mrbn_ntby_tr_pbmn": {
+                  "description": "종금 순매수 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "종금 순매수 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.036",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "mrbn_seln_tr_pbmn": {
+                  "description": "종금 매도 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "종금 매도 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.083",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "mrbn_seln_vol": {
+                  "description": "종금 매도 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "종금 매도 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.081",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "mrbn_shnu_tr_pbmn": {
+                  "description": "종금 매수2 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "종금 매수2 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.084",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "mrbn_shnu_vol": {
+                  "description": "종금 매수2 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "종금 매수2 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.082",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "orgn_ntby_qty": {
+                  "description": "기관계 순매수 수량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기관계 순매수 수량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.015",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "orgn_ntby_tr_pbmn": {
+                  "description": "기관계 순매수 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기관계 순매수 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.030",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "orgn_seln_tr_pbmn": {
+                  "description": "기관계 매도 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기관계 매도 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.059",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "orgn_seln_vol": {
+                  "description": "기관계 매도 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기관계 매도 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.057",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "orgn_shnu_tr_pbmn": {
+                  "description": "기관계 매수2 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기관계 매수2 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.060",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "orgn_shnu_vol": {
+                  "description": "기관계 매수2 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기관계 매수2 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.058",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "pe_fund_ntby_tr_pbmn": {
+                  "description": "사모 펀드 순매수 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "사모 펀드 순매수 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.032",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "pe_fund_ntby_vol": {
+                  "description": "사모 펀드 순매수 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "사모 펀드 순매수 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.018",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "pe_fund_seln_tr_pbmn": {
+                  "description": "사모 펀드 매도 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "사모 펀드 매도 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.069",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "pe_fund_seln_vol": {
+                  "description": "사모 펀드 매도 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "사모 펀드 매도 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.070",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "pe_fund_shnu_tr_pbmn": {
+                  "description": "사모 펀드 매수2 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "사모 펀드 매수2 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.071",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "pe_fund_shnu_vol": {
+                  "description": "사모 펀드 매수2 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "사모 펀드 매수2 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.072",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_ctrt": {
+                  "description": "전일 대비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일 대비율",
+                    "propertyLength": "82",
+                    "propertyOrder": "005.005",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_vrss": {
+                  "description": "전일 대비",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일 대비",
+                    "propertyLength": "10",
+                    "propertyOrder": "005.003",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_vrss_sign": {
+                  "description": "전일 대비 부호",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일 대비 부호",
+                    "propertyLength": "1",
+                    "propertyOrder": "005.004",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prsn_ntby_qty": {
+                  "description": "개인 순매수 수량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "개인 순매수 수량",
+                    "propertyLength": "12",
+                    "propertyOrder": "005.014",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prsn_ntby_tr_pbmn": {
+                  "description": "개인 순매수 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "개인 순매수 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.029",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prsn_seln_tr_pbmn": {
+                  "description": "개인 매도 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "개인 매도 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.055",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prsn_seln_vol": {
+                  "description": "개인 매도 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "개인 매도 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.053",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prsn_shnu_tr_pbmn": {
+                  "description": "개인 매수2 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "개인 매수2 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.056",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prsn_shnu_vol": {
+                  "description": "개인 매수2 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "개인 매수2 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.054",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "scrt_ntby_qty": {
+                  "description": "증권 순매수 수량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "증권 순매수 수량",
+                    "propertyLength": "12",
+                    "propertyOrder": "005.016",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "scrt_ntby_tr_pbmn": {
+                  "description": "증권 순매수 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "증권 순매수 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.031",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "scrt_seln_tr_pbmn": {
+                  "description": "증권 매도 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "증권 매도 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.063",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "scrt_seln_vol": {
+                  "description": "증권 매도 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "증권 매도 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.061",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "scrt_shnu_tr_pbmn": {
+                  "description": "증권 매수2 거래 대금",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "증권 매수2 거래 대금",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.064",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "scrt_shnu_vol": {
+                  "description": "증권 매수2 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "증권 매수2 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.062",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "stck_bsop_date": {
+                  "description": "주식 영업 일자",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식 영업 일자",
+                    "propertyLength": "8",
+                    "propertyOrder": "005.001",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "stck_clpr": {
+                  "description": "주식 종가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식 종가",
+                    "propertyLength": "10",
+                    "propertyOrder": "005.002",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "stck_hgpr": {
+                  "description": "주식 최고가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식 최고가",
+                    "propertyLength": "10",
+                    "propertyOrder": "005.009",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "stck_lwpr": {
+                  "description": "주식 최저가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식 최저가",
+                    "propertyLength": "10",
+                    "propertyOrder": "005.010",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "stck_oprc": {
+                  "description": "주식 시가2",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식 시가2",
+                    "propertyLength": "10",
+                    "propertyOrder": "005.008",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                }
+              },
+              "required": [
+                "stck_bsop_date",
+                "stck_clpr",
+                "prdy_vrss",
+                "prdy_vrss_sign",
+                "prdy_ctrt",
+                "acml_vol",
+                "acml_tr_pbmn",
+                "stck_oprc",
+                "stck_hgpr",
+                "stck_lwpr",
+                "frgn_ntby_qty",
+                "frgn_reg_ntby_qty",
+                "frgn_nreg_ntby_qty",
+                "prsn_ntby_qty",
+                "orgn_ntby_qty",
+                "scrt_ntby_qty",
+                "ivtr_ntby_qty",
+                "pe_fund_ntby_vol",
+                "bank_ntby_qty",
+                "insu_ntby_qty",
+                "mrbn_ntby_qty",
+                "fund_ntby_qty",
+                "etc_ntby_qty",
+                "etc_corp_ntby_vol",
+                "etc_orgt_ntby_vol",
+                "frgn_reg_ntby_pbmn",
+                "frgn_ntby_tr_pbmn",
+                "frgn_nreg_ntby_pbmn",
+                "prsn_ntby_tr_pbmn",
+                "orgn_ntby_tr_pbmn",
+                "scrt_ntby_tr_pbmn",
+                "pe_fund_ntby_tr_pbmn",
+                "ivtr_ntby_tr_pbmn",
+                "bank_ntby_tr_pbmn",
+                "insu_ntby_tr_pbmn",
+                "mrbn_ntby_tr_pbmn",
+                "fund_ntby_tr_pbmn",
+                "etc_ntby_tr_pbmn",
+                "etc_corp_ntby_tr_pbmn",
+                "etc_orgt_ntby_tr_pbmn",
+                "frgn_seln_vol",
+                "frgn_shnu_vol",
+                "frgn_seln_tr_pbmn",
+                "frgn_shnu_tr_pbmn",
+                "frgn_reg_askp_qty",
+                "frgn_reg_bidp_qty",
+                "frgn_reg_askp_pbmn",
+                "frgn_reg_bidp_pbmn",
+                "frgn_nreg_askp_qty",
+                "frgn_nreg_bidp_qty",
+                "frgn_nreg_askp_pbmn",
+                "frgn_nreg_bidp_pbmn",
+                "prsn_seln_vol",
+                "prsn_shnu_vol",
+                "prsn_seln_tr_pbmn",
+                "prsn_shnu_tr_pbmn",
+                "orgn_seln_vol",
+                "orgn_shnu_vol",
+                "orgn_seln_tr_pbmn",
+                "orgn_shnu_tr_pbmn",
+                "scrt_seln_vol",
+                "scrt_shnu_vol",
+                "scrt_seln_tr_pbmn",
+                "scrt_shnu_tr_pbmn",
+                "ivtr_seln_vol",
+                "ivtr_shnu_vol",
+                "ivtr_seln_tr_pbmn",
+                "ivtr_shnu_tr_pbmn",
+                "pe_fund_seln_tr_pbmn",
+                "pe_fund_seln_vol",
+                "pe_fund_shnu_tr_pbmn",
+                "pe_fund_shnu_vol",
+                "bank_seln_vol",
+                "bank_shnu_vol",
+                "bank_seln_tr_pbmn",
+                "bank_shnu_tr_pbmn",
+                "insu_seln_vol",
+                "insu_shnu_vol",
+                "insu_seln_tr_pbmn",
+                "insu_shnu_tr_pbmn",
+                "mrbn_seln_vol",
+                "mrbn_shnu_vol",
+                "mrbn_seln_tr_pbmn",
+                "mrbn_shnu_tr_pbmn",
+                "fund_seln_vol",
+                "fund_shnu_vol",
+                "fund_seln_tr_pbmn",
+                "fund_shnu_tr_pbmn",
+                "etc_seln_vol",
+                "etc_shnu_vol",
+                "etc_seln_tr_pbmn",
+                "etc_shnu_tr_pbmn",
+                "etc_orgt_seln_vol",
+                "etc_orgt_shnu_vol",
+                "etc_orgt_seln_tr_pbmn",
+                "etc_orgt_shnu_tr_pbmn",
+                "etc_corp_seln_vol",
+                "etc_corp_shnu_vol",
+                "etc_corp_seln_tr_pbmn",
+                "etc_corp_shnu_tr_pbmn",
+                "bold_yn"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "rt_cd": {
+            "description": "성공 실패 여부",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "성공 실패 여부",
+              "propertyLength": "1",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        },
+        "required": [
+          "rt_cd",
+          "msg_cd",
+          "msg1",
+          "output1",
+          "output2"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "KISOAuth": {
+        "bearerFormat": "KIS OAuth access token",
+        "description": "Issued by KIS /oauth2/tokenP and injected by the handwritten runtime.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "KIS Domestic Stock OpenAPI - investor-trade-by-stock-daily",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/uapi/domestic-stock/v1/quotations/investor-trade-by-stock-daily": {
+      "get": {
+        "description": "국내주식 종목별 투자자매매동향(일별) API입니다.\n한국투자 HTS(eFriend Plus) \u0026gt; [0416] 종목별 일별동향 화면 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\n\n※ 단위 : 금액(백만원) 수량(주)\n\n당일 데이터는 15:40이후에 데이터가 가집계 및 산출되어 15:40부터 조회가능하며,\n데이터 산출의 경우 산출 시간대는 일정하지 않을 수 있음을 참고 부탁드립니다.\n추가로 API를 통한 00:00 ~ 15:40 이외의 시간은 당일 조회가 제한되는 점 이용에 참고 부탁드립니다.",
+        "operationId": "investor-trade-by-stock-daily",
+        "parameters": [
+          {
+            "description": "J:KRX, NX:NXT, UN:통합",
+            "in": "query",
+            "name": "FID_COND_MRKT_DIV_CODE",
+            "required": true,
+            "schema": {
+              "description": "조건 시장 분류 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "J:KRX, NX:NXT, UN:통합",
+                "name": "조건 시장 분류 코드",
+                "propertyLength": "2",
+                "propertyOrder": "001",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "J:KRX, NX:NXT, UN:통합",
+              "name": "조건 시장 분류 코드",
+              "propertyLength": "2",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "market",
+              "completion": [
+                "krx",
+                "nxt",
+                "unified",
+                "J",
+                "NX",
+                "UN"
+              ],
+              "default": "J",
+              "description": "J:KRX, NX:NXT, UN:통합",
+              "flag": "market",
+              "required": true,
+              "source": "default",
+              "valueKind": "market"
+            }
+          },
+          {
+            "description": "종목번호 (6자리)",
+            "in": "query",
+            "name": "FID_INPUT_ISCD",
+            "required": true,
+            "schema": {
+              "description": "입력 종목코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "종목번호 (6자리)",
+                "name": "입력 종목코드",
+                "propertyLength": "12",
+                "propertyOrder": "002",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "종목번호 (6자리)",
+              "name": "입력 종목코드",
+              "propertyLength": "12",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "symbol",
+              "default": "",
+              "description": "종목번호 (6자리)",
+              "flag": "symbol",
+              "required": true,
+              "source": "user",
+              "valueKind": "symbol"
+            }
+          },
+          {
+            "description": "입력 날짜(20250812) (해당일 조회는 장 종료 후 정상 조회 가능)",
+            "in": "query",
+            "name": "FID_INPUT_DATE_1",
+            "required": true,
+            "schema": {
+              "description": "입력 날짜1",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "입력 날짜(20250812) (해당일 조회는 장 종료 후 정상 조회 가능)",
+                "name": "입력 날짜1",
+                "propertyLength": "10",
+                "propertyOrder": "003",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "입력 날짜(20250812) (해당일 조회는 장 종료 후 정상 조회 가능)",
+              "name": "입력 날짜1",
+              "propertyLength": "10",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "from",
+              "default": "",
+              "description": "입력 날짜(20250812) (해당일 조회는 장 종료 후 정상 조회 가능)",
+              "flag": "from",
+              "required": true,
+              "source": "user",
+              "valueKind": "date"
+            }
+          },
+          {
+            "description": "공란 입력",
+            "in": "query",
+            "name": "FID_ORG_ADJ_PRC",
+            "required": true,
+            "schema": {
+              "description": "수정주가 원주가 가격",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공란 입력",
+                "name": "수정주가 원주가 가격",
+                "propertyLength": "2",
+                "propertyOrder": "004",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공란 입력",
+              "name": "수정주가 원주가 가격",
+              "propertyLength": "2",
+              "propertyOrder": "004",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "adjust_price",
+              "completion": [
+                "0",
+                "1"
+              ],
+              "default": "0",
+              "description": "공란 입력",
+              "flag": "adjust-price",
+              "required": true,
+              "source": "default",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "\"1\" 입력",
+            "in": "query",
+            "name": "FID_ETC_CLS_CODE",
+            "required": true,
+            "schema": {
+              "description": "기타 구분 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "\"1\" 입력",
+                "name": "기타 구분 코드",
+                "propertyLength": "2",
+                "propertyOrder": "005",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "\"1\" 입력",
+              "name": "기타 구분 코드",
+              "propertyLength": "2",
+              "propertyOrder": "005",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "\"1\" 입력",
+              "flag": "fid-etc-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InvestorTradeByStockDailyResponse"
+                }
+              }
+            },
+            "description": "KIS business response envelope"
+          }
+        },
+        "security": [
+          {
+            "KISOAuth": []
+          }
+        ],
+        "summary": "종목별 투자자매매동향(일별)",
+        "tags": [
+          "Analysis"
+        ],
+        "x-kis": {
+          "accessUrl": "/uapi/domestic-stock/v1/quotations/investor-trade-by-stock-daily",
+          "apiId": "141f0f11-ef30-4e52-9388-a6e78502d5c2",
+          "apiName": "종목별 투자자매매동향(일별)",
+          "apiSummary": "국내주식 종목별 투자자매매동향(일별) API입니다.\r\n한국투자 HTS(eFriend Plus) \u0026gt; [0416] 종목별 일별동향 화면 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.\r\n\r\n※ 단위 : 금액(백만원) 수량(주)\r\n\r\n당일 데이터는 15:40이후에 데이터가 가집계 및 산출되어 15:40부터 조회가능하며,\r\n데이터 산출의 경우 산출 시간대는 일정하지 않을 수 있음을 참고 부탁드립니다.\r\n추가로 API를 통한 00:00 ~ 15:40 이외의 시간은 당일 조회가 제한되는 점 이용에 참고 부탁드립니다.\r\n",
+          "catalogSchemaVersion": 1,
+          "collectionId": "4e29f215-0a20-4396-95d4-5d99ad9a2c3d",
+          "collectionName": "[국내주식] 시세분석",
+          "group": "analysis",
+          "lastModifiedDate": "2026-04-10T20:48:57+09:00",
+          "oauth": true,
+          "realDomain": "https://openapi.koreainvestment.com:9443",
+          "realTrId": "FHPTJ04160001",
+          "roleCandidate": "market_scan",
+          "securityType": "oauth2-access-token",
+          "serviceGroup": "Analysis",
+          "source": {
+            "categoryApi": "https://apiportal.koreainvestment.com/api/apis/public/api-list/{collectionId}",
+            "detailApi": "https://apiportal.koreainvestment.com/api/apis/public/detail?accessUrl={accessUrl}",
+            "detailPageTemplate": "https://apiportal.koreainvestment.com/apiservice-apiservice?{accessUrl}",
+            "portal": "https://apiportal.koreainvestment.com/apiservice-category"
+          },
+          "sourceDetailUrl": "https://apiportal.koreainvestment.com/apiservice-apiservice?/uapi/domestic-stock/v1/quotations/investor-trade-by-stock-daily",
+          "supportsReal": true,
+          "supportsVirtual": false,
+          "virtualDomain": "모의투자 미지원",
+          "virtualTrId": "모의투자 미지원"
+        }
+      }
+    }
+  }
+}

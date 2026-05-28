@@ -71,7 +71,7 @@ func (c *Client) ETFETNPrice(ctx context.Context, symbol string) (ETFETNPrice, e
 	symbol = strings.TrimSpace(symbol)
 	errb := oops.In("kis_client").With(
 		"provider", ProviderKIS,
-		"group", GroupDomesticStockQuotation,
+		"group", GroupQuote,
 		"operation", OperationETFETNPrice,
 		"endpoint", "/uapi/etfetn/v1/quotations/inquire-price",
 		"tr_id", trIDETFETNPrice,
@@ -82,7 +82,8 @@ func (c *Client) ETFETNPrice(ctx context.Context, symbol string) (ETFETNPrice, e
 	}
 
 	var envelope etfetnPriceEnvelope
-	request, err := c.request(ctx, GroupDomesticStockQuotation, OperationETFETNPrice, trIDETFETNPrice, errb)
+	endpoint := "/uapi/etfetn/v1/quotations/inquire-price"
+	request, err := c.request(ctx, GroupQuote, OperationETFETNPrice, trIDETFETNPrice, endpoint, errb)
 	if err != nil {
 		return ETFETNPrice{}, err
 	}
@@ -91,14 +92,14 @@ func (c *Client) ETFETNPrice(ctx context.Context, symbol string) (ETFETNPrice, e
 		"fid_input_iscd":         symbol,
 	}).
 		SetResult(&envelope).
-		Get("/uapi/etfetn/v1/quotations/inquire-price")
+		Get(endpoint)
 	if err != nil {
 		return ETFETNPrice{}, errb.Wrapf(err, "request kis ETF/ETN price")
 	}
-	if err := checkHTTP(response, errb, GroupDomesticStockQuotation, OperationETFETNPrice, trIDETFETNPrice); err != nil {
+	if err := checkHTTP(response, errb, GroupQuote, OperationETFETNPrice, trIDETFETNPrice); err != nil {
 		return ETFETNPrice{}, err
 	}
-	if err := checkKIS(envelope.responseFields, errb, GroupDomesticStockQuotation, OperationETFETNPrice, trIDETFETNPrice); err != nil {
+	if err := checkKIS(envelope.responseFields, errb, newRateLimitRequest(GroupQuote, OperationETFETNPrice, trIDETFETNPrice, endpoint)); err != nil {
 		return ETFETNPrice{}, err
 	}
 	return etfetnPriceFromOutput(envelope.Output), nil

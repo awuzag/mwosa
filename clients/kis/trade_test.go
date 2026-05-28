@@ -39,12 +39,15 @@ func TestTradesBuildsKISRequestAndParsesRows(t *testing.T) {
 	defer server.Close()
 
 	client := newTestClient(t, server.URL, "token")
-	trades, err := client.Trades(context.Background(), "005930")
+	trades, err := client.Quote().Trades(context.Background(), InquireCcnlRequest{
+		FidCondMrktDivCode: "J",
+		FidInputISCD:       "005930",
+	})
 	require.NoError(t, err)
-	require.Len(t, trades, 1)
-	assert.Equal(t, "155955", trades[0].Time)
-	assert.Equal(t, "78900", trades[0].Current)
-	assert.Equal(t, "2", trades[0].Volume)
+	require.Len(t, trades.Output, 1)
+	assert.Equal(t, "155955", trades.Output[0].StckCntgHour)
+	assert.Equal(t, "78900", trades.Output[0].StckPrpr)
+	assert.Equal(t, "2", trades.Output[0].CntgVol)
 }
 
 func TestTimeTradesBuildsKISRequestAndParsesRows(t *testing.T) {
@@ -62,29 +65,30 @@ func TestTimeTradesBuildsKISRequestAndParsesRows(t *testing.T) {
 			"msg_cd": "MCA00000",
 			"msg1": "ok",
 			"output1": {"stck_prpr": "104000"},
-			"output2": [
-				{
-					"stck_cntg_hour": "141159",
-					"stck_prpr": "104500",
-					"askp": "105000",
-					"bidp": "104500",
-					"cnqn": "20",
-					"acml_vol": "1979727",
-					"prdy_ctrt": "-2.34",
-					"prdy_vrss": "-2500",
-					"prdy_vrss_sign": "5",
-					"tday_rltv": "42.43"
-				}
-			]
+			"output2": {
+				"stck_cntg_hour": "141159",
+				"stck_pbpr": "104500",
+				"askp": "105000",
+				"bidp": "104500",
+				"cnqn": "20",
+				"acml_vol": "1979727",
+				"prdy_ctrt": "-2.34",
+				"prdy_vrss": "-2500",
+				"prdy_vrss_sign": "5",
+				"tday_rltv": "42.43"
+			}
 		}`))
 	}))
 	defer server.Close()
 
 	client := newTestClient(t, server.URL, "token")
-	trades, err := client.TimeTrades(context.Background(), "005930", "141200")
+	trades, err := client.Quote().TimeTrades(context.Background(), InquireTimeItemConclusionRequest{
+		FidCondMrktDivCode: "J",
+		FidInputISCD:       "005930",
+		FidInputHour1:      "141200",
+	})
 	require.NoError(t, err)
-	require.Len(t, trades, 1)
-	assert.Equal(t, "141159", trades[0].Time)
-	assert.Equal(t, "104500", trades[0].Bid)
-	assert.Equal(t, "20", trades[0].Volume)
+	assert.Equal(t, "141159", trades.Output2.StckCntgHour)
+	assert.Equal(t, "104500", trades.Output2.Bidp)
+	assert.Equal(t, "20", trades.Output2.Cnqn)
 }

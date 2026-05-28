@@ -8,7 +8,7 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func newTestClient(t *testing.T, baseURL string, accessToken string) *Client {
+func newTestClient(t *testing.T, baseURL string, accessToken string, extraOptions ...Option) *Client {
 	t.Helper()
 	options := []Option{
 		WithAppKey("test-app-key"),
@@ -18,6 +18,7 @@ func newTestClient(t *testing.T, baseURL string, accessToken string) *Client {
 	if accessToken != "" {
 		options = append(options, WithAccessToken(accessToken))
 	}
+	options = append(options, extraOptions...)
 	client, err := New(options...)
 	require.NoError(t, err)
 	return client

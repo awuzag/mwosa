@@ -5,6 +5,7 @@ import (
 	"strings"
 	"time"
 
+	kisclient "github.com/ev3rlit/mwosa/clients/kis"
 	provider "github.com/ev3rlit/mwosa/providers/core"
 	opendartprovider "github.com/ev3rlit/mwosa/providers/opendart"
 	"github.com/ev3rlit/mwosa/storage"
@@ -108,10 +109,24 @@ func newListProviderAPIsCommand(opts *Options) *cobra.Command {
 		Args:              cobra.ExactArgs(1),
 		ValidArgsFunction: completeProviderIDs,
 		RunE: runResult(opts, func(_ *cobra.Command, args []string) (any, error) {
+			if provider.ProviderID(args[0]) == provider.ProviderKIS {
+				rows := make([]kisAPIOutputRow, 0, len(kisclient.RawOperations()))
+				for _, operation := range kisclient.RawOperations() {
+					rows = append(rows, kisAPIOutputRow{
+						Group:            operation.Group,
+						APIID:            operation.OperationID,
+						Method:           operation.Method,
+						Endpoint:         operation.Endpoint,
+						Description:      firstNonEmpty(operation.Description, operation.Summary),
+						CanonicalSupport: kisRawCanonicalSupport(operation.RoleHint),
+					})
+				}
+				return kisAPIListOutput{Services: rows}, nil
+			}
 			if provider.ProviderID(args[0]) != provider.ProviderOpenDART {
 				return nil, oops.In("cli").
 					With("provider", args[0]).
-					New("provider API catalog is only available for opendart")
+					New("provider API catalog is only available for kis or opendart")
 			}
 			rows := make([]opendartAPIOutputRow, 0, len(opendartprovider.ServiceCatalog()))
 			for _, service := range opendartprovider.ServiceCatalog() {

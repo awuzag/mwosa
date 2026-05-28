@@ -30,21 +30,34 @@ type Config struct {
 	CustomerType   string
 	Account        string
 	TokenCache     TokenCache
+	RateLimit      RateLimitPolicy
 }
 
 type marketDataClient interface {
 	Token(context.Context) (kisclient.Token, error)
 	UseToken(kisclient.Token)
-	Price(context.Context, string) (kisclient.Price, error)
+	RawOperations() []kisclient.RawOperationMetadata
+	LookupRawOperation(string) (kisclient.RawOperationMetadata, bool)
+	RawRequestTemplate(string) (map[string]string, error)
+	InvokeRaw(context.Context, string, map[string]string) (any, error)
+	Quote() quoteAPI
 	ETFETNPrice(context.Context, string) (kisclient.ETFETNPrice, error)
 	ETFComponentStockPrices(context.Context, string) (kisclient.ETFComponentStockPriceResult, error)
-	Daily(context.Context, string, ...kisclient.DailyOption) ([]kisclient.Bar, error)
-	Intraday(context.Context, string, ...kisclient.IntradayOption) ([]kisclient.IntradayBar, error)
-	Orderbook(context.Context, string) (kisclient.Orderbook, error)
-	Trades(context.Context, string) ([]kisclient.Trade, error)
-	TimeTrades(context.Context, string, string) ([]kisclient.TimedTrade, error)
-	Product(context.Context, string, ...kisclient.InstrumentOption) (kisclient.Product, error)
-	Stock(context.Context, string, ...kisclient.InstrumentOption) (kisclient.Stock, error)
+	Instrument() instrumentAPI
+}
+
+type quoteAPI interface {
+	Price(context.Context, kisclient.InquirePriceRequest) (kisclient.InquirePriceResponse, error)
+	Daily(context.Context, kisclient.InquireDailyItemChartPriceRequest) (kisclient.InquireDailyItemChartPriceResponse, error)
+	Intraday(context.Context, kisclient.InquireTimeItemChartPriceRequest) (kisclient.InquireTimeItemChartPriceResponse, error)
+	Orderbook(context.Context, kisclient.InquireAskingPriceExpCcnRequest) (kisclient.InquireAskingPriceExpCcnResponse, error)
+	Trades(context.Context, kisclient.InquireCcnlRequest) (kisclient.InquireCcnlResponse, error)
+	TimeTrades(context.Context, kisclient.InquireTimeItemConclusionRequest) (kisclient.InquireTimeItemConclusionResponse, error)
+}
+
+type instrumentAPI interface {
+	Product(context.Context, kisclient.SearchInfoRequest) (kisclient.SearchInfoResponse, error)
+	Stock(context.Context, kisclient.SearchStockInfoRequest) (kisclient.SearchStockInfoResponse, error)
 }
 
 type Provider struct {
@@ -59,11 +72,58 @@ type Provider struct {
 	tokenCacheKey       TokenCacheKey
 	tokenExpiryBuffer   time.Duration
 	now                 func() time.Time
+	rateLimitPolicy     RateLimitPolicy
+	readLimiter         ReadRateLimiter
+	sleep               rateLimitSleeper
 
 	groups []provider.GroupRoleProvider
 }
 
 type ProviderOption func(*Provider)
+
+type kisClientAdapter struct {
+	client *kisclient.Client
+}
+
+func (a kisClientAdapter) Token(ctx context.Context) (kisclient.Token, error) {
+	return a.client.Token(ctx)
+}
+
+func (a kisClientAdapter) UseToken(token kisclient.Token) {
+	a.client.UseToken(token)
+}
+
+func (a kisClientAdapter) RawOperations() []kisclient.RawOperationMetadata {
+	return a.client.RawOperations()
+}
+
+func (a kisClientAdapter) LookupRawOperation(operationID string) (kisclient.RawOperationMetadata, bool) {
+	return a.client.LookupRawOperation(operationID)
+}
+
+func (a kisClientAdapter) RawRequestTemplate(operationID string) (map[string]string, error) {
+	return a.client.RawRequestTemplate(operationID)
+}
+
+func (a kisClientAdapter) InvokeRaw(ctx context.Context, operationID string, input map[string]string) (any, error) {
+	return a.client.InvokeRaw(ctx, operationID, input)
+}
+
+func (a kisClientAdapter) Quote() quoteAPI {
+	return a.client.Quote()
+}
+
+func (a kisClientAdapter) ETFETNPrice(ctx context.Context, symbol string) (kisclient.ETFETNPrice, error) {
+	return a.client.ETFETNPrice(ctx, symbol)
+}
+
+func (a kisClientAdapter) ETFComponentStockPrices(ctx context.Context, symbol string) (kisclient.ETFComponentStockPriceResult, error) {
+	return a.client.ETFComponentStockPrices(ctx, symbol)
+}
+
+func (a kisClientAdapter) Instrument() instrumentAPI {
+	return a.client.Instrument()
+}
 
 func New(config Config) (*Provider, error) {
 	errb := oops.In("kis_adapter").With("provider", provider.ProviderKIS)
@@ -87,15 +147,21 @@ func New(config Config) (*Provider, error) {
 	if strings.TrimSpace(config.Account) != "" {
 		options = append(options, kisclient.WithAccount(config.Account))
 	}
+	providerOptions := []ProviderOption{
+		WithTokenCache(config.TokenCache, newTokenCacheKey(config.AppKey, config.Virtual)),
+	}
+	if !config.RateLimit.isZero() {
+		providerOptions = append(providerOptions, WithRateLimitPolicy(config.RateLimit))
+	}
 
 	client, err := kisclient.New(options...)
 	if err != nil {
 		return nil, errb.Wrap(err)
 	}
 	return NewWithClient(
-		client,
+		kisClientAdapter{client: client},
 		strings.TrimSpace(config.AccessToken) != "",
-		WithTokenCache(config.TokenCache, newTokenCacheKey(config.AppKey, config.Virtual)),
+		providerOptions...,
 	), nil
 }
 
@@ -109,15 +175,21 @@ func NewWithClient(client marketDataClient, accessTokenProvided bool, options ..
 		accessTokenProvided: accessTokenProvided,
 		tokenExpiryBuffer:   defaultTokenExpiryBuffer,
 		now:                 time.Now,
+		rateLimitPolicy:     defaultRateLimitPolicy(),
+		sleep:               sleepContext,
 	}
 	for _, option := range options {
 		if option != nil {
 			option(p)
 		}
 	}
+	p.rateLimitPolicy = p.rateLimitPolicy.normalized()
+	if p.readLimiter == nil {
+		p.readLimiter = newTokenBucketReadLimiter(p.rateLimitPolicy, p.now, p.sleep)
+	}
 	p.groups = []provider.GroupRoleProvider{
-		newDomesticStockQuotationGroup(p.fetchQuoteSnapshot, p.fetchDailyBars, p.fetchIntradayBars, p.fetchOrderbookSnapshot, p.listMarketTrades, p.listConstituents),
-		newDomesticStockInstrumentGroup(p.searchInstruments),
+		newQuoteGroup(p.fetchQuoteSnapshot, p.fetchDailyBars, p.fetchIntradayBars, p.fetchOrderbookSnapshot, p.listMarketTrades, p.listConstituents),
+		newInstrumentGroup(p.searchInstruments),
 	}
 	return p
 }
@@ -133,6 +205,26 @@ func WithClock(now func() time.Time) ProviderOption {
 	return func(p *Provider) {
 		if now != nil {
 			p.now = now
+		}
+	}
+}
+
+func WithRateLimitPolicy(policy RateLimitPolicy) ProviderOption {
+	return func(p *Provider) {
+		p.rateLimitPolicy = policy.normalized()
+	}
+}
+
+func WithReadRateLimiter(limiter ReadRateLimiter) ProviderOption {
+	return func(p *Provider) {
+		p.readLimiter = limiter
+	}
+}
+
+func WithRateLimitSleeper(sleeper func(context.Context, time.Duration) error) ProviderOption {
+	return func(p *Provider) {
+		if sleeper != nil {
+			p.sleep = sleeper
 		}
 	}
 }
@@ -210,17 +302,24 @@ func (p *Provider) fetchQuoteSnapshot(ctx context.Context, input quote.SnapshotI
 
 	switch input.SecurityType {
 	case provider.SecurityTypeStock:
-		price, err := p.client.Price(ctx, symbol)
+		price, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISQuote, provider.OperationKISPrice, "/uapi/domestic-stock/v1/quotations/inquire-price"), func(ctx context.Context) (kisclient.InquirePriceResponse, error) {
+			return p.client.Quote().Price(ctx, kisclient.InquirePriceRequest{
+				FidCondMrktDivCode: "J",
+				FidInputISCD:       symbol,
+			})
+		})
 		if err != nil {
 			return quote.SnapshotResult{}, errb.With("operation", provider.OperationKISPrice).Wrapf(err, "fetch kis quote")
 		}
 		return quote.SnapshotResult{
 			Provider: p.Identity,
-			Symbol:   firstNonEmpty(price.Symbol, symbol),
-			Price:    price.Current,
+			Symbol:   firstNonEmpty(price.Output.StckShrnISCD, symbol),
+			Price:    price.Output.StckPrpr,
 		}, nil
 	case provider.SecurityTypeETF, provider.SecurityTypeETN:
-		price, err := p.client.ETFETNPrice(ctx, symbol)
+		price, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISQuote, provider.OperationKISETFETNPrice, "/uapi/etfetn/v1/quotations/inquire-price"), func(ctx context.Context) (kisclient.ETFETNPrice, error) {
+			return p.client.ETFETNPrice(ctx, symbol)
+		})
 		if err != nil {
 			return quote.SnapshotResult{}, errb.With("operation", provider.OperationKISETFETNPrice).Wrapf(err, "fetch kis ETF/ETN quote")
 		}
@@ -258,21 +357,27 @@ func (p *Provider) fetchDailyBars(ctx context.Context, input dailybar.FetchInput
 		return dailybar.FetchResult{}, errb.Wrap(err)
 	}
 
-	bars, err := p.client.Daily(ctx, symbol,
-		kisclient.WithPeriod("D"),
-		kisclient.WithDateRange(from, to),
-	)
+	bars, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISQuote, provider.OperationKISDaily, "/uapi/domestic-stock/v1/quotations/inquire-daily-itemchartprice"), func(ctx context.Context) (kisclient.InquireDailyItemChartPriceResponse, error) {
+		return p.client.Quote().Daily(ctx, kisclient.InquireDailyItemChartPriceRequest{
+			FidCondMrktDivCode: "J",
+			FidInputISCD:       symbol,
+			FidInputDate1:      from,
+			FidInputDate2:      to,
+			FidPeriodDivCode:   "D",
+			FidOrgAdjPrc:       "0",
+		})
+	})
 	if err != nil {
 		return dailybar.FetchResult{}, errb.With("operation", provider.OperationKISDaily).Wrapf(err, "fetch kis daily bars")
 	}
-	resultBars := make([]dailybar.Bar, 0, len(bars))
-	for _, bar := range bars {
+	resultBars := make([]dailybar.Bar, 0, len(bars.Output2))
+	for _, bar := range bars.Output2 {
 		resultBars = append(resultBars, normalizeDailyBar(bar, symbol, input.SecurityType))
 	}
 	return dailybar.FetchResult{
 		Bars:       resultBars,
 		Provider:   p.Identity,
-		Group:      provider.GroupKISDomesticStockQuotation,
+		Group:      provider.GroupKISQuote,
 		Operation:  provider.OperationKISDaily,
 		TotalCount: len(resultBars),
 	}, nil
@@ -297,22 +402,29 @@ func (p *Provider) fetchIntradayBars(ctx context.Context, input intradaybar.Fetc
 		return intradaybar.FetchResult{}, errb.Wrap(err)
 	}
 
-	options := make([]kisclient.IntradayOption, 0, 1)
-	if at := normalizeKISTime(input.At); at != "" {
-		options = append(options, kisclient.WithInputHour(at))
+	inputHour := normalizeKISTime(input.At)
+	if inputHour == "" {
+		inputHour = "153000"
 	}
-	bars, err := p.client.Intraday(ctx, symbol, options...)
+	bars, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISQuote, provider.OperationKISIntraday, "/uapi/domestic-stock/v1/quotations/inquire-time-itemchartprice"), func(ctx context.Context) (kisclient.InquireTimeItemChartPriceResponse, error) {
+		return p.client.Quote().Intraday(ctx, kisclient.InquireTimeItemChartPriceRequest{
+			FidCondMrktDivCode: "J",
+			FidInputISCD:       symbol,
+			FidInputHour1:      inputHour,
+			FidPwDataIncuYn:    "Y",
+		})
+	})
 	if err != nil {
 		return intradaybar.FetchResult{}, errb.With("operation", provider.OperationKISIntraday).Wrapf(err, "fetch kis intraday bars")
 	}
-	resultBars := make([]intradaybar.Bar, 0, len(bars))
-	for _, bar := range limitSlice(bars, input.Limit) {
+	resultBars := make([]intradaybar.Bar, 0, len(bars.Output2))
+	for _, bar := range limitSlice(bars.Output2, input.Limit) {
 		resultBars = append(resultBars, normalizeIntradayBar(bar, symbol, input.SecurityType))
 	}
 	return intradaybar.FetchResult{
 		Bars:       resultBars,
 		Provider:   p.Identity,
-		Group:      provider.GroupKISDomesticStockQuotation,
+		Group:      provider.GroupKISQuote,
 		Operation:  provider.OperationKISIntraday,
 		TotalCount: len(resultBars),
 	}, nil
@@ -337,7 +449,12 @@ func (p *Provider) fetchOrderbookSnapshot(ctx context.Context, input orderbook.S
 		return orderbook.SnapshotResult{}, errb.Wrap(err)
 	}
 
-	book, err := p.client.Orderbook(ctx, symbol)
+	book, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISQuote, provider.OperationKISOrderbook, "/uapi/domestic-stock/v1/quotations/inquire-asking-price-exp-ccn"), func(ctx context.Context) (kisclient.InquireAskingPriceExpCcnResponse, error) {
+		return p.client.Quote().Orderbook(ctx, kisclient.InquireAskingPriceExpCcnRequest{
+			FidCondMrktDivCode: "J",
+			FidInputISCD:       symbol,
+		})
+	})
 	if err != nil {
 		return orderbook.SnapshotResult{}, errb.With("operation", provider.OperationKISOrderbook).Wrapf(err, "fetch kis orderbook")
 	}
@@ -345,7 +462,7 @@ func (p *Provider) fetchOrderbookSnapshot(ctx context.Context, input orderbook.S
 	return orderbook.SnapshotResult{
 		Snapshot:   snapshot,
 		Provider:   p.Identity,
-		Group:      provider.GroupKISDomesticStockQuotation,
+		Group:      provider.GroupKISQuote,
 		Operation:  provider.OperationKISOrderbook,
 		TotalCount: len(snapshot.Levels),
 	}, nil
@@ -372,35 +489,46 @@ func (p *Provider) listMarketTrades(ctx context.Context, input tradesrole.ListIn
 
 	at := normalizeKISTime(input.At)
 	if at != "" {
-		trades, err := p.client.TimeTrades(ctx, symbol, at)
+		trades, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISQuote, provider.OperationKISTimeTrades, "/uapi/domestic-stock/v1/quotations/inquire-time-itemconclusion"), func(ctx context.Context) (kisclient.InquireTimeItemConclusionResponse, error) {
+			return p.client.Quote().TimeTrades(ctx, kisclient.InquireTimeItemConclusionRequest{
+				FidCondMrktDivCode: "J",
+				FidInputISCD:       symbol,
+				FidInputHour1:      at,
+			})
+		})
 		if err != nil {
 			return tradesrole.ListResult{}, errb.With("operation", provider.OperationKISTimeTrades).Wrapf(err, "fetch kis time trades")
 		}
-		resultTrades := make([]tradesrole.Trade, 0, len(trades))
-		for _, trade := range limitSlice(trades, input.Limit) {
+		resultTrades := make([]tradesrole.Trade, 0, 1)
+		for _, trade := range limitSlice([]kisclient.InquireTimeItemConclusionOutput2{trades.Output2}, input.Limit) {
 			resultTrades = append(resultTrades, normalizeTimedTrade(trade, symbol, input.SecurityType))
 		}
 		return tradesrole.ListResult{
 			Trades:     resultTrades,
 			Provider:   p.Identity,
-			Group:      provider.GroupKISDomesticStockQuotation,
+			Group:      provider.GroupKISQuote,
 			Operation:  provider.OperationKISTimeTrades,
 			TotalCount: len(resultTrades),
 		}, nil
 	}
 
-	trades, err := p.client.Trades(ctx, symbol)
+	trades, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISQuote, provider.OperationKISTrades, "/uapi/domestic-stock/v1/quotations/inquire-ccnl"), func(ctx context.Context) (kisclient.InquireCcnlResponse, error) {
+		return p.client.Quote().Trades(ctx, kisclient.InquireCcnlRequest{
+			FidCondMrktDivCode: "J",
+			FidInputISCD:       symbol,
+		})
+	})
 	if err != nil {
 		return tradesrole.ListResult{}, errb.With("operation", provider.OperationKISTrades).Wrapf(err, "fetch kis trades")
 	}
-	resultTrades := make([]tradesrole.Trade, 0, len(trades))
-	for _, trade := range limitSlice(trades, input.Limit) {
+	resultTrades := make([]tradesrole.Trade, 0, len(trades.Output))
+	for _, trade := range limitSlice(trades.Output, input.Limit) {
 		resultTrades = append(resultTrades, normalizeTrade(trade, symbol, input.SecurityType))
 	}
 	return tradesrole.ListResult{
 		Trades:     resultTrades,
 		Provider:   p.Identity,
-		Group:      provider.GroupKISDomesticStockQuotation,
+		Group:      provider.GroupKISQuote,
 		Operation:  provider.OperationKISTrades,
 		TotalCount: len(resultTrades),
 	}, nil
@@ -425,7 +553,9 @@ func (p *Provider) listConstituents(ctx context.Context, input composition.ListI
 		return composition.ListResult{}, errb.Wrap(err)
 	}
 
-	result, err := p.client.ETFComponentStockPrices(ctx, symbol)
+	result, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISQuote, provider.OperationKISETFComponentStockPrice, "/uapi/etfetn/v1/quotations/inquire-component-stock-price"), func(ctx context.Context) (kisclient.ETFComponentStockPriceResult, error) {
+		return p.client.ETFComponentStockPrices(ctx, symbol)
+	})
 	if err != nil {
 		return composition.ListResult{}, errb.With("operation", provider.OperationKISETFComponentStockPrice).Wrapf(err, "fetch kis ETF component stock prices")
 	}
@@ -451,7 +581,7 @@ func (p *Provider) listConstituents(ctx context.Context, input composition.ListI
 			Members:      members,
 		},
 		Provider:   p.Identity,
-		Group:      provider.GroupKISDomesticStockQuotation,
+		Group:      provider.GroupKISQuote,
 		Operation:  provider.OperationKISETFComponentStockPrice,
 		TotalCount: len(members),
 	}, nil
@@ -476,160 +606,209 @@ func (p *Provider) searchInstruments(ctx context.Context, input instrument.Searc
 		return instrument.SearchResult{}, errb.Wrap(err)
 	}
 
-	product, err := p.client.Product(ctx, query)
+	instrumentService := p.client.Instrument()
+	product, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISInstrument, provider.OperationKISProduct, "/uapi/domestic-stock/v1/quotations/search-info"), func(ctx context.Context) (kisclient.SearchInfoResponse, error) {
+		return instrumentService.Product(ctx, kisclient.SearchInfoRequest{
+			Pdno:       query,
+			PrdtTypeCd: kisclient.DefaultDomesticStockProductType,
+		})
+	})
 	if err != nil {
 		return instrument.SearchResult{}, errb.With("operation", provider.OperationKISProduct).Wrapf(err, "fetch kis product")
 	}
-	item := instrumentFromProduct(product, input.SecurityType)
+	item := instrumentFromSearchInfo(product.Output, input.SecurityType)
 	operations := []provider.OperationID{provider.OperationKISProduct}
 	if input.SecurityType == provider.SecurityTypeStock {
-		stock, err := p.client.Stock(ctx, query)
+		stock, err := withReadRetry(ctx, p, kisReadRequest(provider.GroupKISInstrument, provider.OperationKISStock, "/uapi/domestic-stock/v1/quotations/search-stock-info"), func(ctx context.Context) (kisclient.SearchStockInfoResponse, error) {
+			return instrumentService.Stock(ctx, kisclient.SearchStockInfoRequest{
+				Pdno:       query,
+				PrdtTypeCd: kisclient.DefaultDomesticStockProductType,
+			})
+		})
 		if err != nil {
 			return instrument.SearchResult{}, errb.With("operation", provider.OperationKISStock).Wrapf(err, "fetch kis stock")
 		}
-		item = instrumentFromProductAndStock(product, stock, input.SecurityType)
+		item = instrumentFromSearchInfoAndSearchStockInfo(product.Output, stock.Output, input.SecurityType)
 		operations = append(operations, provider.OperationKISStock)
 	}
 
 	return instrument.SearchResult{
 		Instruments: []instrument.Instrument{item},
 		Provider:    p.Identity,
-		Group:       provider.GroupKISDomesticStockInstrument,
+		Group:       provider.GroupKISInstrument,
 		Operations:  operations,
 		TotalCount:  1,
 	}, nil
 }
 
-func normalizeDailyBar(bar kisclient.Bar, symbol string, securityType provider.SecurityType) dailybar.Bar {
+func normalizeDailyBar(bar kisclient.InquireDailyItemChartPriceOutput2Item, symbol string, securityType provider.SecurityType) dailybar.Bar {
 	return dailybar.Bar{
 		Provider:     provider.ProviderKIS,
-		Group:        provider.GroupKISDomesticStockQuotation,
+		Group:        provider.GroupKISQuote,
 		Operation:    provider.OperationKISDaily,
 		Market:       provider.MarketKRX,
 		SecurityType: securityType,
-		TradingDate:  normalizeISODate(bar.Date),
+		TradingDate:  normalizeISODate(bar.StckBsopDate),
 		Symbol:       symbol,
 		Currency:     "KRW",
-		Open:         bar.Open,
-		High:         bar.High,
-		Low:          bar.Low,
-		Close:        bar.Close,
-		Change:       bar.PreviousChange,
-		Volume:       bar.Volume,
-		TradedValue:  bar.Amount,
+		Open:         bar.StckOprc,
+		High:         bar.StckHgpr,
+		Low:          bar.StckLwpr,
+		Close:        bar.StckClpr,
+		Change:       bar.PrdyVrss,
+		Volume:       bar.AcmlVol,
+		TradedValue:  bar.AcmlTRPbmn,
 		Extensions: map[string]string{
-			"previous_change_sign": bar.PreviousChangeSign,
-			"lock_code":            bar.Raw.LockCode,
-			"split_rate":           bar.Raw.SplitRate,
-			"modified":             bar.Raw.Modified,
-			"revaluation_reason":   bar.Raw.RevaluationReason,
+			"previous_change_sign": bar.PrdyVrssSign,
+			"lock_code":            bar.FlngClsCode,
+			"split_rate":           bar.PrttRate,
+			"modified":             bar.ModYn,
+			"revaluation_reason":   bar.RevlIssuReas,
 		},
 	}
 }
 
-func normalizeIntradayBar(bar kisclient.IntradayBar, symbol string, securityType provider.SecurityType) intradaybar.Bar {
+func normalizeIntradayBar(bar kisclient.InquireTimeItemChartPriceOutput2Item, symbol string, securityType provider.SecurityType) intradaybar.Bar {
 	return intradaybar.Bar{
 		Provider:     provider.ProviderKIS,
-		Group:        provider.GroupKISDomesticStockQuotation,
+		Group:        provider.GroupKISQuote,
 		Operation:    provider.OperationKISIntraday,
 		Market:       provider.MarketKRX,
 		SecurityType: securityType,
-		TradingDate:  normalizeISODate(bar.Date),
-		Time:         normalizeISOTime(bar.Time),
+		TradingDate:  normalizeISODate(bar.StckBsopDate),
+		Time:         normalizeISOTime(bar.StckCntgHour),
 		Symbol:       symbol,
 		Currency:     "KRW",
-		Open:         bar.Open,
-		High:         bar.High,
-		Low:          bar.Low,
-		Close:        bar.Current,
-		Volume:       bar.Volume,
-		TradedValue:  bar.Amount,
+		Open:         bar.StckOprc,
+		High:         bar.StckHgpr,
+		Low:          bar.StckLwpr,
+		Close:        bar.StckPrpr,
+		Volume:       bar.CntgVol,
+		TradedValue:  bar.AcmlTRPbmn,
 	}
 }
 
-func normalizeOrderbook(book kisclient.Orderbook, symbol string, securityType provider.SecurityType) orderbook.Snapshot {
-	levels := make([]orderbook.Level, 0, len(book.Asks)+len(book.Bids))
-	for i, level := range book.Asks {
+func normalizeOrderbook(book kisclient.InquireAskingPriceExpCcnResponse, symbol string, securityType provider.SecurityType) orderbook.Snapshot {
+	asks := []struct {
+		price    string
+		quantity string
+		delta    string
+	}{
+		{book.Output1.Askp1, book.Output1.AskpRsqn1, book.Output1.AskpRsqnIcdc1},
+		{book.Output1.Askp2, book.Output1.AskpRsqn2, book.Output1.AskpRsqnIcdc2},
+		{book.Output1.Askp3, book.Output1.AskpRsqn3, book.Output1.AskpRsqnIcdc3},
+		{book.Output1.Askp4, book.Output1.AskpRsqn4, book.Output1.AskpRsqnIcdc4},
+		{book.Output1.Askp5, book.Output1.AskpRsqn5, book.Output1.AskpRsqnIcdc5},
+		{book.Output1.Askp6, book.Output1.AskpRsqn6, book.Output1.AskpRsqnIcdc6},
+		{book.Output1.Askp7, book.Output1.AskpRsqn7, book.Output1.AskpRsqnIcdc7},
+		{book.Output1.Askp8, book.Output1.AskpRsqn8, book.Output1.AskpRsqnIcdc8},
+		{book.Output1.Askp9, book.Output1.AskpRsqn9, book.Output1.AskpRsqnIcdc9},
+		{book.Output1.Askp10, book.Output1.AskpRsqn10, book.Output1.AskpRsqnIcdc10},
+	}
+	bids := []struct {
+		price    string
+		quantity string
+		delta    string
+	}{
+		{book.Output1.Bidp1, book.Output1.BidpRsqn1, book.Output1.BidpRsqnIcdc1},
+		{book.Output1.Bidp2, book.Output1.BidpRsqn2, book.Output1.BidpRsqnIcdc2},
+		{book.Output1.Bidp3, book.Output1.BidpRsqn3, book.Output1.BidpRsqnIcdc3},
+		{book.Output1.Bidp4, book.Output1.BidpRsqn4, book.Output1.BidpRsqnIcdc4},
+		{book.Output1.Bidp5, book.Output1.BidpRsqn5, book.Output1.BidpRsqnIcdc5},
+		{book.Output1.Bidp6, book.Output1.BidpRsqn6, book.Output1.BidpRsqnIcdc6},
+		{book.Output1.Bidp7, book.Output1.BidpRsqn7, book.Output1.BidpRsqnIcdc7},
+		{book.Output1.Bidp8, book.Output1.BidpRsqn8, book.Output1.BidpRsqnIcdc8},
+		{book.Output1.Bidp9, book.Output1.BidpRsqn9, book.Output1.BidpRsqnIcdc9},
+		{book.Output1.Bidp10, book.Output1.BidpRsqn10, book.Output1.BidpRsqnIcdc10},
+	}
+	levels := make([]orderbook.Level, 0, len(asks)+len(bids))
+	for i, level := range asks {
+		if strings.TrimSpace(level.price) == "" && strings.TrimSpace(level.quantity) == "" {
+			continue
+		}
 		levels = append(levels, orderbook.Level{
 			Side:          orderbook.SideAsk,
 			Level:         i + 1,
-			Price:         level.Price,
-			Quantity:      level.Quantity,
-			QuantityDelta: level.Delta,
+			Price:         level.price,
+			Quantity:      level.quantity,
+			QuantityDelta: level.delta,
 		})
 	}
-	for i, level := range book.Bids {
+	for i, level := range bids {
+		if strings.TrimSpace(level.price) == "" && strings.TrimSpace(level.quantity) == "" {
+			continue
+		}
 		levels = append(levels, orderbook.Level{
 			Side:          orderbook.SideBid,
 			Level:         i + 1,
-			Price:         level.Price,
-			Quantity:      level.Quantity,
-			QuantityDelta: level.Delta,
+			Price:         level.price,
+			Quantity:      level.quantity,
+			QuantityDelta: level.delta,
 		})
 	}
 	return orderbook.Snapshot{
 		Provider:         provider.ProviderKIS,
-		Group:            provider.GroupKISDomesticStockQuotation,
+		Group:            provider.GroupKISQuote,
 		Operation:        provider.OperationKISOrderbook,
 		Market:           provider.MarketKRX,
 		SecurityType:     securityType,
-		Symbol:           firstNonEmpty(book.Expected.Symbol, symbol),
-		AcceptanceTime:   normalizeISOTime(book.AcceptanceTime),
+		Symbol:           firstNonEmpty(book.Output2.StckShrnISCD, symbol),
+		AcceptanceTime:   normalizeISOTime(book.Output1.AsprAcptHour),
 		Currency:         "KRW",
 		Levels:           levels,
-		TotalAskQuantity: book.TotalAskQuantity,
-		TotalBidQuantity: book.TotalBidQuantity,
+		TotalAskQuantity: book.Output1.TotalAskpRsqn,
+		TotalBidQuantity: book.Output1.TotalBidpRsqn,
 		Expected: orderbook.ExpectedConclusion{
-			Price:              book.Expected.ExpectedPrice,
-			Volume:             book.Expected.ExpectedVolume,
-			Current:            book.Expected.Current,
-			Open:               book.Expected.Open,
-			High:               book.Expected.High,
-			Low:                book.Expected.Low,
-			PreviousClose:      book.Expected.PreviousClose,
-			PreviousChange:     book.Expected.PreviousChange,
-			PreviousChangeSign: book.Expected.PreviousChangeSign,
-			PreviousChangeRate: book.Expected.PreviousChangeRate,
+			Price:              book.Output2.AntcCnpr,
+			Volume:             book.Output2.AntcVol,
+			Current:            book.Output2.StckPrpr,
+			Open:               book.Output2.StckOprc,
+			High:               book.Output2.StckHgpr,
+			Low:                book.Output2.StckLwpr,
+			PreviousClose:      book.Output2.StckSdpr,
+			PreviousChange:     book.Output2.AntcCntgVrss,
+			PreviousChangeSign: book.Output2.AntcCntgVrssSign,
+			PreviousChangeRate: book.Output2.AntcCntgPrdyCtrt,
 		},
 	}
 }
 
-func normalizeTrade(trade kisclient.Trade, symbol string, securityType provider.SecurityType) tradesrole.Trade {
+func normalizeTrade(trade kisclient.InquireCcnlOutputItem, symbol string, securityType provider.SecurityType) tradesrole.Trade {
 	return tradesrole.Trade{
 		Provider:           provider.ProviderKIS,
-		Group:              provider.GroupKISDomesticStockQuotation,
+		Group:              provider.GroupKISQuote,
 		Operation:          provider.OperationKISTrades,
 		Market:             provider.MarketKRX,
 		SecurityType:       securityType,
 		Symbol:             symbol,
-		Time:               normalizeISOTime(trade.Time),
-		Price:              trade.Current,
-		Volume:             trade.Volume,
-		PreviousChange:     trade.PreviousChange,
-		PreviousChangeSign: trade.PreviousChangeSign,
-		PreviousChangeRate: trade.PreviousChangeRate,
-		Strength:           trade.Strength,
+		Time:               normalizeISOTime(trade.StckCntgHour),
+		Price:              trade.StckPrpr,
+		Volume:             trade.CntgVol,
+		PreviousChange:     trade.PrdyVrss,
+		PreviousChangeSign: trade.PrdyVrssSign,
+		PreviousChangeRate: trade.PrdyCtrt,
+		Strength:           trade.TdayRltv,
 	}
 }
 
-func normalizeTimedTrade(trade kisclient.TimedTrade, symbol string, securityType provider.SecurityType) tradesrole.Trade {
+func normalizeTimedTrade(trade kisclient.InquireTimeItemConclusionOutput2, symbol string, securityType provider.SecurityType) tradesrole.Trade {
 	return tradesrole.Trade{
 		Provider:           provider.ProviderKIS,
-		Group:              provider.GroupKISDomesticStockQuotation,
+		Group:              provider.GroupKISQuote,
 		Operation:          provider.OperationKISTimeTrades,
 		Market:             provider.MarketKRX,
 		SecurityType:       securityType,
 		Symbol:             symbol,
-		Time:               normalizeISOTime(trade.Time),
-		Price:              trade.Current,
-		Volume:             trade.Volume,
-		AccumulatedVolume:  trade.AccumulatedVolume,
-		Ask:                trade.Ask,
-		Bid:                trade.Bid,
-		PreviousChange:     trade.PreviousChange,
-		PreviousChangeSign: trade.PreviousChangeSign,
-		PreviousChangeRate: trade.PreviousChangeRate,
-		Strength:           trade.Strength,
+		Time:               normalizeISOTime(trade.StckCntgHour),
+		Price:              trade.StckPbpr,
+		Volume:             trade.Cnqn,
+		AccumulatedVolume:  trade.AcmlVol,
+		Ask:                trade.Askp,
+		Bid:                trade.Bidp,
+		PreviousChange:     trade.PrdyVrss,
+		PreviousChangeSign: trade.PrdyVrssSign,
+		PreviousChangeRate: trade.PrdyCtrt,
+		Strength:           trade.TdayRltv,
 	}
 }
 
@@ -651,7 +830,7 @@ func compositionMemberFromKISComponentRow(row kisclient.ETFComponentStockPrice) 
 func kisComponentSource() composition.SourceRef {
 	return composition.SourceRef{
 		Provider:  provider.ProviderKIS,
-		Group:     provider.GroupKISDomesticStockQuotation,
+		Group:     provider.GroupKISQuote,
 		Operation: provider.OperationKISETFComponentStockPrice,
 	}
 }
@@ -672,51 +851,51 @@ func koreaLocation() *time.Location {
 	return time.FixedZone("Asia/Seoul", 9*60*60)
 }
 
-func instrumentFromProduct(product kisclient.Product, securityType provider.SecurityType) instrument.Instrument {
-	securityCode := firstNonEmpty(product.ShortProductNo, product.ProductNo)
+func instrumentFromSearchInfo(product kisclient.SearchInfoOutput, securityType provider.SecurityType) instrument.Instrument {
+	securityCode := firstNonEmpty(product.ShtnPdno, product.Pdno)
 	return instrument.Instrument{
 		Provider:     provider.ProviderKIS,
-		Group:        provider.GroupKISDomesticStockInstrument,
+		Group:        provider.GroupKISInstrument,
 		Operation:    provider.OperationKISProduct,
 		Market:       provider.MarketKRX,
 		SecurityType: securityType,
 		SecurityCode: securityCode,
-		ISIN:         product.StandardProductNo,
-		Name:         firstNonEmpty(product.Name, product.AbbreviatedName),
+		ISIN:         product.StdPdno,
+		Name:         firstNonEmpty(product.PrdtName, product.PrdtAbrvName),
 		ExchangeCode: "KRX",
 		CountryCode:  "KR",
 		Timezone:     "Asia/Seoul",
 		Extensions: map[string]string{
 			"security_key":             fmt.Sprintf("krx:%s", securityCode),
 			"canonical_record_key":     fmt.Sprintf("instrument:krx:%s:current", securityCode),
-			"kis_product_no":           product.ProductNo,
-			"kis_product_type_code":    product.ProductTypeCode,
-			"kis_product_class_code":   product.ProductClassCode,
-			"kis_product_class_name":   product.ProductClassName,
-			"kis_investment_type_code": product.InvestmentTypeCode,
-			"kis_investment_type_name": product.InvestmentTypeCodeName,
-			"english_name":             product.EnglishName,
+			"kis_product_no":           product.Pdno,
+			"kis_product_type_code":    product.PrdtTypeCd,
+			"kis_product_class_code":   product.PrdtClsfCd,
+			"kis_product_class_name":   product.PrdtClsfName,
+			"kis_investment_type_code": product.IvstPrdtTypeCd,
+			"kis_investment_type_name": product.IvstPrdtTypeCdName,
+			"english_name":             product.PrdtEngName,
 		},
 	}
 }
 
-func instrumentFromProductAndStock(product kisclient.Product, stock kisclient.Stock, securityType provider.SecurityType) instrument.Instrument {
-	item := instrumentFromProduct(product, securityType)
+func instrumentFromSearchInfoAndSearchStockInfo(product kisclient.SearchInfoOutput, stock kisclient.SearchStockInfoOutput, securityType provider.SecurityType) instrument.Instrument {
+	item := instrumentFromSearchInfo(product, securityType)
 	item.Operation = provider.OperationKISStock
-	item.SecurityCode = firstNonEmpty(stock.ProductNo, item.SecurityCode)
-	item.ISIN = firstNonEmpty(stock.StandardProductNo, item.ISIN)
-	item.Name = firstNonEmpty(stock.Name, item.Name)
-	item.Extensions["kis_market_id_code"] = stock.MarketIDCode
-	item.Extensions["kis_security_group_id_code"] = stock.SecurityGroupIDCode
-	item.Extensions["kis_exchange_division_code"] = stock.ExchangeDivisionCode
-	item.Extensions["kis_settlement_month_day"] = stock.SettlementMonthDay
-	item.Extensions["kis_listed_shares"] = stock.ListedShares
-	item.Extensions["kis_capital"] = stock.Capital
-	item.Extensions["kis_par_value"] = stock.ParValue
-	item.Extensions["kis_trading_halt"] = stock.TradingHalt
-	item.Extensions["kis_administrative_issue"] = stock.AdministrativeIssue
-	item.Extensions["kis_industry_code"] = stock.IndustryCode
-	item.Extensions["kis_industry_name"] = stock.IndustryName
+	item.SecurityCode = firstNonEmpty(stock.Pdno, item.SecurityCode)
+	item.ISIN = firstNonEmpty(stock.StdPdno, item.ISIN)
+	item.Name = firstNonEmpty(stock.PrdtName, item.Name)
+	item.Extensions["kis_market_id_code"] = stock.MketIDCd
+	item.Extensions["kis_security_group_id_code"] = stock.SctyGrpIDCd
+	item.Extensions["kis_exchange_division_code"] = stock.ExcgDvsnCd
+	item.Extensions["kis_settlement_month_day"] = stock.SetlMmdd
+	item.Extensions["kis_listed_shares"] = stock.LstgStqt
+	item.Extensions["kis_capital"] = stock.Cpta
+	item.Extensions["kis_par_value"] = stock.Papr
+	item.Extensions["kis_trading_halt"] = stock.TRStopYn
+	item.Extensions["kis_administrative_issue"] = stock.AdmnItemYn
+	item.Extensions["kis_industry_code"] = stock.StdIdstClsfCd
+	item.Extensions["kis_industry_name"] = stock.StdIdstClsfCdName
 	return item
 }
 
@@ -809,7 +988,7 @@ func firstNonEmpty(values ...string) string {
 	return ""
 }
 
-type domesticStockQuotationGroup struct {
+type quoteGroup struct {
 	quoteSnapshotter     quote.Snapshotter
 	dailyFetcher         dailybar.Fetcher
 	intradayFetcher      intradaybar.Fetcher
@@ -818,15 +997,15 @@ type domesticStockQuotationGroup struct {
 	compositionLister    composition.Lister
 }
 
-var _ provider.GroupRoleProvider = domesticStockQuotationGroup{}
+var _ provider.GroupRoleProvider = quoteGroup{}
 
-func newDomesticStockQuotationGroup(snapshot quote.SnapshotFunc, fetch dailybar.FetchFunc, fetchIntraday intradaybar.FetchFunc, snapshotOrderbook orderbook.SnapshotFunc, listTrades tradesrole.ListFunc, listConstituents composition.ListFunc) domesticStockQuotationGroup {
-	return domesticStockQuotationGroup{
+func newQuoteGroup(snapshot quote.SnapshotFunc, fetch dailybar.FetchFunc, fetchIntraday intradaybar.FetchFunc, snapshotOrderbook orderbook.SnapshotFunc, listTrades tradesrole.ListFunc, listConstituents composition.ListFunc) quoteGroup {
+	return quoteGroup{
 		quoteSnapshotter: quote.NewSnapshot(
 			spec.Quote().
 				Markets(provider.MarketKRX).
 				SecurityTypes(provider.SecurityTypeStock).
-				Group(provider.GroupKISDomesticStockQuotation).
+				Group(provider.GroupKISQuote).
 				Operations(provider.OperationKISPrice).
 				RequiresAuth(provider.CredentialScopeKIS).
 				Freshness(provider.FreshnessDaily).
@@ -840,7 +1019,7 @@ func newDomesticStockQuotationGroup(snapshot quote.SnapshotFunc, fetch dailybar.
 			spec.DailyBar().
 				Markets(provider.MarketKRX).
 				SecurityTypes(provider.SecurityTypeStock, provider.SecurityTypeETF, provider.SecurityTypeETN).
-				Group(provider.GroupKISDomesticStockQuotation).
+				Group(provider.GroupKISQuote).
 				Operations(provider.OperationKISDaily).
 				RequiresAuth(provider.CredentialScopeKIS).
 				Freshness(provider.FreshnessDaily).
@@ -863,7 +1042,7 @@ func newDomesticStockQuotationGroup(snapshot quote.SnapshotFunc, fetch dailybar.
 		intradayFetcher: spec.RealtimeIntradayBar(fetchIntraday).
 			Markets(provider.MarketKRX).
 			SecurityTypes(provider.SecurityTypeStock, provider.SecurityTypeETF, provider.SecurityTypeETN).
-			Group(provider.GroupKISDomesticStockQuotation).
+			Group(provider.GroupKISQuote).
 			Operations(provider.OperationKISIntraday).
 			RequiresAuth(provider.CredentialScopeKIS).
 			CompatibilityNotes("KIS intraday bars are same-day symbol-scoped minute bars").
@@ -873,7 +1052,7 @@ func newDomesticStockQuotationGroup(snapshot quote.SnapshotFunc, fetch dailybar.
 		orderbookSnapshotter: spec.RealtimeOrderbook(snapshotOrderbook).
 			Markets(provider.MarketKRX).
 			SecurityTypes(provider.SecurityTypeStock, provider.SecurityTypeETF, provider.SecurityTypeETN).
-			Group(provider.GroupKISDomesticStockQuotation).
+			Group(provider.GroupKISQuote).
 			Operations(provider.OperationKISOrderbook).
 			RequiresAuth(provider.CredentialScopeKIS).
 			CompatibilityNotes("KIS orderbook snapshot returns up to 10 ask and 10 bid levels with expected conclusion data").
@@ -883,7 +1062,7 @@ func newDomesticStockQuotationGroup(snapshot quote.SnapshotFunc, fetch dailybar.
 		tradesLister: spec.RealtimeTrades(listTrades).
 			Markets(provider.MarketKRX).
 			SecurityTypes(provider.SecurityTypeStock, provider.SecurityTypeETF, provider.SecurityTypeETN).
-			Group(provider.GroupKISDomesticStockQuotation).
+			Group(provider.GroupKISQuote).
 			Operations(provider.OperationKISTrades, provider.OperationKISTimeTrades).
 			RequiresAuth(provider.CredentialScopeKIS).
 			CompatibilityNotes("KIS trade rows are market trade prints, not account order executions").
@@ -893,7 +1072,7 @@ func newDomesticStockQuotationGroup(snapshot quote.SnapshotFunc, fetch dailybar.
 		compositionLister: composition.NewList(composition.Profile{
 			Markets:       []provider.Market{provider.MarketKRX},
 			SecurityTypes: []provider.SecurityType{provider.SecurityTypeETF},
-			Group:         provider.GroupKISDomesticStockQuotation,
+			Group:         provider.GroupKISQuote,
 			Operations:    []provider.OperationID{provider.OperationKISETFComponentStockPrice},
 			AuthScope:     provider.CredentialScopeKIS,
 			Freshness:     provider.FreshnessDaily,
@@ -912,17 +1091,17 @@ func newDomesticStockQuotationGroup(snapshot quote.SnapshotFunc, fetch dailybar.
 	}
 }
 
-func (g domesticStockQuotationGroup) ProviderGroup() provider.GroupID {
-	return provider.GroupKISDomesticStockQuotation
+func (g quoteGroup) ProviderGroup() provider.GroupID {
+	return provider.GroupKISQuote
 }
 
-func (g domesticStockQuotationGroup) RoleRegistrations() []provider.RoleRegistration {
+func (g quoteGroup) RoleRegistrations() []provider.RoleRegistration {
 	stockQuote := g.quoteSnapshotter.RoleRegistration()
 	etpQuote := quote.NewSnapshot(
 		spec.Quote().
 			Markets(provider.MarketKRX).
 			SecurityTypes(provider.SecurityTypeETF, provider.SecurityTypeETN).
-			Group(provider.GroupKISDomesticStockQuotation).
+			Group(provider.GroupKISQuote).
 			Operations(provider.OperationKISETFETNPrice).
 			RequiresAuth(provider.CredentialScopeKIS).
 			Freshness(provider.FreshnessDaily).
@@ -943,18 +1122,18 @@ func (g domesticStockQuotationGroup) RoleRegistrations() []provider.RoleRegistra
 	}
 }
 
-type domesticStockInstrumentGroup struct {
+type instrumentGroup struct {
 	instrument.Searcher
 }
 
-var _ provider.GroupRoleProvider = domesticStockInstrumentGroup{}
+var _ provider.GroupRoleProvider = instrumentGroup{}
 
-func newDomesticStockInstrumentGroup(search instrument.SearchFunc) domesticStockInstrumentGroup {
-	return domesticStockInstrumentGroup{
+func newInstrumentGroup(search instrument.SearchFunc) instrumentGroup {
+	return instrumentGroup{
 		Searcher: spec.InstrumentSearcher(search).
 			Markets(provider.MarketKRX).
 			SecurityTypes(provider.SecurityTypeStock, provider.SecurityTypeETF, provider.SecurityTypeETN, provider.SecurityTypeELW).
-			Group(provider.GroupKISDomesticStockInstrument).
+			Group(provider.GroupKISInstrument).
 			Operations(provider.OperationKISProduct, provider.OperationKISStock).
 			RequiresAuth(provider.CredentialScopeKIS).
 			Freshness(provider.FreshnessDaily).
@@ -968,10 +1147,10 @@ func newDomesticStockInstrumentGroup(search instrument.SearchFunc) domesticStock
 	}
 }
 
-func (g domesticStockInstrumentGroup) ProviderGroup() provider.GroupID {
-	return provider.GroupKISDomesticStockInstrument
+func (g instrumentGroup) ProviderGroup() provider.GroupID {
+	return provider.GroupKISInstrument
 }
 
-func (g domesticStockInstrumentGroup) RoleRegistrations() []provider.RoleRegistration {
+func (g instrumentGroup) RoleRegistrations() []provider.RoleRegistration {
 	return []provider.RoleRegistration{g.Searcher.RoleRegistration()}
 }

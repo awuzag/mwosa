@@ -1,0 +1,852 @@
+{
+  "components": {
+    "schemas": {
+      "SensitivityResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "msg1": {
+            "description": "응답메세지",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답메세지",
+              "propertyLength": "80",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "msg_cd": {
+            "description": "응답코드",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답코드",
+              "propertyLength": "8",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "output": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "acml_vol": {
+                  "description": "누적거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "누적거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.007",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "d90_hist_vltl": {
+                  "description": "90일역사적변동성",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "90일역사적변동성",
+                    "propertyLength": "114",
+                    "propertyOrder": "004.015",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "delta_val": {
+                  "description": "델타값",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "델타값",
+                    "propertyLength": "114",
+                    "propertyOrder": "004.009",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "elw_kor_isnm": {
+                  "description": "ELW한글종목명",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "ELW한글종목명",
+                    "propertyLength": "40",
+                    "propertyOrder": "004.002",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "elw_prpr": {
+                  "description": "ELW현재가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "ELW현재가",
+                    "propertyLength": "10",
+                    "propertyOrder": "004.003",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "elw_shrn_iscd": {
+                  "description": "ELW단축종목코드",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "ELW단축종목코드",
+                    "propertyLength": "9",
+                    "propertyOrder": "004.001",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "gama": {
+                  "description": "감마",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "감마",
+                    "propertyLength": "84",
+                    "propertyOrder": "004.010",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "hts_ints_vltl": {
+                  "description": "HTS내재변동성",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "HTS내재변동성",
+                    "propertyLength": "114",
+                    "propertyOrder": "004.014",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "hts_thpr": {
+                  "description": "HTS이론가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "HTS이론가",
+                    "propertyLength": "112",
+                    "propertyOrder": "004.008",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_ctrt": {
+                  "description": "전일대비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일대비율",
+                    "propertyLength": "82",
+                    "propertyOrder": "004.006",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_vrss": {
+                  "description": "전일대비",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일대비",
+                    "propertyLength": "10",
+                    "propertyOrder": "004.004",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_vrss_sign": {
+                  "description": "전일대비부호",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일대비부호",
+                    "propertyLength": "1",
+                    "propertyOrder": "004.005",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "rho": {
+                  "description": "로우",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "로우",
+                    "propertyLength": "84",
+                    "propertyOrder": "004.013",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "theta": {
+                  "description": "세타",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "세타",
+                    "propertyLength": "84",
+                    "propertyOrder": "004.011",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "vega": {
+                  "description": "베가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "베가",
+                    "propertyLength": "84",
+                    "propertyOrder": "004.012",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                }
+              },
+              "required": [
+                "elw_shrn_iscd",
+                "elw_kor_isnm",
+                "elw_prpr",
+                "prdy_vrss",
+                "prdy_vrss_sign",
+                "prdy_ctrt",
+                "acml_vol",
+                "hts_thpr",
+                "delta_val",
+                "gama",
+                "theta",
+                "vega",
+                "rho",
+                "hts_ints_vltl",
+                "d90_hist_vltl"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "rt_cd": {
+            "description": "성공 실패 여부",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "성공 실패 여부",
+              "propertyLength": "1",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        },
+        "required": [
+          "rt_cd",
+          "msg_cd",
+          "msg1",
+          "output"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "KISOAuth": {
+        "bearerFormat": "KIS OAuth access token",
+        "description": "Issued by KIS /oauth2/tokenP and injected by the handwritten runtime.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "KIS Domestic Stock OpenAPI - sensitivity",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/uapi/elw/v1/ranking/sensitivity": {
+      "get": {
+        "description": "ELW 민감도 순위 API입니다. \n한국투자 HTS(eFriend Plus) \u0026gt; [0285] ELW 민감도 순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
+        "operationId": "sensitivity",
+        "parameters": [
+          {
+            "description": "시장구분코드 (W)",
+            "in": "query",
+            "name": "FID_COND_MRKT_DIV_CODE",
+            "required": true,
+            "schema": {
+              "description": "조건시장분류코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "시장구분코드 (W)",
+                "name": "조건시장분류코드",
+                "propertyLength": "2",
+                "propertyOrder": "001",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "시장구분코드 (W)",
+              "name": "조건시장분류코드",
+              "propertyLength": "2",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "market",
+              "completion": [
+                "krx",
+                "nxt",
+                "unified",
+                "J",
+                "NX",
+                "UN"
+              ],
+              "default": "J",
+              "description": "시장구분코드 (W)",
+              "flag": "market",
+              "required": true,
+              "source": "default",
+              "valueKind": "market"
+            }
+          },
+          {
+            "description": "Unique key(20285)",
+            "in": "query",
+            "name": "FID_COND_SCR_DIV_CODE",
+            "required": true,
+            "schema": {
+              "description": "조건화면분류코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "Unique key(20285)",
+                "name": "조건화면분류코드",
+                "propertyLength": "5",
+                "propertyOrder": "002",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "Unique key(20285)",
+              "name": "조건화면분류코드",
+              "propertyLength": "5",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "",
+              "default": "",
+              "description": "Unique key(20285)",
+              "flag": "fid-cond-scr-div-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "'000000(전체), 2001(코스피200)\n, 3003(코스닥150), 005930(삼성전자) '",
+            "in": "query",
+            "name": "FID_UNAS_INPUT_ISCD",
+            "required": true,
+            "schema": {
+              "description": "기초자산입력종목코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "'000000(전체), 2001(코스피200)\n, 3003(코스닥150), 005930(삼성전자) '",
+                "name": "기초자산입력종목코드",
+                "propertyLength": "12",
+                "propertyOrder": "003",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "'000000(전체), 2001(코스피200)\n, 3003(코스닥150), 005930(삼성전자) '",
+              "name": "기초자산입력종목코드",
+              "propertyLength": "12",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "'000000(전체), 2001(코스피200)\n, 3003(코스닥150), 005930(삼성전자) '",
+              "flag": "fid-unas-input-iscd",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "'00000(전체), 00003(한국투자증권)\n, 00017(KB증권), 00005(미래에셋주식회사)'",
+            "in": "query",
+            "name": "FID_INPUT_ISCD",
+            "required": true,
+            "schema": {
+              "description": "입력종목코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "'00000(전체), 00003(한국투자증권)\n, 00017(KB증권), 00005(미래에셋주식회사)'",
+                "name": "입력종목코드",
+                "propertyLength": "12",
+                "propertyOrder": "004",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "'00000(전체), 00003(한국투자증권)\n, 00017(KB증권), 00005(미래에셋주식회사)'",
+              "name": "입력종목코드",
+              "propertyLength": "12",
+              "propertyOrder": "004",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "symbol",
+              "default": "",
+              "description": "'00000(전체), 00003(한국투자증권)\n, 00017(KB증권), 00005(미래에셋주식회사)'",
+              "flag": "symbol",
+              "required": true,
+              "source": "user",
+              "valueKind": "symbol"
+            }
+          },
+          {
+            "description": "0(전체), 1(콜), 2(풋)",
+            "in": "query",
+            "name": "FID_DIV_CLS_CODE",
+            "required": true,
+            "schema": {
+              "description": "콜풋구분코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "0(전체), 1(콜), 2(풋)",
+                "name": "콜풋구분코드",
+                "propertyLength": "2",
+                "propertyOrder": "005",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "0(전체), 1(콜), 2(풋)",
+              "name": "콜풋구분코드",
+              "propertyLength": "2",
+              "propertyOrder": "005",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "0(전체), 1(콜), 2(풋)",
+              "flag": "fid-div-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "FID_INPUT_PRICE_1",
+            "required": true,
+            "schema": {
+              "description": "가격(이상)",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "",
+                "name": "가격(이상)",
+                "propertyLength": "12",
+                "propertyOrder": "006",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "",
+              "name": "가격(이상)",
+              "propertyLength": "12",
+              "propertyOrder": "006",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "",
+              "default": "",
+              "description": "가격(이상)",
+              "flag": "fid-input-price-1",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "FID_INPUT_PRICE_2",
+            "required": true,
+            "schema": {
+              "description": "가격(이하)",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "",
+                "name": "가격(이하)",
+                "propertyLength": "12",
+                "propertyOrder": "007",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "",
+              "name": "가격(이하)",
+              "propertyLength": "12",
+              "propertyOrder": "007",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "",
+              "default": "",
+              "description": "가격(이하)",
+              "flag": "fid-input-price-2",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "FID_INPUT_VOL_1",
+            "required": true,
+            "schema": {
+              "description": "거래량(이상)",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "",
+                "name": "거래량(이상)",
+                "propertyLength": "18",
+                "propertyOrder": "008",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "",
+              "name": "거래량(이상)",
+              "propertyLength": "18",
+              "propertyOrder": "008",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "거래량(이상)",
+              "flag": "fid-input-vol-1",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "FID_INPUT_VOL_2",
+            "required": true,
+            "schema": {
+              "description": "거래량(이하)",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "",
+                "name": "거래량(이하)",
+                "propertyLength": "18",
+                "propertyOrder": "009",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "",
+              "name": "거래량(이하)",
+              "propertyLength": "18",
+              "propertyOrder": "009",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "거래량(이하)",
+              "flag": "fid-input-vol-2",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "'0(이론가), 1(델타), 2(감마), 3(로), 4(베가) , 5(로)\n, 6(내재변동성), 7(90일변동성)'",
+            "in": "query",
+            "name": "FID_RANK_SORT_CLS_CODE",
+            "required": true,
+            "schema": {
+              "description": "순위정렬구분코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "'0(이론가), 1(델타), 2(감마), 3(로), 4(베가) , 5(로)\n, 6(내재변동성), 7(90일변동성)'",
+                "name": "순위정렬구분코드",
+                "propertyLength": "2",
+                "propertyOrder": "010",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "'0(이론가), 1(델타), 2(감마), 3(로), 4(베가) , 5(로)\n, 6(내재변동성), 7(90일변동성)'",
+              "name": "순위정렬구분코드",
+              "propertyLength": "2",
+              "propertyOrder": "010",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "",
+              "default": "",
+              "description": "'0(이론가), 1(델타), 2(감마), 3(로), 4(베가) , 5(로)\n, 6(내재변동성), 7(90일변동성)'",
+              "flag": "fid-rank-sort-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "FID_INPUT_RMNN_DYNU_1",
+            "required": true,
+            "schema": {
+              "description": "잔존일수(이상)",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "",
+                "name": "잔존일수(이상)",
+                "propertyLength": "5",
+                "propertyOrder": "011",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "",
+              "name": "잔존일수(이상)",
+              "propertyLength": "5",
+              "propertyOrder": "011",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "잔존일수(이상)",
+              "flag": "fid-input-rmnn-dynu-1",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "",
+            "in": "query",
+            "name": "FID_INPUT_DATE_1",
+            "required": true,
+            "schema": {
+              "description": "조회기준일",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "",
+                "name": "조회기준일",
+                "propertyLength": "10",
+                "propertyOrder": "012",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "",
+              "name": "조회기준일",
+              "propertyLength": "10",
+              "propertyOrder": "012",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "from",
+              "default": "",
+              "description": "조회기준일",
+              "flag": "from",
+              "required": true,
+              "source": "user",
+              "valueKind": "date"
+            }
+          },
+          {
+            "description": "0(전체), 1(일반), 2(조기종료)",
+            "in": "query",
+            "name": "FID_BLNG_CLS_CODE",
+            "required": true,
+            "schema": {
+              "description": "결재방법",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "0(전체), 1(일반), 2(조기종료)",
+                "name": "결재방법",
+                "propertyLength": "2",
+                "propertyOrder": "013",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "0(전체), 1(일반), 2(조기종료)",
+              "name": "결재방법",
+              "propertyLength": "2",
+              "propertyOrder": "013",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "0(전체), 1(일반), 2(조기종료)",
+              "flag": "fid-blng-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/SensitivityResponse"
+                }
+              }
+            },
+            "description": "KIS business response envelope"
+          }
+        },
+        "security": [
+          {
+            "KISOAuth": []
+          }
+        ],
+        "summary": "ELW 민감도 순위[국내주식-170]",
+        "tags": [
+          "ELWQuote"
+        ],
+        "x-kis": {
+          "accessUrl": "/uapi/elw/v1/ranking/sensitivity",
+          "apiId": "246842f0-450e-464b-8dbc-356133d12b42",
+          "apiName": "ELW 민감도 순위[국내주식-170]",
+          "apiSummary": "ELW 민감도 순위 API입니다. \r\n한국투자 HTS(eFriend Plus) \u0026gt; [0285] ELW 민감도 순위 화면의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
+          "catalogSchemaVersion": 1,
+          "collectionId": "31ee18d0-526f-4d7c-81ba-160cd0396092",
+          "collectionName": "[국내주식] ELW 시세",
+          "group": "elw-quote",
+          "lastModifiedDate": "2025-05-07T09:30:34+09:00",
+          "oauth": true,
+          "realDomain": "https://openapi.koreainvestment.com:9443",
+          "realTrId": "FHPEW02850000",
+          "roleCandidate": "read_only",
+          "securityType": "oauth2-access-token",
+          "serviceGroup": "ELWQuote",
+          "source": {
+            "categoryApi": "https://apiportal.koreainvestment.com/api/apis/public/api-list/{collectionId}",
+            "detailApi": "https://apiportal.koreainvestment.com/api/apis/public/detail?accessUrl={accessUrl}",
+            "detailPageTemplate": "https://apiportal.koreainvestment.com/apiservice-apiservice?{accessUrl}",
+            "portal": "https://apiportal.koreainvestment.com/apiservice-category"
+          },
+          "sourceDetailUrl": "https://apiportal.koreainvestment.com/apiservice-apiservice?/uapi/elw/v1/ranking/sensitivity",
+          "supportsReal": true,
+          "supportsVirtual": false,
+          "virtualDomain": "모의투자 미지원",
+          "virtualTrId": "모의투자 미지원"
+        }
+      }
+    }
+  }
+}

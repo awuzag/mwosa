@@ -43,11 +43,16 @@ func TestIntradayBuildsKISRequestAndParsesBars(t *testing.T) {
 	defer server.Close()
 
 	client := newTestClient(t, server.URL, "token")
-	bars, err := client.Intraday(context.Background(), "005930", WithInputHour("100000"), WithPastData(false))
+	response, err := client.Quote().Intraday(context.Background(), InquireTimeItemChartPriceRequest{
+		FidCondMrktDivCode: "J",
+		FidInputISCD:       "005930",
+		FidInputHour1:      "100000",
+		FidPwDataIncuYn:    "N",
+	})
 	require.NoError(t, err)
-	require.Len(t, bars, 1)
-	assert.Equal(t, "20250131", bars[0].Date)
-	assert.Equal(t, "100000", bars[0].Time)
-	assert.Equal(t, "70100", bars[0].Current)
-	assert.Equal(t, "1234", bars[0].Volume)
+	require.Len(t, response.Output2, 1)
+	assert.Equal(t, "20250131", response.Output2[0].StckBsopDate)
+	assert.Equal(t, "100000", response.Output2[0].StckCntgHour)
+	assert.Equal(t, "70100", response.Output2[0].StckPrpr)
+	assert.Equal(t, "1234", response.Output2[0].CntgVol)
 }

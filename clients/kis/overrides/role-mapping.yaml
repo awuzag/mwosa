@@ -1,0 +1,44 @@
+version: 1
+role_hints:
+  inquire-price:
+    candidate: quote_snapshot
+    adapter_boundary: manual
+  inquire-daily-itemchartprice:
+    candidate: daily_bar
+    adapter_boundary: manual
+  inquire-time-itemchartprice:
+    candidate: intraday_bar
+    adapter_boundary: manual
+  inquire-ccnl:
+    candidate: trades
+    adapter_boundary: manual
+  inquire-daily-price:
+    candidate: daily_bar
+    adapter_boundary: generated_assisted
+  inquire-asking-price-exp-ccn:
+    candidate: orderbook
+    adapter_boundary: manual
+  inquire-investor:
+    candidate: market_scan
+    adapter_boundary: generated_assisted
+  inquire-member:
+    candidate: market_scan
+    adapter_boundary: generated_assisted
+  inquire-time-itemconclusion:
+    candidate: trades
+    adapter_boundary: manual
+  fluctuation:
+    candidate: market_scan
+    adapter_boundary: generated_assisted
+  volume-rank:
+    candidate: market_scan
+    adapter_boundary: generated_assisted
+  market-cap:
+    candidate: market_scan
+    adapter_boundary: generated_assisted
+  market-value:
+    candidate: market_scan
+    adapter_boundary: generated_assisted
+  volume-power:
+    candidate: market_scan
+    adapter_boundary: generated_assisted

@@ -70,6 +70,25 @@ live/read-through 조회다. `mwosa list constituents` 는 조회 결과를 자�
 은 `HHMMSS` 또는 `HH:MM:SS` 형식의 범용 시간 anchor 로 받고, KIS adapter 내부에서
 provider 요청 형식으로 바꾼다.
 
+## Raw API CLI
+
+KIS raw API 조회는 canonical role 로 승격되지 않은 provider-native 응답을 확인하거나
+새 adapter 후보를 검증할 때 사용한다. 목록과 schema 는 generated OpenAPI 의
+`x-mwosa-cli` metadata 에서 생성된 registry 를 기준으로 한다.
+
+```text
+mwosa list provider-apis kis -o table
+mwosa inspect provider-api kis inquire-price -o table
+mwosa inspect provider-api kis inquire-price --request-template -o json
+mwosa fetch provider-raw kis inquire-price --symbol 005930 -o json
+mwosa fetch provider-raw kis inquire-daily-itemchartprice --symbol 005930 --period daily --from 20250101 --to 20250131 -o json
+mwosa sync provider-raw kis inquire-price --symbol 005930 -o json
+```
+
+일반 입력은 operation 별 friendly flag 를 우선 사용한다. `--input-json`,
+`--input-file`, `--param KEY=VALUE` 는 원본 KIS field 명을 직접 넘기는 고급 경로다.
+같은 KIS field 를 friendly flag 와 JSON/param 에서 동시에 넘기면 error 로 처리한다.
+
 ## Composition canonical storage
 
 KIS 구성 종목 조회 결과를 저장할 때 canonical storage 는 KIS 응답 전체나 raw payload 를

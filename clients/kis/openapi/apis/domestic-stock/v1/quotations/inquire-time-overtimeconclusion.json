@@ -1,0 +1,618 @@
+{
+  "components": {
+    "schemas": {
+      "InquireTimeOvertimeconclusionResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "msg1": {
+            "description": "응답메세지",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답메세지",
+              "propertyLength": "80",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "msg_cd": {
+            "description": "응답코드",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답코드",
+              "propertyLength": "8",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "output1": {
+            "additionalProperties": false,
+            "properties": {
+              "lslm_sign": {
+                "description": "하한 부호",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "하한 부호",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.018",
+                  "propertyType": "A0001",
+                  "required": false
+                }
+              },
+              "ovtm_untp_antc_cnpr": {
+                "description": "시간외 단일가 예상 체결가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 단일가 예상 체결가",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.012",
+                  "propertyType": "A0001",
+                  "required": false
+                }
+              },
+              "ovtm_untp_antc_cntg_ctrt": {
+                "description": "시간외 단일가 예상 체결 대비율",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 단일가 예상 체결 대비율",
+                  "propertyLength": "11",
+                  "propertyOrder": "004.015",
+                  "propertyType": "A0001",
+                  "required": false
+                }
+              },
+              "ovtm_untp_antc_cntg_vrss": {
+                "description": "시간외 단일가 예상 체결 대비",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 단일가 예상 체결 대비",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.013",
+                  "propertyType": "A0001",
+                  "required": false
+                }
+              },
+              "ovtm_untp_antc_cntg_vrss_sign": {
+                "description": "시간외 단일가 예상 체결 대비",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 단일가 예상 체결 대비",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.014",
+                  "propertyType": "A0001",
+                  "required": false
+                }
+              },
+              "ovtm_untp_antc_vol": {
+                "description": "시간외 단일가 예상 거래량",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 단일가 예상 거래량",
+                  "propertyLength": "18",
+                  "propertyOrder": "004.016",
+                  "propertyType": "A0001",
+                  "required": false
+                }
+              },
+              "ovtm_untp_hgpr": {
+                "description": "시간외 단일가 최고가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 단일가 최고가",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.010",
+                  "propertyType": "A0001",
+                  "required": false
+                }
+              },
+              "ovtm_untp_llam": {
+                "description": "시간외 단일가 하한가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 단일가 하한가",
+                  "propertyLength": "18",
+                  "propertyOrder": "004.008",
+                  "propertyType": "A0001",
+                  "required": false
+                }
+              },
+              "ovtm_untp_lwpr": {
+                "description": "시간외 단일가 최저가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 단일가 최저가",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.011",
+                  "propertyType": "A0001",
+                  "required": false
+                }
+              },
+              "ovtm_untp_mxpr": {
+                "description": "시간외 단일가 상한가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 단일가 상한가",
+                  "propertyLength": "18",
+                  "propertyOrder": "004.007",
+                  "propertyType": "A0001",
+                  "required": false
+                }
+              },
+              "ovtm_untp_oprc": {
+                "description": "시간외 단일가 시가2",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 단일가 시가2",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.009",
+                  "propertyType": "A0001",
+                  "required": false
+                }
+              },
+              "ovtm_untp_prdy_ctrt": {
+                "description": "시간외 단일가 전일 대비율",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 단일가 전일 대비율",
+                  "propertyLength": "11",
+                  "propertyOrder": "004.004",
+                  "propertyType": "A0001",
+                  "required": false
+                }
+              },
+              "ovtm_untp_prdy_vrss": {
+                "description": "시간외 단일가 전일 대비",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 단일가 전일 대비",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.002",
+                  "propertyType": "A0001",
+                  "required": false
+                }
+              },
+              "ovtm_untp_prdy_vrss_sign": {
+                "description": "시간외 단일가 전일 대비 부호",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 단일가 전일 대비 부호",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.003",
+                  "propertyType": "A0001",
+                  "required": false
+                }
+              },
+              "ovtm_untp_prpr": {
+                "description": "시간외 단일가 현재가",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 단일가 현재가",
+                  "propertyLength": "10",
+                  "propertyOrder": "004.001",
+                  "propertyType": "A0001",
+                  "required": false
+                }
+              },
+              "ovtm_untp_tr_pbmn": {
+                "description": "시간외 단일가 거래 대금",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 단일가 거래 대금",
+                  "propertyLength": "18",
+                  "propertyOrder": "004.006",
+                  "propertyType": "A0001",
+                  "required": false
+                }
+              },
+              "ovtm_untp_vol": {
+                "description": "시간외 단일가 거래량",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "시간외 단일가 거래량",
+                  "propertyLength": "18",
+                  "propertyOrder": "004.005",
+                  "propertyType": "A0001",
+                  "required": false
+                }
+              },
+              "uplm_sign": {
+                "description": "상한 부호",
+                "type": "string",
+                "x-kis": {
+                  "bodyType": "res_b",
+                  "description": "",
+                  "name": "상한 부호",
+                  "propertyLength": "1",
+                  "propertyOrder": "004.017",
+                  "propertyType": "A0001",
+                  "required": false
+                }
+              }
+            },
+            "required": [],
+            "type": "object"
+          },
+          "output2": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "acml_vol": {
+                  "description": "누적 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "누적 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.008",
+                    "propertyType": "A0001",
+                    "required": false
+                  }
+                },
+                "askp": {
+                  "description": "매도호가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "매도호가",
+                    "propertyLength": "10",
+                    "propertyOrder": "005.006",
+                    "propertyType": "A0001",
+                    "required": false
+                  }
+                },
+                "bidp": {
+                  "description": "매수호가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "매수호가",
+                    "propertyLength": "10",
+                    "propertyOrder": "005.007",
+                    "propertyType": "A0001",
+                    "required": false
+                  }
+                },
+                "cntg_vol": {
+                  "description": "체결 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "체결 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "005.009",
+                    "propertyType": "A0001",
+                    "required": false
+                  }
+                },
+                "prdy_ctrt": {
+                  "description": "전일 대비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일 대비율",
+                    "propertyLength": "11",
+                    "propertyOrder": "005.005",
+                    "propertyType": "A0001",
+                    "required": false
+                  }
+                },
+                "prdy_vrss": {
+                  "description": "전일 대비",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일 대비",
+                    "propertyLength": "10",
+                    "propertyOrder": "005.003",
+                    "propertyType": "A0001",
+                    "required": false
+                  }
+                },
+                "prdy_vrss_sign": {
+                  "description": "전일 대비 부호",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일 대비 부호",
+                    "propertyLength": "1",
+                    "propertyOrder": "005.004",
+                    "propertyType": "A0001",
+                    "required": false
+                  }
+                },
+                "stck_cntg_hour": {
+                  "description": "주식 체결 시간",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식 체결 시간",
+                    "propertyLength": "6",
+                    "propertyOrder": "005.001",
+                    "propertyType": "A0001",
+                    "required": false
+                  }
+                },
+                "stck_prpr": {
+                  "description": "주식 현재가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식 현재가",
+                    "propertyLength": "10",
+                    "propertyOrder": "005.002",
+                    "propertyType": "A0001",
+                    "required": false
+                  }
+                }
+              },
+              "required": [],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "rt_cd": {
+            "description": "성공 실패 여부",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "성공 실패 여부",
+              "propertyLength": "1",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        },
+        "required": [
+          "rt_cd",
+          "msg_cd",
+          "msg1"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "KISOAuth": {
+        "bearerFormat": "KIS OAuth access token",
+        "description": "Issued by KIS /oauth2/tokenP and injected by the handwritten runtime.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "KIS Domestic Stock OpenAPI - inquire-time-overtimeconclusion",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/uapi/domestic-stock/v1/quotations/inquire-time-overtimeconclusion": {
+      "get": {
+        "description": "주식현재가 시간외시간별체결 API입니다.\n한국투자 HTS(eFriend Plus) \u0026gt; [0231] 시간외 시간별체결의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
+        "operationId": "inquire-time-overtimeconclusion",
+        "parameters": [
+          {
+            "description": "J : 주식, ETF, ETN",
+            "in": "query",
+            "name": "FID_COND_MRKT_DIV_CODE",
+            "required": true,
+            "schema": {
+              "description": "조건 시장 분류 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "J : 주식, ETF, ETN",
+                "name": "조건 시장 분류 코드",
+                "propertyLength": "2",
+                "propertyOrder": "001",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "J : 주식, ETF, ETN",
+              "name": "조건 시장 분류 코드",
+              "propertyLength": "2",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "market",
+              "completion": [
+                "krx",
+                "nxt",
+                "unified",
+                "J",
+                "NX",
+                "UN"
+              ],
+              "default": "J",
+              "description": "J : 주식, ETF, ETN",
+              "flag": "market",
+              "required": true,
+              "source": "default",
+              "valueKind": "market"
+            }
+          },
+          {
+            "description": "종목번호 (6자리)\nETN의 경우, Q로 시작 (EX. Q500001)",
+            "in": "query",
+            "name": "FID_INPUT_ISCD",
+            "required": true,
+            "schema": {
+              "description": "입력 종목코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "종목번호 (6자리)\nETN의 경우, Q로 시작 (EX. Q500001)",
+                "name": "입력 종목코드",
+                "propertyLength": "12",
+                "propertyOrder": "002",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "종목번호 (6자리)\nETN의 경우, Q로 시작 (EX. Q500001)",
+              "name": "입력 종목코드",
+              "propertyLength": "12",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "symbol",
+              "default": "",
+              "description": "종목번호 (6자리)\nETN의 경우, Q로 시작 (EX. Q500001)",
+              "flag": "symbol",
+              "required": true,
+              "source": "user",
+              "valueKind": "symbol"
+            }
+          },
+          {
+            "description": "1 : 시간외 (Default)",
+            "in": "query",
+            "name": "FID_HOUR_CLS_CODE",
+            "required": true,
+            "schema": {
+              "description": "시간 구분 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "1 : 시간외 (Default)",
+                "name": "시간 구분 코드",
+                "propertyLength": "5",
+                "propertyOrder": "003",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "1 : 시간외 (Default)",
+              "name": "시간 구분 코드",
+              "propertyLength": "5",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "1 : 시간외 (Default)",
+              "flag": "fid-hour-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/InquireTimeOvertimeconclusionResponse"
+                }
+              }
+            },
+            "description": "KIS business response envelope"
+          }
+        },
+        "security": [
+          {
+            "KISOAuth": []
+          }
+        ],
+        "summary": "주식현재가 시간외시간별체결[v1_국내주식-025]",
+        "tags": [
+          "Quote"
+        ],
+        "x-kis": {
+          "accessUrl": "/uapi/domestic-stock/v1/quotations/inquire-time-overtimeconclusion",
+          "apiId": "3dfc942e-0ed3-4c81-9e8d-9a96f1c5c669",
+          "apiName": "주식현재가 시간외시간별체결[v1_국내주식-025]",
+          "apiSummary": "주식현재가 시간외시간별체결 API입니다.\r\n한국투자 HTS(eFriend Plus) \u0026gt; [0231] 시간외 시간별체결의 기능을 API로 개발한 사항으로, 해당 화면을 참고하시면 기능을 이해하기 쉽습니다.",
+          "catalogSchemaVersion": 1,
+          "collectionId": "1031d032-6747-414b-bdf2-fd419c0c98ce",
+          "collectionName": "[국내주식] 기본시세",
+          "group": "quote",
+          "lastModifiedDate": "2026-04-16T18:17:10+09:00",
+          "oauth": true,
+          "realDomain": "https://openapi.koreainvestment.com:9443",
+          "realTrId": "FHPST02310000",
+          "roleCandidate": "intraday_bar",
+          "securityType": "oauth2-access-token",
+          "serviceGroup": "Quote",
+          "source": {
+            "categoryApi": "https://apiportal.koreainvestment.com/api/apis/public/api-list/{collectionId}",
+            "detailApi": "https://apiportal.koreainvestment.com/api/apis/public/detail?accessUrl={accessUrl}",
+            "detailPageTemplate": "https://apiportal.koreainvestment.com/apiservice-apiservice?{accessUrl}",
+            "portal": "https://apiportal.koreainvestment.com/apiservice-category"
+          },
+          "sourceDetailUrl": "https://apiportal.koreainvestment.com/apiservice-apiservice?/uapi/domestic-stock/v1/quotations/inquire-time-overtimeconclusion",
+          "supportsReal": true,
+          "supportsVirtual": true,
+          "virtualDomain": "https://openapivts.koreainvestment.com:29443",
+          "virtualTrId": "FHPST02310000"
+        }
+      }
+    }
+  }
+}

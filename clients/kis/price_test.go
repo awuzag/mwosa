@@ -44,16 +44,18 @@ func TestPriceBuildsKISRequestAndParsesTypedResponse(t *testing.T) {
 	defer server.Close()
 
 	client := newTestClient(t, server.URL, "token")
-	price, err := client.Price(context.Background(), "005930")
+	price, err := client.Quote().Price(context.Background(), InquirePriceRequest{
+		FidCondMrktDivCode: "J",
+		FidInputISCD:       "005930",
+	})
 	require.NoError(t, err)
-	assert.Equal(t, "005930", price.Symbol)
-	assert.Equal(t, "70100", price.Current)
-	assert.Equal(t, "70000", price.Open)
-	assert.Equal(t, "71000", price.High)
-	assert.Equal(t, "69500", price.Low)
-	assert.Equal(t, "418000000", price.MarketCap)
-	assert.Equal(t, "12.34", price.PER)
-	assert.Equal(t, "70100", price.Raw.Current)
+	assert.Equal(t, "005930", price.Output.StckShrnISCD)
+	assert.Equal(t, "70100", price.Output.StckPrpr)
+	assert.Equal(t, "70000", price.Output.StckOprc)
+	assert.Equal(t, "71000", price.Output.StckHgpr)
+	assert.Equal(t, "69500", price.Output.StckLwpr)
+	assert.Equal(t, "418000000", price.Output.HtsAvls)
+	assert.Equal(t, "12.34", price.Output.Per)
 }
 
 func TestBusinessErrorIncludesKISContext(t *testing.T) {
@@ -69,12 +71,15 @@ func TestBusinessErrorIncludesKISContext(t *testing.T) {
 	defer server.Close()
 
 	client := newTestClient(t, server.URL, "token")
-	_, err := client.Price(context.Background(), "005930")
+	_, err := client.Quote().Price(context.Background(), InquirePriceRequest{
+		FidCondMrktDivCode: "J",
+		FidInputISCD:       "005930",
+	})
 	require.Error(t, err)
 	for _, want := range []string{
 		"provider=kis",
-		"group=domesticStockQuotation",
-		"operation=price",
+		"group=quote",
+		"operation=inquire-price",
 		"tr_id=FHKST01010100",
 		"rt_cd=1",
 		"msg_cd=EGW00123",

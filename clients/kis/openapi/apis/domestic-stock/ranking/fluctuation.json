@@ -1,0 +1,1016 @@
+{
+  "components": {
+    "schemas": {
+      "FluctuationResponse": {
+        "additionalProperties": false,
+        "properties": {
+          "msg1": {
+            "description": "응답메세지",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답메세지",
+              "propertyLength": "80",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "msg_cd": {
+            "description": "응답코드",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "응답코드",
+              "propertyLength": "8",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            }
+          },
+          "output": {
+            "items": {
+              "additionalProperties": false,
+              "properties": {
+                "acml_hgpr_date": {
+                  "description": "누적 최고가 일자",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "누적 최고가 일자",
+                    "propertyLength": "8",
+                    "propertyOrder": "004.011",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "acml_lwpr_date": {
+                  "description": "누적 최저가 일자",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "누적 최저가 일자",
+                    "propertyLength": "8",
+                    "propertyOrder": "004.014",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "acml_vol": {
+                  "description": "누적 거래량",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "누적 거래량",
+                    "propertyLength": "18",
+                    "propertyOrder": "004.008",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "cnnt_ascn_dynu": {
+                  "description": "연속 상승 일수",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "연속 상승 일수",
+                    "propertyLength": "5",
+                    "propertyOrder": "004.017",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "cnnt_down_dynu": {
+                  "description": "연속 하락 일수",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "연속 하락 일수",
+                    "propertyLength": "5",
+                    "propertyOrder": "004.019",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "data_rank": {
+                  "description": "데이터 순위",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "데이터 순위",
+                    "propertyLength": "10",
+                    "propertyOrder": "004.002",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "dsgt_date_clpr_vrss_prpr_rate": {
+                  "description": "지정 일자 종가 대비 현재가 비",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "지정 일자 종가 대비 현재가 비",
+                    "propertyLength": "84",
+                    "propertyOrder": "004.016",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "hgpr_hour": {
+                  "description": "최고가 시간",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "최고가 시간",
+                    "propertyLength": "6",
+                    "propertyOrder": "004.010",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "hgpr_vrss_prpr_rate": {
+                  "description": "최고가 대비 현재가 비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "최고가 대비 현재가 비율",
+                    "propertyLength": "84",
+                    "propertyOrder": "004.018",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "hts_kor_isnm": {
+                  "description": "HTS 한글 종목명",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "HTS 한글 종목명",
+                    "propertyLength": "40",
+                    "propertyOrder": "004.003",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "lwpr_hour": {
+                  "description": "최저가 시간",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "최저가 시간",
+                    "propertyLength": "6",
+                    "propertyOrder": "004.013",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "lwpr_vrss_prpr_rate": {
+                  "description": "최저가 대비 현재가 비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "최저가 대비 현재가 비율",
+                    "propertyLength": "84",
+                    "propertyOrder": "004.015",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "oprc_vrss_prpr": {
+                  "description": "시가2 대비 현재가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "시가2 대비 현재가",
+                    "propertyLength": "10",
+                    "propertyOrder": "004.021",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "oprc_vrss_prpr_rate": {
+                  "description": "시가2 대비 현재가 비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "시가2 대비 현재가 비율",
+                    "propertyLength": "84",
+                    "propertyOrder": "004.022",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "oprc_vrss_prpr_sign": {
+                  "description": "시가2 대비 현재가 부호",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "시가2 대비 현재가 부호",
+                    "propertyLength": "1",
+                    "propertyOrder": "004.020",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prd_rsfl": {
+                  "description": "기간 등락",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기간 등락",
+                    "propertyLength": "10",
+                    "propertyOrder": "004.023",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prd_rsfl_rate": {
+                  "description": "기간 등락 비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "기간 등락 비율",
+                    "propertyLength": "84",
+                    "propertyOrder": "004.024",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_ctrt": {
+                  "description": "전일 대비율",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일 대비율",
+                    "propertyLength": "82",
+                    "propertyOrder": "004.007",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_vrss": {
+                  "description": "전일 대비",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일 대비",
+                    "propertyLength": "10",
+                    "propertyOrder": "004.005",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "prdy_vrss_sign": {
+                  "description": "전일 대비 부호",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "전일 대비 부호",
+                    "propertyLength": "1",
+                    "propertyOrder": "004.006",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "stck_hgpr": {
+                  "description": "주식 최고가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식 최고가",
+                    "propertyLength": "10",
+                    "propertyOrder": "004.009",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "stck_lwpr": {
+                  "description": "주식 최저가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식 최저가",
+                    "propertyLength": "10",
+                    "propertyOrder": "004.012",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "stck_prpr": {
+                  "description": "주식 현재가",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식 현재가",
+                    "propertyLength": "10",
+                    "propertyOrder": "004.004",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                },
+                "stck_shrn_iscd": {
+                  "description": "주식 단축 종목코드",
+                  "type": "string",
+                  "x-kis": {
+                    "bodyType": "res_b",
+                    "description": "",
+                    "name": "주식 단축 종목코드",
+                    "propertyLength": "9",
+                    "propertyOrder": "004.001",
+                    "propertyType": "A0001",
+                    "required": true
+                  }
+                }
+              },
+              "required": [
+                "stck_shrn_iscd",
+                "data_rank",
+                "hts_kor_isnm",
+                "stck_prpr",
+                "prdy_vrss",
+                "prdy_vrss_sign",
+                "prdy_ctrt",
+                "acml_vol",
+                "stck_hgpr",
+                "hgpr_hour",
+                "acml_hgpr_date",
+                "stck_lwpr",
+                "lwpr_hour",
+                "acml_lwpr_date",
+                "lwpr_vrss_prpr_rate",
+                "dsgt_date_clpr_vrss_prpr_rate",
+                "cnnt_ascn_dynu",
+                "hgpr_vrss_prpr_rate",
+                "cnnt_down_dynu",
+                "oprc_vrss_prpr_sign",
+                "oprc_vrss_prpr",
+                "oprc_vrss_prpr_rate",
+                "prd_rsfl",
+                "prd_rsfl_rate"
+              ],
+              "type": "object"
+            },
+            "type": "array"
+          },
+          "rt_cd": {
+            "description": "성공 실패 여부",
+            "type": "string",
+            "x-kis": {
+              "bodyType": "res_b",
+              "description": "",
+              "name": "성공 실패 여부",
+              "propertyLength": "1",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            }
+          }
+        },
+        "required": [
+          "rt_cd",
+          "msg_cd",
+          "msg1",
+          "output"
+        ],
+        "type": "object"
+      }
+    },
+    "securitySchemes": {
+      "KISOAuth": {
+        "bearerFormat": "KIS OAuth access token",
+        "description": "Issued by KIS /oauth2/tokenP and injected by the handwritten runtime.",
+        "scheme": "bearer",
+        "type": "http"
+      }
+    }
+  },
+  "info": {
+    "title": "KIS Domestic Stock OpenAPI - fluctuation",
+    "version": "0.1.0"
+  },
+  "openapi": "3.1.0",
+  "paths": {
+    "/uapi/domestic-stock/v1/ranking/fluctuation": {
+      "get": {
+        "description": "국내 주식 등락률 순위를 조회합니다.",
+        "operationId": "fluctuation",
+        "parameters": [
+          {
+            "description": "공백 입력 시 전체 (~ 비율",
+            "in": "query",
+            "name": "fid_rsfl_rate2",
+            "required": true,
+            "schema": {
+              "description": "등락 비율2",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공백 입력 시 전체 (~ 비율",
+                "name": "등락 비율2",
+                "propertyLength": "132",
+                "propertyOrder": "001",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공백 입력 시 전체 (~ 비율",
+              "name": "등락 비율2",
+              "propertyLength": "132",
+              "propertyOrder": "001",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "공백 입력 시 전체 (~ 비율",
+              "flag": "fid-rsfl-rate2",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "시장구분코드 (J:KRX, NX:NXT)",
+            "in": "query",
+            "name": "fid_cond_mrkt_div_code",
+            "required": true,
+            "schema": {
+              "description": "조건 시장 분류 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "시장구분코드 (J:KRX, NX:NXT)",
+                "name": "조건 시장 분류 코드",
+                "propertyLength": "2",
+                "propertyOrder": "002",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "시장구분코드 (J:KRX, NX:NXT)",
+              "name": "조건 시장 분류 코드",
+              "propertyLength": "2",
+              "propertyOrder": "002",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "market",
+              "completion": [
+                "krx",
+                "nxt",
+                "unified",
+                "J",
+                "NX",
+                "UN"
+              ],
+              "default": "J",
+              "description": "시장구분코드 (J:KRX, NX:NXT)",
+              "flag": "market",
+              "required": true,
+              "source": "default",
+              "valueKind": "market"
+            }
+          },
+          {
+            "description": "Unique key( 20170 )",
+            "in": "query",
+            "name": "fid_cond_scr_div_code",
+            "required": true,
+            "schema": {
+              "description": "조건 화면 분류 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "Unique key( 20170 )",
+                "name": "조건 화면 분류 코드",
+                "propertyLength": "5",
+                "propertyOrder": "003",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "Unique key( 20170 )",
+              "name": "조건 화면 분류 코드",
+              "propertyLength": "5",
+              "propertyOrder": "003",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "",
+              "default": "",
+              "description": "Unique key( 20170 )",
+              "flag": "fid-cond-scr-div-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "0000(전체) 코스피(0001), 코스닥(1001), 코스피200(2001)",
+            "in": "query",
+            "name": "fid_input_iscd",
+            "required": true,
+            "schema": {
+              "description": "입력 종목코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "0000(전체) 코스피(0001), 코스닥(1001), 코스피200(2001)",
+                "name": "입력 종목코드",
+                "propertyLength": "12",
+                "propertyOrder": "004",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "0000(전체) 코스피(0001), 코스닥(1001), 코스피200(2001)",
+              "name": "입력 종목코드",
+              "propertyLength": "12",
+              "propertyOrder": "004",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "symbol",
+              "default": "",
+              "description": "0000(전체) 코스피(0001), 코스닥(1001), 코스피200(2001)",
+              "flag": "symbol",
+              "required": true,
+              "source": "user",
+              "valueKind": "symbol"
+            }
+          },
+          {
+            "description": "0:상승율순 1:하락율순 2:시가대비상승율 3:시가대비하락율 4:변동율",
+            "in": "query",
+            "name": "fid_rank_sort_cls_code",
+            "required": true,
+            "schema": {
+              "description": "순위 정렬 구분 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "0:상승율순 1:하락율순 2:시가대비상승율 3:시가대비하락율 4:변동율",
+                "name": "순위 정렬 구분 코드",
+                "propertyLength": "2",
+                "propertyOrder": "005",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "0:상승율순 1:하락율순 2:시가대비상승율 3:시가대비하락율 4:변동율",
+              "name": "순위 정렬 구분 코드",
+              "propertyLength": "2",
+              "propertyOrder": "005",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "",
+              "default": "",
+              "description": "0:상승율순 1:하락율순 2:시가대비상승율 3:시가대비하락율 4:변동율",
+              "flag": "fid-rank-sort-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "0:전체 , 누적일수 입력",
+            "in": "query",
+            "name": "fid_input_cnt_1",
+            "required": true,
+            "schema": {
+              "description": "입력 수1",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "0:전체 , 누적일수 입력",
+                "name": "입력 수1",
+                "propertyLength": "12",
+                "propertyOrder": "006",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "0:전체 , 누적일수 입력",
+              "name": "입력 수1",
+              "propertyLength": "12",
+              "propertyOrder": "006",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "0:전체 , 누적일수 입력",
+              "flag": "fid-input-cnt-1",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "'fid_rank_sort_cls_code :0 상승율 순일때 (0:저가대비, 1:종가대비)\nfid_rank_sort_cls_code :1 하락율 순일때 (0:고가대비, 1:종가대비)\nfid_rank_sort_cls_code : 기타 (0:전체)'",
+            "in": "query",
+            "name": "fid_prc_cls_code",
+            "required": true,
+            "schema": {
+              "description": "가격 구분 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "'fid_rank_sort_cls_code :0 상승율 순일때 (0:저가대비, 1:종가대비)\nfid_rank_sort_cls_code :1 하락율 순일때 (0:고가대비, 1:종가대비)\nfid_rank_sort_cls_code : 기타 (0:전체)'",
+                "name": "가격 구분 코드",
+                "propertyLength": "2",
+                "propertyOrder": "007",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "'fid_rank_sort_cls_code :0 상승율 순일때 (0:저가대비, 1:종가대비)\nfid_rank_sort_cls_code :1 하락율 순일때 (0:고가대비, 1:종가대비)\nfid_rank_sort_cls_code : 기타 (0:전체)'",
+              "name": "가격 구분 코드",
+              "propertyLength": "2",
+              "propertyOrder": "007",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "'fid_rank_sort_cls_code :0 상승율 순일때 (0:저가대비, 1:종가대비)\nfid_rank_sort_cls_code :1 하락율 순일때 (0:고가대비, 1:종가대비)\nfid_rank_sort_cls_code : 기타 (0:전체)'",
+              "flag": "fid-prc-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "공백 입력 시 전체 (가격 ~)",
+            "in": "query",
+            "name": "fid_input_price_1",
+            "required": true,
+            "schema": {
+              "description": "입력 가격1",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공백 입력 시 전체 (가격 ~)",
+                "name": "입력 가격1",
+                "propertyLength": "12",
+                "propertyOrder": "008",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공백 입력 시 전체 (가격 ~)",
+              "name": "입력 가격1",
+              "propertyLength": "12",
+              "propertyOrder": "008",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "",
+              "default": "",
+              "description": "공백 입력 시 전체 (가격 ~)",
+              "flag": "fid-input-price-1",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "공백 입력 시 전체 (~ 가격)",
+            "in": "query",
+            "name": "fid_input_price_2",
+            "required": true,
+            "schema": {
+              "description": "입력 가격2",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공백 입력 시 전체 (~ 가격)",
+                "name": "입력 가격2",
+                "propertyLength": "12",
+                "propertyOrder": "009",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공백 입력 시 전체 (~ 가격)",
+              "name": "입력 가격2",
+              "propertyLength": "12",
+              "propertyOrder": "009",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "",
+              "default": "",
+              "description": "공백 입력 시 전체 (~ 가격)",
+              "flag": "fid-input-price-2",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "공백 입력 시 전체 (거래량 ~)",
+            "in": "query",
+            "name": "fid_vol_cnt",
+            "required": true,
+            "schema": {
+              "description": "거래량 수",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공백 입력 시 전체 (거래량 ~)",
+                "name": "거래량 수",
+                "propertyLength": "12",
+                "propertyOrder": "010",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공백 입력 시 전체 (거래량 ~)",
+              "name": "거래량 수",
+              "propertyLength": "12",
+              "propertyOrder": "010",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": true,
+              "canonical": "",
+              "default": "",
+              "description": "공백 입력 시 전체 (거래량 ~)",
+              "flag": "fid-vol-cnt",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "0:전체",
+            "in": "query",
+            "name": "fid_trgt_cls_code",
+            "required": true,
+            "schema": {
+              "description": "대상 구분 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "0:전체",
+                "name": "대상 구분 코드",
+                "propertyLength": "32",
+                "propertyOrder": "011",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "0:전체",
+              "name": "대상 구분 코드",
+              "propertyLength": "32",
+              "propertyOrder": "011",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "0:전체",
+              "flag": "fid-trgt-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "0:전체",
+            "in": "query",
+            "name": "fid_trgt_exls_cls_code",
+            "required": true,
+            "schema": {
+              "description": "대상 제외 구분 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "0:전체",
+                "name": "대상 제외 구분 코드",
+                "propertyLength": "32",
+                "propertyOrder": "012",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "0:전체",
+              "name": "대상 제외 구분 코드",
+              "propertyLength": "32",
+              "propertyOrder": "012",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "0:전체",
+              "flag": "fid-trgt-exls-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "0:전체",
+            "in": "query",
+            "name": "fid_div_cls_code",
+            "required": true,
+            "schema": {
+              "description": "분류 구분 코드",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "0:전체",
+                "name": "분류 구분 코드",
+                "propertyLength": "2",
+                "propertyOrder": "013",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "0:전체",
+              "name": "분류 구분 코드",
+              "propertyLength": "2",
+              "propertyOrder": "013",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "0:전체",
+              "flag": "fid-div-cls-code",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          },
+          {
+            "description": "공백 입력 시 전체 (비율 ~)",
+            "in": "query",
+            "name": "fid_rsfl_rate1",
+            "required": true,
+            "schema": {
+              "description": "등락 비율1",
+              "type": "string",
+              "x-kis": {
+                "bodyType": "req_b",
+                "description": "공백 입력 시 전체 (비율 ~)",
+                "name": "등락 비율1",
+                "propertyLength": "132",
+                "propertyOrder": "014",
+                "propertyType": "A0001",
+                "required": true
+              }
+            },
+            "x-kis": {
+              "bodyType": "req_b",
+              "description": "공백 입력 시 전체 (비율 ~)",
+              "name": "등락 비율1",
+              "propertyLength": "132",
+              "propertyOrder": "014",
+              "propertyType": "A0001",
+              "required": true
+            },
+            "x-mwosa-cli": {
+              "advanced": false,
+              "canonical": "",
+              "default": "",
+              "description": "공백 입력 시 전체 (비율 ~)",
+              "flag": "fid-rsfl-rate1",
+              "required": true,
+              "source": "user",
+              "valueKind": "string"
+            }
+          }
+        ],
+        "responses": {
+          "200": {
+            "content": {
+              "application/json": {
+                "schema": {
+                  "$ref": "#/components/schemas/FluctuationResponse"
+                }
+              }
+            },
+            "description": "KIS business response envelope"
+          }
+        },
+        "security": [
+          {
+            "KISOAuth": []
+          }
+        ],
+        "summary": "국내주식 등락률 순위[v1_국내주식-088]",
+        "tags": [
+          "Ranking"
+        ],
+        "x-kis": {
+          "accessUrl": "/uapi/domestic-stock/v1/ranking/fluctuation",
+          "apiId": "c3b78a4a-de38-43fb-a78d-4018b1ea4d4f",
+          "apiName": "국내주식 등락률 순위[v1_국내주식-088]",
+          "apiSummary": "국내 주식 등락률 순위를 조회합니다.",
+          "catalogSchemaVersion": 1,
+          "collectionId": "344d007c-f0c7-432e-bc30-b32e0509f897",
+          "collectionName": "[국내주식] 순위분석",
+          "group": "ranking",
+          "lastModifiedDate": "2026-03-31T14:10:22+09:00",
+          "oauth": true,
+          "realDomain": "https://openapi.koreainvestment.com:9443",
+          "realTrId": "FHPST01700000",
+          "roleCandidate": "market_scan",
+          "securityType": "oauth2-access-token",
+          "serviceGroup": "Ranking",
+          "source": {
+            "categoryApi": "https://apiportal.koreainvestment.com/api/apis/public/api-list/{collectionId}",
+            "detailApi": "https://apiportal.koreainvestment.com/api/apis/public/detail?accessUrl={accessUrl}",
+            "detailPageTemplate": "https://apiportal.koreainvestment.com/apiservice-apiservice?{accessUrl}",
+            "portal": "https://apiportal.koreainvestment.com/apiservice-category"
+          },
+          "sourceDetailUrl": "https://apiportal.koreainvestment.com/apiservice-apiservice?/uapi/domestic-stock/v1/ranking/fluctuation",
+          "supportsReal": true,
+          "supportsVirtual": false,
+          "virtualDomain": "모의투자 미지원",
+          "virtualTrId": "모의투자 미지원"
+        }
+      }
+    }
+  }
+}
