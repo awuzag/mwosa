@@ -3,9 +3,9 @@ package handler
 import (
 	"context"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	compositionrole "github.com/ev3rlit/mwosa/providers/core/composition"
-	"github.com/ev3rlit/mwosa/service/composition"
+	provider "github.com/awuzag/mwosa/providers/core"
+	compositionrole "github.com/awuzag/mwosa/providers/core/composition"
+	"github.com/awuzag/mwosa/service/composition"
 )
 
 type Composition struct {

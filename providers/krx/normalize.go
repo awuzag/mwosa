@@ -4,11 +4,11 @@ import (
 	"strings"
 	"time"
 
-	krxclient "github.com/ev3rlit/mwosa/clients/krx"
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/dailybar"
-	"github.com/ev3rlit/mwosa/providers/core/indexbar"
-	"github.com/ev3rlit/mwosa/providers/core/instrument"
+	krxclient "github.com/awuzag/krx"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/dailybar"
+	"github.com/awuzag/mwosa/providers/core/indexbar"
+	"github.com/awuzag/mwosa/providers/core/instrument"
 	"github.com/samber/oops"
 )
 

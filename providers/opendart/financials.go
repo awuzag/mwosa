@@ -4,9 +4,9 @@ import (
 	"context"
 	"strings"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/financials"
-	opendartsdk "github.com/ev3rlit/opendart"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/financials"
+	opendartsdk "github.com/awuzag/opendart"
 	"github.com/samber/oops"
 )
 

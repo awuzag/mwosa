@@ -3,8 +3,8 @@ package cli
 import (
 	"strings"
 
-	"github.com/ev3rlit/mwosa/app/handler"
-	provider "github.com/ev3rlit/mwosa/providers/core"
+	"github.com/awuzag/mwosa/app/handler"
+	provider "github.com/awuzag/mwosa/providers/core"
 	"github.com/samber/oops"
 	"github.com/spf13/cobra"
 )

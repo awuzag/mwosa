@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/financials"
-	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
-	"github.com/ev3rlit/mwosa/storage"
-	"github.com/ev3rlit/mwosa/storage/companyidentity"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/financials"
+	strategyservice "github.com/awuzag/mwosa/service/strategy"
+	"github.com/awuzag/mwosa/storage"
+	"github.com/awuzag/mwosa/storage/companyidentity"
 	"github.com/stretchr/testify/require"
 )
 

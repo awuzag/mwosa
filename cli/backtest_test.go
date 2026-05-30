@@ -9,10 +9,10 @@ import (
 	"strings"
 	"testing"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/dailybar"
-	"github.com/ev3rlit/mwosa/storage"
-	dailybarstorage "github.com/ev3rlit/mwosa/storage/dailybar"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/dailybar"
+	"github.com/awuzag/mwosa/storage"
+	dailybarstorage "github.com/awuzag/mwosa/storage/dailybar"
 )
 
 func TestBacktestValidateAndRunUseStoredDailyBars(t *testing.T) {

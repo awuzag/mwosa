@@ -7,14 +7,14 @@ import (
 	"strings"
 	"time"
 
-	datagocorpfin "github.com/ev3rlit/mwosa/clients/datago-corpfin"
-	datagoetp "github.com/ev3rlit/mwosa/clients/datago-etp"
-	datagokrxlisted "github.com/ev3rlit/mwosa/clients/datago-krxlisted"
-	datagostock "github.com/ev3rlit/mwosa/clients/datago-stock-price"
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/dailybar"
-	"github.com/ev3rlit/mwosa/providers/core/financials"
-	"github.com/ev3rlit/mwosa/providers/core/instrument"
+	datagocorpfin "github.com/awuzag/mwosa/clients/datago-corpfin"
+	datagoetp "github.com/awuzag/mwosa/clients/datago-etp"
+	datagokrxlisted "github.com/awuzag/mwosa/clients/datago-krxlisted"
+	datagostock "github.com/awuzag/mwosa/clients/datago-stock-price"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/dailybar"
+	"github.com/awuzag/mwosa/providers/core/financials"
+	"github.com/awuzag/mwosa/providers/core/instrument"
 	"github.com/samber/oops"
 )
 

@@ -3,8 +3,8 @@ package quote
 import (
 	"context"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	quoterole "github.com/ev3rlit/mwosa/providers/core/quote"
+	provider "github.com/awuzag/mwosa/providers/core"
+	quoterole "github.com/awuzag/mwosa/providers/core/quote"
 	"github.com/samber/oops"
 )
 

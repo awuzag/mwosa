@@ -3,8 +3,8 @@ package cli
 import (
 	"fmt"
 
-	"github.com/ev3rlit/mwosa/providers/builtin"
-	provider "github.com/ev3rlit/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/builtin"
+	provider "github.com/awuzag/mwosa/providers/core"
 	"github.com/samber/oops"
 	"github.com/spf13/cobra"
 )

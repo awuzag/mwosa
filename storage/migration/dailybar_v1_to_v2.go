@@ -5,11 +5,11 @@ import (
 	"encoding/json"
 	"strings"
 
-	migrationcore "github.com/ev3rlit/mwosa/migration"
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	coredailybar "github.com/ev3rlit/mwosa/providers/core/dailybar"
-	"github.com/ev3rlit/mwosa/service/daily"
-	"github.com/ev3rlit/mwosa/storage"
+	migrationcore "github.com/awuzag/mwosa/migration"
+	provider "github.com/awuzag/mwosa/providers/core"
+	coredailybar "github.com/awuzag/mwosa/providers/core/dailybar"
+	"github.com/awuzag/mwosa/service/daily"
+	"github.com/awuzag/mwosa/storage"
 	"github.com/samber/oops"
 	"github.com/uptrace/bun"
 )

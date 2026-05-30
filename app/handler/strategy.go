@@ -3,8 +3,8 @@ package handler
 import (
 	"context"
 
-	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
-	universeservice "github.com/ev3rlit/mwosa/service/universe"
+	strategyservice "github.com/awuzag/mwosa/service/strategy"
+	universeservice "github.com/awuzag/mwosa/service/universe"
 )
 
 type Strategy struct {

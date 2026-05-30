@@ -7,9 +7,9 @@ import (
 	"testing"
 	"time"
 
-	core "github.com/ev3rlit/mwosa/packages/backtest"
-	backtestservice "github.com/ev3rlit/mwosa/service/backtest"
-	"github.com/ev3rlit/mwosa/storage"
+	core "github.com/awuzag/mwosa/packages/backtest"
+	backtestservice "github.com/awuzag/mwosa/service/backtest"
+	"github.com/awuzag/mwosa/storage"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

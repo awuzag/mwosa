@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	compositionrole "github.com/ev3rlit/mwosa/providers/core/composition"
-	compositionservice "github.com/ev3rlit/mwosa/service/composition"
-	"github.com/ev3rlit/mwosa/storage"
+	provider "github.com/awuzag/mwosa/providers/core"
+	compositionrole "github.com/awuzag/mwosa/providers/core/composition"
+	compositionservice "github.com/awuzag/mwosa/service/composition"
+	"github.com/awuzag/mwosa/storage"
 	"github.com/stretchr/testify/require"
 )
 

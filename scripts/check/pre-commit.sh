@@ -14,7 +14,11 @@ run_step() {
 }
 
 check_go_format() {
-	files="$(git ls-files '*.go')"
+	files="$(git ls-files '*.go' | while IFS= read -r file; do
+		if [ -f "$file" ]; then
+			printf '%s\n' "$file"
+		fi
+	done)"
 	if [ -z "$files" ]; then
 		return 0
 	fi
@@ -31,9 +35,7 @@ test_client_modules() {
 		clients/datago-corpfin \
 		clients/datago-etp \
 		clients/datago-krxlisted \
-		clients/datago-stock-price \
-		clients/kis \
-		clients/krx
+		clients/datago-stock-price
 	do
 		printf "\n==> %s\n" "$module" >&2
 		(cd "$module" && "$go_cmd" test ./... && "$go_cmd" mod verify)

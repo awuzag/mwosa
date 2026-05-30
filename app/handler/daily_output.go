@@ -3,8 +3,8 @@ package handler
 import (
 	"fmt"
 
-	"github.com/ev3rlit/mwosa/providers/core/dailybar"
-	"github.com/ev3rlit/mwosa/service/daily"
+	"github.com/awuzag/mwosa/providers/core/dailybar"
+	"github.com/awuzag/mwosa/service/daily"
 )
 
 type DailyBarsOutput []dailybar.Bar

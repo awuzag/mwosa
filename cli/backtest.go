@@ -1,7 +1,7 @@
 package cli
 
 import (
-	"github.com/ev3rlit/mwosa/app/handler"
+	"github.com/awuzag/mwosa/app/handler"
 	"github.com/samber/oops"
 	"github.com/spf13/cobra"
 )

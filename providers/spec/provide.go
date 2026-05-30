@@ -1,13 +1,13 @@
 package spec
 
 import (
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/dailybar"
-	"github.com/ev3rlit/mwosa/providers/core/indexbar"
-	"github.com/ev3rlit/mwosa/providers/core/instrument"
-	"github.com/ev3rlit/mwosa/providers/core/intradaybar"
-	"github.com/ev3rlit/mwosa/providers/core/orderbook"
-	"github.com/ev3rlit/mwosa/providers/core/trades"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/dailybar"
+	"github.com/awuzag/mwosa/providers/core/indexbar"
+	"github.com/awuzag/mwosa/providers/core/instrument"
+	"github.com/awuzag/mwosa/providers/core/intradaybar"
+	"github.com/awuzag/mwosa/providers/core/orderbook"
+	"github.com/awuzag/mwosa/providers/core/trades"
 	"github.com/samber/oops"
 )
 

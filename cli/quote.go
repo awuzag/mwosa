@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"github.com/ev3rlit/mwosa/app/handler"
-	provider "github.com/ev3rlit/mwosa/providers/core"
+	"github.com/awuzag/mwosa/app/handler"
+	provider "github.com/awuzag/mwosa/providers/core"
 	"github.com/spf13/cobra"
 )
 

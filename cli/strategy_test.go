@@ -10,12 +10,12 @@ import (
 	"testing"
 	"time"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/dailybar"
-	"github.com/ev3rlit/mwosa/providers/core/financials"
-	"github.com/ev3rlit/mwosa/storage"
-	"github.com/ev3rlit/mwosa/storage/companyidentity"
-	dailybarstorage "github.com/ev3rlit/mwosa/storage/dailybar"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/dailybar"
+	"github.com/awuzag/mwosa/providers/core/financials"
+	"github.com/awuzag/mwosa/storage"
+	"github.com/awuzag/mwosa/storage/companyidentity"
+	dailybarstorage "github.com/awuzag/mwosa/storage/dailybar"
 )
 
 func TestStrategyLifecycleStoresJQSourceAndScreensFixtureData(t *testing.T) {

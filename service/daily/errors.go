@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"strings"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
+	provider "github.com/awuzag/mwosa/providers/core"
 )
 
 type NotFoundError struct {

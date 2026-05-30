@@ -9,8 +9,8 @@ import (
 	"strings"
 	"time"
 
-	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
-	"github.com/ev3rlit/mwosa/storage"
+	strategyservice "github.com/awuzag/mwosa/service/strategy"
+	"github.com/awuzag/mwosa/storage"
 	"github.com/samber/oops"
 )
 

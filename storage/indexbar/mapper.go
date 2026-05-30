@@ -7,9 +7,9 @@ import (
 	"strings"
 	"time"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	coreindexbar "github.com/ev3rlit/mwosa/providers/core/indexbar"
-	"github.com/ev3rlit/mwosa/storage"
+	provider "github.com/awuzag/mwosa/providers/core"
+	coreindexbar "github.com/awuzag/mwosa/providers/core/indexbar"
+	"github.com/awuzag/mwosa/storage"
 	"github.com/samber/oops"
 	"golang.org/x/text/currency"
 )

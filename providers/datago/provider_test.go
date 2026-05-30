@@ -9,12 +9,12 @@ import (
 	"strings"
 	"testing"
 
-	datagocorpfin "github.com/ev3rlit/mwosa/clients/datago-corpfin"
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/dailybar"
-	"github.com/ev3rlit/mwosa/providers/core/financials"
-	"github.com/ev3rlit/mwosa/providers/core/instrument"
-	"github.com/ev3rlit/mwosa/providers/core/quote"
+	datagocorpfin "github.com/awuzag/mwosa/clients/datago-corpfin"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/dailybar"
+	"github.com/awuzag/mwosa/providers/core/financials"
+	"github.com/awuzag/mwosa/providers/core/instrument"
+	"github.com/awuzag/mwosa/providers/core/quote"
 )
 
 func TestFetchDailyBarsDecodesSingleObjectItem(t *testing.T) {

@@ -4,8 +4,8 @@ import (
 	"context"
 	"testing"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	tradesrole "github.com/ev3rlit/mwosa/providers/core/trades"
+	provider "github.com/awuzag/mwosa/providers/core"
+	tradesrole "github.com/awuzag/mwosa/providers/core/trades"
 	"github.com/stretchr/testify/require"
 )
 

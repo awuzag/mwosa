@@ -9,9 +9,9 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ev3rlit/mwosa/packages/financialmetrics"
-	"github.com/ev3rlit/mwosa/storage"
-	"github.com/ev3rlit/mwosa/storage/companyidentity"
+	"github.com/awuzag/mwosa/packages/financialmetrics"
+	"github.com/awuzag/mwosa/storage"
+	"github.com/awuzag/mwosa/storage/companyidentity"
 	"github.com/samber/oops"
 	"github.com/uptrace/bun"
 )

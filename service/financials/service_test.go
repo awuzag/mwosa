@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	financialsrole "github.com/ev3rlit/mwosa/providers/core/financials"
+	provider "github.com/awuzag/mwosa/providers/core"
+	financialsrole "github.com/awuzag/mwosa/providers/core/financials"
 )
 
 func TestNewServiceRequiresRouter(t *testing.T) {

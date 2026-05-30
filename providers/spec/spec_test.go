@@ -5,11 +5,11 @@ import (
 	"strings"
 	"testing"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/dailybar"
-	"github.com/ev3rlit/mwosa/providers/core/financials"
-	"github.com/ev3rlit/mwosa/providers/core/indexbar"
-	"github.com/ev3rlit/mwosa/providers/core/instrument"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/dailybar"
+	"github.com/awuzag/mwosa/providers/core/financials"
+	"github.com/awuzag/mwosa/providers/core/indexbar"
+	"github.com/awuzag/mwosa/providers/core/instrument"
 )
 
 func TestDailyBarBuilderBuildsProfile(t *testing.T) {

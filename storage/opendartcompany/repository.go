@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	opendartprovider "github.com/ev3rlit/mwosa/providers/opendart"
-	"github.com/ev3rlit/mwosa/storage"
+	opendartprovider "github.com/awuzag/mwosa/providers/opendart"
+	"github.com/awuzag/mwosa/storage"
 	"github.com/samber/oops"
 )
 

@@ -1,15 +1,15 @@
-module github.com/ev3rlit/mwosa
+module github.com/awuzag/mwosa
 
 go 1.26.3
 
 require (
-	github.com/ev3rlit/mwosa/clients/datago-corpfin v0.0.0
-	github.com/ev3rlit/mwosa/clients/datago-etp v0.0.0-20260503103611-57138e7267ca
-	github.com/ev3rlit/mwosa/clients/datago-krxlisted v0.0.0
-	github.com/ev3rlit/mwosa/clients/datago-stock-price v0.0.0
-	github.com/ev3rlit/mwosa/clients/kis v0.0.0
-	github.com/ev3rlit/mwosa/clients/krx v0.0.0
-	github.com/ev3rlit/opendart v1.1.0
+	github.com/awuzag/kis v0.1.0
+	github.com/awuzag/krx v0.1.0
+	github.com/awuzag/mwosa/clients/datago-corpfin v0.0.0
+	github.com/awuzag/mwosa/clients/datago-etp v0.0.0
+	github.com/awuzag/mwosa/clients/datago-krxlisted v0.0.0
+	github.com/awuzag/mwosa/clients/datago-stock-price v0.0.0
+	github.com/awuzag/opendart v1.2.0
 	github.com/go-ozzo/ozzo-validation/v4 v4.3.0
 	github.com/google/uuid v1.6.0
 	github.com/itchyny/gojq v0.12.19
@@ -63,12 +63,10 @@ require (
 	modernc.org/memory v1.11.0 // indirect
 )
 
-replace github.com/ev3rlit/mwosa/clients/datago-corpfin => ./clients/datago-corpfin
+replace github.com/awuzag/mwosa/clients/datago-corpfin => ./clients/datago-corpfin
 
-replace github.com/ev3rlit/mwosa/clients/datago-krxlisted => ./clients/datago-krxlisted
+replace github.com/awuzag/mwosa/clients/datago-krxlisted => ./clients/datago-krxlisted
 
-replace github.com/ev3rlit/mwosa/clients/datago-stock-price => ./clients/datago-stock-price
+replace github.com/awuzag/mwosa/clients/datago-stock-price => ./clients/datago-stock-price
 
-replace github.com/ev3rlit/mwosa/clients/kis => ./clients/kis
-
-replace github.com/ev3rlit/mwosa/clients/krx => ./clients/krx
+replace github.com/awuzag/mwosa/clients/datago-etp => ./clients/datago-etp

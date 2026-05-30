@@ -4,13 +4,13 @@ import (
 	"context"
 	"strconv"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/intradaybar"
-	"github.com/ev3rlit/mwosa/providers/core/orderbook"
-	tradesrole "github.com/ev3rlit/mwosa/providers/core/trades"
-	"github.com/ev3rlit/mwosa/service/intraday"
-	orderbookservice "github.com/ev3rlit/mwosa/service/orderbook"
-	tradesservice "github.com/ev3rlit/mwosa/service/trades"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/intradaybar"
+	"github.com/awuzag/mwosa/providers/core/orderbook"
+	tradesrole "github.com/awuzag/mwosa/providers/core/trades"
+	"github.com/awuzag/mwosa/service/intraday"
+	orderbookservice "github.com/awuzag/mwosa/service/orderbook"
+	tradesservice "github.com/awuzag/mwosa/service/trades"
 )
 
 type Intraday struct {

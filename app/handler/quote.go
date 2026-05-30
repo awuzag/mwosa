@@ -3,9 +3,9 @@ package handler
 import (
 	"context"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	quoterole "github.com/ev3rlit/mwosa/providers/core/quote"
-	"github.com/ev3rlit/mwosa/service/quote"
+	provider "github.com/awuzag/mwosa/providers/core"
+	quoterole "github.com/awuzag/mwosa/providers/core/quote"
+	"github.com/awuzag/mwosa/service/quote"
 )
 
 type Quote struct {

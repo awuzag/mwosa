@@ -1,8 +1,8 @@
 package spec
 
 import (
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/financials"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/financials"
 	"github.com/samber/oops"
 )
 

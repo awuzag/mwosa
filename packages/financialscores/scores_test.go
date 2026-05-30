@@ -3,7 +3,7 @@ package financialscores
 import (
 	"testing"
 
-	"github.com/ev3rlit/mwosa/packages/financialmetrics"
+	"github.com/awuzag/mwosa/packages/financialmetrics"
 	"github.com/stretchr/testify/require"
 )
 

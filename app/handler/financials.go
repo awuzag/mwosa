@@ -3,9 +3,9 @@ package handler
 import (
 	"context"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	financialsrole "github.com/ev3rlit/mwosa/providers/core/financials"
-	financialsservice "github.com/ev3rlit/mwosa/service/financials"
+	provider "github.com/awuzag/mwosa/providers/core"
+	financialsrole "github.com/awuzag/mwosa/providers/core/financials"
+	financialsservice "github.com/awuzag/mwosa/service/financials"
 )
 
 type Financials struct {

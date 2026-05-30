@@ -11,7 +11,7 @@ import (
 	"testing"
 	"time"
 
-	etp "github.com/ev3rlit/mwosa/clients/datago-etp"
+	etp "github.com/awuzag/mwosa/clients/datago-etp"
 	"github.com/samber/oops"
 )
 

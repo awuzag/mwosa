@@ -4,8 +4,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ev3rlit/mwosa/providers/core/financials"
-	"github.com/ev3rlit/mwosa/storage/stocksummary"
+	"github.com/awuzag/mwosa/providers/core/financials"
+	"github.com/awuzag/mwosa/storage/stocksummary"
 	"github.com/spf13/cobra"
 )
 

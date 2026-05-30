@@ -1,6 +1,6 @@
 package handler
 
-import "github.com/ev3rlit/mwosa/providers/core/financials"
+import "github.com/awuzag/mwosa/providers/core/financials"
 
 type FinancialStatementsOutput []financials.Statement
 

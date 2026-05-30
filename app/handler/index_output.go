@@ -3,8 +3,8 @@ package handler
 import (
 	"fmt"
 
-	"github.com/ev3rlit/mwosa/providers/core/indexbar"
-	indexservice "github.com/ev3rlit/mwosa/service/index"
+	"github.com/awuzag/mwosa/providers/core/indexbar"
+	indexservice "github.com/awuzag/mwosa/service/index"
 )
 
 type IndexBarsOutput []indexbar.Bar

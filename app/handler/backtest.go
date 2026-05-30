@@ -8,8 +8,8 @@ import (
 	"strings"
 	"time"
 
-	core "github.com/ev3rlit/mwosa/packages/backtest"
-	backtestservice "github.com/ev3rlit/mwosa/service/backtest"
+	core "github.com/awuzag/mwosa/packages/backtest"
+	backtestservice "github.com/awuzag/mwosa/service/backtest"
 	"github.com/samber/oops"
 )
 

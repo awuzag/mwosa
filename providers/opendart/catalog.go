@@ -1,6 +1,6 @@
 package opendart
 
-import provider "github.com/ev3rlit/mwosa/providers/core"
+import provider "github.com/awuzag/mwosa/providers/core"
 
 type CatalogService struct {
 	Category         string

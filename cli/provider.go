@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	appconfig "github.com/ev3rlit/mwosa/app/config"
-	"github.com/ev3rlit/mwosa/providers/builtin"
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	opendartprovider "github.com/ev3rlit/mwosa/providers/opendart"
+	appconfig "github.com/awuzag/mwosa/app/config"
+	"github.com/awuzag/mwosa/providers/builtin"
+	provider "github.com/awuzag/mwosa/providers/core"
+	opendartprovider "github.com/awuzag/mwosa/providers/opendart"
 	"github.com/samber/oops"
 	"github.com/spf13/cobra"
 )

@@ -1,6 +1,6 @@
 package krx
 
-import provider "github.com/ev3rlit/mwosa/providers/core"
+import provider "github.com/awuzag/mwosa/providers/core"
 
 type Service struct {
 	Category    string               `json:"category"`

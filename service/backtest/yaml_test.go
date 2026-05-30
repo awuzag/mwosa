@@ -7,7 +7,7 @@ import (
 	"testing"
 	"time"
 
-	core "github.com/ev3rlit/mwosa/packages/backtest"
+	core "github.com/awuzag/mwosa/packages/backtest"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

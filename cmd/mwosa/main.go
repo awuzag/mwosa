@@ -6,7 +6,7 @@ import (
 	"os"
 	"runtime/debug"
 
-	"github.com/ev3rlit/mwosa/cli"
+	"github.com/awuzag/mwosa/cli"
 )
 
 var (

@@ -1,8 +1,8 @@
 package cli
 
 import (
-	"github.com/ev3rlit/mwosa/app/handler"
-	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
+	"github.com/awuzag/mwosa/app/handler"
+	strategyservice "github.com/awuzag/mwosa/service/strategy"
 	"github.com/spf13/cobra"
 )
 

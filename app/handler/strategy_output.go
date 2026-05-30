@@ -5,9 +5,9 @@ import (
 	"fmt"
 	"strings"
 
-	universecore "github.com/ev3rlit/mwosa/packages/universe"
-	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
-	universeservice "github.com/ev3rlit/mwosa/service/universe"
+	universecore "github.com/awuzag/mwosa/packages/universe"
+	strategyservice "github.com/awuzag/mwosa/service/strategy"
+	universeservice "github.com/awuzag/mwosa/service/universe"
 )
 
 type DeleteStrategyResult struct {

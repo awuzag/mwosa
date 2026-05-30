@@ -5,9 +5,9 @@ import (
 	"io"
 	"runtime"
 
-	appconfig "github.com/ev3rlit/mwosa/app/config"
-	"github.com/ev3rlit/mwosa/providers/builtin"
-	provider "github.com/ev3rlit/mwosa/providers/core"
+	appconfig "github.com/awuzag/mwosa/app/config"
+	"github.com/awuzag/mwosa/providers/builtin"
+	provider "github.com/awuzag/mwosa/providers/core"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/samber/oops"
 	"github.com/spf13/cobra"

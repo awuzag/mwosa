@@ -8,12 +8,12 @@ import (
 	"strconv"
 	"strings"
 
-	kisclient "github.com/ev3rlit/mwosa/clients/kis"
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	kisprovider "github.com/ev3rlit/mwosa/providers/kis"
-	"github.com/ev3rlit/mwosa/storage"
-	"github.com/ev3rlit/mwosa/storage/providerauth"
-	"github.com/ev3rlit/mwosa/storage/providerraw"
+	kisclient "github.com/awuzag/kis"
+	provider "github.com/awuzag/mwosa/providers/core"
+	kisprovider "github.com/awuzag/mwosa/providers/kis"
+	"github.com/awuzag/mwosa/storage"
+	"github.com/awuzag/mwosa/storage/providerauth"
+	"github.com/awuzag/mwosa/storage/providerraw"
 	"github.com/samber/oops"
 	"github.com/spf13/cobra"
 )

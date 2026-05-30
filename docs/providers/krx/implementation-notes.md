@@ -86,7 +86,7 @@ raw snapshot 후보:
 편이 좋다.
 
 ```text
-clients/krx
+github.com/awuzag/krx
 providers/krx
 storage/providerraw
 ```

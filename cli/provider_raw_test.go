@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/storage"
-	"github.com/ev3rlit/mwosa/storage/providerraw"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/storage"
+	"github.com/awuzag/mwosa/storage/providerraw"
 )
 
 func TestGetProviderRawSnapshotsReadsStoredPayload(t *testing.T) {

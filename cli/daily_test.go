@@ -12,10 +12,10 @@ import (
 	"sync"
 	"testing"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/indexbar"
-	"github.com/ev3rlit/mwosa/storage"
-	indexbarstorage "github.com/ev3rlit/mwosa/storage/indexbar"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/indexbar"
+	"github.com/awuzag/mwosa/storage"
+	indexbarstorage "github.com/awuzag/mwosa/storage/indexbar"
 	"github.com/spf13/cobra"
 )
 

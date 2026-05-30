@@ -9,8 +9,8 @@ import (
 	"sync"
 	"time"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/dailybar"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/dailybar"
 	"github.com/samber/oops"
 )
 

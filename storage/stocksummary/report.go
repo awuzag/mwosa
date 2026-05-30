@@ -5,11 +5,11 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/ev3rlit/mwosa/packages/financialmetrics"
-	"github.com/ev3rlit/mwosa/providers/core/financials"
-	"github.com/ev3rlit/mwosa/storage/companyevent"
-	"github.com/ev3rlit/mwosa/storage/companyfact"
-	"github.com/ev3rlit/mwosa/storage/financialmetric"
+	"github.com/awuzag/mwosa/packages/financialmetrics"
+	"github.com/awuzag/mwosa/providers/core/financials"
+	"github.com/awuzag/mwosa/storage/companyevent"
+	"github.com/awuzag/mwosa/storage/companyfact"
+	"github.com/awuzag/mwosa/storage/financialmetric"
 )
 
 type StockInspectReport struct {

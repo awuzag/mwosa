@@ -5,7 +5,7 @@ import (
 	"os"
 	"strings"
 
-	universecore "github.com/ev3rlit/mwosa/packages/universe"
+	universecore "github.com/awuzag/mwosa/packages/universe"
 	"github.com/samber/oops"
 	"gopkg.in/yaml.v3"
 )

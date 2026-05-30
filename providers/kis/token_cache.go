@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	kisclient "github.com/ev3rlit/mwosa/clients/kis"
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/authcache"
+	kisclient "github.com/awuzag/kis"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/authcache"
 	"github.com/samber/oops"
 )
 

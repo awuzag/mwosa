@@ -8,8 +8,8 @@ import (
 	"testing"
 	"time"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/storage"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/storage"
 )
 
 func TestMigrateApplyMigratesDailyBarV1Rows(t *testing.T) {

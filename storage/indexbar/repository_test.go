@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"testing"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/indexbar"
-	indexservice "github.com/ev3rlit/mwosa/service/index"
-	"github.com/ev3rlit/mwosa/storage"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/indexbar"
+	indexservice "github.com/awuzag/mwosa/service/index"
+	"github.com/awuzag/mwosa/storage"
 )
 
 func TestIndexBarStoreUpsertIsIdempotent(t *testing.T) {

@@ -4,10 +4,10 @@ import (
 	"fmt"
 	"strings"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	krxprovider "github.com/ev3rlit/mwosa/providers/krx"
-	"github.com/ev3rlit/mwosa/storage"
-	"github.com/ev3rlit/mwosa/storage/providerraw"
+	provider "github.com/awuzag/mwosa/providers/core"
+	krxprovider "github.com/awuzag/mwosa/providers/krx"
+	"github.com/awuzag/mwosa/storage"
+	"github.com/awuzag/mwosa/storage/providerraw"
 	"github.com/samber/oops"
 	"github.com/spf13/cobra"
 )

@@ -5,9 +5,9 @@ import (
 	"path/filepath"
 	"testing"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/storage"
-	"github.com/ev3rlit/mwosa/storage/companyidentity"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/storage"
+	"github.com/awuzag/mwosa/storage/companyidentity"
 	"github.com/stretchr/testify/require"
 )
 

@@ -18,32 +18,13 @@ MWOSA_KRX_AUTH_KEY="..."
 ```
 
 ```bash
-MWOSA_KRX_AUTH_KEY="..." make test-e2e-krx-client
 MWOSA_KRX_AUTH_KEY="..." make test-e2e-krx-cli
 MWOSA_KRX_AUTH_KEY="..." make test-e2e-krx
 ```
 
-client e2e 를 직접 실행한다.
-
-```bash
-cd clients/krx
-
-KRX_E2E=1 \
-MWOSA_KRX_AUTH_KEY="..." \
-go test -tags=e2e -count=1 ./...
-```
-
-전체 31개 KRX API 승인 범위를 얕게 확인하려면 client e2e 에 `KRX_E2E_ALL=1` 을
-추가한다.
-
-```bash
-cd clients/krx
-
-KRX_E2E=1 \
-KRX_E2E_ALL=1 \
-MWOSA_KRX_AUTH_KEY="..." \
-go test -tags=e2e -count=1 ./...
-```
+KRX SDK client e2e 는 독립 repository 인 `awuzag/krx` 에서 실행한다. 전체 31개
+KRX API 승인 범위를 얕게 확인해야 할 때도 `awuzag/krx` 의 `KRX_E2E_ALL=1`
+경로를 사용한다.
 
 CLI e2e 를 직접 실행한다.
 

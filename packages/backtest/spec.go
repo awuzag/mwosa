@@ -3,7 +3,7 @@ package backtest
 import (
 	"time"
 
-	"github.com/ev3rlit/mwosa/packages/universe"
+	"github.com/awuzag/mwosa/packages/universe"
 )
 
 const SchemaVersion = 1

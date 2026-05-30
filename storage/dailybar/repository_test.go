@@ -6,10 +6,10 @@ import (
 	"testing"
 	"time"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/dailybar"
-	"github.com/ev3rlit/mwosa/service/daily"
-	"github.com/ev3rlit/mwosa/storage"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/dailybar"
+	"github.com/awuzag/mwosa/service/daily"
+	"github.com/awuzag/mwosa/storage"
 )
 
 func TestDailyBarStoreUpsertIsIdempotent(t *testing.T) {

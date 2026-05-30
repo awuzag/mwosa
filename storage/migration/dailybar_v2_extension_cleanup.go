@@ -3,7 +3,7 @@ package migration
 import (
 	"context"
 
-	migrationcore "github.com/ev3rlit/mwosa/migration"
+	migrationcore "github.com/awuzag/mwosa/migration"
 	"github.com/samber/oops"
 )
 

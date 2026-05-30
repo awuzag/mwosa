@@ -8,11 +8,11 @@ import (
 	"testing"
 	"time"
 
-	core "github.com/ev3rlit/mwosa/packages/universe"
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/dailybar"
-	"github.com/ev3rlit/mwosa/service/daily"
-	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
+	core "github.com/awuzag/mwosa/packages/universe"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/dailybar"
+	"github.com/awuzag/mwosa/service/daily"
+	strategyservice "github.com/awuzag/mwosa/service/strategy"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

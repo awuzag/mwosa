@@ -6,8 +6,8 @@ import (
 	"strconv"
 	"strings"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	opendartsdk "github.com/ev3rlit/opendart"
+	provider "github.com/awuzag/mwosa/providers/core"
+	opendartsdk "github.com/awuzag/opendart"
 	"github.com/samber/oops"
 )
 

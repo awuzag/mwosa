@@ -6,10 +6,10 @@ import (
 	"strings"
 	"testing"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	coreinstrument "github.com/ev3rlit/mwosa/providers/core/instrument"
-	instrumentservice "github.com/ev3rlit/mwosa/service/instrument"
-	"github.com/ev3rlit/mwosa/storage"
+	provider "github.com/awuzag/mwosa/providers/core"
+	coreinstrument "github.com/awuzag/mwosa/providers/core/instrument"
+	instrumentservice "github.com/awuzag/mwosa/service/instrument"
+	"github.com/awuzag/mwosa/storage"
 )
 
 func TestRepositoryUpsertSearchAndInspectInstrumentMaster(t *testing.T) {

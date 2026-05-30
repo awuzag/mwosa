@@ -8,12 +8,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/financials"
-	"github.com/ev3rlit/mwosa/storage"
-	"github.com/ev3rlit/mwosa/storage/companyfact"
-	"github.com/ev3rlit/mwosa/storage/companyidentity"
-	"github.com/ev3rlit/mwosa/storage/valuation"
+	"github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/financials"
+	"github.com/awuzag/mwosa/storage"
+	"github.com/awuzag/mwosa/storage/companyfact"
+	"github.com/awuzag/mwosa/storage/companyidentity"
+	"github.com/awuzag/mwosa/storage/valuation"
 	"github.com/stretchr/testify/require"
 )
 

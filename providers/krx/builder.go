@@ -3,8 +3,8 @@ package krx
 import (
 	"strings"
 
-	krxclient "github.com/ev3rlit/mwosa/clients/krx"
-	provider "github.com/ev3rlit/mwosa/providers/core"
+	krxclient "github.com/awuzag/krx"
+	provider "github.com/awuzag/mwosa/providers/core"
 	"github.com/samber/oops"
 )
 

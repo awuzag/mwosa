@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	financialsrole "github.com/ev3rlit/mwosa/providers/core/financials"
-	"github.com/ev3rlit/mwosa/storage"
-	"github.com/ev3rlit/mwosa/storage/companyfact"
-	"github.com/ev3rlit/mwosa/storage/companyidentity"
-	"github.com/ev3rlit/mwosa/storage/financialstatement"
+	provider "github.com/awuzag/mwosa/providers/core"
+	financialsrole "github.com/awuzag/mwosa/providers/core/financials"
+	"github.com/awuzag/mwosa/storage"
+	"github.com/awuzag/mwosa/storage/companyfact"
+	"github.com/awuzag/mwosa/storage/companyidentity"
+	"github.com/awuzag/mwosa/storage/financialstatement"
 	"github.com/stretchr/testify/require"
 )
 

@@ -4,8 +4,8 @@ import (
 	"fmt"
 	"strings"
 
-	appconfig "github.com/ev3rlit/mwosa/app/config"
-	provider "github.com/ev3rlit/mwosa/providers/core"
+	appconfig "github.com/awuzag/mwosa/app/config"
+	provider "github.com/awuzag/mwosa/providers/core"
 	"github.com/samber/oops"
 	"github.com/spf13/cobra"
 )

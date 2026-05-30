@@ -6,8 +6,8 @@ import (
 	"errors"
 	"time"
 
-	migrationcore "github.com/ev3rlit/mwosa/migration"
-	"github.com/ev3rlit/mwosa/storage"
+	migrationcore "github.com/awuzag/mwosa/migration"
+	"github.com/awuzag/mwosa/storage"
 	"github.com/samber/oops"
 )
 

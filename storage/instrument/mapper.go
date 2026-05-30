@@ -3,8 +3,8 @@ package instrument
 import (
 	"strings"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	coreinstrument "github.com/ev3rlit/mwosa/providers/core/instrument"
+	provider "github.com/awuzag/mwosa/providers/core"
+	coreinstrument "github.com/awuzag/mwosa/providers/core/instrument"
 	"github.com/samber/oops"
 )
 

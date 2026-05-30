@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"strings"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	compositionrole "github.com/ev3rlit/mwosa/providers/core/composition"
+	provider "github.com/awuzag/mwosa/providers/core"
+	compositionrole "github.com/awuzag/mwosa/providers/core/composition"
 	"github.com/samber/oops"
 )
 

@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/intradaybar"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/intradaybar"
 	"github.com/samber/oops"
 )
 

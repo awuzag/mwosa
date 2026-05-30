@@ -1,6 +1,6 @@
 package financialscores
 
-import "github.com/ev3rlit/mwosa/packages/financialmetrics"
+import "github.com/awuzag/mwosa/packages/financialmetrics"
 
 const Version = "fundamentals-score/v1"
 

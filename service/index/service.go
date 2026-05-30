@@ -6,8 +6,8 @@ import (
 	"sort"
 	"time"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/indexbar"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/indexbar"
 	"github.com/samber/oops"
 )
 

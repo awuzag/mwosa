@@ -3,8 +3,8 @@ package handler
 import (
 	"context"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	indexservice "github.com/ev3rlit/mwosa/service/index"
+	provider "github.com/awuzag/mwosa/providers/core"
+	indexservice "github.com/awuzag/mwosa/service/index"
 )
 
 type Index struct {

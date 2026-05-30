@@ -6,11 +6,11 @@ import (
 	"testing"
 	"time"
 
-	migrationcore "github.com/ev3rlit/mwosa/migration"
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/service/daily"
-	"github.com/ev3rlit/mwosa/storage"
-	dailybarstorage "github.com/ev3rlit/mwosa/storage/dailybar"
+	migrationcore "github.com/awuzag/mwosa/migration"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/service/daily"
+	"github.com/awuzag/mwosa/storage"
+	dailybarstorage "github.com/awuzag/mwosa/storage/dailybar"
 )
 
 func TestDailyBarV1ToV2Executor(t *testing.T) {

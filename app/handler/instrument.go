@@ -4,9 +4,9 @@ import (
 	"context"
 	"strconv"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	instrumentrole "github.com/ev3rlit/mwosa/providers/core/instrument"
-	"github.com/ev3rlit/mwosa/service/instrument"
+	provider "github.com/awuzag/mwosa/providers/core"
+	instrumentrole "github.com/awuzag/mwosa/providers/core/instrument"
+	"github.com/awuzag/mwosa/service/instrument"
 )
 
 type Instrument struct {

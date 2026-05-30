@@ -10,13 +10,13 @@ import (
 	"sync"
 	"time"
 
-	core "github.com/ev3rlit/mwosa/packages/backtest"
-	"github.com/ev3rlit/mwosa/packages/hashutil"
-	"github.com/ev3rlit/mwosa/packages/idgen"
-	"github.com/ev3rlit/mwosa/providers/core/dailybar"
-	"github.com/ev3rlit/mwosa/service/daily"
-	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
-	universeservice "github.com/ev3rlit/mwosa/service/universe"
+	core "github.com/awuzag/mwosa/packages/backtest"
+	"github.com/awuzag/mwosa/packages/hashutil"
+	"github.com/awuzag/mwosa/packages/idgen"
+	"github.com/awuzag/mwosa/providers/core/dailybar"
+	"github.com/awuzag/mwosa/service/daily"
+	strategyservice "github.com/awuzag/mwosa/service/strategy"
+	universeservice "github.com/awuzag/mwosa/service/universe"
 	"github.com/samber/oops"
 )
 

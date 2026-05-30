@@ -6,9 +6,9 @@ import (
 	"encoding/json"
 	"strings"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
-	"github.com/ev3rlit/mwosa/storage"
+	provider "github.com/awuzag/mwosa/providers/core"
+	strategyservice "github.com/awuzag/mwosa/service/strategy"
+	"github.com/awuzag/mwosa/storage"
 	"github.com/samber/oops"
 )
 

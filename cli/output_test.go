@@ -7,12 +7,12 @@ import (
 	"testing"
 	"time"
 
-	"github.com/ev3rlit/mwosa/app/handler"
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/dailybar"
-	"github.com/ev3rlit/mwosa/providers/core/financials"
-	"github.com/ev3rlit/mwosa/service/daily"
-	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
+	"github.com/awuzag/mwosa/app/handler"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/dailybar"
+	"github.com/awuzag/mwosa/providers/core/financials"
+	"github.com/awuzag/mwosa/service/daily"
+	strategyservice "github.com/awuzag/mwosa/service/strategy"
 )
 
 func TestRenderBarsTableShowsPriceFieldsWithoutProviderMetadata(t *testing.T) {

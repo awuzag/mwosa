@@ -110,7 +110,7 @@ OpenDART 데이터는 단독으로 투자 판단을 끝내기보다, 시장 데�
 
 - provider id 는 `opendart` 를 우선 후보로 둔다. 기존 `dart` 표기를 alias 로
   둘지 제거할지는 구현 전에 결정한다.
-- OpenDART SDK 는 `github.com/ev3rlit/opendart` root package 를 사용한다.
+- OpenDART SDK 는 `github.com/awuzag/opendart` root package 를 사용한다.
 - provider config 와 auth loading 은 기존 mwosa provider 패턴에 맞춘다.
 - `OPENDART_API_KEY` 기반 doctor 를 제공한다.
 - API key 값은 stdout, stderr, error message 에 노출하지 않는다.

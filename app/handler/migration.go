@@ -4,7 +4,7 @@ import (
 	"context"
 	"strconv"
 
-	migrationcore "github.com/ev3rlit/mwosa/migration"
+	migrationcore "github.com/awuzag/mwosa/migration"
 )
 
 type Migration struct {

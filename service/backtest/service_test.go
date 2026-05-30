@@ -11,12 +11,12 @@ import (
 	"testing"
 	"time"
 
-	core "github.com/ev3rlit/mwosa/packages/backtest"
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/providers/core/dailybar"
-	"github.com/ev3rlit/mwosa/service/daily"
-	strategyservice "github.com/ev3rlit/mwosa/service/strategy"
-	universeservice "github.com/ev3rlit/mwosa/service/universe"
+	core "github.com/awuzag/mwosa/packages/backtest"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/providers/core/dailybar"
+	"github.com/awuzag/mwosa/service/daily"
+	strategyservice "github.com/awuzag/mwosa/service/strategy"
+	universeservice "github.com/awuzag/mwosa/service/universe"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 )

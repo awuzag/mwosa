@@ -4,7 +4,7 @@ import (
 	"testing"
 	"time"
 
-	kisclient "github.com/ev3rlit/mwosa/clients/kis"
+	kisclient "github.com/awuzag/kis"
 	"github.com/stretchr/testify/require"
 )
 

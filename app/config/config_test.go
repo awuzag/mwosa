@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
+	provider "github.com/awuzag/mwosa/providers/core"
 )
 
 func TestLoadOrCreateCreatesConfigWithAppAndProviderDefaults(t *testing.T) {

@@ -9,10 +9,10 @@ import (
 	"strings"
 	"time"
 
-	core "github.com/ev3rlit/mwosa/packages/backtest"
-	"github.com/ev3rlit/mwosa/packages/idgen"
-	backtestservice "github.com/ev3rlit/mwosa/service/backtest"
-	"github.com/ev3rlit/mwosa/storage"
+	core "github.com/awuzag/mwosa/packages/backtest"
+	"github.com/awuzag/mwosa/packages/idgen"
+	backtestservice "github.com/awuzag/mwosa/service/backtest"
+	"github.com/awuzag/mwosa/storage"
 	"github.com/samber/oops"
 	"github.com/uptrace/bun"
 )

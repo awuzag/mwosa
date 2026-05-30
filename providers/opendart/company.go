@@ -7,7 +7,7 @@ import (
 	"encoding/xml"
 	"strings"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
+	provider "github.com/awuzag/mwosa/providers/core"
 	"github.com/samber/oops"
 )
 

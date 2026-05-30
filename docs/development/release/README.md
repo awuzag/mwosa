@@ -13,7 +13,7 @@
 Go 가 설치된 사용자는 태그 기준으로 CLI 를 설치한다.
 
 ```bash
-go install github.com/ev3rlit/mwosa/cmd/mwosa@v0.1.0
+go install github.com/awuzag/mwosa/cmd/mwosa@v0.2.0
 ```
 
 현재 개발 중인 커밋을 직접 확인할 때는 로컬 workspace 영향을 끊고 빌드한다.

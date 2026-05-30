@@ -4,8 +4,8 @@ import (
 	"context"
 	"strings"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	orderbookrole "github.com/ev3rlit/mwosa/providers/core/orderbook"
+	provider "github.com/awuzag/mwosa/providers/core"
+	orderbookrole "github.com/awuzag/mwosa/providers/core/orderbook"
 	"github.com/samber/oops"
 )
 

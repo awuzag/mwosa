@@ -6,9 +6,9 @@ import (
 	"strings"
 	"time"
 
-	core "github.com/ev3rlit/mwosa/packages/universe"
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/service/daily"
+	core "github.com/awuzag/mwosa/packages/universe"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/service/daily"
 	"github.com/samber/oops"
 	"gopkg.in/yaml.v3"
 )

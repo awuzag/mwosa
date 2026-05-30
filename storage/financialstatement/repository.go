@@ -7,10 +7,10 @@ import (
 	"strings"
 	"time"
 
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	financialsrole "github.com/ev3rlit/mwosa/providers/core/financials"
-	"github.com/ev3rlit/mwosa/storage"
-	"github.com/ev3rlit/mwosa/storage/companyidentity"
+	provider "github.com/awuzag/mwosa/providers/core"
+	financialsrole "github.com/awuzag/mwosa/providers/core/financials"
+	"github.com/awuzag/mwosa/storage"
+	"github.com/awuzag/mwosa/storage/companyidentity"
 	"github.com/samber/oops"
 	"github.com/uptrace/bun"
 )

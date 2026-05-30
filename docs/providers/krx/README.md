@@ -8,7 +8,7 @@ provider 다. KRX OPEN API 는 하나의 통합 API 보다는 서비스별 API �
 진행된다.
 
 이 문서는 2026-05-10 기준 KRX OPEN API 서비스 목록과 각 서비스 상세 페이지를
-확인해 만든 조사 문서에서 출발했다. 현재 `clients/krx` 독립 Go module 은 31개
+확인해 만든 조사 문서에서 출발했다. 현재 `github.com/awuzag/krx` 독립 Go module 은 31개
 API typed client 를 제공하고, `providers/krx` adapter 는 그중 canonical 로 자연스럽게
 흡수 가능한 일부 API 를 `daily_bar` / `instrument` role 로 연결한다. 나머지 API 는
 provider-native raw snapshot 으로 조회하고 저장할 수 있다.
@@ -19,9 +19,9 @@ provider-native raw snapshot 으로 조회하고 저장할 수 있다.
   `BO_ID`, 상세 페이지 링크
 - [implementation-notes.md](implementation-notes.md): `mwosa` provider/client
   설계에 반영할 인증, 신청 단위, capability 매핑 메모
-- [../../../clients/krx/README.md](../../../clients/krx/README.md):
+- [awuzag/krx](https://github.com/awuzag/krx):
   KRX OPEN API 31개 typed client module
-- [../../../clients/krx/scripts/apply-all-services.browser.js](../../../clients/krx/scripts/apply-all-services.browser.js):
+- [apply-all-services.browser.js](https://github.com/awuzag/krx/blob/main/scripts/apply-all-services.browser.js):
   KRX OPEN API 전체 31개 서비스를 12개월로 일괄 신청하는 브라우저 콘솔용 스크립트
 
 ## 원천

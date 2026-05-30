@@ -10,7 +10,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/ev3rlit/mwosa/storage"
+	"github.com/awuzag/mwosa/storage"
 )
 
 func TestGetKRXRawAPI(t *testing.T) {

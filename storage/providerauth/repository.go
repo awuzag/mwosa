@@ -7,7 +7,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ev3rlit/mwosa/providers/core/authcache"
+	"github.com/awuzag/mwosa/providers/core/authcache"
 	"github.com/samber/oops"
 )
 

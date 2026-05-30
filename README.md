@@ -67,7 +67,7 @@ provider
 Go 가 설치되어 있다면 태그 기준으로 설치한다.
 
 ```bash
-go install github.com/ev3rlit/mwosa/cmd/mwosa@v0.1.0
+go install github.com/awuzag/mwosa/cmd/mwosa@v0.2.0
 ```
 
 Go 없이 사용하는 사용자는 GitHub Release 에서 자기 OS/CPU 에 맞는 archive 를

@@ -7,7 +7,7 @@ import (
 	"os"
 	"strconv"
 
-	core "github.com/ev3rlit/mwosa/packages/backtest"
+	core "github.com/awuzag/mwosa/packages/backtest"
 	"github.com/samber/oops"
 	"gopkg.in/yaml.v3"
 )

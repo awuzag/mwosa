@@ -4,9 +4,9 @@ import (
 	"context"
 	"time"
 
-	core "github.com/ev3rlit/mwosa/packages/backtest"
-	provider "github.com/ev3rlit/mwosa/providers/core"
-	"github.com/ev3rlit/mwosa/service/daily"
+	core "github.com/awuzag/mwosa/packages/backtest"
+	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/service/daily"
 	"github.com/samber/oops"
 )
 
