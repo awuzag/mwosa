@@ -197,6 +197,24 @@ func TestDatabaseCreatesDailyBarIndexes(t *testing.T) {
 		t.Fatal("idx_daily_bar_extension_v2_bar should not be created because the primary key index covers bar-prefix lookups")
 	}
 
+	macroIndicatorIndexes := sqliteIndexes(t, client, "macro_indicator")
+	for _, name := range []string{"macro_indicator_provider_source_unique", "idx_macro_indicator_preset", "idx_macro_indicator_category"} {
+		if _, ok := macroIndicatorIndexes[name]; !ok {
+			t.Fatalf("%s index was not created", name)
+		}
+	}
+	macroObservationIndexes := sqliteIndexes(t, client, "macro_observation")
+	if _, ok := macroObservationIndexes["idx_macro_observation_period"]; !ok {
+		t.Fatal("idx_macro_observation_period index was not created")
+	}
+	macroSourceIndexes := sqliteIndexes(t, client, "macro_indicator_source")
+	if _, ok := macroSourceIndexes["idx_macro_indicator_source_provider"]; !ok {
+		t.Fatal("idx_macro_indicator_source_provider index was not created")
+	}
+	if _, err := client.ExecContext(context.Background(), `INSERT INTO macro_indicator_provider_doc (indicator_id, provider, schema_version, document_json, updated_at_ms) VALUES ('probe', 'ecos', '1.0.0', '{bad', 1)`); err == nil {
+		t.Fatal("invalid macro provider document JSON insert succeeded")
+	}
+
 	migrationIndexes := sqliteIndexes(t, client, "migration_runs")
 	for _, name := range []string{"idx_migration_runs_resource", "idx_migration_runs_status"} {
 		if _, ok := migrationIndexes[name]; !ok {

@@ -70,7 +70,7 @@ provider 와 group 을 한 문자열로 합쳐 `datago/securitiesProductPrice` �
 | `krx` | `planned` | 한국 거래소, 시장, 종목, 지수 | `instrument`, `candles`, `index`, `market` | 국내 종목 reference 와 시장 calendar 보강용이다. |
 | `kiwoom` | `planned` | 한국 주식, ETF | `quote`, `candles`, `orderbook`, `trades` | 국내 실시간/브로커 데이터 확장 대상으로 둔다. 여기서 `trades` 는 시장 체결 데이터이며 계좌 체결내역이 아니다. |
 | `opendart` | `reference` | 한국 상장사 공시 | `filings`, `company_registry`, `financials`, `fundamentals` | 기업 공시와 재무 원천 자료 보강용이다. 기존 `dart` 표기는 구현 id가 아니라 이전 자리 표시자로 본다. |
-| `ecos` | `reference` | 한국 거시 지표, 환율, 금리 | `macro`, `fx`, `rates` | 한국 macro context 보강용이다. |
+| `ecos` | `reference` | 한국 거시 지표, 환율, 금리 | `macro`, `fx`, `rates` | 100대 통계지표는 `macro` canonical 로 수용한다. 금리, 환율, 물가, 통화량, 고용, GDP 같은 경제 지표는 `index_bar` 와 섞지 않는다. |
 
 ## 국내 provider group 계획
 
@@ -120,7 +120,7 @@ provider 와 group 을 한 문자열로 합쳐 `datago/securitiesProductPrice` �
 
 | provider | 상태 | 호환 범위 | 주요 capability | 비고 |
 | --- | --- | --- | --- | --- |
-| `ecos` | `reference` | 한국 macro, 환율, 금리 | `macro`, `fx`, `rates` | 한국 시장 context 를 위한 기본 macro provider 다. |
+| `ecos` | `reference` | 한국 macro, 환율, 금리 | `macro`, `fx`, `rates` | 한국 시장 context 를 위한 기본 macro provider 다. 100대 통계지표 preset 은 `key-statistics` 로 표현한다. |
 | `fred` | `reference` | 미국 macro, 금리 | `macro`, `rates` | 미국 금리, 물가, 고용, 경기 지표용이다. |
 | `world-bank` | `reference` | 글로벌 macro | `macro` | 국가별 장기 macro 비교용이다. |
 | `oecd` | `reference` | 글로벌 macro | `macro` | 선진국 macro 비교용이다. |
@@ -179,6 +179,19 @@ provider 와 group 을 한 문자열로 합쳐 `datago/securitiesProductPrice` �
 | `news` | `finnhub` | `newsapi`, `gdelt`, `naver-news` |
 | `macro` | `ecos`, `fred` | `world-bank`, `oecd`, `ecb` |
 | `fx` | `ecos` | `alpha-vantage`, `twelve-data`, `ecb`, `stooq` |
+
+## Macro canonical 방향
+
+`macro` capability 는 금리, 환율, 물가, 통화량, 고용, GDP 처럼 시장 OHLC 가 아닌
+경제 지표를 다룬다. KOSPI/KOSDAQ 같은 시장 지수 일별 OHLC 는 계속 `index_bar`
+에 저장하고, ECOS 100대 통계지표는 `macro_indicator` 와 `macro_observation`
+계열 저장소에 분리한다.
+
+canonical 본체는 얇게 둔다. 지표 metadata 는 provider, source code, 이름,
+카테고리, 주기, 단위, 배율, 활성 여부를 담고, 관측값은 `period`, `published_at`,
+`collected_at`, `revision` 을 분리한다. provider raw response 전체는 저장하지
+않는다. provider 별 보조 정보가 필요하면 adapter 가 선별한 작은 문서만
+`macro_indicator_provider_doc.document_json` 에 저장한다.
 
 ## Composition storage 방향
 

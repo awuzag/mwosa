@@ -16,6 +16,7 @@ const (
 	ProviderDataGoCorporateFinance ProviderID = "datago-corpfin"
 	ProviderKRX                    ProviderID = "krx"
 	ProviderOpenDART               ProviderID = "opendart"
+	ProviderECOS                   ProviderID = "ecos"
 
 	GroupKISQuote                 GroupID = "quote"
 	GroupKISInstrument            GroupID = "instrument"
@@ -35,6 +36,7 @@ const (
 	GroupOpenDARTFinancials       GroupID = "financials"
 	GroupOpenDARTMaterialEvents   GroupID = "materialEvents"
 	GroupOpenDARTPeriodicReport   GroupID = "periodicReport"
+	GroupECOSKeyStatistics        GroupID = "keyStatistics"
 
 	OperationKISPrice                  OperationID = "price"
 	OperationKISDaily                  OperationID = "daily"
@@ -114,6 +116,7 @@ const (
 	OperationOpenDARTCmpDvmgDecsn      OperationID = "cmpDvmgDecsn"
 	OperationOpenDARTStkExtrDecsn      OperationID = "stkExtrDecsn"
 	OperationOpenDARTTsstkAqDecsn      OperationID = "tsstkAqDecsn"
+	OperationECOSKeyStatistics         OperationID = "keyStatistics"
 	OperationOpenDARTTsstkDpDecsn      OperationID = "tsstkDpDecsn"
 
 	MarketKRX Market = "krx"
@@ -127,6 +130,7 @@ const (
 	CredentialScopeDataGo   CredentialScope = "datago"
 	CredentialScopeKRX      CredentialScope = "krx"
 	CredentialScopeOpenDART CredentialScope = "opendart"
+	CredentialScopeECOS     CredentialScope = "ecos"
 
 	FreshnessDaily    Freshness = "daily"
 	FreshnessFiling   Freshness = "filing"
@@ -148,6 +152,7 @@ const (
 	RoleTrades          Role = "trades"
 	RoleCompanyRegistry Role = "company_registry"
 	RoleFilings         Role = "filings"
+	RoleMacro           Role = "macro"
 )
 
 type Compatibility struct {

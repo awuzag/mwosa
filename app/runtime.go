@@ -14,6 +14,7 @@ import (
 	"github.com/awuzag/mwosa/providers/core/indexbar"
 	"github.com/awuzag/mwosa/providers/core/instrument"
 	"github.com/awuzag/mwosa/providers/core/intradaybar"
+	"github.com/awuzag/mwosa/providers/core/macro"
 	"github.com/awuzag/mwosa/providers/core/orderbook"
 	"github.com/awuzag/mwosa/providers/core/quote"
 	"github.com/awuzag/mwosa/providers/core/trades"
@@ -25,6 +26,7 @@ import (
 	indexservice "github.com/awuzag/mwosa/service/index"
 	instrumentservice "github.com/awuzag/mwosa/service/instrument"
 	intradayservice "github.com/awuzag/mwosa/service/intraday"
+	macroservice "github.com/awuzag/mwosa/service/macro"
 	orderbookservice "github.com/awuzag/mwosa/service/orderbook"
 	providerservice "github.com/awuzag/mwosa/service/providers"
 	quoteservice "github.com/awuzag/mwosa/service/quote"
@@ -37,6 +39,7 @@ import (
 	dailybarstorage "github.com/awuzag/mwosa/storage/dailybar"
 	indexbarstorage "github.com/awuzag/mwosa/storage/indexbar"
 	instrumentstorage "github.com/awuzag/mwosa/storage/instrument"
+	macrostorage "github.com/awuzag/mwosa/storage/macro"
 	migrationstorage "github.com/awuzag/mwosa/storage/migration"
 	"github.com/awuzag/mwosa/storage/providerauth"
 	strategystorage "github.com/awuzag/mwosa/storage/strategy"
@@ -67,6 +70,7 @@ type StorageRuntime struct {
 	Compositions         compositionservice.Repository
 	DailyBars            DailyBarStorage
 	IndexBars            IndexBarStorage
+	Macro                MacroStorage
 	Instruments          instrumentservice.Repository
 	Migrations           migrationcore.Store
 	Strategies           strategyservice.Repository
@@ -83,6 +87,11 @@ type IndexBarStorage struct {
 	Writer indexservice.WriteRepository
 }
 
+type MacroStorage struct {
+	Reader macroservice.ReadRepository
+	Writer macroservice.WriteRepository
+}
+
 type ProviderRuntime struct {
 	Registry     *provider.Registry
 	Router       *provider.Router
@@ -90,6 +99,7 @@ type ProviderRuntime struct {
 	DailyBars    dailybar.Router
 	IndexBars    indexbar.Router
 	Financials   financials.Router
+	Macro        macro.Router
 	Quotes       quote.Router
 	Instruments  instrument.Router
 	Intraday     intradaybar.Router
@@ -102,6 +112,7 @@ type ServiceRuntime struct {
 	Compositions compositionservice.Service
 	Daily        DailyServices
 	Index        IndexServices
+	Macro        MacroServices
 	Financials   financialsservice.Service
 	Instruments  instrumentservice.Service
 	Intraday     intradayservice.Service
@@ -117,6 +128,7 @@ type Handlers struct {
 	Compositions handler.Composition
 	Daily        handler.Daily
 	Index        handler.Index
+	Macro        handler.Macro
 	Financials   handler.Financials
 	Instruments  handler.Instrument
 	Intraday     handler.Intraday
@@ -135,6 +147,11 @@ type DailyServices struct {
 type IndexServices struct {
 	Reader    indexservice.ReadService
 	Collector indexservice.Service
+}
+
+type MacroServices struct {
+	Reader    macroservice.ReadService
+	Collector macroservice.Service
 }
 
 func NewRuntime(opts Options) (*Runtime, error) {
@@ -166,6 +183,14 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create index bar repository"),
+			database.Close(),
+			providerAuthDatabase.Close(),
+		)
+	}
+	macroReader, macroWriter, err := macrostorage.NewRepository(database)
+	if err != nil {
+		return nil, oops.Join(
+			errb.Wrapf(err, "create macro repository"),
 			database.Close(),
 			providerAuthDatabase.Close(),
 		)
@@ -245,6 +270,7 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 		DailyBars:    dailybar.NewRouter(coreRouter),
 		IndexBars:    indexbar.NewRouter(coreRouter),
 		Financials:   financials.NewRouter(coreRouter),
+		Macro:        macro.NewRouter(coreRouter),
 		Quotes:       quote.NewRouter(coreRouter),
 		Instruments:  instrument.NewRouter(coreRouter),
 		Intraday:     intradaybar.NewRouter(coreRouter),
@@ -280,6 +306,22 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create index collect service"),
+			database.Close(),
+			providerAuthDatabase.Close(),
+		)
+	}
+	macroReaderService, err := macroservice.NewReadService(macroReader)
+	if err != nil {
+		return nil, oops.Join(
+			errb.Wrapf(err, "create macro read service"),
+			database.Close(),
+			providerAuthDatabase.Close(),
+		)
+	}
+	macroCollector, err := macroservice.NewService(macroReader, macroWriter, providerRuntime.Macro)
+	if err != nil {
+		return nil, oops.Join(
+			errb.Wrapf(err, "create macro collect service"),
 			database.Close(),
 			providerAuthDatabase.Close(),
 		)
@@ -397,6 +439,7 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	backtestHandler := handler.NewBacktest(backtestService)
 	dailyHandler := handler.NewDaily(dailyReader, dailyCollector)
 	indexHandler := handler.NewIndex(indexReaderService, indexCollector)
+	macroHandler := handler.NewMacro(macroReaderService, macroCollector)
 	financialsHandler := handler.NewFinancials(financialsService)
 	strategyHandler := handler.NewStrategy(strategyService, universeRunner)
 	instrumentHandler := handler.NewInstrument(instrumentService)
@@ -420,6 +463,10 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 				Reader: indexReader,
 				Writer: indexWriter,
 			},
+			Macro: MacroStorage{
+				Reader: macroReader,
+				Writer: macroWriter,
+			},
 			Instruments:        instrumentRepository,
 			Migrations:         migrationStore,
 			Strategies:         strategyRepository,
@@ -437,6 +484,10 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 				Reader:    indexReaderService,
 				Collector: indexCollector,
 			},
+			Macro: MacroServices{
+				Reader:    macroReaderService,
+				Collector: macroCollector,
+			},
 			Financials:  financialsService,
 			Instruments: instrumentService,
 			Intraday:    intradayService,
@@ -451,6 +502,7 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 			Compositions: compositionHandler,
 			Daily:        dailyHandler,
 			Index:        indexHandler,
+			Macro:        macroHandler,
 			Financials:   financialsHandler,
 			Instruments:  instrumentHandler,
 			Intraday:     intradayHandler,

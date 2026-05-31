@@ -182,6 +182,10 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 		{name: "index_source_v1", model: (*IndexSourceV1Row)(nil)},
 		{name: "index_bar_v1", model: (*IndexBarV1Row)(nil)},
 		{name: "index_bar_extension_v1", model: (*IndexBarExtensionV1Row)(nil)},
+		{name: "macro_indicator", model: (*MacroIndicatorRow)(nil)},
+		{name: "macro_observation", model: (*MacroObservationRow)(nil)},
+		{name: "macro_indicator_source", model: (*MacroIndicatorSourceRow)(nil)},
+		{name: "macro_indicator_provider_doc", model: (*MacroIndicatorProviderDocRow)(nil)},
 		{name: "migration_runs", model: (*MigrationRunRow)(nil)},
 		{name: "strategies", model: (*StrategyRow)(nil)},
 		{name: "strategy_versions", model: (*StrategyVersionRow)(nil)},
@@ -228,6 +232,9 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 		return errb.Wrap(err)
 	}
 	if err := ensureBacktestWalkForwardStepColumns(ctx, db); err != nil {
+		return errb.Wrap(err)
+	}
+	if err := ensureMacroProviderDocJSONValidation(ctx, db); err != nil {
 		return errb.Wrap(err)
 	}
 
@@ -340,6 +347,32 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 			name:    "idx_index_bar_v1_index_date",
 			model:   (*IndexBarV1Row)(nil),
 			columns: []string{"index_id", "trading_date"},
+		},
+		{
+			name:    "macro_indicator_provider_source_unique",
+			model:   (*MacroIndicatorRow)(nil),
+			columns: []string{"provider", "source_code"},
+			unique:  true,
+		},
+		{
+			name:    "idx_macro_indicator_preset",
+			model:   (*MacroIndicatorRow)(nil),
+			columns: []string{"provider", "preset"},
+		},
+		{
+			name:    "idx_macro_indicator_category",
+			model:   (*MacroIndicatorRow)(nil),
+			columns: []string{"category", "frequency"},
+		},
+		{
+			name:    "idx_macro_observation_period",
+			model:   (*MacroObservationRow)(nil),
+			columns: []string{"indicator_id", "period"},
+		},
+		{
+			name:    "idx_macro_indicator_source_provider",
+			model:   (*MacroIndicatorSourceRow)(nil),
+			columns: []string{"provider", "source_code"},
 		},
 		{
 			name:    "idx_migration_runs_resource",
@@ -615,6 +648,39 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 		}
 		if _, err := query.Exec(ctx); err != nil {
 			return errb.With("index", index.name).Wrapf(err, "create daily_bar index")
+		}
+	}
+	return nil
+}
+
+func ensureMacroProviderDocJSONValidation(ctx context.Context, db *bun.DB) error {
+	errb := oops.In("storage_database")
+	statements := []struct {
+		name string
+		sql  string
+	}{
+		{
+			name: "macro_indicator_provider_doc_json_valid_insert",
+			sql: `CREATE TRIGGER IF NOT EXISTS macro_indicator_provider_doc_json_valid_insert
+BEFORE INSERT ON macro_indicator_provider_doc
+WHEN json_valid(NEW.document_json) = 0
+BEGIN
+	SELECT RAISE(ABORT, 'macro_indicator_provider_doc.document_json must be valid JSON');
+END`,
+		},
+		{
+			name: "macro_indicator_provider_doc_json_valid_update",
+			sql: `CREATE TRIGGER IF NOT EXISTS macro_indicator_provider_doc_json_valid_update
+BEFORE UPDATE OF document_json ON macro_indicator_provider_doc
+WHEN json_valid(NEW.document_json) = 0
+BEGIN
+	SELECT RAISE(ABORT, 'macro_indicator_provider_doc.document_json must be valid JSON');
+END`,
+		},
+	}
+	for _, statement := range statements {
+		if _, err := db.ExecContext(ctx, statement.sql); err != nil {
+			return errb.With("trigger", statement.name).Wrapf(err, "create macro provider doc json validation trigger")
 		}
 	}
 	return nil
