@@ -44,6 +44,9 @@ func TestLoadOrCreateCreatesConfigWithAppAndProviderDefaults(t *testing.T) {
 	if resolved.DatabasePath != databasePath {
 		t.Fatalf("DatabasePath = %q, want %q", resolved.DatabasePath, databasePath)
 	}
+	if resolved.DatabaseBackend != DatabaseBackendSQLite {
+		t.Fatalf("DatabaseBackend = %q, want sqlite", resolved.DatabaseBackend)
+	}
 	if resolved.ProviderAuthDatabasePath != filepath.Join(filepath.Dir(databasePath), ProviderAuthDatabaseFileName) {
 		t.Fatalf("ProviderAuthDatabasePath = %q, want sidecar token cache path", resolved.ProviderAuthDatabasePath)
 	}
@@ -58,6 +61,9 @@ func TestLoadOrCreateCreatesConfigWithAppAndProviderDefaults(t *testing.T) {
 	}
 	if cfg.App.Database.Path != defaultDatabasePath {
 		t.Fatalf("generated database path = %q, want %q", cfg.App.Database.Path, defaultDatabasePath)
+	}
+	if cfg.App.Database.Backend != DatabaseBackendSQLite {
+		t.Fatalf("generated database backend = %q, want sqlite", cfg.App.Database.Backend)
 	}
 	if len(cfg.Providers) != 1 || cfg.Providers[0].String("id") != "fake" {
 		t.Fatalf("generated providers = %#v, want fake provider", cfg.Providers)
@@ -224,6 +230,103 @@ func TestLoadOrCreateBuildsProviderConfigFromProviderArrayAndEnv(t *testing.T) {
 	}
 	if got := resolved.ProviderConfig.Env("MWOSA_FAKE_TOKEN"); got != "env-token" {
 		t.Fatalf("provider env token = %q, want env-token", got)
+	}
+}
+
+func TestLoadOrCreateResolvesPostgresURLFromConfiguredEnv(t *testing.T) {
+	t.Setenv("CUSTOM_DATABASE_URL", "postgres://mwosa:secret@localhost:5432/mwosa?sslmode=disable")
+	configPath := filepath.Join(t.TempDir(), "config.json")
+	dataPath := filepath.Join(t.TempDir(), "data", "mwosa.db")
+	writeTestConfig(t, configPath, File{
+		App: AppConfig{
+			Market: string(provider.MarketKRX),
+			Database: DatabaseConfig{
+				Backend: DatabaseBackendPostgres,
+				Path:    dataPath,
+				URLEnv:  "CUSTOM_DATABASE_URL",
+			},
+		},
+	})
+
+	resolved, err := LoadOrCreate(Options{ConfigPath: configPath})
+	if err != nil {
+		t.Fatalf("LoadOrCreate error = %v", err)
+	}
+	if resolved.DatabaseBackend != DatabaseBackendPostgres {
+		t.Fatalf("backend = %q, want postgres", resolved.DatabaseBackend)
+	}
+	if resolved.DatabaseURL != "postgres://mwosa:secret@localhost:5432/mwosa?sslmode=disable" {
+		t.Fatalf("database URL was not resolved from env")
+	}
+	if resolved.DatabaseURLEnv != "CUSTOM_DATABASE_URL" {
+		t.Fatalf("url env = %q, want CUSTOM_DATABASE_URL", resolved.DatabaseURLEnv)
+	}
+	if resolved.ProviderAuthDatabasePath != filepath.Join(filepath.Dir(dataPath), ProviderAuthDatabaseFileName) {
+		t.Fatalf("provider auth path = %q, want sqlite sidecar path", resolved.ProviderAuthDatabasePath)
+	}
+}
+
+func TestUseDatabaseWritesPostgresURLEnv(t *testing.T) {
+	t.Setenv("MWOSA_DATABASE_URL", "postgres://mwosa:secret@localhost:5432/mwosa?sslmode=disable")
+	configPath := filepath.Join(t.TempDir(), "config.json")
+
+	resolved, err := UseDatabase(Options{ConfigPath: configPath}, DatabaseConfig{
+		Backend: DatabaseBackendPostgres,
+		URLEnv:  "MWOSA_DATABASE_URL",
+	})
+	if err != nil {
+		t.Fatalf("UseDatabase error = %v", err)
+	}
+	if resolved.DatabaseBackend != DatabaseBackendPostgres {
+		t.Fatalf("backend = %q, want postgres", resolved.DatabaseBackend)
+	}
+	if resolved.DatabaseURL == "" {
+		t.Fatal("database URL was not resolved from url_env")
+	}
+
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("read config file: %v", err)
+	}
+	var cfg File
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		t.Fatalf("parse config file: %v", err)
+	}
+	if cfg.App.Database.URL != "" {
+		t.Fatalf("direct URL was stored = %q, want empty", cfg.App.Database.URL)
+	}
+	if cfg.App.Database.URLEnv != "MWOSA_DATABASE_URL" {
+		t.Fatalf("url_env = %q, want MWOSA_DATABASE_URL", cfg.App.Database.URLEnv)
+	}
+}
+
+func TestUseDatabaseWritesSQLitePathAndClearsPostgresURL(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "config.json")
+	writeTestConfig(t, configPath, File{
+		App: AppConfig{
+			Market: string(provider.MarketKRX),
+			Database: DatabaseConfig{
+				Backend: DatabaseBackendPostgres,
+				Path:    filepath.Join(t.TempDir(), "mwosa.db"),
+				URL:     "postgres://mwosa:secret@localhost:5432/mwosa?sslmode=disable",
+				URLEnv:  "MWOSA_DATABASE_URL",
+			},
+		},
+	})
+	sqlitePath := filepath.Join(t.TempDir(), "sqlite.db")
+
+	resolved, err := UseDatabase(Options{ConfigPath: configPath}, DatabaseConfig{
+		Backend: DatabaseBackendSQLite,
+		Path:    sqlitePath,
+	})
+	if err != nil {
+		t.Fatalf("UseDatabase error = %v", err)
+	}
+	if resolved.DatabaseBackend != DatabaseBackendSQLite || resolved.DatabasePath != sqlitePath {
+		t.Fatalf("database = %s/%s, want sqlite/%s", resolved.DatabaseBackend, resolved.DatabasePath, sqlitePath)
+	}
+	if resolved.File.App.Database.URL != "" || resolved.File.App.Database.URLEnv != "" {
+		t.Fatalf("postgres URL settings were not cleared: %#v", resolved.File.App.Database)
 	}
 }
 

@@ -2,6 +2,7 @@ package cli
 
 import (
 	"fmt"
+	"net/url"
 	"strings"
 
 	appconfig "github.com/awuzag/mwosa/app/config"
@@ -12,6 +13,7 @@ import (
 
 type configInspectResult struct {
 	ConfigFile           configFileInspect     `json:"config_file"`
+	Database             databaseInspect       `json:"database"`
 	DatabaseFile         databaseFileInspect   `json:"database_file"`
 	ProviderAuthDatabase providerAuthInspect   `json:"provider_auth_database"`
 	DataDir              dataDirectoryInspect  `json:"data_directory"`
@@ -29,6 +31,25 @@ type configFileInspect struct {
 type databaseFileInspect struct {
 	Path   string `json:"path"`
 	Source string `json:"source"`
+}
+
+type databaseInspect struct {
+	Backend       string              `json:"backend"`
+	BackendSource string              `json:"backend_source"`
+	Path          databasePathInspect `json:"path"`
+	URL           databaseURLInspect  `json:"url"`
+}
+
+type databasePathInspect struct {
+	Value  string `json:"value"`
+	Source string `json:"source"`
+}
+
+type databaseURLInspect struct {
+	Value      string `json:"value,omitempty"`
+	Source     string `json:"source"`
+	URLEnv     string `json:"url_env,omitempty"`
+	Configured bool   `json:"configured"`
 }
 
 type providerAuthInspect struct {
@@ -63,12 +84,21 @@ type configSetResult struct {
 	Value      string `json:"value"`
 }
 
+type configUseDatabaseResult struct {
+	ConfigFile string `json:"config_file"`
+	Backend    string `json:"backend"`
+	Path       string `json:"path,omitempty"`
+	URL        string `json:"url,omitempty"`
+	URLEnv     string `json:"url_env,omitempty"`
+}
+
 func newConfigCommand(opts *Options) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "config",
 		Short: "Manage mwosa config file",
 	}
 	cmd.AddCommand(newConfigSetCommand(opts))
+	cmd.AddCommand(newConfigUseDatabaseCommand(opts))
 	return cmd
 }
 
@@ -92,7 +122,9 @@ func newConfigSetCommand(opts *Options) *cobra.Command {
 				return nil, oops.In("cli").Wrapf(err, "set config")
 			}
 			opts.Config = resolved.ConfigPath
+			opts.DatabaseBackend = resolved.DatabaseBackend
 			opts.Database = resolved.DatabasePath
+			opts.DatabaseURL = resolved.DatabaseURL
 			opts.ProviderAuthDatabase = resolved.ProviderAuthDatabasePath
 			opts.ProviderConfig = resolved.ProviderConfig
 			opts.ConfigState = resolved
@@ -104,6 +136,58 @@ func newConfigSetCommand(opts *Options) *cobra.Command {
 			}, nil
 		}),
 	}
+}
+
+func newConfigUseDatabaseCommand(opts *Options) *cobra.Command {
+	flags := struct {
+		Path   string
+		URL    string
+		URLEnv string
+	}{}
+	cmd := &cobra.Command{
+		Use:   "use-database <sqlite|postgres>",
+		Short: "Select the database backend",
+		Args:  cobra.ExactArgs(1),
+		RunE: runJSONResult(func(cmd *cobra.Command, args []string) (any, error) {
+			backend := strings.TrimSpace(args[0])
+			if strings.TrimSpace(flags.URL) != "" && strings.TrimSpace(flags.URLEnv) != "" {
+				return nil, oops.In("cli").New("config use-database accepts only one of --url or --url-env")
+			}
+			resolved, err := appconfig.UseDatabase(appconfig.Options{
+				ConfigPath:       opts.Config,
+				Market:           opts.Market,
+				Development:      opts.Development,
+				ProviderDefaults: providerDefaults(),
+			}, appconfig.DatabaseConfig{
+				Backend: backend,
+				Path:    flags.Path,
+				URL:     flags.URL,
+				URLEnv:  flags.URLEnv,
+			})
+			if err != nil {
+				return nil, oops.In("cli").Wrapf(err, "select database backend")
+			}
+			opts.Config = resolved.ConfigPath
+			opts.DatabaseBackend = resolved.DatabaseBackend
+			opts.Database = resolved.DatabasePath
+			opts.DatabaseURL = resolved.DatabaseURL
+			opts.ProviderAuthDatabase = resolved.ProviderAuthDatabasePath
+			opts.ProviderConfig = resolved.ProviderConfig
+			opts.ConfigState = resolved
+			opts.configLoaded = true
+			return configUseDatabaseResult{
+				ConfigFile: resolved.ConfigPath,
+				Backend:    resolved.DatabaseBackend,
+				Path:       pathForBackend(resolved),
+				URL:        maskedDatabaseURL(resolved.DatabaseURL),
+				URLEnv:     resolved.DatabaseURLEnv,
+			}, nil
+		}),
+	}
+	cmd.Flags().StringVar(&flags.Path, "path", flags.Path, "SQLite database path")
+	cmd.Flags().StringVar(&flags.URL, "url", flags.URL, "PostgreSQL database URL")
+	cmd.Flags().StringVar(&flags.URLEnv, "url-env", flags.URLEnv, "environment variable that contains the PostgreSQL database URL")
+	return cmd
 }
 
 func newInspectConfigCommand(opts *Options) *cobra.Command {
@@ -127,6 +211,20 @@ func configInspectFromResolved(resolved appconfig.Resolved) configInspectResult 
 			Source:  string(resolved.ConfigPathSource),
 			Exists:  resolved.ConfigFileExists,
 			Created: resolved.ConfigFileCreated,
+		},
+		Database: databaseInspect{
+			Backend:       resolved.DatabaseBackend,
+			BackendSource: string(resolved.DatabaseBackendSource),
+			Path: databasePathInspect{
+				Value:  resolved.DatabasePath,
+				Source: string(resolved.DatabasePathSource),
+			},
+			URL: databaseURLInspect{
+				Value:      maskedDatabaseURL(resolved.DatabaseURL),
+				Source:     string(resolved.DatabaseURLSource),
+				URLEnv:     resolved.DatabaseURLEnv,
+				Configured: strings.TrimSpace(resolved.DatabaseURL) != "",
+			},
 		},
 		DatabaseFile: databaseFileInspect{
 			Path:   resolved.DatabasePath,
@@ -191,5 +289,29 @@ func maskedConfigSetValue(path string, value string) string {
 }
 
 func isSecretConfigPath(path string) bool {
-	return strings.HasPrefix(path, "providers.") && strings.Contains(path, ".auth.")
+	return path == "app.database.url" || strings.HasPrefix(path, "providers.") && strings.Contains(path, ".auth.")
+}
+
+func pathForBackend(resolved appconfig.Resolved) string {
+	if resolved.DatabaseBackend == appconfig.DatabaseBackendSQLite {
+		return resolved.DatabasePath
+	}
+	return ""
+}
+
+func maskedDatabaseURL(value string) string {
+	if strings.TrimSpace(value) == "" {
+		return ""
+	}
+	parsed, err := url.Parse(value)
+	if err != nil || parsed.Scheme == "" {
+		return "<configured>"
+	}
+	if parsed.User != nil {
+		username := parsed.User.Username()
+		if _, ok := parsed.User.Password(); ok {
+			parsed.User = url.UserPassword(username, "xxxxx")
+		}
+	}
+	return parsed.String()
 }

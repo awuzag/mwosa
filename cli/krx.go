@@ -6,7 +6,6 @@ import (
 
 	provider "github.com/awuzag/mwosa/providers/core"
 	krxprovider "github.com/awuzag/mwosa/providers/krx"
-	"github.com/awuzag/mwosa/storage"
 	"github.com/awuzag/mwosa/storage/providerraw"
 	"github.com/samber/oops"
 	"github.com/spf13/cobra"
@@ -102,7 +101,7 @@ func newSyncKRXCommand(opts *Options) *cobra.Command {
 			if err != nil {
 				return nil, err
 			}
-			database := storage.NewDatabase(opts.Database)
+			database := newStorageDatabase(opts)
 			defer func() {
 				err = oops.Join(err, database.Close())
 			}()

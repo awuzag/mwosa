@@ -9,7 +9,6 @@ import (
 	provider "github.com/awuzag/mwosa/providers/core"
 	"github.com/awuzag/mwosa/providers/core/financials"
 	opendartprovider "github.com/awuzag/mwosa/providers/opendart"
-	"github.com/awuzag/mwosa/storage"
 	"github.com/awuzag/mwosa/storage/companyfact"
 	"github.com/awuzag/mwosa/storage/companyidentity"
 	"github.com/awuzag/mwosa/storage/financialmetric"
@@ -262,7 +261,7 @@ read as an identifier rather than treated as the canonical key.`),
 			if err != nil {
 				return nil, err
 			}
-			database := storage.NewDatabase(opts.Database)
+			database := newStorageDatabase(opts)
 			defer func() {
 				err = oops.Join(err, database.Close())
 			}()
@@ -337,7 +336,7 @@ identity graph so OpenDART corp_code is used as a provider identifier.`),
 			if err != nil {
 				return nil, err
 			}
-			database := storage.NewDatabase(opts.Database)
+			database := newStorageDatabase(opts)
 			defer func() {
 				err = oops.Join(err, database.Close())
 			}()

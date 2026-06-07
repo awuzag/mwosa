@@ -8,22 +8,52 @@ import (
 	"path/filepath"
 	"strings"
 	"sync"
+	"time"
 
 	"github.com/samber/oops"
 	"github.com/uptrace/bun"
+	"github.com/uptrace/bun/dialect/pgdialect"
 	"github.com/uptrace/bun/dialect/sqlitedialect"
+	"github.com/uptrace/bun/driver/pgdriver"
 	_ "modernc.org/sqlite"
 )
 
+type Backend string
+
+const (
+	BackendSQLite   Backend = "sqlite"
+	BackendPostgres Backend = "postgres"
+)
+
+type DatabaseConfig struct {
+	Backend Backend
+	Path    string
+	URL     string
+}
+
 type Database struct {
+	backend    Backend
 	path       string
+	url        string
 	mu         sync.Mutex
 	client     *bun.DB
 	readClient *bun.DB
 }
 
 func NewDatabase(path string) *Database {
-	return &Database{path: path}
+	return NewDatabaseWithConfig(DatabaseConfig{Backend: BackendSQLite, Path: path})
+}
+
+func NewDatabaseWithConfig(config DatabaseConfig) *Database {
+	backend := config.Backend
+	if backend == "" {
+		backend = BackendSQLite
+	}
+	return &Database{
+		backend: backend,
+		path:    config.Path,
+		url:     config.URL,
+	}
 }
 
 func (db *Database) Client(ctx context.Context) (*bun.DB, error) {
@@ -31,7 +61,13 @@ func (db *Database) Client(ctx context.Context) (*bun.DB, error) {
 }
 
 func (db *Database) Reader(ctx context.Context) (*bun.DB, error) {
-	if db == nil || strings.TrimSpace(db.path) == "" {
+	if db == nil {
+		return nil, oops.In("storage_database").New("database is nil")
+	}
+	if db.backend == BackendPostgres {
+		return db.DB(ctx)
+	}
+	if strings.TrimSpace(db.path) == "" {
 		return nil, oops.In("storage_database").New("sqlite database path is empty")
 	}
 	if _, err := db.DB(ctx); err != nil {
@@ -45,26 +81,22 @@ func (db *Database) Reader(ctx context.Context) (*bun.DB, error) {
 	if db.readClient != nil {
 		return db.readClient, nil
 	}
-	rawDB, err := stdsql.Open("sqlite", sqliteReadOnlyDSN(db.path))
+	client, err := openSQLiteReader(ctx, db.path)
 	if err != nil {
-		return nil, errb.Wrapf(err, "open read-only sqlite database")
-	}
-	rawDB.SetMaxOpenConns(4)
-
-	if err := setupReadDatabase(ctx, rawDB); err != nil {
-		_ = rawDB.Close()
 		return nil, errb.Wrap(err)
 	}
-
-	db.readClient = bun.NewDB(rawDB, sqlitedialect.New())
-	return db.readClient, nil
+	db.readClient = client
+	return client, nil
 }
 
 func (db *Database) DB(ctx context.Context) (*bun.DB, error) {
-	if db == nil || strings.TrimSpace(db.path) == "" {
-		return nil, oops.In("storage_database").New("sqlite database path is empty")
+	if db == nil {
+		return nil, oops.In("storage_database").New("database is nil")
 	}
-	errb := oops.In("storage_database").With("path", db.path)
+	if db.backend == "" {
+		db.backend = BackendSQLite
+	}
+	errb := oops.In("storage_database").With("backend", db.backend, "database", db.safeLocation())
 
 	db.mu.Lock()
 	defer db.mu.Unlock()
@@ -72,26 +104,15 @@ func (db *Database) DB(ctx context.Context) (*bun.DB, error) {
 	if db.client != nil {
 		return db.client, nil
 	}
-	directory := filepath.Dir(db.path)
-	if err := os.MkdirAll(directory, 0o755); err != nil {
-		return nil, errb.With("directory", directory).Wrapf(err, "create sqlite database directory")
-	}
 
-	rawDB, err := stdsql.Open("sqlite", db.path)
+	client, err := db.open(ctx)
 	if err != nil {
-		return nil, errb.Wrapf(err, "open sqlite database")
-	}
-	rawDB.SetMaxOpenConns(1)
-
-	if err := setupDatabase(ctx, rawDB); err != nil {
-		_ = rawDB.Close()
 		return nil, errb.Wrap(err)
 	}
 
-	client := bun.NewDB(rawDB, sqlitedialect.New())
-	if err := setupSchema(ctx, client); err != nil {
+	if err := setupSchema(ctx, client, db.backend); err != nil {
 		return nil, oops.Join(
-			errb.Wrapf(err, "apply sqlite bun schema"),
+			errb.Wrapf(err, "apply bun schema"),
 			errb.Wrap(client.Close()),
 		)
 	}
@@ -103,7 +124,7 @@ func (db *Database) Close() error {
 	if db == nil {
 		return nil
 	}
-	errb := oops.In("storage_database").With("path", db.path)
+	errb := oops.In("storage_database").With("backend", db.backend, "database", db.safeLocation())
 
 	db.mu.Lock()
 	defer db.mu.Unlock()
@@ -126,7 +147,82 @@ func (db *Database) Close() error {
 	return out
 }
 
-func setupReadDatabase(ctx context.Context, db *stdsql.DB) error {
+func (db *Database) open(ctx context.Context) (*bun.DB, error) {
+	switch db.backend {
+	case BackendSQLite:
+		return openSQLiteWriter(ctx, db.path)
+	case BackendPostgres:
+		return openPostgres(ctx, db.url)
+	default:
+		return nil, oops.In("storage_database").With("backend", db.backend).New("unsupported database backend")
+	}
+}
+
+func (db *Database) safeLocation() string {
+	if db == nil {
+		return ""
+	}
+	switch db.backend {
+	case BackendPostgres:
+		if strings.TrimSpace(db.url) == "" {
+			return ""
+		}
+		return "<configured>"
+	default:
+		return db.path
+	}
+}
+
+func openSQLiteWriter(ctx context.Context, path string) (*bun.DB, error) {
+	if strings.TrimSpace(path) == "" {
+		return nil, oops.In("storage_database").New("sqlite database path is empty")
+	}
+	errb := oops.In("storage_database").With("path", path)
+	directory := filepath.Dir(path)
+	if err := os.MkdirAll(directory, 0o755); err != nil {
+		return nil, errb.With("directory", directory).Wrapf(err, "create sqlite database directory")
+	}
+	rawDB, err := stdsql.Open("sqlite", path)
+	if err != nil {
+		return nil, errb.Wrapf(err, "open sqlite database")
+	}
+	rawDB.SetMaxOpenConns(1)
+	if err := setupSQLiteWriter(ctx, rawDB); err != nil {
+		_ = rawDB.Close()
+		return nil, errb.Wrap(err)
+	}
+	return bun.NewDB(rawDB, sqlitedialect.New()), nil
+}
+
+func openSQLiteReader(ctx context.Context, path string) (*bun.DB, error) {
+	rawDB, err := stdsql.Open("sqlite", sqliteReadOnlyDSN(path))
+	if err != nil {
+		return nil, oops.In("storage_database").Wrapf(err, "open read-only sqlite database")
+	}
+	rawDB.SetMaxOpenConns(4)
+	if err := setupSQLiteReader(ctx, rawDB); err != nil {
+		_ = rawDB.Close()
+		return nil, err
+	}
+	return bun.NewDB(rawDB, sqlitedialect.New()), nil
+}
+
+func openPostgres(ctx context.Context, dsn string) (*bun.DB, error) {
+	if strings.TrimSpace(dsn) == "" {
+		return nil, oops.In("storage_database").New("postgres database URL is empty")
+	}
+	rawDB := stdsql.OpenDB(pgdriver.NewConnector(pgdriver.WithDSN(postgresDSNWithApplicationName(dsn))))
+	rawDB.SetMaxOpenConns(16)
+	rawDB.SetMaxIdleConns(4)
+	rawDB.SetConnMaxLifetime(30 * time.Minute)
+	if err := setupPostgres(ctx, rawDB); err != nil {
+		_ = rawDB.Close()
+		return nil, err
+	}
+	return bun.NewDB(rawDB, pgdialect.New()), nil
+}
+
+func setupSQLiteReader(ctx context.Context, db *stdsql.DB) error {
 	errb := oops.In("storage_database")
 	for _, statement := range []string{
 		`PRAGMA busy_timeout = 5000`,
@@ -147,7 +243,7 @@ func sqliteReadOnlyDSN(path string) string {
 	return dsn.String()
 }
 
-func setupDatabase(ctx context.Context, db *stdsql.DB) error {
+func setupSQLiteWriter(ctx context.Context, db *stdsql.DB) error {
 	errb := oops.In("storage_database")
 	for _, statement := range []string{
 		`PRAGMA busy_timeout = 5000`,
@@ -162,7 +258,27 @@ func setupDatabase(ctx context.Context, db *stdsql.DB) error {
 	return nil
 }
 
-func setupSchema(ctx context.Context, db *bun.DB) error {
+func setupPostgres(ctx context.Context, db *stdsql.DB) error {
+	if err := db.PingContext(ctx); err != nil {
+		return oops.In("storage_database").Wrapf(err, "ping postgres database")
+	}
+	return nil
+}
+
+func postgresDSNWithApplicationName(dsn string) string {
+	parsed, err := url.Parse(dsn)
+	if err != nil || parsed.Scheme == "" {
+		return dsn
+	}
+	query := parsed.Query()
+	if strings.TrimSpace(query.Get("application_name")) == "" {
+		query.Set("application_name", "mwosa")
+	}
+	parsed.RawQuery = query.Encode()
+	return parsed.String()
+}
+
+func setupSchema(ctx context.Context, db *bun.DB, backend Backend) error {
 	errb := oops.In("storage_database")
 	tables := []struct {
 		name  string
@@ -216,28 +332,12 @@ func setupSchema(ctx context.Context, db *bun.DB) error {
 			Model(table.model).
 			IfNotExists().
 			Exec(ctx); err != nil {
-			return errb.With("table", table.name).Wrapf(err, "create sqlite table")
+			return errb.With("backend", backend, "table", table.name).Wrapf(err, "create table")
 		}
 	}
-	if err := ensureStrategyVersionColumns(ctx, db); err != nil {
+	if err := ensureBackendSchemaCompatibility(ctx, db, backend); err != nil {
 		return errb.Wrap(err)
 	}
-	if err := ensureBacktestRunColumns(ctx, db); err != nil {
-		return errb.Wrap(err)
-	}
-	if err := ensureBacktestExperimentCaseColumns(ctx, db); err != nil {
-		return errb.Wrap(err)
-	}
-	if err := ensureBacktestResultColumns(ctx, db); err != nil {
-		return errb.Wrap(err)
-	}
-	if err := ensureBacktestWalkForwardStepColumns(ctx, db); err != nil {
-		return errb.Wrap(err)
-	}
-	if err := ensureMacroProviderDocJSONValidation(ctx, db); err != nil {
-		return errb.Wrap(err)
-	}
-
 	indexes := []struct {
 		name    string
 		model   any
@@ -686,108 +786,180 @@ END`,
 	return nil
 }
 
-func ensureStrategyVersionColumns(ctx context.Context, db *bun.DB) error {
+func ensureBackendSchemaCompatibility(ctx context.Context, db *bun.DB, backend Backend) error {
+	switch backend {
+	case BackendSQLite:
+		return ensureSQLiteSchemaCompatibility(ctx, db)
+	case BackendPostgres:
+		return ensurePostgresSchemaCompatibility(ctx, db)
+	default:
+		return oops.In("storage_database").With("backend", backend).New("unsupported database backend")
+	}
+}
+
+func ensureSQLiteSchemaCompatibility(ctx context.Context, db *bun.DB) error {
 	errb := oops.In("storage_database")
-	for _, column := range []struct {
-		name       string
-		definition string
-	}{
-		{name: "spec_json", definition: "TEXT NOT NULL DEFAULT '{}'"},
-		{name: "spec_hash", definition: "TEXT NOT NULL DEFAULT ''"},
-	} {
-		if _, err := db.ExecContext(ctx, "ALTER TABLE strategy_versions ADD COLUMN "+column.name+" "+column.definition); err != nil {
+	if err := ensureSQLiteStrategyVersionColumns(ctx, db); err != nil {
+		return errb.Wrap(err)
+	}
+	if err := ensureSQLiteBacktestRunColumns(ctx, db); err != nil {
+		return errb.Wrap(err)
+	}
+	if err := ensureSQLiteBacktestExperimentCaseColumns(ctx, db); err != nil {
+		return errb.Wrap(err)
+	}
+	if err := ensureSQLiteBacktestResultColumns(ctx, db); err != nil {
+		return errb.Wrap(err)
+	}
+	if err := ensureSQLiteBacktestWalkForwardStepColumns(ctx, db); err != nil {
+		return errb.Wrap(err)
+	}
+	if err := ensureMacroProviderDocJSONValidation(ctx, db); err != nil {
+		return errb.Wrap(err)
+	}
+	return nil
+}
+
+func ensurePostgresSchemaCompatibility(ctx context.Context, db *bun.DB) error {
+	errb := oops.In("storage_database")
+	for _, table := range schemaRepairColumns() {
+		for _, column := range table.columns {
+			statement := "ALTER TABLE " + table.name + " ADD COLUMN IF NOT EXISTS " + column.name + " " + column.postgresDefinition
+			if _, err := db.ExecContext(ctx, statement); err != nil {
+				return errb.With("table", table.name, "column", column.name).Wrapf(err, "ensure postgres column")
+			}
+		}
+	}
+	if _, err := db.ExecContext(ctx, `ALTER TABLE macro_indicator_provider_doc ALTER COLUMN document_json TYPE jsonb USING document_json::jsonb`); err != nil {
+		return errb.With("table", "macro_indicator_provider_doc", "column", "document_json").Wrapf(err, "ensure postgres jsonb document column")
+	}
+	if _, err := db.ExecContext(ctx, `ALTER TABLE macro_indicator_provider_doc ALTER COLUMN document_json SET DEFAULT '{}'::jsonb`); err != nil {
+		return errb.With("table", "macro_indicator_provider_doc", "column", "document_json").Wrapf(err, "ensure postgres jsonb document default")
+	}
+	return nil
+}
+
+type schemaRepairTable struct {
+	name    string
+	columns []schemaRepairColumn
+}
+
+type schemaRepairColumn struct {
+	name               string
+	sqliteDefinition   string
+	postgresDefinition string
+}
+
+func schemaRepairColumns() []schemaRepairTable {
+	return []schemaRepairTable{
+		{
+			name: "strategy_versions",
+			columns: []schemaRepairColumn{
+				{name: "spec_json", sqliteDefinition: "TEXT NOT NULL DEFAULT '{}'", postgresDefinition: "TEXT NOT NULL DEFAULT '{}'"},
+				{name: "spec_hash", sqliteDefinition: "TEXT NOT NULL DEFAULT ''", postgresDefinition: "TEXT NOT NULL DEFAULT ''"},
+			},
+		},
+		{
+			name: "backtest_experiment_cases",
+			columns: []schemaRepairColumn{
+				{name: "strategy_hash", sqliteDefinition: "TEXT NOT NULL DEFAULT ''", postgresDefinition: "TEXT NOT NULL DEFAULT ''"},
+				{name: "run_hash", sqliteDefinition: "TEXT NOT NULL DEFAULT ''", postgresDefinition: "TEXT NOT NULL DEFAULT ''"},
+				{name: "engine_version", sqliteDefinition: "TEXT NOT NULL DEFAULT ''", postgresDefinition: "TEXT NOT NULL DEFAULT ''"},
+				{name: "indicator_registry_version", sqliteDefinition: "TEXT NOT NULL DEFAULT ''", postgresDefinition: "TEXT NOT NULL DEFAULT ''"},
+				{name: "metric_registry_version", sqliteDefinition: "TEXT NOT NULL DEFAULT ''", postgresDefinition: "TEXT NOT NULL DEFAULT ''"},
+				{name: "data_fingerprint", sqliteDefinition: "TEXT NOT NULL DEFAULT ''", postgresDefinition: "TEXT NOT NULL DEFAULT ''"},
+			},
+		},
+		{
+			name: "backtest_runs",
+			columns: []schemaRepairColumn{
+				{name: "engine_version", sqliteDefinition: "TEXT NOT NULL DEFAULT ''", postgresDefinition: "TEXT NOT NULL DEFAULT ''"},
+				{name: "indicator_registry_version", sqliteDefinition: "TEXT NOT NULL DEFAULT ''", postgresDefinition: "TEXT NOT NULL DEFAULT ''"},
+				{name: "metric_registry_version", sqliteDefinition: "TEXT NOT NULL DEFAULT ''", postgresDefinition: "TEXT NOT NULL DEFAULT ''"},
+			},
+		},
+		{
+			name: "backtest_results",
+			columns: []schemaRepairColumn{
+				{name: "engine_version", sqliteDefinition: "TEXT NOT NULL DEFAULT ''", postgresDefinition: "TEXT NOT NULL DEFAULT ''"},
+				{name: "indicator_registry_version", sqliteDefinition: "TEXT NOT NULL DEFAULT ''", postgresDefinition: "TEXT NOT NULL DEFAULT ''"},
+				{name: "metric_registry_version", sqliteDefinition: "TEXT NOT NULL DEFAULT ''", postgresDefinition: "TEXT NOT NULL DEFAULT ''"},
+			},
+		},
+		{
+			name: "backtest_walk_forward_steps",
+			columns: []schemaRepairColumn{
+				{name: "strategy_hash", sqliteDefinition: "TEXT NOT NULL DEFAULT ''", postgresDefinition: "TEXT NOT NULL DEFAULT ''"},
+				{name: "run_hash", sqliteDefinition: "TEXT NOT NULL DEFAULT ''", postgresDefinition: "TEXT NOT NULL DEFAULT ''"},
+				{name: "engine_version", sqliteDefinition: "TEXT NOT NULL DEFAULT ''", postgresDefinition: "TEXT NOT NULL DEFAULT ''"},
+				{name: "indicator_registry_version", sqliteDefinition: "TEXT NOT NULL DEFAULT ''", postgresDefinition: "TEXT NOT NULL DEFAULT ''"},
+				{name: "metric_registry_version", sqliteDefinition: "TEXT NOT NULL DEFAULT ''", postgresDefinition: "TEXT NOT NULL DEFAULT ''"},
+				{name: "data_fingerprint", sqliteDefinition: "TEXT NOT NULL DEFAULT ''", postgresDefinition: "TEXT NOT NULL DEFAULT ''"},
+				{name: "test_metrics_json", sqliteDefinition: "TEXT NOT NULL DEFAULT '{}'", postgresDefinition: "TEXT NOT NULL DEFAULT '{}'"},
+			},
+		},
+	}
+}
+
+func ensureSQLiteColumns(ctx context.Context, db *bun.DB, table schemaRepairTable) error {
+	errb := oops.In("storage_database")
+	for _, column := range table.columns {
+		if _, err := db.ExecContext(ctx, "ALTER TABLE "+table.name+" ADD COLUMN "+column.name+" "+column.sqliteDefinition); err != nil {
 			if strings.Contains(err.Error(), "duplicate column name") {
 				continue
 			}
-			return errb.With("table", "strategy_versions", "column", column.name).Wrapf(err, "ensure strategy version sqlite column")
+			return errb.With("table", table.name, "column", column.name).Wrapf(err, "ensure sqlite column")
 		}
 	}
 	return nil
 }
 
-func ensureBacktestExperimentCaseColumns(ctx context.Context, db *bun.DB) error {
+func ensureSQLiteStrategyVersionColumns(ctx context.Context, db *bun.DB) error {
 	errb := oops.In("storage_database")
-	for _, column := range []struct {
-		name       string
-		definition string
-	}{
-		{name: "strategy_hash", definition: "TEXT NOT NULL DEFAULT ''"},
-		{name: "run_hash", definition: "TEXT NOT NULL DEFAULT ''"},
-		{name: "engine_version", definition: "TEXT NOT NULL DEFAULT ''"},
-		{name: "indicator_registry_version", definition: "TEXT NOT NULL DEFAULT ''"},
-		{name: "metric_registry_version", definition: "TEXT NOT NULL DEFAULT ''"},
-		{name: "data_fingerprint", definition: "TEXT NOT NULL DEFAULT ''"},
-	} {
-		if _, err := db.ExecContext(ctx, "ALTER TABLE backtest_experiment_cases ADD COLUMN "+column.name+" "+column.definition); err != nil {
-			if strings.Contains(err.Error(), "duplicate column name") {
-				continue
-			}
-			return errb.With("table", "backtest_experiment_cases", "column", column.name).Wrapf(err, "ensure backtest experiment case sqlite column")
+	for _, table := range schemaRepairColumns() {
+		if table.name == "strategy_versions" {
+			return ensureSQLiteColumns(ctx, db, table)
 		}
 	}
-	return nil
+	return errb.New("strategy_versions schema repair definition is missing")
 }
 
-func ensureBacktestRunColumns(ctx context.Context, db *bun.DB) error {
+func ensureSQLiteBacktestExperimentCaseColumns(ctx context.Context, db *bun.DB) error {
 	errb := oops.In("storage_database")
-	for _, column := range []struct {
-		name       string
-		definition string
-	}{
-		{name: "engine_version", definition: "TEXT NOT NULL DEFAULT ''"},
-		{name: "indicator_registry_version", definition: "TEXT NOT NULL DEFAULT ''"},
-		{name: "metric_registry_version", definition: "TEXT NOT NULL DEFAULT ''"},
-	} {
-		if _, err := db.ExecContext(ctx, "ALTER TABLE backtest_runs ADD COLUMN "+column.name+" "+column.definition); err != nil {
-			if strings.Contains(err.Error(), "duplicate column name") {
-				continue
-			}
-			return errb.With("table", "backtest_runs", "column", column.name).Wrapf(err, "ensure backtest run sqlite column")
+	for _, table := range schemaRepairColumns() {
+		if table.name == "backtest_experiment_cases" {
+			return ensureSQLiteColumns(ctx, db, table)
 		}
 	}
-	return nil
+	return errb.New("backtest_experiment_cases schema repair definition is missing")
 }
 
-func ensureBacktestResultColumns(ctx context.Context, db *bun.DB) error {
+func ensureSQLiteBacktestRunColumns(ctx context.Context, db *bun.DB) error {
 	errb := oops.In("storage_database")
-	for _, column := range []struct {
-		name       string
-		definition string
-	}{
-		{name: "engine_version", definition: "TEXT NOT NULL DEFAULT ''"},
-		{name: "indicator_registry_version", definition: "TEXT NOT NULL DEFAULT ''"},
-		{name: "metric_registry_version", definition: "TEXT NOT NULL DEFAULT ''"},
-	} {
-		if _, err := db.ExecContext(ctx, "ALTER TABLE backtest_results ADD COLUMN "+column.name+" "+column.definition); err != nil {
-			if strings.Contains(err.Error(), "duplicate column name") {
-				continue
-			}
-			return errb.With("table", "backtest_results", "column", column.name).Wrapf(err, "ensure backtest result sqlite column")
+	for _, table := range schemaRepairColumns() {
+		if table.name == "backtest_runs" {
+			return ensureSQLiteColumns(ctx, db, table)
 		}
 	}
-	return nil
+	return errb.New("backtest_runs schema repair definition is missing")
 }
 
-func ensureBacktestWalkForwardStepColumns(ctx context.Context, db *bun.DB) error {
+func ensureSQLiteBacktestResultColumns(ctx context.Context, db *bun.DB) error {
 	errb := oops.In("storage_database")
-	for _, column := range []struct {
-		name       string
-		definition string
-	}{
-		{name: "strategy_hash", definition: "TEXT NOT NULL DEFAULT ''"},
-		{name: "run_hash", definition: "TEXT NOT NULL DEFAULT ''"},
-		{name: "engine_version", definition: "TEXT NOT NULL DEFAULT ''"},
-		{name: "indicator_registry_version", definition: "TEXT NOT NULL DEFAULT ''"},
-		{name: "metric_registry_version", definition: "TEXT NOT NULL DEFAULT ''"},
-		{name: "data_fingerprint", definition: "TEXT NOT NULL DEFAULT ''"},
-		{name: "test_metrics_json", definition: "TEXT NOT NULL DEFAULT '{}'"},
-	} {
-		if _, err := db.ExecContext(ctx, "ALTER TABLE backtest_walk_forward_steps ADD COLUMN "+column.name+" "+column.definition); err != nil {
-			if strings.Contains(err.Error(), "duplicate column name") {
-				continue
-			}
-			return errb.With("table", "backtest_walk_forward_steps", "column", column.name).Wrapf(err, "ensure backtest walk-forward step sqlite column")
+	for _, table := range schemaRepairColumns() {
+		if table.name == "backtest_results" {
+			return ensureSQLiteColumns(ctx, db, table)
 		}
 	}
-	return nil
+	return errb.New("backtest_results schema repair definition is missing")
+}
+
+func ensureSQLiteBacktestWalkForwardStepColumns(ctx context.Context, db *bun.DB) error {
+	errb := oops.In("storage_database")
+	for _, table := range schemaRepairColumns() {
+		if table.name == "backtest_walk_forward_steps" {
+			return ensureSQLiteColumns(ctx, db, table)
+		}
+	}
+	return errb.New("backtest_walk_forward_steps schema repair definition is missing")
 }

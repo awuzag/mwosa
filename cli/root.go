@@ -8,6 +8,7 @@ import (
 	appconfig "github.com/awuzag/mwosa/app/config"
 	"github.com/awuzag/mwosa/providers/builtin"
 	provider "github.com/awuzag/mwosa/providers/core"
+	"github.com/awuzag/mwosa/storage"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/samber/oops"
 	"github.com/spf13/cobra"
@@ -41,8 +42,14 @@ type Options struct {
 	// 필수. provider routing 과 storage query 에 사용할 시장 ID 다.
 	Market string
 
-	// 필수. 로컬 SQLite database 경로다.
+	// 선택. 비어 있으면 config/env/default 기준으로 database backend 를 결정한다.
+	DatabaseBackend string
+
+	// 선택. SQLite database path 다. PostgreSQL backend 에서는 sidecar cache 기준 경로로만 쓴다.
 	Database string
+
+	// 선택. PostgreSQL backend 에 사용할 database URL 이다.
+	DatabaseURL string
 
 	ProviderAuthDatabase string
 	ProviderConfig       provider.Config
@@ -52,13 +59,28 @@ type Options struct {
 }
 
 func (opts Options) Validate() error {
-	return validation.ValidateStruct(&opts,
+	err := validation.ValidateStruct(&opts,
 		validation.Field(&opts.Output, validation.Required, validation.By(validateOutputMode)),
 		validation.Field(&opts.Provider),
 		validation.Field(&opts.PreferProvider),
 		validation.Field(&opts.Market, validation.Required),
-		validation.Field(&opts.Database, validation.Required),
 	)
+	if err != nil {
+		return err
+	}
+	switch opts.DatabaseBackend {
+	case "", appconfig.DatabaseBackendSQLite:
+		if opts.Database == "" {
+			return oops.In("cli").New("Database is required for sqlite backend")
+		}
+	case appconfig.DatabaseBackendPostgres:
+		if opts.DatabaseURL == "" {
+			return oops.In("cli").New("DatabaseURL is required for postgres backend")
+		}
+	default:
+		return oops.In("cli").With("backend", opts.DatabaseBackend).New("unsupported database backend")
+	}
+	return nil
 }
 
 func validateOutputMode(value any) error {
@@ -83,7 +105,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 		SilenceUsage:  true,
 		SilenceErrors: true,
 		PersistentPreRunE: func(cmd *cobra.Command, _ []string) error {
-			if skipConfigLoadForCompletion(cmd) {
+			if skipConfigLoadForCompletion(cmd) || skipConfigLoadForConfigMutation(cmd) {
 				return nil
 			}
 			return loadConfig(&opts)
@@ -121,10 +143,22 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 		"market id",
 	)
 	cmd.PersistentFlags().StringVar(
+		&opts.DatabaseBackend,
+		"database-backend",
+		opts.DatabaseBackend,
+		"database backend: sqlite or postgres",
+	)
+	cmd.PersistentFlags().StringVar(
 		&opts.Database,
 		"database",
 		opts.Database,
-		"local SQLite database path",
+		"SQLite database path",
+	)
+	cmd.PersistentFlags().StringVar(
+		&opts.DatabaseURL,
+		"database-url",
+		opts.DatabaseURL,
+		"PostgreSQL database URL",
 	)
 	registerRootCompletions(cmd)
 
@@ -229,6 +263,18 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	return cmd
 }
 
+func skipConfigLoadForConfigMutation(cmd *cobra.Command) bool {
+	if cmd == nil {
+		return false
+	}
+	switch cmd.CommandPath() {
+	case "mwosa config set", "mwosa config use-database":
+		return true
+	default:
+		return false
+	}
+}
+
 func loadConfig(opts *Options) error {
 	if opts == nil {
 		return oops.In("cli").New("cli options are nil")
@@ -238,7 +284,9 @@ func loadConfig(opts *Options) error {
 	}
 	resolved, err := appconfig.LoadOrCreate(appconfig.Options{
 		ConfigPath:       opts.Config,
+		DatabaseBackend:  opts.DatabaseBackend,
 		DatabasePath:     opts.Database,
+		DatabaseURL:      opts.DatabaseURL,
 		Market:           opts.Market,
 		Development:      opts.Development,
 		ProviderDefaults: providerDefaults(),
@@ -247,7 +295,9 @@ func loadConfig(opts *Options) error {
 		return oops.In("cli").Wrapf(err, "load config")
 	}
 	opts.Config = resolved.ConfigPath
+	opts.DatabaseBackend = resolved.DatabaseBackend
 	opts.Database = resolved.DatabasePath
+	opts.DatabaseURL = resolved.DatabaseURL
 	opts.ProviderAuthDatabase = resolved.ProviderAuthDatabasePath
 	if opts.PreferProvider == "" {
 		opts.PreferProvider = resolved.File.App.PreferredProvider
@@ -256,6 +306,17 @@ func loadConfig(opts *Options) error {
 	opts.ConfigState = resolved
 	opts.configLoaded = true
 	return nil
+}
+
+func newStorageDatabase(opts *Options) *storage.Database {
+	if opts == nil {
+		return storage.NewDatabase("")
+	}
+	return storage.NewDatabaseWithConfig(storage.DatabaseConfig{
+		Backend: storage.Backend(opts.DatabaseBackend),
+		Path:    opts.Database,
+		URL:     opts.DatabaseURL,
+	})
 }
 
 func providerDefaults() []appconfig.ProviderDefault {

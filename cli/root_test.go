@@ -8,6 +8,7 @@ import (
 	"strings"
 	"testing"
 
+	appconfig "github.com/awuzag/mwosa/app/config"
 	provider "github.com/awuzag/mwosa/providers/core"
 	"github.com/spf13/cobra"
 )
@@ -308,6 +309,81 @@ func TestConfigSetMasksProviderAuthAccessToken(t *testing.T) {
 	}
 }
 
+func TestConfigUseDatabasePostgresStoresURLEnvAndMasksOutput(t *testing.T) {
+	t.Setenv("MWOSA_DATABASE_URL", "postgres://mwosa:secret@localhost:5432/mwosa?sslmode=disable")
+	configPath := filepath.Join(t.TempDir(), "config.json")
+	cmd := NewRootCommand(BuildInfo{})
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	cmd.SetArgs([]string{
+		"--config", configPath,
+		"config", "use-database", "postgres", "--url-env", "MWOSA_DATABASE_URL",
+	})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("execute config use-database: %v\n%s", err, out.String())
+	}
+	if strings.Contains(out.String(), ":secret@") {
+		t.Fatalf("config use-database output should mask URL secret:\n%s", out.String())
+	}
+	var result configUseDatabaseResult
+	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
+		t.Fatalf("config use-database output should be json: %v\n%s", err, out.String())
+	}
+	if result.Backend != "postgres" || result.URLEnv != "MWOSA_DATABASE_URL" {
+		t.Fatalf("result = %#v, want postgres url_env", result)
+	}
+
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("read config file: %v", err)
+	}
+	var cfg appconfig.File
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		t.Fatalf("parse config file: %v", err)
+	}
+	if cfg.App.Database.Backend != "postgres" || cfg.App.Database.URLEnv != "MWOSA_DATABASE_URL" {
+		t.Fatalf("database config = %#v, want postgres url_env", cfg.App.Database)
+	}
+	if cfg.App.Database.URL != "" {
+		t.Fatalf("direct URL stored = %q, want empty", cfg.App.Database.URL)
+	}
+}
+
+func TestInspectConfigMasksDirectDatabaseURL(t *testing.T) {
+	configPath := filepath.Join(t.TempDir(), "config.json")
+	writeRootTestConfig(t, configPath, appconfig.File{
+		App: appconfig.AppConfig{
+			Market: "krx",
+			Database: appconfig.DatabaseConfig{
+				Backend: "postgres",
+				Path:    filepath.Join(t.TempDir(), "mwosa.db"),
+				URL:     "postgres://mwosa:secret@localhost:5432/mwosa?sslmode=disable",
+			},
+		},
+	})
+	cmd := NewRootCommand(BuildInfo{})
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	cmd.SetArgs([]string{"--config", configPath, "inspect", "config"})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("execute inspect config: %v\n%s", err, out.String())
+	}
+	if strings.Contains(out.String(), ":secret@") {
+		t.Fatalf("inspect config output should mask database URL secret:\n%s", out.String())
+	}
+	var parsed configInspectResult
+	if err := json.Unmarshal(out.Bytes(), &parsed); err != nil {
+		t.Fatalf("inspect config output should be json: %v\n%s", err, out.String())
+	}
+	if parsed.Database.Backend != "postgres" || !parsed.Database.URL.Configured {
+		t.Fatalf("database inspect = %#v, want configured postgres", parsed.Database)
+	}
+}
+
 func TestLoginProviderDataGoWritesProviderConfigAndMasksOutput(t *testing.T) {
 	configPath := filepath.Join(t.TempDir(), "config.json")
 	cmd := NewRootCommand(BuildInfo{})
@@ -456,9 +532,10 @@ func TestValidateProviderReportsConfiguredDataGo(t *testing.T) {
 
 func TestOptionsValidateTreatsProviderFlagsAsOptional(t *testing.T) {
 	opts := Options{
-		Output:   OutputModeTable,
-		Market:   "krx",
-		Database: t.TempDir() + "/mwosa.db",
+		Output:          OutputModeTable,
+		Market:          "krx",
+		DatabaseBackend: "postgres",
+		DatabaseURL:     "postgres://mwosa@localhost:5432/mwosa?sslmode=disable",
 	}
 
 	if err := opts.Validate(); err != nil {
@@ -475,9 +552,20 @@ func TestOptionsValidateRequiresCoreOptions(t *testing.T) {
 	if err == nil {
 		t.Fatal("Validate error = nil, want validation errors")
 	}
-	for _, want := range []string{"Output", "Market", "Database"} {
+	for _, want := range []string{"Output", "Market"} {
 		if !strings.Contains(err.Error(), want) {
 			t.Fatalf("validation error missing %q in %q", want, err.Error())
 		}
+	}
+}
+
+func writeRootTestConfig(t *testing.T, path string, cfg appconfig.File) {
+	t.Helper()
+	data, err := json.MarshalIndent(cfg, "", "  ")
+	if err != nil {
+		t.Fatalf("marshal config: %v", err)
+	}
+	if err := os.WriteFile(path, append(data, '\n'), 0o644); err != nil {
+		t.Fatalf("write config: %v", err)
 	}
 }

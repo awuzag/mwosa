@@ -8,7 +8,6 @@ import (
 	kisclient "github.com/awuzag/kis"
 	provider "github.com/awuzag/mwosa/providers/core"
 	opendartprovider "github.com/awuzag/mwosa/providers/opendart"
-	"github.com/awuzag/mwosa/storage"
 	"github.com/awuzag/mwosa/storage/companyevent"
 	"github.com/awuzag/mwosa/storage/companyidentity"
 	"github.com/awuzag/mwosa/storage/opendartcompany"
@@ -173,7 +172,7 @@ operation has an explicit mapping.`),
 			if err != nil {
 				return nil, err
 			}
-			database := storage.NewDatabase(opts.Database)
+			database := newStorageDatabase(opts)
 			defer func() {
 				err = oops.Join(err, database.Close())
 			}()
@@ -240,7 +239,7 @@ KRX stock_code; stock_code is stored only as a listed-company mapping.`),
 			if err != nil {
 				return nil, err
 			}
-			database := storage.NewDatabase(opts.Database)
+			database := newStorageDatabase(opts)
 			defer func() {
 				err = oops.Join(err, database.Close())
 			}()
@@ -302,7 +301,7 @@ corp_code and KRX stock_code are both identifiers, not canonical company keys.`)
 			if err := loadConfig(opts); err != nil {
 				return nil, err
 			}
-			database := storage.NewDatabase(opts.Database)
+			database := newStorageDatabase(opts)
 			defer func() {
 				err = oops.Join(err, database.Close())
 			}()
@@ -334,7 +333,7 @@ identity graph from corpCode.xml.`),
 			if err := loadConfig(opts); err != nil {
 				return nil, err
 			}
-			database := storage.NewDatabase(opts.Database)
+			database := newStorageDatabase(opts)
 			defer func() {
 				err = oops.Join(err, database.Close())
 			}()
@@ -370,7 +369,7 @@ stock_code is the listed-company KRX mapping.`),
 			if err := requireOpenDARTProvider(opts, "search companies"); err != nil {
 				return nil, err
 			}
-			database := storage.NewDatabase(opts.Database)
+			database := newStorageDatabase(opts)
 			defer func() {
 				err = oops.Join(err, database.Close())
 			}()
@@ -497,7 +496,7 @@ opendart to fetch canonicalized OpenDART material events first.`),
 			if err := loadConfig(opts); err != nil {
 				return nil, err
 			}
-			database := storage.NewDatabase(opts.Database)
+			database := newStorageDatabase(opts)
 			defer func() {
 				err = oops.Join(err, database.Close())
 			}()

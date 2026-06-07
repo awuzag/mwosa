@@ -48,7 +48,9 @@ import (
 )
 
 type Options struct {
+	DatabaseBackend      string
 	Database             string
+	DatabaseURL          string
 	ProviderAuthDatabase string
 	Market               provider.Market
 	ProviderID           provider.ProviderID
@@ -161,7 +163,7 @@ func NewRuntime(opts Options) (*Runtime, error) {
 func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderBuilder) (*Runtime, error) {
 	errb := oops.In("app_runtime")
 
-	database := storage.NewDatabase(opts.Database)
+	database := storageDatabaseFromOptions(opts)
 	providerAuthDatabase := providerauth.NewDatabase(providerAuthDatabasePath(opts))
 	tokenCache, err := providerauth.NewRepository(providerAuthDatabase)
 	if err != nil {
@@ -530,6 +532,18 @@ func providerAuthDatabasePath(opts Options) string {
 		return opts.ProviderAuthDatabase
 	}
 	return filepath.Join(filepath.Dir(opts.Database), appconfig.ProviderAuthDatabaseFileName)
+}
+
+func storageDatabaseFromOptions(opts Options) *storage.Database {
+	backend := storage.Backend(opts.DatabaseBackend)
+	if backend == "" {
+		backend = storage.BackendSQLite
+	}
+	return storage.NewDatabaseWithConfig(storage.DatabaseConfig{
+		Backend: backend,
+		Path:    opts.Database,
+		URL:     opts.DatabaseURL,
+	})
 }
 
 type kisTokenCacheBuilder interface {

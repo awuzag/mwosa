@@ -18,8 +18,12 @@ const (
 	DatabaseFileName             = "mwosa.db"
 	ProviderAuthDatabaseFileName = "provider-token-cache.sqlite"
 
-	ConfigPathEnv   = "MWOSA_CONFIG"
-	DatabasePathEnv = "MWOSA_DATABASE"
+	ConfigPathEnv           = "MWOSA_CONFIG"
+	DatabaseBackendEnv      = "MWOSA_DATABASE_BACKEND"
+	DatabasePathEnv         = "MWOSA_DATABASE"
+	DatabaseURLEnv          = "MWOSA_DATABASE_URL"
+	DatabaseBackendSQLite   = "sqlite"
+	DatabaseBackendPostgres = "postgres"
 )
 
 var (
@@ -38,7 +42,9 @@ const (
 
 type Options struct {
 	ConfigPath       string
+	DatabaseBackend  string
 	DatabasePath     string
+	DatabaseURL      string
 	Market           string
 	Development      bool
 	ProviderDefaults []ProviderDefault
@@ -61,7 +67,10 @@ type AppConfig struct {
 }
 
 type DatabaseConfig struct {
-	Path string `json:"path"`
+	Backend string `json:"backend,omitempty"`
+	Path    string `json:"path,omitempty"`
+	URL     string `json:"url,omitempty"`
+	URLEnv  string `json:"url_env,omitempty"`
 }
 
 type Resolved struct {
@@ -69,8 +78,13 @@ type Resolved struct {
 	ConfigPathSource         Source
 	ConfigFileExists         bool
 	ConfigFileCreated        bool
+	DatabaseBackend          string
+	DatabaseBackendSource    Source
 	DatabasePath             string
 	DatabasePathSource       Source
+	DatabaseURL              string
+	DatabaseURLSource        Source
+	DatabaseURLEnv           string
 	DataDirectory            string
 	DataDirectoryExists      bool
 	ProviderAuthDatabasePath string
@@ -107,6 +121,14 @@ func LoadOrCreate(opts Options) (Resolved, error) {
 	if err != nil {
 		return Resolved{}, errb.Wrap(err)
 	}
+	databaseBackend, databaseBackendSource, err := resolveDatabaseBackend(opts.DatabaseBackend, cfg.App.Database.Backend)
+	if err != nil {
+		return Resolved{}, errb.Wrap(err)
+	}
+	databaseURL, databaseURLSource, err := resolveDatabaseURL(opts.DatabaseURL, cfg.App.Database.URL, cfg.App.Database.URLEnv)
+	if err != nil {
+		return Resolved{}, errb.Wrap(err)
+	}
 	dataDirectory := filepath.Dir(databasePath)
 	_, dataDirErr := os.Stat(dataDirectory)
 	_, configFileErr := os.Stat(configPath)
@@ -116,8 +138,13 @@ func LoadOrCreate(opts Options) (Resolved, error) {
 		ConfigPathSource:         configSource,
 		ConfigFileExists:         configFileErr == nil,
 		ConfigFileCreated:        !existed,
+		DatabaseBackend:          databaseBackend,
+		DatabaseBackendSource:    databaseBackendSource,
 		DatabasePath:             databasePath,
 		DatabasePathSource:       databaseSource,
+		DatabaseURL:              databaseURL,
+		DatabaseURLSource:        databaseURLSource,
+		DatabaseURLEnv:           strings.TrimSpace(cfg.App.Database.URLEnv),
 		DataDirectory:            dataDirectory,
 		DataDirectoryExists:      dataDirErr == nil,
 		ProviderAuthDatabasePath: filepath.Join(dataDirectory, ProviderAuthDatabaseFileName),
@@ -201,12 +228,75 @@ func setAppConfigValue(cfg *File, parts []string, rawValue string) error {
 		cfg.App.Market = strings.TrimSpace(rawValue)
 	case "preferred_provider":
 		cfg.App.PreferredProvider = strings.TrimSpace(rawValue)
+	case "database.backend":
+		backend, err := normalizeDatabaseBackend(rawValue)
+		if err != nil {
+			return err
+		}
+		cfg.App.Database.Backend = backend
 	case "database.path":
 		cfg.App.Database.Path = strings.TrimSpace(rawValue)
+	case "database.url":
+		cfg.App.Database.URL = strings.TrimSpace(rawValue)
+	case "database.url_env":
+		cfg.App.Database.URLEnv = strings.TrimSpace(rawValue)
 	default:
 		return oops.In("app_config").With("setting", "app."+strings.Join(parts, ".")).New("unsupported app config setting")
 	}
 	return nil
+}
+
+func UseDatabase(opts Options, database DatabaseConfig) (Resolved, error) {
+	errb := oops.In("app_config")
+	configPath, _, err := resolveConfigPath(opts.ConfigPath, opts.Development)
+	if err != nil {
+		return Resolved{}, errb.Wrap(err)
+	}
+	defaultDatabasePath, err := defaultDatabasePathFor(opts.Development)
+	if err != nil {
+		return Resolved{}, errb.Wrap(err)
+	}
+	cfg, _, err := readOrCreateConfigFile(configPath, defaultFile(opts, defaultDatabasePath))
+	if err != nil {
+		return Resolved{}, errb.With("path", configPath).Wrap(err)
+	}
+	applyDefaults(&cfg, opts, defaultDatabasePath)
+
+	backend, err := normalizeDatabaseBackend(database.Backend)
+	if err != nil {
+		return Resolved{}, errb.Wrap(err)
+	}
+	switch backend {
+	case DatabaseBackendSQLite:
+		path := strings.TrimSpace(database.Path)
+		if path == "" {
+			path = defaultDatabasePath
+		}
+		cfg.App.Database.Backend = DatabaseBackendSQLite
+		cfg.App.Database.Path = path
+		cfg.App.Database.URL = ""
+		cfg.App.Database.URLEnv = ""
+	case DatabaseBackendPostgres:
+		urlValue := strings.TrimSpace(database.URL)
+		urlEnv := strings.TrimSpace(database.URLEnv)
+		if urlValue == "" && urlEnv == "" {
+			return Resolved{}, errb.New("postgres database backend requires --url or --url-env")
+		}
+		cfg.App.Database.Backend = DatabaseBackendPostgres
+		cfg.App.Database.URL = urlValue
+		cfg.App.Database.URLEnv = urlEnv
+	default:
+		return Resolved{}, errb.With("backend", backend).New("unsupported database backend")
+	}
+	if err := writeConfigFile(configPath, cfg); err != nil {
+		return Resolved{}, errb.With("path", configPath).Wrap(err)
+	}
+	return LoadOrCreate(Options{
+		ConfigPath:       configPath,
+		Market:           opts.Market,
+		Development:      opts.Development,
+		ProviderDefaults: opts.ProviderDefaults,
+	})
 }
 
 func setProviderConfigValue(cfg *File, parts []string, rawValue string, defaults []ProviderDefault) error {
@@ -343,6 +433,53 @@ func resolveDatabasePath(flagPath, configPath, defaultPath string) (string, Sour
 	return defaultPath, SourceDefault, nil
 }
 
+func resolveDatabaseBackend(flagBackend, configBackend string) (string, Source, error) {
+	if strings.TrimSpace(flagBackend) != "" {
+		backend, err := normalizeDatabaseBackend(flagBackend)
+		return backend, SourceFlag, err
+	}
+	if envBackend := strings.TrimSpace(os.Getenv(DatabaseBackendEnv)); envBackend != "" {
+		backend, err := normalizeDatabaseBackend(envBackend)
+		return backend, SourceEnv, err
+	}
+	if strings.TrimSpace(configBackend) != "" {
+		backend, err := normalizeDatabaseBackend(configBackend)
+		return backend, SourceConfigFile, err
+	}
+	return DatabaseBackendSQLite, SourceDefault, nil
+}
+
+func normalizeDatabaseBackend(value string) (string, error) {
+	switch strings.ToLower(strings.TrimSpace(value)) {
+	case "", DatabaseBackendSQLite:
+		return DatabaseBackendSQLite, nil
+	case DatabaseBackendPostgres, "postgresql":
+		return DatabaseBackendPostgres, nil
+	default:
+		return "", oops.In("app_config").With("backend", value).New("unsupported database backend")
+	}
+}
+
+func resolveDatabaseURL(flagURL, configURL, configURLEnv string) (string, Source, error) {
+	if strings.TrimSpace(flagURL) != "" {
+		return strings.TrimSpace(flagURL), SourceFlag, nil
+	}
+	if envURL := strings.TrimSpace(os.Getenv(DatabaseURLEnv)); envURL != "" {
+		return envURL, SourceEnv, nil
+	}
+	if strings.TrimSpace(configURL) != "" {
+		return strings.TrimSpace(configURL), SourceConfigFile, nil
+	}
+	if strings.TrimSpace(configURLEnv) != "" {
+		envURL := strings.TrimSpace(os.Getenv(strings.TrimSpace(configURLEnv)))
+		if envURL != "" {
+			return envURL, SourceEnv, nil
+		}
+		return "", SourceConfigFile, nil
+	}
+	return "", SourceDefault, nil
+}
+
 func defaultFile(opts Options, databasePath string) File {
 	market := strings.TrimSpace(opts.Market)
 	if market == "" {
@@ -352,7 +489,8 @@ func defaultFile(opts Options, databasePath string) File {
 		App: AppConfig{
 			Market: market,
 			Database: DatabaseConfig{
-				Path: databasePath,
+				Backend: DatabaseBackendSQLite,
+				Path:    databasePath,
 			},
 		},
 	}
@@ -411,6 +549,10 @@ func applyDefaults(cfg *File, opts Options, databasePath string) bool {
 	}
 	if strings.TrimSpace(cfg.App.Database.Path) == "" {
 		cfg.App.Database.Path = databasePath
+		changed = true
+	}
+	if strings.TrimSpace(cfg.App.Database.Backend) == "" {
+		cfg.App.Database.Backend = DatabaseBackendSQLite
 		changed = true
 	}
 

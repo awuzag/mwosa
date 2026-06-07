@@ -11,7 +11,6 @@ import (
 	kisclient "github.com/awuzag/kis"
 	provider "github.com/awuzag/mwosa/providers/core"
 	kisprovider "github.com/awuzag/mwosa/providers/kis"
-	"github.com/awuzag/mwosa/storage"
 	"github.com/awuzag/mwosa/storage/providerauth"
 	"github.com/awuzag/mwosa/storage/providerraw"
 	"github.com/samber/oops"
@@ -165,7 +164,7 @@ func newKISProviderRawCommand(opts *Options, syncSnapshot bool) *cobra.Command {
 				if !syncSnapshot {
 					return kisRawOutput{Result: rawResult}, nil
 				}
-				database := storage.NewDatabase(opts.Database)
+				database := newStorageDatabase(opts)
 				defer func() {
 					err = oops.Join(err, database.Close())
 				}()

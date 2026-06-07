@@ -210,7 +210,9 @@ func newAppRuntime(opts *Options, activateProviders bool) (*app.Runtime, error) 
 		return nil, oops.In("cli").Wrapf(err, "validate cli options")
 	}
 	return app.NewRuntime(app.Options{
+		DatabaseBackend:      opts.DatabaseBackend,
 		Database:             opts.Database,
+		DatabaseURL:          opts.DatabaseURL,
 		ProviderAuthDatabase: opts.ProviderAuthDatabase,
 		Market:               provider.Market(opts.Market),
 		ProviderID:           provider.ProviderID(opts.Provider),
