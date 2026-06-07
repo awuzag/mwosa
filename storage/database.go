@@ -830,6 +830,9 @@ func ensurePostgresSchemaCompatibility(ctx context.Context, db *bun.DB) error {
 			}
 		}
 	}
+	if _, err := db.ExecContext(ctx, `ALTER TABLE macro_indicator_provider_doc ALTER COLUMN document_json DROP DEFAULT`); err != nil {
+		return errb.With("table", "macro_indicator_provider_doc", "column", "document_json").Wrapf(err, "drop postgres document default")
+	}
 	if _, err := db.ExecContext(ctx, `ALTER TABLE macro_indicator_provider_doc ALTER COLUMN document_json TYPE jsonb USING document_json::jsonb`); err != nil {
 		return errb.With("table", "macro_indicator_provider_doc", "column", "document_json").Wrapf(err, "ensure postgres jsonb document column")
 	}

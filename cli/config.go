@@ -179,8 +179,8 @@ func newConfigUseDatabaseCommand(opts *Options) *cobra.Command {
 				ConfigFile: resolved.ConfigPath,
 				Backend:    resolved.DatabaseBackend,
 				Path:       pathForBackend(resolved),
-				URL:        maskedDatabaseURL(resolved.DatabaseURL),
-				URLEnv:     resolved.DatabaseURLEnv,
+				URL:        urlForBackend(resolved),
+				URLEnv:     urlEnvForBackend(resolved),
 			}, nil
 		}),
 	}
@@ -295,6 +295,20 @@ func isSecretConfigPath(path string) bool {
 func pathForBackend(resolved appconfig.Resolved) string {
 	if resolved.DatabaseBackend == appconfig.DatabaseBackendSQLite {
 		return resolved.DatabasePath
+	}
+	return ""
+}
+
+func urlForBackend(resolved appconfig.Resolved) string {
+	if resolved.DatabaseBackend == appconfig.DatabaseBackendPostgres {
+		return maskedDatabaseURL(resolved.DatabaseURL)
+	}
+	return ""
+}
+
+func urlEnvForBackend(resolved appconfig.Resolved) string {
+	if resolved.DatabaseBackend == appconfig.DatabaseBackendPostgres {
+		return resolved.DatabaseURLEnv
 	}
 	return ""
 }

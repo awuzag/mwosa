@@ -230,6 +230,21 @@ SQLite 전용 setup 과 PostgreSQL setup 의 분리 기준은
 - 기본 `go test ./...` 는 SQLite 기반으로 유지한다.
 - PostgreSQL 검증은 `integration` 또는 `e2e` build tag 로 분리한다.
 
+## 테스트 실행
+
+기본 검증은 Docker 없이 SQLite 중심으로 실행한다.
+
+```bash
+go test ./...
+```
+
+PostgreSQL backend 검증은 `integration` build tag 로 분리한다. 이 경로는
+testcontainers 로 실제 PostgreSQL 컨테이너를 시작하므로 Docker 가 실행 중이어야 한다.
+
+```bash
+go test -tags=integration ./...
+```
+
 ## 제외 범위
 
 - SQLite 데이터를 PostgreSQL 로 자동 migration 하는 기능.
