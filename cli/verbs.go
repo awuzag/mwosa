@@ -3,6 +3,7 @@ package cli
 import "github.com/spf13/cobra"
 
 type commandRoots struct {
+	Init     *cobra.Command
 	Inspect  *cobra.Command
 	List     *cobra.Command
 	Search   *cobra.Command
@@ -28,6 +29,13 @@ type commandRoots struct {
 	Enable   *cobra.Command
 	Disable  *cobra.Command
 	Prefer   *cobra.Command
+}
+
+func newInitCommand() *cobra.Command {
+	return &cobra.Command{
+		Use:   "init",
+		Short: "Initialize mwosa resources",
+	}
 }
 
 func newInspectCommand() *cobra.Command {

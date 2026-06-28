@@ -162,6 +162,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	)
 	registerRootCompletions(cmd)
 
+	initCommand := newInitCommand()
 	inspectCommand := newInspectCommand()
 	listCommand := newListCommand()
 	searchCommand := newSearchCommand()
@@ -188,6 +189,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	disableCommand := newDisableCommand()
 	preferCommand := newPreferCommand()
 	roots := commandRoots{
+		Init:     initCommand,
 		Inspect:  inspectCommand,
 		List:     listCommand,
 		Search:   searchCommand,
@@ -230,9 +232,11 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 	registerMigrationCommands(roots, &opts)
 	registerKRXCommands(roots, &opts)
 	registerOpenDARTCommands(roots, &opts)
+	registerStorageCommands(roots, &opts)
 
 	cmd.AddCommand(newCompletionCommand())
 	cmd.AddCommand(newVersionCommand(build))
+	cmd.AddCommand(initCommand)
 	cmd.AddCommand(inspectCommand)
 	cmd.AddCommand(newConfigCommand(&opts))
 	cmd.AddCommand(createCommand)
