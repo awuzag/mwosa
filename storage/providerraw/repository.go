@@ -13,7 +13,7 @@ import (
 )
 
 type Repository struct {
-	database *storage.Database
+	database *storage.SQLDatabase
 }
 
 type Snapshot struct {
@@ -59,7 +59,7 @@ type SnapshotRecord struct {
 	UpdatedAtMS      int64                `json:"updated_at_ms" csv:"updated_at_ms"`
 }
 
-func NewRepository(database *storage.Database) (Repository, error) {
+func NewRepository(database *storage.SQLDatabase) (Repository, error) {
 	if database == nil {
 		return Repository{}, oops.In("provider_raw_repository").New("provider raw repository database is nil")
 	}

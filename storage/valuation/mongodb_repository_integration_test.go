@@ -86,7 +86,7 @@ func assertValuationRepositoryContract(t *testing.T, repository valuationReposit
 	require.Equal(t, int64(500), *snapshots[0].DividendYieldBP)
 }
 
-func seedValuationSQLiteCompany(t *testing.T, ctx context.Context, database *storage.Database) companyidentity.InspectResult {
+func seedValuationSQLiteCompany(t *testing.T, ctx context.Context, database *storage.SQLDatabase) companyidentity.InspectResult {
 	t.Helper()
 
 	repository, err := companyidentity.NewRepository(database)
@@ -147,7 +147,7 @@ func seedValuationCompany(t *testing.T, ctx context.Context, repository interfac
 	return company
 }
 
-func seedValuationSQLiteInputs(t *testing.T, ctx context.Context, database *storage.Database, company companyidentity.InspectResult) {
+func seedValuationSQLiteInputs(t *testing.T, ctx context.Context, database *storage.SQLDatabase, company companyidentity.InspectResult) {
 	t.Helper()
 
 	statementRepository, err := financialstatement.NewRepository(database)

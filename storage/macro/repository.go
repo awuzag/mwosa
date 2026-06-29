@@ -16,13 +16,13 @@ import (
 )
 
 type repository struct {
-	database *storage.Database
+	database *storage.SQLDatabase
 }
 
 var _ macroservice.ReadRepository = (*repository)(nil)
 var _ macroservice.WriteRepository = (*repository)(nil)
 
-func NewRepository(database *storage.Database) (macroservice.ReadRepository, macroservice.WriteRepository, error) {
+func NewRepository(database *storage.SQLDatabase) (macroservice.ReadRepository, macroservice.WriteRepository, error) {
 	if database == nil {
 		return nil, nil, oops.In("macro_repository").New("macro repository database is nil")
 	}

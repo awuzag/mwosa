@@ -52,7 +52,7 @@ sync financials facts or sync events to populate the underlying sections.`),
 			}
 			defer closeAppRuntime(runtime, &err)
 
-			repository, err := stocksummary.NewRepository(runtime.Storage.Database)
+			repository, err := stocksummary.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}

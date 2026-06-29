@@ -19,7 +19,7 @@ const (
 )
 
 type Repository struct {
-	database *storage.Database
+	database *storage.SQLDatabase
 }
 
 type CompanyInput struct {
@@ -92,7 +92,7 @@ type InspectResult struct {
 	Instruments []InstrumentLink `json:"instruments"`
 }
 
-func NewRepository(database *storage.Database) (Repository, error) {
+func NewRepository(database *storage.SQLDatabase) (Repository, error) {
 	if database == nil {
 		return Repository{}, oops.In("company_identity_repository").New("company identity repository database is nil")
 	}

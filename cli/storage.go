@@ -36,14 +36,14 @@ func registerStorageCommands(roots commandRoots, opts *Options) {
 	roots.Doctor.AddCommand(newDoctorStorageCommand(opts))
 }
 
-func newInitStorageCommand(_ *Options) *cobra.Command {
+func newInitStorageCommand(opts *Options) *cobra.Command {
 	flags := storageMongoDBFlags{}
 	cmd := &cobra.Command{
 		Use:   "storage",
 		Short: "Initialize MongoDB storage collections and indexes",
 		Args:  cobra.NoArgs,
 		RunE: runJSONResult(func(cmd *cobra.Command, _ []string) (any, error) {
-			runtime, config, err := newStorageMongoDBRuntime(cmd.Context(), flags)
+			runtime, config, err := newStorageMongoDBRuntime(cmd.Context(), opts, flags)
 			if err != nil {
 				return nil, err
 			}
@@ -66,14 +66,14 @@ func newInitStorageCommand(_ *Options) *cobra.Command {
 	return cmd
 }
 
-func newDoctorStorageCommand(_ *Options) *cobra.Command {
+func newDoctorStorageCommand(opts *Options) *cobra.Command {
 	flags := storageMongoDBFlags{}
 	cmd := &cobra.Command{
 		Use:   "storage",
 		Short: "Diagnose MongoDB storage readiness",
 		Args:  cobra.NoArgs,
 		RunE: runJSONResult(func(cmd *cobra.Command, _ []string) (any, error) {
-			runtime, config, err := newStorageMongoDBRuntime(cmd.Context(), flags)
+			runtime, config, err := newStorageMongoDBRuntime(cmd.Context(), opts, flags)
 			if err != nil {
 				return nil, err
 			}
@@ -110,11 +110,14 @@ func bindStorageMongoDBFlags(cmd *cobra.Command, flags *storageMongoDBFlags) {
 	cmd.Flags().DurationVar(&flags.Timeout, "mongodb-timeout", flags.Timeout, "MongoDB operation timeout")
 }
 
-func newStorageMongoDBRuntime(ctx context.Context, flags storageMongoDBFlags) (*storagemongodb.Runtime, storagemongodb.Config, error) {
+func newStorageMongoDBRuntime(ctx context.Context, opts *Options, flags storageMongoDBFlags) (*storagemongodb.Runtime, storagemongodb.Config, error) {
 	config := storagemongodb.Config{
 		URI:      strings.TrimSpace(flags.URI),
 		Database: strings.TrimSpace(flags.Database),
 		Timeout:  flags.Timeout,
+	}
+	if config.URI == "" && opts != nil {
+		config.URI = strings.TrimSpace(opts.DatabaseURL)
 	}
 	runtime, err := storagemongodb.NewRuntime(ctx, config)
 	if err != nil {

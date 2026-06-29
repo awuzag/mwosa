@@ -141,7 +141,7 @@ func assertCompanyFactRepositoryContract(t *testing.T, repository factRepository
 	require.Equal(t, "2025", limited[0].FiscalYear)
 }
 
-func seedSQLiteFactCompany(t *testing.T, ctx context.Context, database *storage.Database) companyidentity.InspectResult {
+func seedSQLiteFactCompany(t *testing.T, ctx context.Context, database *storage.SQLDatabase) companyidentity.InspectResult {
 	t.Helper()
 
 	repository, err := companyidentity.NewRepository(database)

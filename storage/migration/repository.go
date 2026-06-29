@@ -12,12 +12,12 @@ import (
 )
 
 type Repository struct {
-	database *storage.Database
+	database *storage.SQLDatabase
 }
 
 var _ migrationcore.Store = (*Repository)(nil)
 
-func NewRepository(database *storage.Database) (migrationcore.Store, error) {
+func NewRepository(database *storage.SQLDatabase) (migrationcore.Store, error) {
 	if database == nil {
 		return nil, oops.In("migration_repository").New("migration repository database is nil")
 	}

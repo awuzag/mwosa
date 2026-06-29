@@ -76,12 +76,13 @@ if err != nil {
 
 ## Storage
 
-- 로컬 canonical storage 방향은 SQLite입니다.
-- SQLite 접근은 Bun 기반으로 관리합니다. schema와 index는 Bun model과
-  schema 생성 코드에서 관리합니다.
-- database runtime 접근은 lazy하게 처리합니다. storage handle 생성만으로
-  SQLite를 열지 않고, 실제 첫 사용 시점에 열 수 있습니다. cleanup은
-  command 단위에서 닫습니다.
+- canonical storage 기본 방향은 MongoDB입니다.
+- MongoDB client lifecycle은 repository가 아니라 `storage/mongodb` runtime이
+  관리합니다. CLI는 runtime을 조립하고 command 종료 시점에 닫습니다.
+- MongoDB collection validator와 index는 `storage/mongodb`의 spec으로
+  관리하고, `mwosa init storage`와 `mwosa doctor storage`로 초기화/진단합니다.
+- 기존 SQLite/Bun storage는 회귀 테스트와 비교 baseline으로 유지합니다.
+  새 기능의 기본 storage backend로 확장하지 않습니다.
 - repository 구현체는 export하지 않습니다. 생성자만 export하고,
   service layer repository interface를 반환합니다.
 - repository 생성 시점에 결정되는 invariant는 생성자에서 검증합니다.

@@ -54,7 +54,7 @@ func TestRepositoryUpsertsAndListsFacts(t *testing.T) {
 	require.Equal(t, "00126380", facts[0].Raw["corp_code"])
 }
 
-func seedCompany(t *testing.T, ctx context.Context, database *storage.Database) companyidentity.InspectResult {
+func seedCompany(t *testing.T, ctx context.Context, database *storage.SQLDatabase) companyidentity.InspectResult {
 	t.Helper()
 	companyRepository, err := companyidentity.NewRepository(database)
 	require.NoError(t, err)

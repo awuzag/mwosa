@@ -100,7 +100,7 @@ func findMigrationForTest(t *testing.T, migrations []migrationRunForTest, id str
 	return migrationRunForTest{}
 }
 
-func seedCLIDailyBarV1Row(t *testing.T, ctx context.Context, database *storage.Database) {
+func seedCLIDailyBarV1Row(t *testing.T, ctx context.Context, database *storage.SQLDatabase) {
 	t.Helper()
 	client, err := database.Client(ctx)
 	if err != nil {

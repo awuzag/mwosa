@@ -186,7 +186,7 @@ func assertFinancialStatementRepositoryContract(t *testing.T, repository reposit
 	require.Equal(t, "1,500", afterUpdate[0].Lines[0].Value)
 }
 
-func seedSQLiteCompany(t *testing.T, ctx context.Context, database *storage.Database) companyidentity.InspectResult {
+func seedSQLiteCompany(t *testing.T, ctx context.Context, database *storage.SQLDatabase) companyidentity.InspectResult {
 	t.Helper()
 
 	repository, err := companyidentity.NewRepository(database)

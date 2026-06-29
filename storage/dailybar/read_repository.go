@@ -14,20 +14,20 @@ import (
 )
 
 type readRepository struct {
-	database *storage.Database
+	database *storage.SQLDatabase
 }
 
 var _ daily.ReadRepository = (*readRepository)(nil)
 var _ daily.StreamRepository = (*readRepository)(nil)
 
-func NewReadRepository(database *storage.Database) (daily.ReadRepository, error) {
+func NewReadRepository(database *storage.SQLDatabase) (daily.ReadRepository, error) {
 	if database == nil {
 		return nil, oops.In("dailybar_repository").New("daily bar repository database is nil")
 	}
 	return &readRepository{database: database}, nil
 }
 
-func NewRepositories(database *storage.Database) (daily.ReadRepository, daily.WriteRepository, error) {
+func NewRepositories(database *storage.SQLDatabase) (daily.ReadRepository, daily.WriteRepository, error) {
 	if database == nil {
 		return nil, nil, oops.In("dailybar_repository").New("daily bar repository database is nil")
 	}

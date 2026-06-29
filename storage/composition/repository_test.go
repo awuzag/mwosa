@@ -137,7 +137,7 @@ func sampleComposition() compositionrole.Composition {
 	}
 }
 
-func requireTableCount(t *testing.T, database *storage.Database, table string, want int) {
+func requireTableCount(t *testing.T, database *storage.SQLDatabase, table string, want int) {
 	t.Helper()
 	client, err := database.Client(context.Background())
 	require.NoError(t, err)
@@ -146,7 +146,7 @@ func requireTableCount(t *testing.T, database *storage.Database, table string, w
 	require.Equal(t, want, got)
 }
 
-func requireNoRawColumn(t *testing.T, database *storage.Database, table string) {
+func requireNoRawColumn(t *testing.T, database *storage.SQLDatabase, table string) {
 	t.Helper()
 	client, err := database.Client(context.Background())
 	require.NoError(t, err)

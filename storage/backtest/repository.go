@@ -18,14 +18,14 @@ import (
 )
 
 type repository struct {
-	database *storage.Database
+	database *storage.SQLDatabase
 }
 
 var _ backtestservice.StrategyRepository = (*repository)(nil)
 var _ backtestservice.EvaluationRepository = (*repository)(nil)
 var _ backtestservice.BacktestRunRepository = (*repository)(nil)
 
-func NewRepository(database *storage.Database) (backtestservice.StrategyRepository, error) {
+func NewRepository(database *storage.SQLDatabase) (backtestservice.StrategyRepository, error) {
 	if database == nil {
 		return nil, oops.In("backtest_strategy_repository").New("backtest strategy repository database is nil")
 	}

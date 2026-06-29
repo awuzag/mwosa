@@ -172,10 +172,11 @@ operation has an explicit mapping.`),
 			if err != nil {
 				return nil, err
 			}
-			database := newStorageDatabase(opts)
-			defer func() {
-				err = oops.Join(err, database.Close())
-			}()
+			runtime, database, err := newSQLAppRuntime(opts, "opendart")
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
 			companyRepository, err := companyidentity.NewRepository(database)
 			if err != nil {
 				return nil, err
@@ -239,10 +240,11 @@ KRX stock_code; stock_code is stored only as a listed-company mapping.`),
 			if err != nil {
 				return nil, err
 			}
-			database := newStorageDatabase(opts)
-			defer func() {
-				err = oops.Join(err, database.Close())
-			}()
+			runtime, database, err := newSQLAppRuntime(opts, "opendart")
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
 			companyRepository, err := opendartcompany.NewRepository(database)
 			if err != nil {
 				return nil, err
@@ -301,10 +303,11 @@ corp_code and KRX stock_code are both identifiers, not canonical company keys.`)
 			if err := loadConfig(opts); err != nil {
 				return nil, err
 			}
-			database := newStorageDatabase(opts)
-			defer func() {
-				err = oops.Join(err, database.Close())
-			}()
+			runtime, database, err := newSQLAppRuntime(opts, "opendart")
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
 			repository, err := companyidentity.NewRepository(database)
 			if err != nil {
 				return nil, err
@@ -333,10 +336,11 @@ identity graph from corpCode.xml.`),
 			if err := loadConfig(opts); err != nil {
 				return nil, err
 			}
-			database := newStorageDatabase(opts)
-			defer func() {
-				err = oops.Join(err, database.Close())
-			}()
+			runtime, database, err := newSQLAppRuntime(opts, "opendart")
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
 			repository, err := companyidentity.NewRepository(database)
 			if err != nil {
 				return nil, err
@@ -369,10 +373,11 @@ stock_code is the listed-company KRX mapping.`),
 			if err := requireOpenDARTProvider(opts, "search companies"); err != nil {
 				return nil, err
 			}
-			database := newStorageDatabase(opts)
-			defer func() {
-				err = oops.Join(err, database.Close())
-			}()
+			runtime, database, err := newSQLAppRuntime(opts, "opendart")
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
 			repository, err := opendartcompany.NewRepository(database)
 			if err != nil {
 				return nil, err
@@ -496,10 +501,11 @@ opendart to fetch canonicalized OpenDART material events first.`),
 			if err := loadConfig(opts); err != nil {
 				return nil, err
 			}
-			database := newStorageDatabase(opts)
-			defer func() {
-				err = oops.Join(err, database.Close())
-			}()
+			runtime, database, err := newSQLAppRuntime(opts, "opendart")
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
 			companyRepository, err := companyidentity.NewRepository(database)
 			if err != nil {
 				return nil, err

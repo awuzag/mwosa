@@ -143,7 +143,7 @@ func TestMacroRepositoryRejectsMissingKeys(t *testing.T) {
 	}
 }
 
-func assertMacroRowCounts(t *testing.T, database *storage.Database, wantIndicators, wantSources, wantDocs, wantObservations int) {
+func assertMacroRowCounts(t *testing.T, database *storage.SQLDatabase, wantIndicators, wantSources, wantDocs, wantObservations int) {
 	t.Helper()
 	client, err := database.Client(context.Background())
 	if err != nil {

@@ -126,7 +126,7 @@ func valuationLine(id string, name string, value string, sjDiv string) financial
 	}
 }
 
-func insertPriceFixture(ctx context.Context, database *storage.Database, instrumentID int64) error {
+func insertPriceFixture(ctx context.Context, database *storage.SQLDatabase, instrumentID int64) error {
 	client, err := database.Client(ctx)
 	if err != nil {
 		return err
@@ -175,7 +175,7 @@ func insertPriceFixture(ctx context.Context, database *storage.Database, instrum
 	return err
 }
 
-func insertDividendFixture(ctx context.Context, database *storage.Database, company companyidentity.InspectResult) error {
+func insertDividendFixture(ctx context.Context, database *storage.SQLDatabase, company companyidentity.InspectResult) error {
 	repository, err := companyfact.NewRepository(database)
 	if err != nil {
 		return err

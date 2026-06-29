@@ -16,13 +16,13 @@ import (
 )
 
 type repository struct {
-	database *storage.Database
+	database *storage.SQLDatabase
 }
 
 var _ indexservice.ReadRepository = (*repository)(nil)
 var _ indexservice.WriteRepository = (*repository)(nil)
 
-func NewRepository(database *storage.Database) (indexservice.ReadRepository, indexservice.WriteRepository, error) {
+func NewRepository(database *storage.SQLDatabase) (indexservice.ReadRepository, indexservice.WriteRepository, error) {
 	if database == nil {
 		return nil, nil, oops.In("indexbar_repository").New("index bar repository database is nil")
 	}

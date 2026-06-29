@@ -32,7 +32,7 @@ const (
 var defaultSections = []string{SectionProfile, SectionInvestment, SectionFinancials, SectionScores, SectionDividends, SectionEvents}
 
 type Repository struct {
-	database *storage.Database
+	database *storage.SQLDatabase
 }
 
 type Query struct {
@@ -63,7 +63,7 @@ type MissingSection struct {
 	Reason  string `json:"reason" csv:"reason"`
 }
 
-func NewRepository(database *storage.Database) (Repository, error) {
+func NewRepository(database *storage.SQLDatabase) (Repository, error) {
 	if database == nil {
 		return Repository{}, oops.In("stock_summary_repository").New("stock summary repository database is nil")
 	}
@@ -230,7 +230,7 @@ func buildScores(metrics []financialmetric.Metric, snapshots []valuation.Snapsho
 	return financialscores.Calculate(financialscores.Input{Metrics: inputMetrics, Valuation: inputValuation})
 }
 
-func listValuation(ctx context.Context, database *storage.Database, company companyidentity.InspectResult, asOf string) ([]valuation.Snapshot, error) {
+func listValuation(ctx context.Context, database *storage.SQLDatabase, company companyidentity.InspectResult, asOf string) ([]valuation.Snapshot, error) {
 	repository, err := valuation.NewRepository(database)
 	if err != nil {
 		return nil, err
@@ -238,7 +238,7 @@ func listValuation(ctx context.Context, database *storage.Database, company comp
 	return repository.ListSnapshots(ctx, company, valuation.Query{AsOf: asOf})
 }
 
-func listMetrics(ctx context.Context, database *storage.Database, company companyidentity.InspectResult, window int, period financials.PeriodType) ([]financialmetric.Metric, error) {
+func listMetrics(ctx context.Context, database *storage.SQLDatabase, company companyidentity.InspectResult, window int, period financials.PeriodType) ([]financialmetric.Metric, error) {
 	repository, err := financialmetric.NewRepository(database)
 	if err != nil {
 		return nil, err
@@ -246,7 +246,7 @@ func listMetrics(ctx context.Context, database *storage.Database, company compan
 	return repository.ListMetrics(ctx, company, financialmetric.Query{WindowYears: window, Period: period})
 }
 
-func listStatements(ctx context.Context, database *storage.Database, company companyidentity.InspectResult, period financials.PeriodType) ([]financials.Statement, error) {
+func listStatements(ctx context.Context, database *storage.SQLDatabase, company companyidentity.InspectResult, period financials.PeriodType) ([]financials.Statement, error) {
 	repository, err := financialstatement.NewRepository(database)
 	if err != nil {
 		return nil, err
@@ -254,7 +254,7 @@ func listStatements(ctx context.Context, database *storage.Database, company com
 	return repository.ListStatements(ctx, company, financialstatement.Query{Period: period})
 }
 
-func listDividends(ctx context.Context, database *storage.Database, company companyidentity.InspectResult, window int) ([]companyfact.Fact, error) {
+func listDividends(ctx context.Context, database *storage.SQLDatabase, company companyidentity.InspectResult, window int) ([]companyfact.Fact, error) {
 	repository, err := companyfact.NewRepository(database)
 	if err != nil {
 		return nil, err
@@ -262,7 +262,7 @@ func listDividends(ctx context.Context, database *storage.Database, company comp
 	return repository.ListFacts(ctx, company, companyfact.Query{FactType: companyfact.FactTypeDividend, WindowYears: window})
 }
 
-func listFacts(ctx context.Context, database *storage.Database, company companyidentity.InspectResult, window int) ([]companyfact.Fact, error) {
+func listFacts(ctx context.Context, database *storage.SQLDatabase, company companyidentity.InspectResult, window int) ([]companyfact.Fact, error) {
 	repository, err := companyfact.NewRepository(database)
 	if err != nil {
 		return nil, err
@@ -281,7 +281,7 @@ func listFacts(ctx context.Context, database *storage.Database, company companyi
 	return out, nil
 }
 
-func listEvents(ctx context.Context, database *storage.Database, company companyidentity.InspectResult) ([]companyevent.Event, error) {
+func listEvents(ctx context.Context, database *storage.SQLDatabase, company companyidentity.InspectResult) ([]companyevent.Event, error) {
 	repository, err := companyevent.NewRepository(database)
 	if err != nil {
 		return nil, err

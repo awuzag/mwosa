@@ -14,6 +14,7 @@ import (
 
 func TestInitAndDoctorStorageMongoDB(t *testing.T) {
 	server := integrationtest.StartMongoDB(t)
+	t.Setenv("MWOSA_DATABASE_URL", server.URI)
 	configPath := t.TempDir() + "/config.json"
 	databaseName := "mwosa_cli_test"
 
@@ -24,7 +25,6 @@ func TestInitAndDoctorStorageMongoDB(t *testing.T) {
 	initCmd.SetArgs([]string{
 		"--config", configPath,
 		"init", "storage",
-		"--mongodb-uri", server.URI,
 		"--mongodb-database", databaseName,
 	})
 	requireExecute(t, initCmd, &initOut)
@@ -47,7 +47,6 @@ func TestInitAndDoctorStorageMongoDB(t *testing.T) {
 	idempotentInitCmd.SetArgs([]string{
 		"--config", configPath,
 		"init", "storage",
-		"--mongodb-uri", server.URI,
 		"--mongodb-database", databaseName,
 	})
 	requireExecute(t, idempotentInitCmd, &idempotentInitOut)
@@ -59,7 +58,6 @@ func TestInitAndDoctorStorageMongoDB(t *testing.T) {
 	doctorCmd.SetArgs([]string{
 		"--config", configPath,
 		"doctor", "storage",
-		"--mongodb-uri", server.URI,
 		"--mongodb-database", databaseName,
 	})
 	requireExecute(t, doctorCmd, &doctorOut)

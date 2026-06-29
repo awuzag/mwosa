@@ -16,7 +16,7 @@ import (
 )
 
 type Repository struct {
-	database *storage.Database
+	database *storage.SQLDatabase
 }
 
 type UpsertResult struct {
@@ -31,7 +31,7 @@ type Query struct {
 	Limit      int
 }
 
-func NewRepository(database *storage.Database) (Repository, error) {
+func NewRepository(database *storage.SQLDatabase) (Repository, error) {
 	if database == nil {
 		return Repository{}, oops.In("financial_statement_repository").New("financial statement repository database is nil")
 	}

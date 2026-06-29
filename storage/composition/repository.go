@@ -19,12 +19,12 @@ import (
 const defaultPriceScale = 4
 
 type repository struct {
-	database *storage.Database
+	database *storage.SQLDatabase
 }
 
 var _ compositionservice.Repository = (*repository)(nil)
 
-func NewRepository(database *storage.Database) (compositionservice.Repository, error) {
+func NewRepository(database *storage.SQLDatabase) (compositionservice.Repository, error) {
 	if database == nil {
 		return nil, oops.In("composition_repository").New("composition repository database is nil")
 	}

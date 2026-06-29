@@ -8,17 +8,17 @@ import (
 	"github.com/stretchr/testify/require"
 )
 
-func TestConfigValidateRequiresURIAndDatabase(t *testing.T) {
+func TestConfigValidateRequiresURI(t *testing.T) {
 	require.Error(t, Config{}.Validate())
-	require.Error(t, Config{URI: "mongodb://localhost:27017"}.Validate())
 	require.Error(t, Config{Database: "mwosa"}.Validate())
 	require.NoError(t, Config{URI: "mongodb://localhost:27017", Database: "mwosa"}.Validate())
 }
 
-func TestConfigWithDefaultsSetsTimeoutAndAppName(t *testing.T) {
-	cfg, err := Config{URI: "mongodb://localhost:27017", Database: "mwosa"}.WithDefaults()
+func TestConfigWithDefaultsSetsDatabaseTimeoutAndAppName(t *testing.T) {
+	cfg, err := Config{URI: "mongodb://localhost:27017"}.WithDefaults()
 
 	require.NoError(t, err)
+	require.Equal(t, DefaultDatabaseName, cfg.Database)
 	require.Equal(t, DefaultAppName, cfg.AppName)
 	require.Equal(t, DefaultTimeout, cfg.Timeout)
 }

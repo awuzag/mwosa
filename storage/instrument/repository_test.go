@@ -151,7 +151,7 @@ func samsungInstrument(englishName string) coreinstrument.Instrument {
 	}
 }
 
-func assertInstrumentRowCounts(t *testing.T, database *storage.Database, wantInstruments, wantSources, wantExtensions int) {
+func assertInstrumentRowCounts(t *testing.T, database *storage.SQLDatabase, wantInstruments, wantSources, wantExtensions int) {
 	t.Helper()
 	client, err := database.Client(context.Background())
 	if err != nil {

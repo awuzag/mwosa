@@ -17,7 +17,7 @@ import (
 )
 
 type Repository struct {
-	database *storage.Database
+	database *storage.SQLDatabase
 }
 
 type CalculateOptions struct {
@@ -89,7 +89,7 @@ type dividendValue struct {
 	Operation   string
 }
 
-func NewRepository(database *storage.Database) (Repository, error) {
+func NewRepository(database *storage.SQLDatabase) (Repository, error) {
 	if database == nil {
 		return Repository{}, oops.In("valuation_repository").New("valuation repository database is nil")
 	}

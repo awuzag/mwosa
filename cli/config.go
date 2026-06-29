@@ -145,7 +145,7 @@ func newConfigUseDatabaseCommand(opts *Options) *cobra.Command {
 		URLEnv string
 	}{}
 	cmd := &cobra.Command{
-		Use:   "use-database <sqlite|postgres>",
+		Use:   "use-database <mongodb|sqlite|postgres>",
 		Short: "Select the database backend",
 		Args:  cobra.ExactArgs(1),
 		RunE: runJSONResult(func(cmd *cobra.Command, args []string) (any, error) {
@@ -185,8 +185,8 @@ func newConfigUseDatabaseCommand(opts *Options) *cobra.Command {
 		}),
 	}
 	cmd.Flags().StringVar(&flags.Path, "path", flags.Path, "SQLite database path")
-	cmd.Flags().StringVar(&flags.URL, "url", flags.URL, "PostgreSQL database URL")
-	cmd.Flags().StringVar(&flags.URLEnv, "url-env", flags.URLEnv, "environment variable that contains the PostgreSQL database URL")
+	cmd.Flags().StringVar(&flags.URL, "url", flags.URL, "MongoDB/PostgreSQL database URL")
+	cmd.Flags().StringVar(&flags.URLEnv, "url-env", flags.URLEnv, "environment variable that contains the MongoDB/PostgreSQL database URL")
 	return cmd
 }
 
@@ -300,14 +300,14 @@ func pathForBackend(resolved appconfig.Resolved) string {
 }
 
 func urlForBackend(resolved appconfig.Resolved) string {
-	if resolved.DatabaseBackend == appconfig.DatabaseBackendPostgres {
+	if resolved.DatabaseBackend == appconfig.DatabaseBackendMongoDB || resolved.DatabaseBackend == appconfig.DatabaseBackendPostgres {
 		return maskedDatabaseURL(resolved.DatabaseURL)
 	}
 	return ""
 }
 
 func urlEnvForBackend(resolved appconfig.Resolved) string {
-	if resolved.DatabaseBackend == appconfig.DatabaseBackendPostgres {
+	if resolved.DatabaseBackend == appconfig.DatabaseBackendMongoDB || resolved.DatabaseBackend == appconfig.DatabaseBackendPostgres {
 		return resolved.DatabaseURLEnv
 	}
 	return ""

@@ -45,7 +45,7 @@ func TestLoadOrCreateCreatesConfigWithAppAndProviderDefaults(t *testing.T) {
 		t.Fatalf("DatabasePath = %q, want %q", resolved.DatabasePath, databasePath)
 	}
 	if resolved.DatabaseBackend != DatabaseBackendSQLite {
-		t.Fatalf("DatabaseBackend = %q, want sqlite", resolved.DatabaseBackend)
+		t.Fatalf("DatabaseBackend = %q, want sqlite from explicit database path", resolved.DatabaseBackend)
 	}
 	if resolved.ProviderAuthDatabasePath != filepath.Join(filepath.Dir(databasePath), ProviderAuthDatabaseFileName) {
 		t.Fatalf("ProviderAuthDatabasePath = %q, want sidecar token cache path", resolved.ProviderAuthDatabasePath)
@@ -62,8 +62,8 @@ func TestLoadOrCreateCreatesConfigWithAppAndProviderDefaults(t *testing.T) {
 	if cfg.App.Database.Path != defaultDatabasePath {
 		t.Fatalf("generated database path = %q, want %q", cfg.App.Database.Path, defaultDatabasePath)
 	}
-	if cfg.App.Database.Backend != DatabaseBackendSQLite {
-		t.Fatalf("generated database backend = %q, want sqlite", cfg.App.Database.Backend)
+	if cfg.App.Database.Backend != DatabaseBackendMongoDB {
+		t.Fatalf("generated database backend = %q, want mongodb", cfg.App.Database.Backend)
 	}
 	if len(cfg.Providers) != 1 || cfg.Providers[0].String("id") != "fake" {
 		t.Fatalf("generated providers = %#v, want fake provider", cfg.Providers)
@@ -294,6 +294,40 @@ func TestUseDatabaseWritesPostgresURLEnv(t *testing.T) {
 	}
 	if cfg.App.Database.URL != "" {
 		t.Fatalf("direct URL was stored = %q, want empty", cfg.App.Database.URL)
+	}
+	if cfg.App.Database.URLEnv != "MWOSA_DATABASE_URL" {
+		t.Fatalf("url_env = %q, want MWOSA_DATABASE_URL", cfg.App.Database.URLEnv)
+	}
+}
+
+func TestUseDatabaseWritesMongoDBURLEnv(t *testing.T) {
+	t.Setenv("MWOSA_DATABASE_URL", "mongodb://mwosa:secret@localhost:27017")
+	configPath := filepath.Join(t.TempDir(), "config.json")
+
+	resolved, err := UseDatabase(Options{ConfigPath: configPath}, DatabaseConfig{
+		Backend: DatabaseBackendMongoDB,
+		URLEnv:  "MWOSA_DATABASE_URL",
+	})
+	if err != nil {
+		t.Fatalf("UseDatabase error = %v", err)
+	}
+	if resolved.DatabaseBackend != DatabaseBackendMongoDB {
+		t.Fatalf("backend = %q, want mongodb", resolved.DatabaseBackend)
+	}
+	if resolved.DatabaseURL == "" {
+		t.Fatal("database URL was not resolved from url_env")
+	}
+
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("read config file: %v", err)
+	}
+	var cfg File
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		t.Fatalf("parse config file: %v", err)
+	}
+	if cfg.App.Database.Backend != DatabaseBackendMongoDB {
+		t.Fatalf("backend = %q, want mongodb", cfg.App.Database.Backend)
 	}
 	if cfg.App.Database.URLEnv != "MWOSA_DATABASE_URL" {
 		t.Fatalf("url_env = %q, want MWOSA_DATABASE_URL", cfg.App.Database.URLEnv)

@@ -8,8 +8,9 @@ import (
 )
 
 const (
-	DefaultAppName = "mwosa"
-	DefaultTimeout = 10 * time.Second
+	DefaultAppName      = "mwosa"
+	DefaultDatabaseName = "mwosa"
+	DefaultTimeout      = 10 * time.Second
 )
 
 type Config struct {
@@ -34,6 +35,9 @@ func (c Config) WithDefaults() (Config, error) {
 	c.URI = strings.TrimSpace(c.URI)
 	c.Database = strings.TrimSpace(c.Database)
 	c.AppName = strings.TrimSpace(c.AppName)
+	if c.Database == "" {
+		c.Database = DefaultDatabaseName
+	}
 	if c.AppName == "" {
 		c.AppName = DefaultAppName
 	}

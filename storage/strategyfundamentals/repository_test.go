@@ -45,7 +45,7 @@ func TestRepositoryListsLatestFundamentalsBySymbol(t *testing.T) {
 	require.Equal(t, "2026-05-10", item.Events[0].EventDate)
 }
 
-func seedCompany(t *testing.T, ctx context.Context, database *storage.Database) companyidentity.InspectResult {
+func seedCompany(t *testing.T, ctx context.Context, database *storage.SQLDatabase) companyidentity.InspectResult {
 	t.Helper()
 	companyRepository, err := companyidentity.NewRepository(database)
 	require.NoError(t, err)
@@ -88,7 +88,7 @@ func seedCompany(t *testing.T, ctx context.Context, database *storage.Database) 
 	return company
 }
 
-func seedFundamentals(ctx context.Context, database *storage.Database, company companyidentity.InspectResult) error {
+func seedFundamentals(ctx context.Context, database *storage.SQLDatabase, company companyidentity.InspectResult) error {
 	client, err := database.Client(ctx)
 	if err != nil {
 		return err

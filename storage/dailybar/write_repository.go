@@ -15,12 +15,12 @@ import (
 )
 
 type writeRepository struct {
-	database *storage.Database
+	database *storage.SQLDatabase
 }
 
 var _ daily.WriteRepository = (*writeRepository)(nil)
 
-func NewWriteRepository(database *storage.Database) (daily.WriteRepository, error) {
+func NewWriteRepository(database *storage.SQLDatabase) (daily.WriteRepository, error) {
 	if database == nil {
 		return nil, oops.In("dailybar_repository").New("daily bar repository database is nil")
 	}

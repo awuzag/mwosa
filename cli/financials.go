@@ -110,7 +110,7 @@ through the router.`),
 			}
 			defer closeAppRuntime(runtime, &err)
 
-			companyRepository, err := companyidentity.NewRepository(runtime.Storage.Database)
+			companyRepository, err := companyidentity.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}
@@ -118,7 +118,7 @@ through the router.`),
 			if err != nil {
 				return nil, err
 			}
-			statementRepository, err := financialstatement.NewRepository(runtime.Storage.Database)
+			statementRepository, err := financialstatement.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}
@@ -192,7 +192,7 @@ are available as identifiers.`),
 			}
 			defer closeAppRuntime(runtime, &err)
 
-			companyRepository, err := companyidentity.NewRepository(runtime.Storage.Database)
+			companyRepository, err := companyidentity.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}
@@ -200,7 +200,7 @@ are available as identifiers.`),
 			if err != nil {
 				return nil, err
 			}
-			statementRepository, err := financialstatement.NewRepository(runtime.Storage.Database)
+			statementRepository, err := financialstatement.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}
@@ -261,10 +261,11 @@ read as an identifier rather than treated as the canonical key.`),
 			if err != nil {
 				return nil, err
 			}
-			database := newStorageDatabase(opts)
-			defer func() {
-				err = oops.Join(err, database.Close())
-			}()
+			runtime, database, err := newSQLAppRuntime(opts, "financials")
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
 			companyRepository, err := companyidentity.NewRepository(database)
 			if err != nil {
 				return nil, err
@@ -336,10 +337,11 @@ identity graph so OpenDART corp_code is used as a provider identifier.`),
 			if err != nil {
 				return nil, err
 			}
-			database := newStorageDatabase(opts)
-			defer func() {
-				err = oops.Join(err, database.Close())
-			}()
+			runtime, database, err := newSQLAppRuntime(opts, "financials")
+			if err != nil {
+				return nil, err
+			}
+			defer closeAppRuntime(runtime, &err)
 			companyRepository, err := companyidentity.NewRepository(database)
 			if err != nil {
 				return nil, err
@@ -469,7 +471,7 @@ with explicit reasons.`),
 			}
 			defer closeAppRuntime(runtime, &err)
 
-			companyRepository, err := companyidentity.NewRepository(runtime.Storage.Database)
+			companyRepository, err := companyidentity.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}
@@ -477,7 +479,7 @@ with explicit reasons.`),
 			if err != nil {
 				return nil, err
 			}
-			metricRepository, err := financialmetric.NewRepository(runtime.Storage.Database)
+			metricRepository, err := financialmetric.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}
@@ -511,7 +513,7 @@ func newGetFinancialMetricsCommand(opts *Options) *cobra.Command {
 			}
 			defer closeAppRuntime(runtime, &err)
 
-			companyRepository, err := companyidentity.NewRepository(runtime.Storage.Database)
+			companyRepository, err := companyidentity.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}
@@ -519,7 +521,7 @@ func newGetFinancialMetricsCommand(opts *Options) *cobra.Command {
 			if err != nil {
 				return nil, err
 			}
-			metricRepository, err := financialmetric.NewRepository(runtime.Storage.Database)
+			metricRepository, err := financialmetric.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}
@@ -557,7 +559,7 @@ financial statement line items, then writes valuation_snapshot_v1.`),
 			}
 			defer closeAppRuntime(runtime, &err)
 
-			companyRepository, err := companyidentity.NewRepository(runtime.Storage.Database)
+			companyRepository, err := companyidentity.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}
@@ -565,7 +567,7 @@ financial statement line items, then writes valuation_snapshot_v1.`),
 			if err != nil {
 				return nil, err
 			}
-			repository, err := valuation.NewRepository(runtime.Storage.Database)
+			repository, err := valuation.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}
@@ -593,7 +595,7 @@ func newGetFinancialValuationCommand(opts *Options) *cobra.Command {
 			}
 			defer closeAppRuntime(runtime, &err)
 
-			companyRepository, err := companyidentity.NewRepository(runtime.Storage.Database)
+			companyRepository, err := companyidentity.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}
@@ -601,7 +603,7 @@ func newGetFinancialValuationCommand(opts *Options) *cobra.Command {
 			if err != nil {
 				return nil, err
 			}
-			repository, err := valuation.NewRepository(runtime.Storage.Database)
+			repository, err := valuation.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}
@@ -644,7 +646,7 @@ first to populate the underlying canonical data.`),
 			}
 			defer closeAppRuntime(runtime, &err)
 
-			companyRepository, err := companyidentity.NewRepository(runtime.Storage.Database)
+			companyRepository, err := companyidentity.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}
@@ -652,7 +654,7 @@ first to populate the underlying canonical data.`),
 			if err != nil {
 				return nil, err
 			}
-			metricRepository, err := financialmetric.NewRepository(runtime.Storage.Database)
+			metricRepository, err := financialmetric.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}
@@ -663,7 +665,7 @@ first to populate the underlying canonical data.`),
 			if err != nil {
 				return nil, err
 			}
-			factRepository, err := companyfact.NewRepository(runtime.Storage.Database)
+			factRepository, err := companyfact.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}
@@ -702,7 +704,7 @@ func newGetFinancialDividendsCommand(opts *Options) *cobra.Command {
 			}
 			defer closeAppRuntime(runtime, &err)
 
-			companyRepository, err := companyidentity.NewRepository(runtime.Storage.Database)
+			companyRepository, err := companyidentity.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}
@@ -710,7 +712,7 @@ func newGetFinancialDividendsCommand(opts *Options) *cobra.Command {
 			if err != nil {
 				return nil, err
 			}
-			repository, err := companyfact.NewRepository(runtime.Storage.Database)
+			repository, err := companyfact.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}
@@ -744,7 +746,7 @@ func newGetFinancialFactsCommand(opts *Options) *cobra.Command {
 			}
 			defer closeAppRuntime(runtime, &err)
 
-			companyRepository, err := companyidentity.NewRepository(runtime.Storage.Database)
+			companyRepository, err := companyidentity.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}
@@ -752,7 +754,7 @@ func newGetFinancialFactsCommand(opts *Options) *cobra.Command {
 			if err != nil {
 				return nil, err
 			}
-			repository, err := companyfact.NewRepository(runtime.Storage.Database)
+			repository, err := companyfact.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
 				return nil, err
 			}

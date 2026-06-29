@@ -140,7 +140,7 @@ func assertCompanyEventRepositoryContract(t *testing.T, repository eventReposito
 	require.Empty(t, fallbackDate[0].EventDate)
 }
 
-func seedSQLiteEventCompany(t *testing.T, ctx context.Context, database *storage.Database) companyidentity.InspectResult {
+func seedSQLiteEventCompany(t *testing.T, ctx context.Context, database *storage.SQLDatabase) companyidentity.InspectResult {
 	t.Helper()
 
 	repository, err := companyidentity.NewRepository(database)

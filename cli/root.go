@@ -8,7 +8,6 @@ import (
 	appconfig "github.com/awuzag/mwosa/app/config"
 	"github.com/awuzag/mwosa/providers/builtin"
 	provider "github.com/awuzag/mwosa/providers/core"
-	"github.com/awuzag/mwosa/storage"
 	validation "github.com/go-ozzo/ozzo-validation/v4"
 	"github.com/samber/oops"
 	"github.com/spf13/cobra"
@@ -45,10 +44,10 @@ type Options struct {
 	// 선택. 비어 있으면 config/env/default 기준으로 database backend 를 결정한다.
 	DatabaseBackend string
 
-	// 선택. SQLite database path 다. PostgreSQL backend 에서는 sidecar cache 기준 경로로만 쓴다.
+	// 선택. SQLite database path 다. MongoDB/PostgreSQL backend 에서는 sidecar cache 기준 경로로만 쓴다.
 	Database string
 
-	// 선택. PostgreSQL backend 에 사용할 database URL 이다.
+	// 선택. MongoDB/PostgreSQL backend 에 사용할 database URL 이다.
 	DatabaseURL string
 
 	ProviderAuthDatabase string
@@ -69,13 +68,25 @@ func (opts Options) Validate() error {
 		return err
 	}
 	switch opts.DatabaseBackend {
-	case "", appconfig.DatabaseBackendSQLite:
+	case "":
+		if opts.DatabaseURL != "" {
+			return nil
+		}
+		if opts.Database != "" {
+			return nil
+		}
+		return oops.In("cli").New("DatabaseURL is required for mongodb backend")
+	case appconfig.DatabaseBackendSQLite:
 		if opts.Database == "" {
 			return oops.In("cli").New("Database is required for sqlite backend")
 		}
 	case appconfig.DatabaseBackendPostgres:
 		if opts.DatabaseURL == "" {
 			return oops.In("cli").New("DatabaseURL is required for postgres backend")
+		}
+	case appconfig.DatabaseBackendMongoDB:
+		if opts.DatabaseURL == "" {
+			return oops.In("cli").New("DatabaseURL is required for mongodb backend")
 		}
 	default:
 		return oops.In("cli").With("backend", opts.DatabaseBackend).New("unsupported database backend")
@@ -146,7 +157,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 		&opts.DatabaseBackend,
 		"database-backend",
 		opts.DatabaseBackend,
-		"database backend: sqlite or postgres",
+		"database backend: mongodb, sqlite, or postgres",
 	)
 	cmd.PersistentFlags().StringVar(
 		&opts.Database,
@@ -158,7 +169,7 @@ func NewRootCommand(build BuildInfo) *cobra.Command {
 		&opts.DatabaseURL,
 		"database-url",
 		opts.DatabaseURL,
-		"PostgreSQL database URL",
+		"MongoDB/PostgreSQL database URL",
 	)
 	registerRootCompletions(cmd)
 
@@ -310,17 +321,6 @@ func loadConfig(opts *Options) error {
 	opts.ConfigState = resolved
 	opts.configLoaded = true
 	return nil
-}
-
-func newStorageDatabase(opts *Options) *storage.Database {
-	if opts == nil {
-		return storage.NewDatabase("")
-	}
-	return storage.NewDatabaseWithConfig(storage.DatabaseConfig{
-		Backend: storage.Backend(opts.DatabaseBackend),
-		Path:    opts.Database,
-		URL:     opts.DatabaseURL,
-	})
 }
 
 func providerDefaults() []appconfig.ProviderDefault {

@@ -11,7 +11,7 @@ import (
 )
 
 type Repository struct {
-	database *storage.Database
+	database *storage.SQLDatabase
 }
 
 type UpsertResult struct {
@@ -20,7 +20,7 @@ type UpsertResult struct {
 	ListedCount  int   `json:"listed_count" csv:"listed_count"`
 }
 
-func NewRepository(database *storage.Database) (Repository, error) {
+func NewRepository(database *storage.SQLDatabase) (Repository, error) {
 	if database == nil {
 		return Repository{}, oops.In("opendart_company_repository").New("opendart company repository database is nil")
 	}

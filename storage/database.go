@@ -31,7 +31,7 @@ type DatabaseConfig struct {
 	URL     string
 }
 
-type Database struct {
+type SQLDatabase struct {
 	backend    Backend
 	path       string
 	url        string
@@ -40,27 +40,35 @@ type Database struct {
 	readClient *bun.DB
 }
 
-func NewDatabase(path string) *Database {
-	return NewDatabaseWithConfig(DatabaseConfig{Backend: BackendSQLite, Path: path})
+func NewDatabase(path string) *SQLDatabase {
+	return NewSQLDatabase(path)
 }
 
-func NewDatabaseWithConfig(config DatabaseConfig) *Database {
+func NewSQLDatabase(path string) *SQLDatabase {
+	return NewSQLDatabaseWithConfig(DatabaseConfig{Backend: BackendSQLite, Path: path})
+}
+
+func NewDatabaseWithConfig(config DatabaseConfig) *SQLDatabase {
+	return NewSQLDatabaseWithConfig(config)
+}
+
+func NewSQLDatabaseWithConfig(config DatabaseConfig) *SQLDatabase {
 	backend := config.Backend
 	if backend == "" {
 		backend = BackendSQLite
 	}
-	return &Database{
+	return &SQLDatabase{
 		backend: backend,
 		path:    config.Path,
 		url:     config.URL,
 	}
 }
 
-func (db *Database) Client(ctx context.Context) (*bun.DB, error) {
+func (db *SQLDatabase) Client(ctx context.Context) (*bun.DB, error) {
 	return db.DB(ctx)
 }
 
-func (db *Database) Reader(ctx context.Context) (*bun.DB, error) {
+func (db *SQLDatabase) Reader(ctx context.Context) (*bun.DB, error) {
 	if db == nil {
 		return nil, oops.In("storage_database").New("database is nil")
 	}
@@ -89,7 +97,7 @@ func (db *Database) Reader(ctx context.Context) (*bun.DB, error) {
 	return client, nil
 }
 
-func (db *Database) DB(ctx context.Context) (*bun.DB, error) {
+func (db *SQLDatabase) DB(ctx context.Context) (*bun.DB, error) {
 	if db == nil {
 		return nil, oops.In("storage_database").New("database is nil")
 	}
@@ -120,7 +128,7 @@ func (db *Database) DB(ctx context.Context) (*bun.DB, error) {
 	return db.client, nil
 }
 
-func (db *Database) Close() error {
+func (db *SQLDatabase) Close() error {
 	if db == nil {
 		return nil
 	}
@@ -147,7 +155,7 @@ func (db *Database) Close() error {
 	return out
 }
 
-func (db *Database) open(ctx context.Context) (*bun.DB, error) {
+func (db *SQLDatabase) open(ctx context.Context) (*bun.DB, error) {
 	switch db.backend {
 	case BackendSQLite:
 		return openSQLiteWriter(ctx, db.path)
@@ -158,7 +166,7 @@ func (db *Database) open(ctx context.Context) (*bun.DB, error) {
 	}
 }
 
-func (db *Database) safeLocation() string {
+func (db *SQLDatabase) safeLocation() string {
 	if db == nil {
 		return ""
 	}

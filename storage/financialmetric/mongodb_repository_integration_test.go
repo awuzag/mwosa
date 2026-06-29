@@ -78,7 +78,7 @@ func assertFinancialMetricRepositoryContract(t *testing.T, repository metricRepo
 	require.Contains(t, metricDecimals(metrics), "roe=0.25000000")
 }
 
-func seedMetricSQLiteCompany(t *testing.T, ctx context.Context, database *storage.Database) companyidentity.InspectResult {
+func seedMetricSQLiteCompany(t *testing.T, ctx context.Context, database *storage.SQLDatabase) companyidentity.InspectResult {
 	t.Helper()
 
 	repository, err := companyidentity.NewRepository(database)
@@ -139,7 +139,7 @@ func seedMetricCompany(t *testing.T, ctx context.Context, repository interface {
 	return company
 }
 
-func seedMetricStatements(t *testing.T, ctx context.Context, sqliteDatabase *storage.Database, runtime *storagemongodb.Runtime, company companyidentity.InspectResult) {
+func seedMetricStatements(t *testing.T, ctx context.Context, sqliteDatabase *storage.SQLDatabase, runtime *storagemongodb.Runtime, company companyidentity.InspectResult) {
 	t.Helper()
 
 	var repository interface {

@@ -122,6 +122,11 @@ classDiagram
 
 ## MongoDB Runtime 관리
 
+`mwosa` 의 기본 canonical storage backend 는 MongoDB 로 둔다. 사용자는
+MongoDB server 또는 Atlas cluster 를 먼저 준비하고, `mwosa` 는 준비된 URI 로
+접속해 collection validator/index 를 초기화하고 진단한다. SQLite 는 기존
+repository 비교 baseline 과 명시적인 `--database` 경로 기반 테스트에만 남긴다.
+
 MongoDB client 생성과 종료는 repository 에서 직접 하지 않는다. `*mongo.Client` 는
 connection pool 과 background resource 를 들고 있으므로, 별도 runtime 패키지에서
 일괄 관리한다.

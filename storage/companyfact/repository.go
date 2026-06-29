@@ -17,7 +17,7 @@ import (
 const FactTypeDividend = "dividend"
 
 type Repository struct {
-	database *storage.Database
+	database *storage.SQLDatabase
 }
 
 type FactInput struct {
@@ -71,7 +71,7 @@ type UpsertResult struct {
 	FactsWritten int `json:"facts_written" csv:"facts_written"`
 }
 
-func NewRepository(database *storage.Database) (Repository, error) {
+func NewRepository(database *storage.SQLDatabase) (Repository, error) {
 	if database == nil {
 		return Repository{}, oops.In("company_fact_repository").New("company fact repository database is nil")
 	}

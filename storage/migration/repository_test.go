@@ -167,7 +167,7 @@ func TestDailyBarV2ExtensionCleanupExecutor(t *testing.T) {
 	}
 }
 
-func seedDailyBarV1Row(t *testing.T, ctx context.Context, database *storage.Database) {
+func seedDailyBarV1Row(t *testing.T, ctx context.Context, database *storage.SQLDatabase) {
 	t.Helper()
 	client, err := database.Client(ctx)
 	if err != nil {

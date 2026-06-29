@@ -101,15 +101,12 @@ func newSyncKRXCommand(opts *Options) *cobra.Command {
 			if err != nil {
 				return nil, err
 			}
-			database := newStorageDatabase(opts)
-			defer func() {
-				err = oops.Join(err, database.Close())
-			}()
-			repository, err := providerraw.NewRepository(database)
+			runtime, err := newAppRuntime(opts, false)
 			if err != nil {
 				return nil, err
 			}
-			writeResult, err := repository.UpsertSnapshot(cmd.Context(), providerraw.Snapshot{
+			defer closeAppRuntime(runtime, &err)
+			writeResult, err := runtime.Storage.ProviderRaw.UpsertSnapshot(cmd.Context(), providerraw.Snapshot{
 				Provider:         rawResult.Provider,
 				Group:            rawResult.Group,
 				Operation:        rawResult.APIID,

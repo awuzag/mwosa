@@ -164,14 +164,12 @@ func newKISProviderRawCommand(opts *Options, syncSnapshot bool) *cobra.Command {
 				if !syncSnapshot {
 					return kisRawOutput{Result: rawResult}, nil
 				}
-				database := newStorageDatabase(opts)
-				defer func() {
-					err = oops.Join(err, database.Close())
-				}()
-				repository, err := providerraw.NewRepository(database)
+				runtime, err := newAppRuntime(opts, false)
 				if err != nil {
 					return nil, err
 				}
+				defer closeAppRuntime(runtime, &err)
+				repository := runtime.Storage.ProviderRaw
 				return repository.UpsertSnapshot(cmd.Context(), providerraw.Snapshot{
 					Provider:         rawResult.Provider,
 					Group:            rawResult.Group,
@@ -531,10 +529,7 @@ func readProviderRawSnapshots(cmd *cobra.Command, opts *Options, query providerr
 	}
 	defer closeAppRuntime(runtime, &err)
 
-	repository, err := providerraw.NewRepository(runtime.Storage.Database)
-	if err != nil {
-		return nil, err
-	}
+	repository := runtime.Storage.ProviderRaw
 	snapshots, err := repository.ListSnapshots(cmd.Context(), query)
 	if err != nil {
 		return nil, err

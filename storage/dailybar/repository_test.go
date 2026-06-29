@@ -281,7 +281,7 @@ func TestNewRepositoriesRequiresDatabase(t *testing.T) {
 	}
 }
 
-func countDailyBarExtensionV2Rows(t *testing.T, database *storage.Database) int {
+func countDailyBarExtensionV2Rows(t *testing.T, database *storage.SQLDatabase) int {
 	t.Helper()
 
 	client, err := database.Client(context.Background())
@@ -295,7 +295,7 @@ func countDailyBarExtensionV2Rows(t *testing.T, database *storage.Database) int 
 	return got
 }
 
-func getStoredDailyBarV2Row(t *testing.T, database *storage.Database) storage.DailyBarV2Row {
+func getStoredDailyBarV2Row(t *testing.T, database *storage.SQLDatabase) storage.DailyBarV2Row {
 	t.Helper()
 
 	client, err := database.Client(context.Background())
@@ -309,7 +309,7 @@ func getStoredDailyBarV2Row(t *testing.T, database *storage.Database) storage.Da
 	return row
 }
 
-func assertDailyBarRowCounts(t *testing.T, database *storage.Database, wantV1Rows, wantV2Rows int) {
+func assertDailyBarRowCounts(t *testing.T, database *storage.SQLDatabase, wantV1Rows, wantV2Rows int) {
 	t.Helper()
 
 	client, err := database.Client(context.Background())

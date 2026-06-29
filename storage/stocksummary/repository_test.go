@@ -109,7 +109,7 @@ func TestRepositoryInspectMarksMissingOptionalSections(t *testing.T) {
 	require.Equal(t, "statements", summary.Missing[2].Section)
 }
 
-func seedCompany(t *testing.T, ctx context.Context, database *storage.Database) companyidentity.InspectResult {
+func seedCompany(t *testing.T, ctx context.Context, database *storage.SQLDatabase) companyidentity.InspectResult {
 	t.Helper()
 	companyRepository, err := companyidentity.NewRepository(database)
 	require.NoError(t, err)
@@ -152,7 +152,7 @@ func seedCompany(t *testing.T, ctx context.Context, database *storage.Database) 
 	return company
 }
 
-func seedSummaryData(ctx context.Context, database *storage.Database, company companyidentity.InspectResult) error {
+func seedSummaryData(ctx context.Context, database *storage.SQLDatabase, company companyidentity.InspectResult) error {
 	client, err := database.Client(ctx)
 	if err != nil {
 		return err

@@ -71,7 +71,7 @@ func TestIndexBarStoreUpsertIsIdempotent(t *testing.T) {
 	}
 }
 
-func assertIndexRowCounts(t *testing.T, database *storage.Database, wantIndexes, wantSources, wantBars, wantExtensions int) {
+func assertIndexRowCounts(t *testing.T, database *storage.SQLDatabase, wantIndexes, wantSources, wantBars, wantExtensions int) {
 	t.Helper()
 	client, err := database.Client(context.Background())
 	if err != nil {

@@ -24,6 +24,7 @@ const (
 	DatabaseURLEnv          = "MWOSA_DATABASE_URL"
 	DatabaseBackendSQLite   = "sqlite"
 	DatabaseBackendPostgres = "postgres"
+	DatabaseBackendMongoDB  = "mongodb"
 )
 
 var (
@@ -121,7 +122,11 @@ func LoadOrCreate(opts Options) (Resolved, error) {
 	if err != nil {
 		return Resolved{}, errb.Wrap(err)
 	}
-	databaseBackend, databaseBackendSource, err := resolveDatabaseBackend(opts.DatabaseBackend, cfg.App.Database.Backend)
+	databaseBackendFlag := opts.DatabaseBackend
+	if strings.TrimSpace(databaseBackendFlag) == "" && strings.TrimSpace(opts.DatabasePath) != "" {
+		databaseBackendFlag = DatabaseBackendSQLite
+	}
+	databaseBackend, databaseBackendSource, err := resolveDatabaseBackend(databaseBackendFlag, cfg.App.Database.Backend)
 	if err != nil {
 		return Resolved{}, errb.Wrap(err)
 	}
@@ -285,6 +290,15 @@ func UseDatabase(opts Options, database DatabaseConfig) (Resolved, error) {
 		cfg.App.Database.Backend = DatabaseBackendPostgres
 		cfg.App.Database.URL = urlValue
 		cfg.App.Database.URLEnv = urlEnv
+	case DatabaseBackendMongoDB:
+		urlValue := strings.TrimSpace(database.URL)
+		urlEnv := strings.TrimSpace(database.URLEnv)
+		if urlValue == "" && urlEnv == "" {
+			return Resolved{}, errb.New("mongodb database backend requires --url or --url-env")
+		}
+		cfg.App.Database.Backend = DatabaseBackendMongoDB
+		cfg.App.Database.URL = urlValue
+		cfg.App.Database.URLEnv = urlEnv
 	default:
 		return Resolved{}, errb.With("backend", backend).New("unsupported database backend")
 	}
@@ -446,12 +460,14 @@ func resolveDatabaseBackend(flagBackend, configBackend string) (string, Source, 
 		backend, err := normalizeDatabaseBackend(configBackend)
 		return backend, SourceConfigFile, err
 	}
-	return DatabaseBackendSQLite, SourceDefault, nil
+	return DatabaseBackendMongoDB, SourceDefault, nil
 }
 
 func normalizeDatabaseBackend(value string) (string, error) {
 	switch strings.ToLower(strings.TrimSpace(value)) {
-	case "", DatabaseBackendSQLite:
+	case "", DatabaseBackendMongoDB:
+		return DatabaseBackendMongoDB, nil
+	case DatabaseBackendSQLite:
 		return DatabaseBackendSQLite, nil
 	case DatabaseBackendPostgres, "postgresql":
 		return DatabaseBackendPostgres, nil
@@ -489,7 +505,7 @@ func defaultFile(opts Options, databasePath string) File {
 		App: AppConfig{
 			Market: market,
 			Database: DatabaseConfig{
-				Backend: DatabaseBackendSQLite,
+				Backend: DatabaseBackendMongoDB,
 				Path:    databasePath,
 			},
 		},
@@ -552,7 +568,7 @@ func applyDefaults(cfg *File, opts Options, databasePath string) bool {
 		changed = true
 	}
 	if strings.TrimSpace(cfg.App.Database.Backend) == "" {
-		cfg.App.Database.Backend = DatabaseBackendSQLite
+		cfg.App.Database.Backend = DatabaseBackendMongoDB
 		changed = true
 	}
 

@@ -15,12 +15,12 @@ import (
 )
 
 type repository struct {
-	database *storage.Database
+	database *storage.SQLDatabase
 }
 
 var _ strategyservice.Repository = (*repository)(nil)
 
-func NewRepository(database *storage.Database) (strategyservice.Repository, error) {
+func NewRepository(database *storage.SQLDatabase) (strategyservice.Repository, error) {
 	if database == nil {
 		return nil, oops.In("strategy_repository").New("strategy repository database is nil")
 	}

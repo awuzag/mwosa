@@ -351,6 +351,48 @@ func TestConfigUseDatabasePostgresStoresURLEnvAndMasksOutput(t *testing.T) {
 	}
 }
 
+func TestConfigUseDatabaseMongoDBStoresURLEnvAndMasksOutput(t *testing.T) {
+	t.Setenv("MWOSA_DATABASE_URL", "mongodb://mwosa:secret@localhost:27017")
+	configPath := filepath.Join(t.TempDir(), "config.json")
+	cmd := NewRootCommand(BuildInfo{})
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	cmd.SetArgs([]string{
+		"--config", configPath,
+		"config", "use-database", "mongodb", "--url-env", "MWOSA_DATABASE_URL",
+	})
+
+	if err := cmd.Execute(); err != nil {
+		t.Fatalf("execute config use-database: %v\n%s", err, out.String())
+	}
+	if strings.Contains(out.String(), ":secret@") {
+		t.Fatalf("config use-database output should mask URL secret:\n%s", out.String())
+	}
+	var result configUseDatabaseResult
+	if err := json.Unmarshal(out.Bytes(), &result); err != nil {
+		t.Fatalf("config use-database output should be json: %v\n%s", err, out.String())
+	}
+	if result.Backend != "mongodb" || result.URLEnv != "MWOSA_DATABASE_URL" {
+		t.Fatalf("result = %#v, want mongodb url_env", result)
+	}
+
+	data, err := os.ReadFile(configPath)
+	if err != nil {
+		t.Fatalf("read config file: %v", err)
+	}
+	var cfg appconfig.File
+	if err := json.Unmarshal(data, &cfg); err != nil {
+		t.Fatalf("parse config file: %v", err)
+	}
+	if cfg.App.Database.Backend != "mongodb" || cfg.App.Database.URLEnv != "MWOSA_DATABASE_URL" {
+		t.Fatalf("database config = %#v, want mongodb url_env", cfg.App.Database)
+	}
+	if cfg.App.Database.URL != "" {
+		t.Fatalf("direct URL stored = %q, want empty", cfg.App.Database.URL)
+	}
+}
+
 func TestInspectConfigMasksDirectDatabaseURL(t *testing.T) {
 	configPath := filepath.Join(t.TempDir(), "config.json")
 	writeRootTestConfig(t, configPath, appconfig.File{
@@ -534,8 +576,8 @@ func TestOptionsValidateTreatsProviderFlagsAsOptional(t *testing.T) {
 	opts := Options{
 		Output:          OutputModeTable,
 		Market:          "krx",
-		DatabaseBackend: "postgres",
-		DatabaseURL:     "postgres://mwosa@localhost:5432/mwosa?sslmode=disable",
+		DatabaseBackend: "mongodb",
+		DatabaseURL:     "mongodb://localhost:27017",
 	}
 
 	if err := opts.Validate(); err != nil {

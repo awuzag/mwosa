@@ -14,7 +14,7 @@ import (
 )
 
 type Repository struct {
-	database *storage.Database
+	database *storage.SQLDatabase
 }
 
 type EventInput struct {
@@ -59,7 +59,7 @@ type UpsertResult struct {
 	EventsWritten int `json:"events_written" csv:"events_written"`
 }
 
-func NewRepository(database *storage.Database) (Repository, error) {
+func NewRepository(database *storage.SQLDatabase) (Repository, error) {
 	if database == nil {
 		return Repository{}, oops.In("company_event_repository").New("company event repository database is nil")
 	}
