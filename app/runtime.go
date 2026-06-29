@@ -1,7 +1,9 @@
 package app
 
 import (
+	"context"
 	"path/filepath"
+	"time"
 
 	appconfig "github.com/awuzag/mwosa/app/config"
 	"github.com/awuzag/mwosa/app/handler"
@@ -41,6 +43,7 @@ import (
 	instrumentstorage "github.com/awuzag/mwosa/storage/instrument"
 	macrostorage "github.com/awuzag/mwosa/storage/macro"
 	migrationstorage "github.com/awuzag/mwosa/storage/migration"
+	storagemongodb "github.com/awuzag/mwosa/storage/mongodb"
 	"github.com/awuzag/mwosa/storage/providerauth"
 	strategystorage "github.com/awuzag/mwosa/storage/strategy"
 	strategyfundamentalsstorage "github.com/awuzag/mwosa/storage/strategyfundamentals"
@@ -68,6 +71,7 @@ type Runtime struct {
 
 type StorageRuntime struct {
 	Database             *storage.Database
+	MongoDB              *storagemongodb.Runtime
 	ProviderAuthDatabase *providerauth.Database
 	Compositions         compositionservice.Repository
 	DailyBars            DailyBarStorage
@@ -164,85 +168,107 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	errb := oops.In("app_runtime")
 
 	database := storageDatabaseFromOptions(opts)
+	mongoRuntime, err := mongodbRuntimeFromOptions(opts)
+	if err != nil {
+		return nil, oops.Join(
+			errb.Wrapf(err, "create mongodb runtime"),
+			database.Close(),
+		)
+	}
 	providerAuthDatabase := providerauth.NewDatabase(providerAuthDatabasePath(opts))
+	closeStorage := func() error {
+		return oops.Join(
+			database.Close(),
+			closeMongoDBRuntime(mongoRuntime),
+			providerAuthDatabase.Close(),
+		)
+	}
 	tokenCache, err := providerauth.NewRepository(providerAuthDatabase)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create provider auth token repository"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	reader, writer, err := dailybarstorage.NewRepositories(database)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create daily bar repositories"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	indexReader, indexWriter, err := indexbarstorage.NewRepository(database)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create index bar repository"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	macroReader, macroWriter, err := macrostorage.NewRepository(database)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create macro repository"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
-	instrumentRepository, err := instrumentstorage.NewRepository(database)
+	instrumentRepository, err := instrumentRepositoryFromOptions(database, mongoRuntime)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create instrument repository"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	compositionRepository, err := compositionstorage.NewRepository(database)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create composition repository"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	strategyRepository, err := strategystorage.NewRepository(database)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create strategy repository"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	backtestStrategyRepository, err := backteststorage.NewRepository(database)
 	if err != nil {
-		return nil, errb.Wrapf(err, "create backtest strategy repository")
+		return nil, oops.Join(
+			errb.Wrapf(err, "create backtest strategy repository"),
+			closeStorage(),
+		)
 	}
 	migrationStore, err := migrationstorage.NewRepository(database)
 	if err != nil {
-		return nil, errb.Wrapf(err, "create migration repository")
+		return nil, oops.Join(
+			errb.Wrapf(err, "create migration repository"),
+			closeStorage(),
+		)
 	}
 	dailyBarMigration, err := migrationstorage.NewDailyBarV1ToV2Executor(database, writer)
 	if err != nil {
-		return nil, errb.Wrapf(err, "create daily bar migration")
+		return nil, oops.Join(
+			errb.Wrapf(err, "create daily bar migration"),
+			closeStorage(),
+		)
 	}
 	dailyBarExtensionCleanup, err := migrationstorage.NewDailyBarV2ExtensionCleanupExecutor(database)
 	if err != nil {
-		return nil, errb.Wrapf(err, "create daily bar extension cleanup migration")
+		return nil, oops.Join(
+			errb.Wrapf(err, "create daily bar extension cleanup migration"),
+			closeStorage(),
+		)
 	}
 	migrationRunner, err := migrationcore.NewRunner(migrationStore, []migrationcore.Definition{
 		migrationstorage.NewDailyBarV1ToV2Definition(dailyBarMigration),
 		migrationstorage.NewDailyBarV2ExtensionCleanupDefinition(dailyBarExtensionCleanup),
 	})
 	if err != nil {
-		return nil, errb.Wrapf(err, "create migration runner")
+		return nil, oops.Join(
+			errb.Wrapf(err, "create migration runner"),
+			closeStorage(),
+		)
 	}
 
 	registry := provider.NewRegistry()
@@ -258,8 +284,7 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 		}, config, builders...); err != nil {
 			return nil, oops.Join(
 				errb.Wrapf(err, "register configured providers"),
-				database.Close(),
-				providerAuthDatabase.Close(),
+				closeStorage(),
 			)
 		}
 	}
@@ -284,143 +309,126 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create daily read service"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	dailyCollector, err := daily.NewService(reader, writer, providerRuntime.DailyBars)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create daily collect service"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	indexReaderService, err := indexservice.NewReadService(indexReader)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create index read service"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	indexCollector, err := indexservice.NewService(indexReader, indexWriter, providerRuntime.IndexBars)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create index collect service"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	macroReaderService, err := macroservice.NewReadService(macroReader)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create macro read service"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	macroCollector, err := macroservice.NewService(macroReader, macroWriter, providerRuntime.Macro)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create macro collect service"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	providersService, err := providerservice.NewService(registry)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create providers service"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	financialsService, err := financialsservice.NewService(providerRuntime.Financials)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create financials service"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	instrumentService, err := instrumentservice.NewService(providerRuntime.Instruments, instrumentservice.WithRepository(instrumentRepository))
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create instrument service"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	quoteService, err := quoteservice.NewService(providerRuntime.Quotes)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create quote service"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	intradayService, err := intradayservice.NewService(providerRuntime.Intraday)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create intraday service"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	orderbookService, err := orderbookservice.NewService(providerRuntime.Orderbooks)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create orderbook service"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	tradesService, err := tradesservice.NewService(providerRuntime.Trades)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create trades service"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	compositionService, err := compositionservice.NewService(providerRuntime.Compositions, compositionservice.WithRepository(compositionRepository))
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create composition service"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	fundamentalsRepository, err := strategyfundamentalsstorage.NewRepository(database)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create strategy fundamentals repository"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	datasetReader, err := strategyservice.NewDailyBarDatasetReaderWithFundamentals(reader, fundamentalsRepository, opts.Market)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create strategy dataset reader"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	strategyService, err := strategyservice.NewService(strategyRepository, datasetReader)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create strategy service"),
-			database.Close(),
-			providerAuthDatabase.Close(),
+			closeStorage(),
 		)
 	}
 	universeRunner, err := universeservice.NewRunner(reader, strategyRepository, strategyService)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create universe service"),
-			database.Close(),
+			closeStorage(),
 		)
 	}
 	strategyService.SetPipelineExecutor(universeRunner)
@@ -428,14 +436,14 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	if !ok {
 		return nil, oops.Join(
 			errb.New("daily bar repository does not support streaming reads"),
-			database.Close(),
+			closeStorage(),
 		)
 	}
 	backtestService, err := backtestservice.NewServiceWithUniverseSources(backtestReader, backtestStrategyRepository, strategyRepository, strategyService)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create backtest service"),
-			database.Close(),
+			closeStorage(),
 		)
 	}
 	backtestHandler := handler.NewBacktest(backtestService)
@@ -455,6 +463,7 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	return &Runtime{
 		Storage: StorageRuntime{
 			Database:             database,
+			MongoDB:              mongoRuntime,
 			ProviderAuthDatabase: providerAuthDatabase,
 			Compositions:         compositionRepository,
 			DailyBars: DailyBarStorage{
@@ -523,6 +532,7 @@ func (r *Runtime) Close() error {
 	}
 	return oops.Join(
 		r.Storage.Database.Close(),
+		closeMongoDBRuntime(r.Storage.MongoDB),
 		r.Storage.ProviderAuthDatabase.Close(),
 	)
 }
@@ -544,6 +554,31 @@ func storageDatabaseFromOptions(opts Options) *storage.Database {
 		Path:    opts.Database,
 		URL:     opts.DatabaseURL,
 	})
+}
+
+func mongodbRuntimeFromOptions(opts Options) (*storagemongodb.Runtime, error) {
+	if opts.DatabaseBackend != appconfig.DatabaseBackendMongoDB {
+		return nil, nil
+	}
+	return storagemongodb.NewRuntime(context.Background(), storagemongodb.Config{
+		URI: opts.DatabaseURL,
+	})
+}
+
+func closeMongoDBRuntime(runtime *storagemongodb.Runtime) error {
+	if runtime == nil {
+		return nil
+	}
+	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	defer cancel()
+	return runtime.Close(ctx)
+}
+
+func instrumentRepositoryFromOptions(database *storage.Database, mongoRuntime *storagemongodb.Runtime) (instrumentservice.Repository, error) {
+	if mongoRuntime != nil {
+		return instrumentstorage.NewMongoRepository(mongoRuntime.Database())
+	}
+	return instrumentstorage.NewRepository(database)
 }
 
 type kisTokenCacheBuilder interface {
