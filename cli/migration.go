@@ -13,11 +13,11 @@ func newMigrateStatusCommand(opts *Options) *cobra.Command {
 		Short: "List local data migration status",
 		Args:  cobra.NoArgs,
 		RunE: runResult(opts, func(cmd *cobra.Command, _ []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Migration.Status(cmd.Context())
 		}),
@@ -30,11 +30,11 @@ func newMigrateApplyCommand(opts *Options) *cobra.Command {
 		Short: "Apply pending local data migrations",
 		Args:  cobra.NoArgs,
 		RunE: runResult(opts, func(cmd *cobra.Command, _ []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Migration.Apply(cmd.Context())
 		}),

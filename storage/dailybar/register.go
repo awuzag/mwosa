@@ -1,6 +1,10 @@
 package dailybar
 
-import "github.com/awuzag/mwosa/storage/repositoryregistry"
+import (
+	"github.com/awuzag/mwosa/storage"
+	"github.com/awuzag/mwosa/storage/repositoryregistry"
+	"go.mongodb.org/mongo-driver/v2/mongo"
+)
 
 func Register(registry *repositoryregistry.Registry) error {
 	for _, backend := range []repositoryregistry.Backend{repositoryregistry.BackendSQLite, repositoryregistry.BackendPostgres} {
@@ -12,7 +16,7 @@ func Register(registry *repositoryregistry.Registry) error {
 }
 
 func createSQLRepositories(ctx repositoryregistry.BuildContext) (repositoryregistry.Result, error) {
-	database, err := ctx.Resolver.SQL()
+	database, err := repositoryregistry.Resolve[*storage.SQLDatabase](ctx)
 	if err != nil {
 		return repositoryregistry.Result{}, err
 	}
@@ -24,7 +28,7 @@ func createSQLRepositories(ctx repositoryregistry.BuildContext) (repositoryregis
 }
 
 func createMongoRepositories(ctx repositoryregistry.BuildContext) (repositoryregistry.Result, error) {
-	database, err := ctx.Resolver.Mongo()
+	database, err := repositoryregistry.Resolve[*mongo.Database](ctx)
 	if err != nil {
 		return repositoryregistry.Result{}, err
 	}

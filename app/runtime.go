@@ -1,6 +1,8 @@
 package app
 
 import (
+	"context"
+
 	"github.com/awuzag/mwosa/app/handler"
 	migrationcore "github.com/awuzag/mwosa/migration"
 	"github.com/awuzag/mwosa/providers/builtin"
@@ -40,12 +42,14 @@ type Options struct {
 	Database             string
 	DatabaseURL          string
 	ProviderAuthDatabase string
-	RepositoryBackends   map[RepositoryName]string
-	Market               provider.Market
-	ProviderID           provider.ProviderID
-	PreferProvider       provider.ProviderID
-	ProviderConfig       provider.Config
-	ActivateProviders    bool
+	// RepositoryBackends is an internal assembly hook for tests and staged
+	// migrations. CLI/config backend selection stays on DatabaseBackend.
+	RepositoryBackends map[RepositoryName]string
+	Market             provider.Market
+	ProviderID         provider.ProviderID
+	PreferProvider     provider.ProviderID
+	ProviderConfig     provider.Config
+	ActivateProviders  bool
 }
 
 type Runtime struct {
@@ -151,14 +155,14 @@ type MacroServices struct {
 	Collector macroservice.Service
 }
 
-func NewRuntime(opts Options) (*Runtime, error) {
-	return NewRuntimeWithProviderBuilders(opts, builtin.Builders()...)
+func NewRuntime(ctx context.Context, opts Options) (*Runtime, error) {
+	return NewRuntimeWithProviderBuilders(ctx, opts, builtin.Builders()...)
 }
 
-func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderBuilder) (*Runtime, error) {
+func NewRuntimeWithProviderBuilders(ctx context.Context, opts Options, builders ...provider.ProviderBuilder) (*Runtime, error) {
 	errb := oops.In("app_runtime")
 
-	storageRuntime, err := NewStorageRuntime(opts)
+	storageRuntime, err := NewStorageRuntime(ctx, opts)
 	if err != nil {
 		return nil, errb.Wrapf(err, "create storage runtime")
 	}
@@ -166,21 +170,21 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create provider runtime"),
-			storageRuntime.Close(),
+			storageRuntime.Close(ctx),
 		)
 	}
 	serviceRuntime, err := newServiceRuntime(opts, storageRuntime, providerRuntime)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create service runtime"),
-			storageRuntime.Close(),
+			storageRuntime.Close(ctx),
 		)
 	}
 	handlers, err := newHandlers(serviceRuntime)
 	if err != nil {
 		return nil, oops.Join(
 			errb.Wrapf(err, "create handler runtime"),
-			storageRuntime.Close(),
+			storageRuntime.Close(ctx),
 		)
 	}
 
@@ -192,9 +196,9 @@ func NewRuntimeWithProviderBuilders(opts Options, builders ...provider.ProviderB
 	}, nil
 }
 
-func (r *Runtime) Close() error {
+func (r *Runtime) Close(ctx context.Context) error {
 	if r == nil {
 		return nil
 	}
-	return r.Storage.Close()
+	return r.Storage.Close(ctx)
 }

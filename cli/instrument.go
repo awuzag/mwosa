@@ -35,11 +35,11 @@ func newListInstrumentsCommand(opts *Options) *cobra.Command {
 		Short: "Search stored instruments, falling back to provider search",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, true)
+			runtime, err := newAppRuntime(cmd.Context(), opts, true)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Instruments.List(cmd.Context(), handler.ListInstrumentsRequest{
 				ProviderID:     provider.ProviderID(opts.Provider),
@@ -63,11 +63,11 @@ func newSyncInstrumentsCommand(opts *Options) *cobra.Command {
 		Short: "Fetch provider instrument master and store it locally",
 		Args:  cobra.NoArgs,
 		RunE: runResult(opts, func(cmd *cobra.Command, _ []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, true)
+			runtime, err := newAppRuntime(cmd.Context(), opts, true)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Instruments.Sync(cmd.Context(), handler.SyncInstrumentsRequest{
 				ProviderID:     provider.ProviderID(opts.Provider),
@@ -91,11 +91,11 @@ func newInspectInstrumentCommand(opts *Options) *cobra.Command {
 		Short: "Inspect one provider instrument",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, true)
+			runtime, err := newAppRuntime(cmd.Context(), opts, true)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Instruments.Inspect(cmd.Context(), handler.InspectInstrumentRequest{
 				ProviderID:     provider.ProviderID(opts.Provider),

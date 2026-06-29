@@ -3,19 +3,18 @@ package app
 import (
 	"context"
 	"path/filepath"
-	"time"
 
 	appconfig "github.com/awuzag/mwosa/app/config"
 	"github.com/awuzag/mwosa/storage"
 	storagemongodb "github.com/awuzag/mwosa/storage/mongodb"
 	"github.com/awuzag/mwosa/storage/providerauth"
 	"github.com/awuzag/mwosa/storage/repositoryregistry"
-	repositorybuiltin "github.com/awuzag/mwosa/storage/repositoryregistry/builtin"
 	"github.com/samber/oops"
 	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
-func NewStorageRuntime(opts Options) (StorageRuntime, error) {
+func NewStorageRuntime(ctx context.Context, opts Options) (StorageRuntime, error) {
+	ctx = runtimeContext(ctx)
 	backend := normalizedDatabaseBackend(opts)
 	runtime := StorageRuntime{
 		Backend:              backend,
@@ -26,23 +25,23 @@ func NewStorageRuntime(opts Options) (StorageRuntime, error) {
 	}
 
 	if requiresMongoDBRuntime(backend, opts.RepositoryBackends) {
-		mongoRuntime, err := storagemongodb.NewRuntime(context.Background(), storagemongodb.Config{
+		mongoRuntime, err := storagemongodb.NewRuntime(ctx, storagemongodb.Config{
 			URI: opts.DatabaseURL,
 		})
 		if err != nil {
 			return StorageRuntime{}, oops.Join(
 				oops.In("app_storage_runtime").Wrapf(err, "create mongodb runtime"),
-				runtime.Close(),
+				runtime.Close(ctx),
 			)
 		}
 		runtime.MongoDB = mongoRuntime
 	}
 
 	registry := repositoryregistry.New()
-	if err := repositorybuiltin.Register(registry); err != nil {
+	if err := registerStorageRepositories(registry); err != nil {
 		return StorageRuntime{}, oops.Join(
-			oops.In("app_storage_runtime").Wrapf(err, "register builtin repositories"),
-			runtime.Close(),
+			oops.In("app_storage_runtime").Wrapf(err, "register storage repositories"),
+			runtime.Close(ctx),
 		)
 	}
 	factory, err := NewRepositoryFactory(RepositoryFactoryConfig{
@@ -63,13 +62,13 @@ func NewStorageRuntime(opts Options) (StorageRuntime, error) {
 		},
 	})
 	if err != nil {
-		return StorageRuntime{}, oops.Join(err, runtime.Close())
+		return StorageRuntime{}, oops.Join(err, runtime.Close(ctx))
 	}
 	runtime, err = initializeStorageRepositories(runtime, factory)
 	if err != nil {
 		return StorageRuntime{}, oops.Join(
 			oops.In("app_storage_runtime").Wrapf(err, "create repositories"),
-			runtime.Close(),
+			runtime.Close(ctx),
 		)
 	}
 	return runtime, nil
@@ -82,10 +81,10 @@ func initializeStorageRepositories(runtime StorageRuntime, factory RepositoryFac
 	return runtime, nil
 }
 
-func (r StorageRuntime) Close() error {
+func (r StorageRuntime) Close(ctx context.Context) error {
 	return oops.Join(
 		r.SQLDatabase.Close(),
-		closeMongoDBRuntime(r.MongoDB),
+		closeMongoDBRuntime(ctx, r.MongoDB),
 		r.ProviderAuthDatabase.Close(),
 	)
 }
@@ -149,11 +148,11 @@ func providerAuthDatabasePath(opts Options) string {
 	return filepath.Join(filepath.Dir(opts.Database), appconfig.ProviderAuthDatabaseFileName)
 }
 
-func closeMongoDBRuntime(runtime *storagemongodb.Runtime) error {
+func closeMongoDBRuntime(ctx context.Context, runtime *storagemongodb.Runtime) error {
 	if runtime == nil {
 		return nil
 	}
-	ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+	shutdownCtx, cancel := shutdownContext(ctx)
 	defer cancel()
-	return runtime.Close(ctx)
+	return runtime.Close(shutdownCtx)
 }

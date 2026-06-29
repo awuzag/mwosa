@@ -46,11 +46,11 @@ sync financials facts or sync events to populate the underlying sections.`),
 			if err != nil {
 				return nil, err
 			}
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			repository, err := stocksummary.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {

@@ -1,6 +1,8 @@
 package cli
 
 import (
+	"context"
+
 	"github.com/awuzag/mwosa/app"
 	"github.com/awuzag/mwosa/app/handler"
 	provider "github.com/awuzag/mwosa/providers/core"
@@ -32,11 +34,11 @@ func newInspectStorageCommand(opts *Options) *cobra.Command {
 		Short: "Summarize local daily bar storage coverage",
 		Args:  cobra.NoArgs,
 		RunE: runResult(opts, func(cmd *cobra.Command, _ []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Daily.StorageSummary(cmd.Context(), handler.DailyStorageSummaryRequest{
 				Market:       provider.Market(opts.Market),
@@ -55,11 +57,11 @@ func newInspectCoverageCommand(opts *Options) *cobra.Command {
 		Short: "Inspect local daily bar coverage for a symbol",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Daily.Coverage(cmd.Context(), handler.DailyCoverageRequest{
 				Market:       provider.Market(opts.Market),
@@ -79,11 +81,11 @@ func newGetDailyCommand(opts *Options) *cobra.Command {
 		Short: "Read stored daily bars for a symbol",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Daily.Get(cmd.Context(), handler.GetDailyRequest{
 				Market:       provider.Market(opts.Market),
@@ -106,11 +108,11 @@ func newEnsureDailyCommand(opts *Options) *cobra.Command {
 		Short: "Fetch missing daily bars for a symbol and store them locally",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, true)
+			runtime, err := newAppRuntime(cmd.Context(), opts, true)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Daily.Ensure(cmd.Context(), handler.EnsureDailyRequest{
 				ProviderID:     provider.ProviderID(opts.Provider),
@@ -135,11 +137,11 @@ func newSyncDailyCommand(opts *Options) *cobra.Command {
 		Short: "Collect one provider daily batch for a date",
 		Args:  cobra.NoArgs,
 		RunE: runResult(opts, func(cmd *cobra.Command, _ []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, true)
+			runtime, err := newAppRuntime(cmd.Context(), opts, true)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Daily.Sync(cmd.Context(), handler.SyncDailyRequest{
 				ProviderID:     provider.ProviderID(opts.Provider),
@@ -162,11 +164,11 @@ func newBackfillDailyCommand(opts *Options) *cobra.Command {
 		Short: "Collect provider daily batches for a date range",
 		Args:  cobra.NoArgs,
 		RunE: runResult(opts, func(cmd *cobra.Command, _ []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, true)
+			runtime, err := newAppRuntime(cmd.Context(), opts, true)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Daily.Backfill(cmd.Context(), handler.BackfillDailyRequest{
 				ProviderID:     provider.ProviderID(opts.Provider),
@@ -199,7 +201,7 @@ func addSecurityTypeFlag(cmd *cobra.Command, flags *dailyFlags) {
 	mustRegisterFlagCompletion(cmd, "security-type", completeSecurityTypes)
 }
 
-func newAppRuntime(opts *Options, activateProviders bool) (*app.Runtime, error) {
+func newAppRuntime(ctx context.Context, opts *Options, activateProviders bool) (*app.Runtime, error) {
 	if opts == nil {
 		return nil, oops.In("cli").New("cli options are nil")
 	}
@@ -209,7 +211,7 @@ func newAppRuntime(opts *Options, activateProviders bool) (*app.Runtime, error) 
 	if err := opts.Validate(); err != nil {
 		return nil, oops.In("cli").Wrapf(err, "validate cli options")
 	}
-	return app.NewRuntime(app.Options{
+	return app.NewRuntime(ctx, app.Options{
 		DatabaseBackend:      opts.DatabaseBackend,
 		Database:             opts.Database,
 		DatabaseURL:          opts.DatabaseURL,
@@ -222,9 +224,9 @@ func newAppRuntime(opts *Options, activateProviders bool) (*app.Runtime, error) 
 	})
 }
 
-func closeAppRuntime(runtime *app.Runtime, err *error) {
+func closeAppRuntime(ctx context.Context, runtime *app.Runtime, err *error) {
 	if runtime == nil {
 		return
 	}
-	*err = oops.Join(*err, runtime.Close())
+	*err = oops.Join(*err, runtime.Close(ctx))
 }

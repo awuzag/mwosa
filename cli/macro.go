@@ -29,11 +29,11 @@ func newListMacroIndicatorsCommand(opts *Options) *cobra.Command {
 		Short: "List macro indicator metadata",
 		Args:  cobra.NoArgs,
 		RunE: runResult(opts, func(cmd *cobra.Command, _ []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, opts.Provider != "" || opts.PreferProvider != "")
+			runtime, err := newAppRuntime(cmd.Context(), opts, opts.Provider != "" || opts.PreferProvider != "")
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Macro.ListIndicators(cmd.Context(), handler.ListMacroIndicatorsRequest{
 				ProviderID:     provider.ProviderID(opts.Provider),
@@ -53,11 +53,11 @@ func newGetMacroCommand(opts *Options) *cobra.Command {
 		Short: "Read stored macro observations",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Macro.Get(cmd.Context(), handler.GetMacroRequest{
 				IndicatorID: strings.TrimSpace(args[0]),
@@ -81,11 +81,11 @@ func newSyncMacroCommand(opts *Options) *cobra.Command {
 			if target == "" {
 				return nil, oops.In("cli").New("sync macro requires target")
 			}
-			runtime, err := newAppRuntime(opts, true)
+			runtime, err := newAppRuntime(cmd.Context(), opts, true)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Macro.Sync(cmd.Context(), handler.SyncMacroRequest{
 				ProviderID:     provider.ProviderID(opts.Provider),

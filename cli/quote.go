@@ -21,11 +21,11 @@ func newGetQuoteCommand(opts *Options) *cobra.Command {
 		Short: "Fetch a provider quote snapshot for a symbol",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, true)
+			runtime, err := newAppRuntime(cmd.Context(), opts, true)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Quotes.Get(cmd.Context(), handler.GetQuoteRequest{
 				ProviderID:     provider.ProviderID(opts.Provider),

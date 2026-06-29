@@ -164,11 +164,11 @@ func newKISProviderRawCommand(opts *Options, syncSnapshot bool) *cobra.Command {
 				if !syncSnapshot {
 					return kisRawOutput{Result: rawResult}, nil
 				}
-				runtime, err := newAppRuntime(opts, false)
+				runtime, err := newAppRuntime(cmd.Context(), opts, false)
 				if err != nil {
 					return nil, err
 				}
-				defer closeAppRuntime(runtime, &err)
+				defer closeAppRuntime(cmd.Context(), runtime, &err)
 				repository := runtime.Storage.ProviderRaw
 				return repository.UpsertSnapshot(cmd.Context(), providerraw.Snapshot{
 					Provider:         rawResult.Provider,
@@ -523,11 +523,11 @@ func providerRawQueryFromArgs(opts *Options, flags providerRawSnapshotFlags, arg
 }
 
 func readProviderRawSnapshots(cmd *cobra.Command, opts *Options, query providerraw.Query) (result any, err error) {
-	runtime, err := newAppRuntime(opts, false)
+	runtime, err := newAppRuntime(cmd.Context(), opts, false)
 	if err != nil {
 		return nil, err
 	}
-	defer closeAppRuntime(runtime, &err)
+	defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 	repository := runtime.Storage.ProviderRaw
 	snapshots, err := repository.ListSnapshots(cmd.Context(), query)

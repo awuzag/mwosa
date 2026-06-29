@@ -59,11 +59,11 @@ stock_code. stock_code is resolved to corp_code before OpenDART financial API ca
 corp_code and stock_code remain separate fields in output extensions.`,
 		Args: cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, true)
+			runtime, err := newAppRuntime(cmd.Context(), opts, true)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Financials.Get(cmd.Context(), handler.GetFinancialsRequest{
 				ProviderID:     provider.ProviderID(opts.Provider),
@@ -104,11 +104,11 @@ The legacy shortcut get financials <company> still fetches provider-backed data
 through the router.`),
 		Args: cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			companyRepository, err := companyidentity.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
@@ -186,11 +186,11 @@ are available as identifiers.`),
 			if err != nil {
 				return nil, err
 			}
-			runtime, err := newAppRuntime(opts, true)
+			runtime, err := newAppRuntime(cmd.Context(), opts, true)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			companyRepository, err := companyidentity.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
@@ -261,11 +261,11 @@ read as an identifier rather than treated as the canonical key.`),
 			if err != nil {
 				return nil, err
 			}
-			runtime, database, err := newSQLAppRuntime(opts, "financials")
+			runtime, database, err := newSQLAppRuntime(cmd.Context(), opts, "financials")
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 			companyRepository, err := companyidentity.NewRepository(database)
 			if err != nil {
 				return nil, err
@@ -337,11 +337,11 @@ identity graph so OpenDART corp_code is used as a provider identifier.`),
 			if err != nil {
 				return nil, err
 			}
-			runtime, database, err := newSQLAppRuntime(opts, "financials")
+			runtime, database, err := newSQLAppRuntime(cmd.Context(), opts, "financials")
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 			companyRepository, err := companyidentity.NewRepository(database)
 			if err != nil {
 				return nil, err
@@ -465,11 +465,11 @@ with explicit reasons.`),
 			if err != nil {
 				return nil, err
 			}
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			companyRepository, err := companyidentity.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
@@ -507,11 +507,11 @@ func newGetFinancialMetricsCommand(opts *Options) *cobra.Command {
 			if err != nil {
 				return nil, err
 			}
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			companyRepository, err := companyidentity.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
@@ -553,11 +553,11 @@ This combines the issuer instrument's daily_bar_v2 price/market cap with stored
 financial statement line items, then writes valuation_snapshot_v1.`),
 		Args: cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			companyRepository, err := companyidentity.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
@@ -589,11 +589,11 @@ func newGetFinancialValuationCommand(opts *Options) *cobra.Command {
 		Short: "Read stored canonical valuation snapshots",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			companyRepository, err := companyidentity.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
@@ -640,11 +640,11 @@ first to populate the underlying canonical data.`),
 			if err != nil {
 				return nil, err
 			}
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			companyRepository, err := companyidentity.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
@@ -698,11 +698,11 @@ func newGetFinancialDividendsCommand(opts *Options) *cobra.Command {
 			if err != nil {
 				return nil, err
 			}
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			companyRepository, err := companyidentity.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {
@@ -740,11 +740,11 @@ func newGetFinancialFactsCommand(opts *Options) *cobra.Command {
 		Short: "Read stored canonical company financial facts",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			companyRepository, err := companyidentity.NewRepository(runtime.Storage.SQLDatabase)
 			if err != nil {

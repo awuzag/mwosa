@@ -40,11 +40,11 @@ func newGetIntradayCommand(opts *Options) *cobra.Command {
 		Short: "Fetch provider intraday bars for a symbol",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, true)
+			runtime, err := newAppRuntime(cmd.Context(), opts, true)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Intraday.Get(cmd.Context(), handler.GetIntradayRequest{
 				ProviderID:     provider.ProviderID(opts.Provider),
@@ -71,11 +71,11 @@ func newGetOrderbookCommand(opts *Options) *cobra.Command {
 		Short: "Fetch a provider orderbook snapshot for a symbol",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, true)
+			runtime, err := newAppRuntime(cmd.Context(), opts, true)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Orderbooks.Get(cmd.Context(), handler.GetOrderbookRequest{
 				ProviderID:     provider.ProviderID(opts.Provider),
@@ -98,11 +98,11 @@ func newListTradesCommand(opts *Options) *cobra.Command {
 		Short: "List recent market trade prints for a symbol",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, true)
+			runtime, err := newAppRuntime(cmd.Context(), opts, true)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Trades.List(cmd.Context(), handler.ListTradesRequest{
 				ProviderID:     provider.ProviderID(opts.Provider),
@@ -129,11 +129,11 @@ func newListConstituentsCommand(opts *Options) *cobra.Command {
 		Short: "List composition constituents for a symbol",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, true)
+			runtime, err := newAppRuntime(cmd.Context(), opts, true)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Compositions.List(cmd.Context(), handler.ListConstituentsRequest{
 				ProviderID:     provider.ProviderID(opts.Provider),

@@ -48,7 +48,7 @@ func newInitStorageCommand(opts *Options) *cobra.Command {
 				return nil, err
 			}
 			if err := runtime.Init(cmd.Context()); err != nil {
-				return nil, closeStorageMongoDBRuntime(runtime, oops.In("cli").Wrapf(err, "initialize mongodb storage"))
+				return nil, closeStorageMongoDBRuntime(cmd.Context(), runtime, oops.In("cli").Wrapf(err, "initialize mongodb storage"))
 			}
 			result := storageInitResult{
 				Status:      "ok",
@@ -56,7 +56,7 @@ func newInitStorageCommand(opts *Options) *cobra.Command {
 				Database:    config.Database,
 				Collections: len(storagemongodb.CollectionSpecs()),
 			}
-			if err := closeStorageMongoDBRuntime(runtime, nil); err != nil {
+			if err := closeStorageMongoDBRuntime(cmd.Context(), runtime, nil); err != nil {
 				return nil, err
 			}
 			return result, nil
@@ -79,7 +79,7 @@ func newDoctorStorageCommand(opts *Options) *cobra.Command {
 			}
 			status, err := runtime.Check(cmd.Context())
 			if err != nil {
-				return nil, closeStorageMongoDBRuntime(runtime, oops.In("cli").Wrapf(err, "diagnose mongodb storage"))
+				return nil, closeStorageMongoDBRuntime(cmd.Context(), runtime, oops.In("cli").Wrapf(err, "diagnose mongodb storage"))
 			}
 			result := storageDoctorResult{
 				Backend:     "mongodb",
@@ -88,7 +88,7 @@ func newDoctorStorageCommand(opts *Options) *cobra.Command {
 				Server:      status.Server,
 				Collections: status.Collections,
 			}
-			if err := closeStorageMongoDBRuntime(runtime, nil); err != nil {
+			if err := closeStorageMongoDBRuntime(cmd.Context(), runtime, nil); err != nil {
 				return nil, err
 			}
 			return result, nil
@@ -98,8 +98,12 @@ func newDoctorStorageCommand(opts *Options) *cobra.Command {
 	return cmd
 }
 
-func closeStorageMongoDBRuntime(runtime *storagemongodb.Runtime, commandErr error) error {
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
+func closeStorageMongoDBRuntime(ctx context.Context, runtime *storagemongodb.Runtime, commandErr error) error {
+	base := context.Background()
+	if ctx != nil {
+		base = context.WithoutCancel(ctx)
+	}
+	shutdownCtx, cancel := context.WithTimeout(base, 10*time.Second)
 	defer cancel()
 	return oops.Join(commandErr, runtime.Close(shutdownCtx))
 }
@@ -119,14 +123,13 @@ func newStorageMongoDBRuntime(ctx context.Context, opts *Options, flags storageM
 	if config.URI == "" && opts != nil {
 		config.URI = strings.TrimSpace(opts.DatabaseURL)
 	}
-	runtime, err := storagemongodb.NewRuntime(ctx, config)
-	if err != nil {
-		return nil, storagemongodb.Config{}, oops.In("cli").Wrapf(err, "create mongodb storage runtime")
-	}
 	applied, err := config.WithDefaults()
 	if err != nil {
-		_ = runtime.Close(context.Background())
 		return nil, storagemongodb.Config{}, oops.In("cli").Wrap(err)
+	}
+	runtime, err := storagemongodb.NewRuntime(ctx, applied)
+	if err != nil {
+		return nil, storagemongodb.Config{}, oops.In("cli").Wrapf(err, "create mongodb storage runtime")
 	}
 	return runtime, applied, nil
 }

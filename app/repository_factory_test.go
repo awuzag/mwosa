@@ -10,7 +10,6 @@ import (
 	appconfig "github.com/awuzag/mwosa/app/config"
 	"github.com/awuzag/mwosa/storage"
 	"github.com/awuzag/mwosa/storage/repositoryregistry"
-	repositorybuiltin "github.com/awuzag/mwosa/storage/repositoryregistry/builtin"
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
 	"go.mongodb.org/mongo-driver/v2/mongo"
@@ -96,13 +95,14 @@ func TestRepositoryFactoryUsesMongoDailyAndInstrumentWithoutSQLBackendFallback(t
 }
 
 func TestNewStorageRuntimeInitializesRepositories(t *testing.T) {
-	runtime, err := NewStorageRuntime(Options{
+	ctx := context.Background()
+	runtime, err := NewStorageRuntime(ctx, Options{
 		DatabaseBackend: appconfig.DatabaseBackendSQLite,
 		Database:        filepath.Join(t.TempDir(), "mwosa.db"),
 	})
 	require.NoError(t, err)
 	t.Cleanup(func() {
-		require.NoError(t, runtime.Close())
+		require.NoError(t, runtime.Close(ctx))
 	})
 
 	assert.NotNil(t, runtime.DailyBars.Reader)
@@ -117,6 +117,21 @@ func TestNewStorageRuntimeInitializesRepositories(t *testing.T) {
 	assert.NotNil(t, runtime.Strategies)
 	assert.NotNil(t, runtime.Fundamentals)
 	assert.NotNil(t, runtime.BacktestStrategies)
+}
+
+func TestNewStorageRuntimeUsesCallerContextForMongoStartup(t *testing.T) {
+	ctx, cancel := context.WithCancel(context.Background())
+	cancel()
+
+	runtime, err := NewStorageRuntime(ctx, Options{
+		DatabaseBackend: appconfig.DatabaseBackendMongoDB,
+		Database:        filepath.Join(t.TempDir(), "mwosa.db"),
+		DatabaseURL:     "mongodb://127.0.0.1:27017",
+	})
+
+	require.Error(t, err)
+	assert.Contains(t, err.Error(), "context canceled")
+	assert.Nil(t, runtime.MongoDB)
 }
 
 func testMongoDatabase(t *testing.T) *mongo.Database {
@@ -136,6 +151,6 @@ func testRepositoryRegistry(t *testing.T) *repositoryregistry.Registry {
 	t.Helper()
 
 	registry := repositoryregistry.New()
-	require.NoError(t, repositorybuiltin.Register(registry))
+	require.NoError(t, registerStorageRepositories(registry))
 	return registry
 }

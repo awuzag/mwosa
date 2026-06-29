@@ -3,9 +3,7 @@ package repositoryregistry
 import (
 	"sort"
 
-	"github.com/awuzag/mwosa/storage"
 	"github.com/samber/oops"
-	"go.mongodb.org/mongo-driver/v2/mongo"
 )
 
 type Name string
@@ -31,8 +29,7 @@ const (
 )
 
 type Resolver interface {
-	SQL() (*storage.SQLDatabase, error)
-	Mongo() (*mongo.Database, error)
+	Resolve(Backend) (any, error)
 }
 
 type BuildContext struct {
@@ -53,6 +50,23 @@ func One(value any) Result {
 
 func Pair(first any, second any) Result {
 	return Result{Values: []any{first, second}}
+}
+
+func Resolve[T any](ctx BuildContext) (T, error) {
+	var zero T
+	errb := oops.In("repository_registry").With("repository", ctx.Name, "backend", ctx.Backend)
+	if ctx.Resolver == nil {
+		return zero, errb.New("repository resolver is nil")
+	}
+	value, err := ctx.Resolver.Resolve(ctx.Backend)
+	if err != nil {
+		return zero, err
+	}
+	typed, ok := value.(T)
+	if !ok {
+		return zero, errb.New("repository backend handle type mismatch")
+	}
+	return typed, nil
 }
 
 type Registry struct {

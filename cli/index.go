@@ -30,11 +30,11 @@ func newGetIndexCommand(opts *Options) *cobra.Command {
 			if strings.TrimSpace(flags.AsOf) == "" && strings.TrimSpace(flags.From) == "" && strings.TrimSpace(flags.To) == "" {
 				return nil, oops.In("cli").New("get index requires --as-of or --from/--to")
 			}
-			runtime, err := newAppRuntime(opts, opts.Provider != "" || opts.PreferProvider != "")
+			runtime, err := newAppRuntime(cmd.Context(), opts, opts.Provider != "" || opts.PreferProvider != "")
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Index.Get(cmd.Context(), handler.GetIndexRequest{
 				ProviderID:     provider.ProviderID(opts.Provider),
@@ -61,11 +61,11 @@ func newSyncIndexCommand(opts *Options) *cobra.Command {
 			if strings.TrimSpace(flags.AsOf) == "" {
 				return nil, oops.In("cli").New("sync index requires --as-of")
 			}
-			runtime, err := newAppRuntime(opts, true)
+			runtime, err := newAppRuntime(cmd.Context(), opts, true)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			indexCode := ""
 			if len(args) > 0 {

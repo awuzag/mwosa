@@ -40,11 +40,11 @@ func newListEvaluationsCommand(opts *Options) *cobra.Command {
 		Short: "List saved backtest evaluations",
 		Args:  cobra.NoArgs,
 		RunE: runResult(opts, func(cmd *cobra.Command, _ []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Backtest.ListEvaluations(cmd.Context(), handler.ListEvaluationsRequest{})
 		}),
@@ -57,11 +57,11 @@ func newListBacktestStrategiesCommand(opts *Options) *cobra.Command {
 		Short: "List saved backtest strategies",
 		Args:  cobra.NoArgs,
 		RunE: runResult(opts, func(cmd *cobra.Command, _ []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Backtest.ListStrategies(cmd.Context(), handler.ListBacktestStrategiesRequest{})
 		}),
@@ -74,11 +74,11 @@ func newListBacktestRunsCommand(opts *Options) *cobra.Command {
 		Short: "List saved backtest runs",
 		Args:  cobra.NoArgs,
 		RunE: runResult(opts, func(cmd *cobra.Command, _ []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Backtest.ListRuns(cmd.Context(), handler.ListBacktestRunsRequest{})
 		}),
@@ -109,11 +109,11 @@ func newInspectEvaluationCommand(opts *Options) *cobra.Command {
 		Short: "Inspect a saved backtest evaluation",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Backtest.InspectEvaluation(cmd.Context(), handler.InspectEvaluationRequest{Ref: args[0], View: view})
 		}),
@@ -128,11 +128,11 @@ func newInspectBacktestStrategyCommand(opts *Options) *cobra.Command {
 		Short: "Inspect a saved backtest strategy",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Backtest.InspectStrategy(cmd.Context(), handler.InspectBacktestStrategyRequest{Name: args[0]})
 		}),
@@ -146,11 +146,11 @@ func newInspectBacktestRunNestedCommand(opts *Options) *cobra.Command {
 		Short: "Inspect a saved backtest run",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Backtest.InspectRun(cmd.Context(), handler.InspectBacktestRunRequest{Ref: args[0], View: view})
 		}),
@@ -166,11 +166,11 @@ func newInspectBacktestUniverseNestedCommand(opts *Options) *cobra.Command {
 		Short: "Inspect a YAML backtest universe pipeline",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Backtest.InspectUniverse(cmd.Context(), handler.InspectBacktestUniverseRequest{Path: args[0], View: view})
 		}),
@@ -205,11 +205,11 @@ func newUpdateBacktestStrategyCommand(opts *Options) *cobra.Command {
 			if yamlFile == "" {
 				return nil, oops.In("cli_backtest").New("--yaml-file is required")
 			}
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Backtest.UpdateStrategy(cmd.Context(), handler.UpdateBacktestStrategyRequest{
 				Name:     args[0],
@@ -236,11 +236,11 @@ func newDeleteBacktestStrategyCommand(opts *Options) *cobra.Command {
 		Short: "Soft delete a saved backtest strategy",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Backtest.DeleteStrategy(cmd.Context(), handler.DeleteBacktestStrategyRequest{Name: args[0]})
 		}),
@@ -254,11 +254,11 @@ func newValidateBacktestCommand(opts *Options) *cobra.Command {
 		Short: "Validate a YAML backtest strategy and run spec",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Backtest.Validate(cmd.Context(), handler.ValidateBacktestRequest{Path: args[0], View: view})
 		}),
@@ -274,11 +274,11 @@ func newValidateEvaluationCommand(opts *Options) *cobra.Command {
 		Short: "Validate a YAML backtest evaluation spec",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Backtest.ValidateEvaluation(cmd.Context(), handler.ValidateEvaluationRequest{Path: args[0]})
 		}),
@@ -294,11 +294,11 @@ func newRunBacktestCommand(opts *Options) *cobra.Command {
 		Short: "Run a YAML backtest against stored canonical daily bars",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Backtest.Run(cmd.Context(), handler.RunBacktestRequest{Path: args[0], View: view})
 		}),
@@ -315,11 +315,11 @@ func newRunEvaluationCommand(opts *Options) *cobra.Command {
 		Short: "Run a YAML backtest evaluation against stored canonical daily bars",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Backtest.RunEvaluation(cmd.Context(), handler.RunEvaluationRequest{Path: args[0], Parallelism: parallelism})
 		}),
@@ -336,11 +336,11 @@ func newCompareEvaluationCommand(opts *Options) *cobra.Command {
 		Short: "Compare saved backtest evaluation cases",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Backtest.CompareEvaluation(cmd.Context(), handler.CompareEvaluationRequest{Ref: args[0], View: view})
 		}),
@@ -355,11 +355,11 @@ func newCompareBacktestRunsCommand(opts *Options) *cobra.Command {
 		Short: "Compare two saved backtest runs",
 		Args:  cobra.ExactArgs(2),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Backtest.CompareRuns(cmd.Context(), handler.CompareBacktestRunsRequest{LeftRef: args[0], RightRef: args[1]})
 		}),
@@ -373,11 +373,11 @@ func newRankEvaluationCommand(opts *Options) *cobra.Command {
 		Short: "Rank saved backtest evaluation cases",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (result any, err error) {
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 
 			return runtime.Handlers.Backtest.RankEvaluation(cmd.Context(), handler.RankEvaluationRequest{Ref: args[0], Objective: objective})
 		}),

@@ -101,11 +101,11 @@ func newSyncKRXCommand(opts *Options) *cobra.Command {
 			if err != nil {
 				return nil, err
 			}
-			runtime, err := newAppRuntime(opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, false)
 			if err != nil {
 				return nil, err
 			}
-			defer closeAppRuntime(runtime, &err)
+			defer closeAppRuntime(cmd.Context(), runtime, &err)
 			writeResult, err := runtime.Storage.ProviderRaw.UpsertSnapshot(cmd.Context(), providerraw.Snapshot{
 				Provider:         rawResult.Provider,
 				Group:            rawResult.Group,
