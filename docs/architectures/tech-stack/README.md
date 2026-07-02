@@ -207,6 +207,7 @@ provider 이름은 큰 데이터 소스 단위로 둔다. 공공데이터포털�
 
 - `docs/architectures/layers/README.md`
 - `docs/architectures/provider/README.md`
+- `docs/architectures/aggregate/README.md`
 - `docs/architectures/research-aggregate/README.md`
 - `docs/architectures/indicator/README.md`
 - `docs/architectures/packages/README.md`
