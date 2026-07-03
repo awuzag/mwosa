@@ -24,6 +24,7 @@ const inspectSearchLimit = 25
 
 type Repository interface {
 	UpsertInstruments(ctx context.Context, instruments []instrumentrole.Instrument) (WriteResult, error)
+	ListInstruments(ctx context.Context, query Query) (instrumentrole.SearchResult, error)
 	SearchInstruments(ctx context.Context, query Query) (instrumentrole.SearchResult, error)
 	InspectInstrument(ctx context.Context, query Query) (instrumentrole.Instrument, error)
 }
@@ -283,7 +284,17 @@ func (s Service) Sync(ctx context.Context, req SyncRequest) (SyncResult, error) 
 	if err != nil {
 		return SyncResult{}, errb.Wrapf(err, "fetch instrument master")
 	}
-	writeResult, err := s.repository.UpsertInstruments(ctx, fetched.Instruments)
+	existing, err := s.repository.ListInstruments(ctx, Query{
+		Market: market,
+	})
+	if err != nil {
+		return SyncResult{}, errb.Wrapf(err, "list existing instruments for alias assignment")
+	}
+	instruments, err := instrumentsWithAssignedAliases(fetched.Instruments, existing.Instruments)
+	if err != nil {
+		return SyncResult{}, errb.With("instruments", len(fetched.Instruments)).Wrapf(err, "assign instrument aliases")
+	}
+	writeResult, err := s.repository.UpsertInstruments(ctx, instruments)
 	if err != nil {
 		return SyncResult{}, errb.With("instruments", len(fetched.Instruments)).Wrapf(err, "store instrument master")
 	}

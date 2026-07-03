@@ -49,12 +49,16 @@ func CollectionSpecs() []CollectionSpec {
 		},
 		{
 			Name:      "instruments",
-			Validator: baseValidator([]string{"market_key", "security_type", "symbol", "sources"}),
+			Validator: baseValidator([]string{"instrument_key", "market_key", "security_type", "symbol", "sources"}),
 			Indexes: []IndexSpec{
 				{
-					Name:   "instruments_market_security_symbol_unique",
-					Keys:   bson.D{{Key: "market_key", Value: 1}, {Key: "security_type", Value: 1}, {Key: "symbol", Value: 1}},
+					Name:   "instruments_instrument_key_unique",
+					Keys:   bson.D{{Key: "instrument_key", Value: 1}},
 					Unique: true,
+				},
+				{
+					Name: "instruments_market_security_symbol",
+					Keys: bson.D{{Key: "market_key", Value: 1}, {Key: "security_type", Value: 1}, {Key: "symbol", Value: 1}},
 				},
 				{
 					Name:   "instruments_source_provider_symbol_unique",

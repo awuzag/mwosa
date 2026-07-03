@@ -113,7 +113,8 @@ func assertMongoInstrumentDocumentShape(t *testing.T, runtime *storagemongodb.Ru
 	t.Helper()
 
 	var stored struct {
-		ID            string         `bson:"_id"`
+		ID            bson.ObjectID  `bson:"_id"`
+		InstrumentKey string         `bson:"instrument_key"`
 		SchemaVersion string         `bson:"schema_version"`
 		Revision      int64          `bson:"revision"`
 		Sources       []bson.M       `bson:"sources"`
@@ -121,9 +122,15 @@ func assertMongoInstrumentDocumentShape(t *testing.T, runtime *storagemongodb.Ru
 	}
 	if err := runtime.Database().
 		Collection("instruments").
-		FindOne(context.Background(), bson.D{{Key: "_id", Value: "instruments:krx:stock:005930"}}).
+		FindOne(context.Background(), bson.D{{Key: "instrument_key", Value: "instruments:krx:stock:005930"}}).
 		Decode(&stored); err != nil {
 		t.Fatalf("find mongodb instrument document: %v", err)
+	}
+	if stored.ID.IsZero() {
+		t.Fatalf("mongodb _id is zero, want ObjectID")
+	}
+	if stored.InstrumentKey != "instruments:krx:stock:005930" {
+		t.Fatalf("instrument_key = %q, want stable natural key", stored.InstrumentKey)
 	}
 	if stored.SchemaVersion == "" || stored.Revision < 2 {
 		t.Fatalf("common fields = schema %q revision %d, want revision incremented", stored.SchemaVersion, stored.Revision)

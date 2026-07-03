@@ -34,7 +34,7 @@ func TestCollectionSpecsIncludePriorityMongoDBModels(t *testing.T) {
 
 	instruments := requireCollectionSpec(t, specs, "instruments")
 	require.NotEmpty(t, instruments.Validator)
-	require.True(t, hasUniqueIndex(instruments, "instruments_market_security_symbol_unique"))
+	require.True(t, hasUniqueIndex(instruments, "instruments_instrument_key_unique"))
 	require.True(t, hasUniqueIndex(instruments, "instruments_source_provider_symbol_unique"))
 
 	dailyBars := requireCollectionSpec(t, specs, "daily_bars")

@@ -99,6 +99,19 @@ func (r *repository) SearchInstruments(ctx context.Context, query instrumentserv
 	return recordsToSearchResult(ctx, client, records)
 }
 
+func (r *repository) ListInstruments(ctx context.Context, query instrumentservice.Query) (coreinstrument.SearchResult, error) {
+	errb := oops.In("instrument_repository").With("provider", query.ProviderID, "market", query.Market, "security_type", query.SecurityType, "limit", query.Limit)
+	client, err := r.database.Client(ctx)
+	if err != nil {
+		return coreinstrument.SearchResult{}, errb.Wrap(err)
+	}
+	records, err := listRecords(ctx, client, query)
+	if err != nil {
+		return coreinstrument.SearchResult{}, errb.Wrap(err)
+	}
+	return recordsToSearchResult(ctx, client, records)
+}
+
 func (r *repository) InspectInstrument(ctx context.Context, query instrumentservice.Query) (coreinstrument.Instrument, error) {
 	symbol := strings.TrimSpace(query.Symbol)
 	errb := oops.In("instrument_repository").With("provider", query.ProviderID, "market", query.Market, "security_type", query.SecurityType, "symbol", symbol)
@@ -276,6 +289,40 @@ type queryDB interface {
 	QueryContext(ctx context.Context, query string, args ...any) (*sql.Rows, error)
 }
 
+func listRecords(ctx context.Context, db queryDB, query instrumentservice.Query) ([]record, error) {
+	sqlQuery, args := listSQL(query)
+	rows, err := db.QueryContext(ctx, sqlQuery, args...)
+	if err != nil {
+		return nil, oops.In("instrument_repository").Wrapf(err, "list instruments")
+	}
+	defer rows.Close()
+	records := make([]record, 0)
+	for rows.Next() {
+		var row record
+		if err := rows.Scan(
+			&row.InstrumentID,
+			&row.SourceID,
+			&row.Provider,
+			&row.ProviderGroup,
+			&row.Operation,
+			&row.Market,
+			&row.SecurityType,
+			&row.Symbol,
+			&row.ISIN,
+			&row.Name,
+			&row.CurrencyCode,
+			&row.Timezone,
+		); err != nil {
+			return nil, oops.In("instrument_repository").Wrapf(err, "scan instrument")
+		}
+		records = append(records, row)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, oops.In("instrument_repository").Wrapf(err, "iterate instruments")
+	}
+	return records, nil
+}
+
 func queryRecords(ctx context.Context, db queryDB, query instrumentservice.Query, exact bool) ([]record, error) {
 	sqlQuery, args := selectSQL(query, exact)
 	rows, err := db.QueryContext(ctx, sqlQuery, args...)
@@ -310,6 +357,28 @@ func queryRecords(ctx context.Context, db queryDB, query instrumentservice.Query
 	return records, nil
 }
 
+func listSQL(query instrumentservice.Query) (string, []any) {
+	market := string(withDefaultMarket(query.Market))
+	var builder strings.Builder
+	builder.WriteString(baseInstrumentSelectSQL())
+	builder.WriteString("WHERE m.code = ?")
+	args := []any{market}
+	if query.SecurityType != "" {
+		builder.WriteString(" AND i.security_type = ?")
+		args = append(args, string(query.SecurityType))
+	}
+	if query.ProviderID != "" {
+		builder.WriteString(" AND s.provider = ?")
+		args = append(args, string(query.ProviderID))
+	}
+	builder.WriteString(" ORDER BY i.symbol ASC, s.provider ASC, s.operation ASC")
+	if query.Limit > 0 {
+		builder.WriteString(" LIMIT ?")
+		args = append(args, query.Limit)
+	}
+	return builder.String(), args
+}
+
 func selectSQL(query instrumentservice.Query, exact bool) (string, []any) {
 	market := string(withDefaultMarket(query.Market))
 	limit := query.Limit
@@ -317,7 +386,59 @@ func selectSQL(query instrumentservice.Query, exact bool) (string, []any) {
 		limit = 25
 	}
 	var builder strings.Builder
-	builder.WriteString(`SELECT
+	builder.WriteString(baseInstrumentSelectSQL())
+	builder.WriteString("WHERE m.code = ?")
+	args := []any{market}
+	if query.SecurityType != "" {
+		builder.WriteString(" AND i.security_type = ?")
+		args = append(args, string(query.SecurityType))
+	}
+	if query.ProviderID != "" {
+		builder.WriteString(" AND s.provider = ?")
+		args = append(args, string(query.ProviderID))
+	}
+	needle := strings.TrimSpace(query.Query)
+	if exact {
+		needle = strings.TrimSpace(query.Symbol)
+		builder.WriteString(` AND (
+	lower(i.symbol) = lower(?)
+	OR lower(i.isin) = lower(?)
+	OR lower(s.provider_symbol) = lower(?)
+	OR EXISTS (
+		SELECT 1
+		FROM instrument_extension_v1 AS e
+		WHERE e.instrument_id = i.id
+		  AND e.source_id = s.id
+		  AND e.key IN ('alias', 'k_ticker')
+		  AND lower(e.value) = lower(?)
+	)
+)`)
+		args = append(args, needle, needle, needle, needle)
+	} else {
+		like := "%" + needle + "%"
+		builder.WriteString(` AND (
+	lower(i.symbol) = lower(?)
+	OR lower(i.isin) = lower(?)
+	OR lower(s.provider_symbol) = lower(?)
+	OR i.name LIKE ?
+	OR EXISTS (
+		SELECT 1
+		FROM instrument_extension_v1 AS e
+		WHERE e.instrument_id = i.id
+		  AND e.source_id = s.id
+		  AND e.key IN ('issueName', 'issueEnglishName', 'listingDate', 'alias', 'k_ticker')
+		  AND e.value LIKE ?
+	)
+)`)
+		args = append(args, needle, needle, needle, like, like)
+	}
+	builder.WriteString(" ORDER BY CASE WHEN lower(i.symbol) = lower(?) THEN 0 WHEN lower(i.isin) = lower(?) THEN 1 ELSE 2 END, i.symbol ASC, s.provider ASC, s.operation ASC LIMIT ?")
+	args = append(args, needle, needle, limit)
+	return builder.String(), args
+}
+
+func baseInstrumentSelectSQL() string {
+	return `SELECT
 	i.id,
 	s.id,
 	s.provider,
@@ -333,42 +454,7 @@ func selectSQL(query instrumentservice.Query, exact bool) (string, []any) {
 FROM instrument_v2 AS i
 JOIN market_v2 AS m ON m.id = i.market_id
 JOIN instrument_source_v1 AS s ON s.instrument_id = i.id
-WHERE m.code = ?`)
-	args := []any{market}
-	if query.SecurityType != "" {
-		builder.WriteString(" AND i.security_type = ?")
-		args = append(args, string(query.SecurityType))
-	}
-	if query.ProviderID != "" {
-		builder.WriteString(" AND s.provider = ?")
-		args = append(args, string(query.ProviderID))
-	}
-	needle := strings.TrimSpace(query.Query)
-	if exact {
-		needle = strings.TrimSpace(query.Symbol)
-		builder.WriteString(" AND (lower(i.symbol) = lower(?) OR lower(i.isin) = lower(?) OR lower(s.provider_symbol) = lower(?))")
-		args = append(args, needle, needle, needle)
-	} else {
-		like := "%" + needle + "%"
-		builder.WriteString(` AND (
-	lower(i.symbol) = lower(?)
-	OR lower(i.isin) = lower(?)
-	OR lower(s.provider_symbol) = lower(?)
-	OR i.name LIKE ?
-	OR EXISTS (
-		SELECT 1
-		FROM instrument_extension_v1 AS e
-		WHERE e.instrument_id = i.id
-		  AND e.source_id = s.id
-		  AND e.key IN ('issueName', 'issueEnglishName', 'listingDate')
-		  AND e.value LIKE ?
-	)
-)`)
-		args = append(args, needle, needle, needle, like, like)
-	}
-	builder.WriteString(" ORDER BY CASE WHEN lower(i.symbol) = lower(?) THEN 0 WHEN lower(i.isin) = lower(?) THEN 1 ELSE 2 END, i.symbol ASC, s.provider ASC, s.operation ASC LIMIT ?")
-	args = append(args, needle, needle, limit)
-	return builder.String(), args
+`
 }
 
 func recordsToSearchResult(ctx context.Context, db queryDB, records []record) (coreinstrument.SearchResult, error) {

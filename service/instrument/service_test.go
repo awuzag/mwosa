@@ -214,6 +214,7 @@ func TestSyncFetchesAndStoresInstrumentMaster(t *testing.T) {
 				SecurityType: provider.SecurityTypeStock,
 				SecurityCode: "005930",
 				Name:         "삼성전자",
+				Extensions:   map[string]string{"issueEnglishName": "Samsung Electronics"},
 			}},
 			Provider:   provider.Identity{ID: provider.ProviderKRX},
 			Group:      provider.GroupKRXStockInstrument,
@@ -237,6 +238,12 @@ func TestSyncFetchesAndStoresInstrumentMaster(t *testing.T) {
 	}
 	if result.InstrumentsFetched != 1 || result.InstrumentsStored != 1 || len(repository.upserted) != 1 {
 		t.Fatalf("result = %+v upserted=%d, want one stored", result, len(repository.upserted))
+	}
+	if repository.listQuery.Market != provider.MarketKRX {
+		t.Fatalf("list query = %+v, want KRX market", repository.listQuery)
+	}
+	if got := repository.upserted[0].Extensions[instrumentAliasExtensionKey]; got != "SAMS" {
+		t.Fatalf("stored alias = %q, want SAMS", got)
 	}
 }
 
@@ -294,6 +301,9 @@ type fakeInstrumentRepository struct {
 	searchResult  instrumentrole.SearchResult
 	searchErr     error
 	searchQuery   Query
+	listResult    instrumentrole.SearchResult
+	listErr       error
+	listQuery     Query
 	inspectResult instrumentrole.Instrument
 	inspectErr    error
 	inspectQuery  Query
@@ -308,6 +318,11 @@ func (r *fakeInstrumentRepository) UpsertInstruments(_ context.Context, instrume
 func (r *fakeInstrumentRepository) SearchInstruments(_ context.Context, query Query) (instrumentrole.SearchResult, error) {
 	r.searchQuery = query
 	return r.searchResult, r.searchErr
+}
+
+func (r *fakeInstrumentRepository) ListInstruments(_ context.Context, query Query) (instrumentrole.SearchResult, error) {
+	r.listQuery = query
+	return r.listResult, r.listErr
 }
 
 func (r *fakeInstrumentRepository) InspectInstrument(_ context.Context, query Query) (instrumentrole.Instrument, error) {

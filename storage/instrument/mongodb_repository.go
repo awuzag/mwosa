@@ -22,22 +22,23 @@ type mongoRepository struct {
 }
 
 type instrumentMongoDocument struct {
-	ID            string    `bson:"_id"`
-	SchemaVersion string    `bson:"schema_version"`
-	Revision      int64     `bson:"revision"`
-	CreatedAt     time.Time `bson:"created_at"`
-	UpdatedAt     time.Time `bson:"updated_at"`
+	ID            bson.ObjectID `bson:"_id,omitempty"`
+	SchemaVersion string        `bson:"schema_version"`
+	Revision      int64         `bson:"revision"`
+	CreatedAt     time.Time     `bson:"created_at"`
+	UpdatedAt     time.Time     `bson:"updated_at"`
 
-	MarketKey    string                  `bson:"market_key"`
-	SecurityType string                  `bson:"security_type"`
-	Symbol       string                  `bson:"symbol"`
-	ISIN         string                  `bson:"isin,omitempty"`
-	Name         string                  `bson:"name,omitempty"`
-	ExchangeCode string                  `bson:"exchange_code,omitempty"`
-	CountryCode  string                  `bson:"country_code,omitempty"`
-	Timezone     string                  `bson:"timezone,omitempty"`
-	Sources      []instrumentMongoSource `bson:"sources"`
-	Extensions   map[string]string       `bson:"extensions,omitempty"`
+	InstrumentKey string                  `bson:"instrument_key"`
+	MarketKey     string                  `bson:"market_key"`
+	SecurityType  string                  `bson:"security_type"`
+	Symbol        string                  `bson:"symbol"`
+	ISIN          string                  `bson:"isin,omitempty"`
+	Name          string                  `bson:"name,omitempty"`
+	ExchangeCode  string                  `bson:"exchange_code,omitempty"`
+	CountryCode   string                  `bson:"country_code,omitempty"`
+	Timezone      string                  `bson:"timezone,omitempty"`
+	Sources       []instrumentMongoSource `bson:"sources"`
+	Extensions    map[string]string       `bson:"extensions,omitempty"`
 }
 
 type instrumentMongoSource struct {
@@ -64,7 +65,7 @@ func (r *mongoRepository) UpsertInstruments(ctx context.Context, instruments []c
 		}
 		document := instrumentToMongoDocument(item)
 		if err := r.replaceDocument(ctx, document); err != nil {
-			return instrumentservice.WriteResult{}, errb.With("id", document.ID).Wrap(err)
+			return instrumentservice.WriteResult{}, errb.With("instrument_key", document.InstrumentKey).Wrap(err)
 		}
 	}
 	return instrumentservice.WriteResult{
@@ -75,26 +76,28 @@ func (r *mongoRepository) UpsertInstruments(ctx context.Context, instruments []c
 
 func (r *mongoRepository) replaceDocument(ctx context.Context, next instrumentMongoDocument) error {
 	var current instrumentMongoDocument
-	err := r.collection.FindOne(ctx, bson.D{{Key: "_id", Value: next.ID}}).Decode(&current)
+	err := r.collection.FindOne(ctx, bson.D{{Key: "instrument_key", Value: next.InstrumentKey}}).Decode(&current)
 	if err == mongo.ErrNoDocuments {
+		next.ID = bson.NewObjectID()
 		if _, insertErr := r.collection.InsertOne(ctx, next); insertErr != nil {
-			return oops.In("instrument_repository").With("id", next.ID).Wrapf(insertErr, "insert instrument mongodb document")
+			return oops.In("instrument_repository").With("instrument_key", next.InstrumentKey).Wrapf(insertErr, "insert instrument mongodb document")
 		}
 		return nil
 	}
 	if err != nil {
-		return oops.In("instrument_repository").With("id", next.ID).Wrapf(err, "read instrument mongodb document")
+		return oops.In("instrument_repository").With("instrument_key", next.InstrumentKey).Wrapf(err, "read instrument mongodb document")
 	}
 
+	next.ID = current.ID
 	next.CreatedAt = current.CreatedAt
 	next.Revision = current.Revision + 1
 	next.Sources = replaceSource(current.Sources, next.Sources[0])
-	result, err := r.collection.ReplaceOne(ctx, bson.D{{Key: "_id", Value: next.ID}, {Key: "revision", Value: current.Revision}}, next)
+	result, err := r.collection.ReplaceOne(ctx, bson.D{{Key: "instrument_key", Value: next.InstrumentKey}, {Key: "revision", Value: current.Revision}}, next)
 	if err != nil {
-		return oops.In("instrument_repository").With("id", next.ID, "revision", current.Revision).Wrapf(err, "replace instrument mongodb document")
+		return oops.In("instrument_repository").With("instrument_key", next.InstrumentKey, "revision", current.Revision).Wrapf(err, "replace instrument mongodb document")
 	}
 	if result.MatchedCount == 0 {
-		return storagemongodb.NewRevisionConflictError("instruments", next.ID, current.Revision)
+		return storagemongodb.NewRevisionConflictError("instruments", next.InstrumentKey, current.Revision)
 	}
 	return nil
 }
@@ -105,6 +108,15 @@ func (r *mongoRepository) SearchInstruments(ctx context.Context, query instrumen
 		return coreinstrument.SearchResult{}, errb.New("search instruments requires query")
 	}
 	documents, err := r.queryDocuments(ctx, query, false)
+	if err != nil {
+		return coreinstrument.SearchResult{}, errb.Wrap(err)
+	}
+	return mongoDocumentsToSearchResult(documents, query.ProviderID), nil
+}
+
+func (r *mongoRepository) ListInstruments(ctx context.Context, query instrumentservice.Query) (coreinstrument.SearchResult, error) {
+	errb := oops.In("instrument_repository").With("backend", "mongodb", "provider", query.ProviderID, "market", query.Market, "security_type", query.SecurityType, "limit", query.Limit)
+	documents, err := r.listDocuments(ctx, query)
 	if err != nil {
 		return coreinstrument.SearchResult{}, errb.Wrap(err)
 	}
@@ -131,6 +143,24 @@ func (r *mongoRepository) InspectInstrument(ctx context.Context, query instrumen
 	return mongoDocumentToCanonical(documents[0], firstMatchingSource(documents[0], query.ProviderID)), nil
 }
 
+func (r *mongoRepository) listDocuments(ctx context.Context, query instrumentservice.Query) ([]instrumentMongoDocument, error) {
+	filter := instrumentMongoBaseFilter(query)
+	findOptions := options.Find().SetSort(bson.D{{Key: "symbol", Value: 1}, {Key: "sources.provider", Value: 1}, {Key: "sources.operation", Value: 1}})
+	if query.Limit > 0 {
+		findOptions.SetLimit(int64(query.Limit))
+	}
+	cursor, err := r.collection.Find(ctx, filter, findOptions)
+	if err != nil {
+		return nil, oops.In("instrument_repository").With("backend", "mongodb").Wrapf(err, "list instruments mongodb")
+	}
+	defer cursor.Close(ctx)
+	var documents []instrumentMongoDocument
+	if err := cursor.All(ctx, &documents); err != nil {
+		return nil, oops.In("instrument_repository").With("backend", "mongodb").Wrapf(err, "decode instruments mongodb")
+	}
+	return documents, nil
+}
+
 func (r *mongoRepository) queryDocuments(ctx context.Context, query instrumentservice.Query, exact bool) ([]instrumentMongoDocument, error) {
 	filter := instrumentMongoFilter(query, exact)
 	limit := int64(query.Limit)
@@ -149,12 +179,23 @@ func (r *mongoRepository) queryDocuments(ctx context.Context, query instrumentse
 	return rankInstrumentMongoDocuments(documents, query, exact), nil
 }
 
+func instrumentMongoBaseFilter(query instrumentservice.Query) bson.D {
+	filter := bson.D{{Key: "market_key", Value: string(withDefaultMarket(query.Market))}}
+	if query.SecurityType != "" {
+		filter = append(filter, bson.E{Key: "security_type", Value: string(query.SecurityType)})
+	}
+	if query.ProviderID != "" {
+		filter = append(filter, bson.E{Key: "sources.provider", Value: string(query.ProviderID)})
+	}
+	return filter
+}
+
 func instrumentToMongoDocument(item coreinstrument.Instrument) instrumentMongoDocument {
 	now := storagemongodb.ISOTimeNow()
 	market := string(withDefaultMarket(item.Market))
 	symbol := canonicalSymbol(item)
 	return instrumentMongoDocument{
-		ID:            instrumentMongoID(market, string(item.SecurityType), symbol),
+		InstrumentKey: instrumentMongoKey(market, string(item.SecurityType), symbol),
 		SchemaVersion: storagemongodb.SchemaVersion1,
 		Revision:      1,
 		CreatedAt:     now,
@@ -180,19 +221,15 @@ func instrumentToMongoDocument(item coreinstrument.Instrument) instrumentMongoDo
 }
 
 func instrumentMongoFilter(query instrumentservice.Query, exact bool) bson.D {
-	filter := bson.D{{Key: "market_key", Value: string(withDefaultMarket(query.Market))}}
-	if query.SecurityType != "" {
-		filter = append(filter, bson.E{Key: "security_type", Value: string(query.SecurityType)})
-	}
-	if query.ProviderID != "" {
-		filter = append(filter, bson.E{Key: "sources.provider", Value: string(query.ProviderID)})
-	}
+	filter := instrumentMongoBaseFilter(query)
 	if exact {
 		needle := strings.TrimSpace(query.Symbol)
 		filter = append(filter, bson.E{Key: "$or", Value: bson.A{
 			exactRegexFilter("symbol", needle),
 			exactRegexFilter("isin", needle),
 			exactRegexFilter("sources.provider_symbol", needle),
+			exactRegexFilter("extensions.alias", needle),
+			exactRegexFilter("extensions.k_ticker", needle),
 		}})
 		return filter
 	}
@@ -205,6 +242,8 @@ func instrumentMongoFilter(query instrumentservice.Query, exact bool) bson.D {
 		containsRegexFilter("extensions.issueName", needle),
 		containsRegexFilter("extensions.issueEnglishName", needle),
 		containsRegexFilter("extensions.listingDate", needle),
+		containsRegexFilter("extensions.alias", needle),
+		containsRegexFilter("extensions.k_ticker", needle),
 	}})
 	return filter
 }
@@ -338,7 +377,7 @@ func sanitizedExtensions(extensions map[string]string) map[string]string {
 	return out
 }
 
-func instrumentMongoID(market string, securityType string, symbol string) string {
+func instrumentMongoKey(market string, securityType string, symbol string) string {
 	return strings.Join([]string{"instruments", market, securityType, symbol}, ":")
 }
 
