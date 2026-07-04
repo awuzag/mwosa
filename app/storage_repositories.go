@@ -1,6 +1,7 @@
 package app
 
 import (
+	aggregatestorage "github.com/awuzag/mwosa/storage/aggregate"
 	backteststorage "github.com/awuzag/mwosa/storage/backtest"
 	compositionstorage "github.com/awuzag/mwosa/storage/composition"
 	dailybarstorage "github.com/awuzag/mwosa/storage/dailybar"
@@ -20,6 +21,7 @@ func registerStorageRepositories(registry *repositoryregistry.Registry) error {
 		macrostorage.Register,
 		instrumentstorage.Register,
 		compositionstorage.Register,
+		aggregatestorage.Register,
 		strategystorage.Register,
 		strategyfundamentalsstorage.Register,
 		backteststorage.Register,

@@ -1,0 +1,77 @@
+kind: Aggregate
+schema_version: 1
+name: raw-snapshot-replay
+description: live 호출 없이 저장된 provider raw snapshot을 다시 읽어 raw payload 상태를 점검
+
+params:
+  as_of:
+    type: date
+    default: "2026-07-01"
+  limit:
+    type: int
+    default: 20
+
+workspace:
+  ttl: 24h
+
+pipeline:
+  - name: snapshots
+    type: snapshot
+    provider: kis
+    operation: inquire-daily-itemchartprice
+    params:
+      base_date: "${params.as_of}"
+      limit: "${params.limit}"
+
+  - name: replay
+    type: jq
+    from: snapshots
+    query: |
+      map({
+        provider: (.source.provider // .provider // ""),
+        provider_group: (.source.provider_group // .provider_group // ""),
+        operation: (.source.operation // .operation // ""),
+        base_date: (.source.base_date // .base_date // ""),
+        row_count: (.source.row_count // .row_count // 0),
+        payload_kind: (
+          if (.payload | type) == "object" then "object"
+          elif (.payload | type) == "array" then "array"
+          else (.payload | type)
+          end
+        ),
+        collected_at: (.collected_at // .created_at // "")
+      })
+
+output:
+  from: replay
+  default_format: table
+  sort:
+    - field: collected_at
+      order: desc
+  columns:
+    - key: ordinal
+      title: "#"
+      format: integer
+      align: right
+    - key: provider
+      title: Provider
+      align: center
+    - key: provider_group
+      title: Group
+      align: center
+    - key: operation
+      title: Operation
+      align: left
+    - key: base_date
+      title: 기준일
+      align: center
+    - key: row_count
+      title: Rows
+      format: integer
+      align: right
+    - key: payload_kind
+      title: Payload
+      align: center
+    - key: collected_at
+      title: 수집시각
+      align: left

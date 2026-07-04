@@ -47,7 +47,8 @@ type RoleEntry struct {
 }
 
 type Registry struct {
-	entries []RoleEntry
+	entries   []RoleEntry
+	providers map[ProviderID]IdentityProvider
 }
 
 func NewRegistry() *Registry {
@@ -68,6 +69,10 @@ func (r *Registry) RegisterProvider(provider IdentityProvider) error {
 	if identity.ID == "" {
 		return errb.New("register provider: provider id is empty")
 	}
+	if r.providers == nil {
+		r.providers = map[ProviderID]IdentityProvider{}
+	}
+	r.providers[identity.ID] = provider
 
 	value = reflect.Indirect(value)
 	if !value.IsValid() || value.Kind() != reflect.Struct {
@@ -91,6 +96,14 @@ func (r *Registry) RegisterProvider(provider IdentityProvider) error {
 	}
 
 	return r.Register(provider, registrations...)
+}
+
+func (r *Registry) Provider(id ProviderID) (IdentityProvider, bool) {
+	if r == nil || r.providers == nil {
+		return nil, false
+	}
+	provider, ok := r.providers[id]
+	return provider, ok
 }
 
 func collectEmbeddedRoleRegistrations(value reflect.Value, identity Identity) ([]RoleRegistration, error) {

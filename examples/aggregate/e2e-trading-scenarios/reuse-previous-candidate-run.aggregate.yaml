@@ -1,0 +1,111 @@
+kind: Aggregate
+schema_version: 1
+name: reuse-previous-candidate-run
+description: 직전 후보 Aggregate run 결과를 불러와 현재 로컬 후보와 비교
+
+params:
+  as_of:
+    type: date
+    default: "2026-07-01"
+  limit:
+    type: int
+    default: 30
+
+workspace:
+  ttl: 24h
+
+pipeline:
+  - name: previous
+    type: aggregate_run
+    aggregate: kis-daily-candidate-board
+
+  - name: current_local
+    type: local_collection
+    collection: candidate_observations
+    filter:
+      as_of_date: "${params.as_of}"
+
+  - name: compared
+    type: aggregate
+    from: current_local
+    pipeline:
+      - $lookup:
+          from: previous
+          localField: symbol
+          foreignField: symbol
+          as: previous
+      - $addFields:
+          previous_rank:
+            $ifNull: [{ $first: "$previous.ordinal" }, null]
+          rank_delta:
+            $subtract:
+              - { $ifNull: [{ $first: "$previous.ordinal" }, 9999] }
+              - "$rank"
+          status:
+            $cond:
+              - $gt:
+                  - { $size: "$previous" }
+                  - 0
+              - "kept"
+              - "new"
+      - $sort:
+          rank: 1
+      - $limit: "${params.limit}"
+
+  - name: shaped
+    type: jq
+    from: compared
+    query: |
+      map({
+        rank,
+        previous_rank,
+        rank_delta,
+        status,
+        symbol,
+        name,
+        change_pct,
+        traded_amount_100m,
+        label: (.label // "")
+      })
+
+output:
+  from: shaped
+  default_format: table
+  sort:
+    - field: rank
+      order: asc
+  columns:
+    - key: rank
+      title: 현재#
+      format: integer
+      align: right
+    - key: previous_rank
+      title: 이전#
+      format: integer
+      align: right
+    - key: rank_delta
+      title: 변화
+      format: integer
+      align: right
+    - key: status
+      title: 상태
+      align: center
+    - key: symbol
+      title: 코드
+      align: center
+    - key: name
+      title: 종목
+      align: left
+    - key: change_pct
+      title: 등락%
+      format: percent
+      precision: 2
+      align: right
+    - key: traded_amount_100m
+      title: 거래대금(억)
+      format: number
+      precision: 0
+      align: right
+    - key: label
+      title: 메모/라벨
+      align: left

@@ -22,6 +22,26 @@ type RawResult struct {
 	Canonical string               `json:"canonical_support"`
 }
 
+var _ provider.RawFetcher = (*Provider)(nil)
+
+func (p *Provider) FetchProviderRaw(ctx context.Context, input provider.RawFetchInput) (provider.RawFetchResult, error) {
+	result, err := p.FetchRaw(ctx, RawRequest{
+		APIID:    input.OperationID,
+		BaseDate: rawInputBaseDate(input),
+	})
+	if err != nil {
+		return provider.RawFetchResult{}, err
+	}
+	return provider.RawFetchResult{
+		Provider:  result.Provider,
+		Group:     result.Group,
+		Operation: result.APIID,
+		Response:  result.Rows,
+		RowCount:  result.RowCount,
+		BaseDate:  result.BaseDate,
+	}, nil
+}
+
 func (p *Provider) FetchRaw(ctx context.Context, req RawRequest) (RawResult, error) {
 	errb := oops.In("krx_adapter").With("provider", provider.ProviderKRX, "api_id", req.APIID, "base_date", req.BaseDate)
 	if p == nil {
@@ -52,6 +72,20 @@ func (p *Provider) FetchRaw(ctx context.Context, req RawRequest) (RawResult, err
 		RowCount:  count,
 		Canonical: canonicalSupport(req.APIID),
 	}, nil
+}
+
+func rawInputBaseDate(input provider.RawFetchInput) string {
+	for _, key := range []string{"base_date", "as_of", "BAS_DD"} {
+		if value := input.Input[key]; value != "" {
+			return value
+		}
+	}
+	for _, key := range []string{"base_date", "as_of"} {
+		if value, ok := input.Context[key].(string); ok && value != "" {
+			return value
+		}
+	}
+	return ""
 }
 
 func (p *Provider) fetchRawRows(ctx context.Context, apiID provider.OperationID, baseDate string) (any, int, error) {

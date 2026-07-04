@@ -1,6 +1,7 @@
 package app
 
 import (
+	aggregateservice "github.com/awuzag/mwosa/service/aggregate"
 	backtestservice "github.com/awuzag/mwosa/service/backtest"
 	compositionservice "github.com/awuzag/mwosa/service/composition"
 	"github.com/awuzag/mwosa/service/daily"
@@ -29,6 +30,7 @@ func newServiceRuntime(opts Options, storageRuntime StorageRuntime, providerRunt
 	strategyRepository := storageRuntime.Strategies
 	fundamentalsRepository := storageRuntime.Fundamentals
 	backtestStrategyRepository := storageRuntime.BacktestStrategies
+	aggregateRepository := storageRuntime.Aggregates
 
 	dailyReader, err := daily.NewReadService(dailyBars.Reader)
 	if err != nil {
@@ -107,8 +109,28 @@ func newServiceRuntime(opts Options, storageRuntime StorageRuntime, providerRunt
 	if err != nil {
 		return ServiceRuntime{}, errb.Wrapf(err, "create backtest service")
 	}
+	aggregateOptions := []aggregateservice.Option{}
+	if storageRuntime.MongoDB != nil {
+		executorOptions := []aggregateservice.MongoExecutorOption{}
+		if providerFetcher := newAggregateProviderFetcher(providerRuntime); providerFetcher != nil {
+			executorOptions = append(executorOptions, aggregateservice.WithProviderFetcher(providerFetcher))
+		}
+		if rawFetcher := newAggregateRawFetcher(providerRuntime); rawFetcher != nil {
+			executorOptions = append(executorOptions, aggregateservice.WithRawFetcher(rawFetcher))
+		}
+		aggregateExecutor, err := aggregateservice.NewMongoExecutor(storageRuntime.MongoDB.Database(), executorOptions...)
+		if err != nil {
+			return ServiceRuntime{}, errb.Wrapf(err, "create aggregate executor")
+		}
+		aggregateOptions = append(aggregateOptions, aggregateservice.WithExecutor(aggregateExecutor))
+	}
+	aggregateService, err := aggregateservice.NewService(aggregateRepository, aggregateOptions...)
+	if err != nil {
+		return ServiceRuntime{}, errb.Wrapf(err, "create aggregate service")
+	}
 
 	return ServiceRuntime{
+		Aggregates:   aggregateService,
 		Backtest:     backtestService,
 		Compositions: compositionService,
 		Daily: DailyServices{

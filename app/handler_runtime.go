@@ -4,6 +4,7 @@ import "github.com/awuzag/mwosa/app/handler"
 
 func newHandlers(services ServiceRuntime) (Handlers, error) {
 	return Handlers{
+		Aggregates:   handler.NewAggregate(services.Aggregates),
 		Backtest:     handler.NewBacktest(services.Backtest),
 		Compositions: handler.NewComposition(services.Compositions),
 		Daily:        handler.NewDaily(services.Daily.Reader, services.Daily.Collector),

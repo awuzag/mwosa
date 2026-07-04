@@ -309,6 +309,38 @@ func TestWriteTableRendersAlignedColumns(t *testing.T) {
 	}
 }
 
+func TestRenderTableUsesPerColumnAlignment(t *testing.T) {
+	var out bytes.Buffer
+
+	err := Render(&out, OutputModeTable, alignedTableOutput{
+		header:     []string{"name", "value"},
+		rows:       [][]string{{"a", "12"}, {"long", "3"}},
+		alignments: []string{"left", "right"},
+	})
+	if err != nil {
+		t.Fatalf("render aligned table: %v", err)
+	}
+
+	got := out.String()
+	if !strings.Contains(got, "a        12") || !strings.Contains(got, "long      3") {
+		t.Fatalf("table output should right align second column:\n%s", got)
+	}
+}
+
+type alignedTableOutput struct {
+	header     []string
+	rows       [][]string
+	alignments []string
+}
+
+func (o alignedTableOutput) TableRows() ([]string, [][]string) {
+	return o.header, o.rows
+}
+
+func (o alignedTableOutput) TableAlignments() []string {
+	return o.alignments
+}
+
 func dailyBarForOutputTest() dailybar.Bar {
 	return dailybar.Bar{
 		Provider:    provider.ProviderDataGo,

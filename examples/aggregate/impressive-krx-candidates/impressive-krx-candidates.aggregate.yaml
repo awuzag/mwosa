@@ -1,0 +1,158 @@
+kind: Aggregate
+schema_version: 1
+name: impressive-krx-candidates
+description: KIS 호출과 로컬 데이터를 합성한 KRX 후보 관찰 테이블
+
+params:
+  as_of:
+    type: date
+    default: "2026-07-01"
+  from:
+    type: date
+    default: "2025-07-01"
+  limit:
+    type: int
+    default: 30
+
+workspace:
+  ttl: 24h
+
+pipeline:
+  - name: universe
+    type: local_collection
+    collection: instruments
+    filter:
+      market_key: krx
+      security_type: stock
+      extensions.marketTypeName:
+        $in: [KOSPI, KOSDAQ]
+
+  - name: daily_windows
+    type: provider_raw
+    provider: kis
+    operation: inquire-daily-itemchartprice
+    foreach:
+      stage: universe
+      field: symbol
+      as: symbol
+    params:
+      FID_INPUT_ISCD: "${each.symbol}"
+      FID_INPUT_DATE_1: "${params.from}"
+      FID_INPUT_DATE_2: "${params.as_of}"
+      FID_PERIOD_DIV_CODE: D
+
+  - name: normalized_daily
+    type: jq
+    from: daily_windows
+    query: |
+      map({
+        symbol: .context.symbol,
+        rows: (.payload.output2 // .payload.output // [])
+      })
+
+  - name: market_cap
+    type: local_collection
+    collection: valuation_snapshots
+    filter:
+      as_of_date: "${params.as_of}"
+
+  - name: scored_candidates
+    type: aggregate
+    from: universe
+    pipeline:
+      - $lookup:
+          from: normalized_daily
+          localField: symbol
+          foreignField: symbol
+          as: daily
+      - $lookup:
+          from: market_cap
+          localField: symbol
+          foreignField: symbol
+          as: valuation
+      - $addFields:
+          market_cap_minor:
+            $ifNull: [{ $first: "$valuation.market_cap_minor" }, 0]
+          market_cap_trillion:
+            $divide:
+              - { $ifNull: [{ $first: "$valuation.market_cap_minor" }, 0] }
+              - 10000000000000000
+          turnover_100m:
+            $divide: [{ $ifNull: ["$traded_amount", 0] }, 100000000]
+          trend: neutral
+          label: user-defined
+      - $sort:
+          turnover_100m: -1
+      - $limit: "${params.limit}"
+
+  - name: ranked_candidates
+    type: jq
+    from: scored_candidates
+    query: |
+      map({
+        symbol,
+        name,
+        change_pct,
+        market_cap_trillion,
+        turnover_100m,
+        relative_volume_20d,
+        high_52w_pct,
+        close_position_pct,
+        rsi_14,
+        adx_14,
+        atr_pct_14,
+        trend,
+        label
+      })
+
+output:
+  from: ranked_candidates
+  default_format: table
+  columns:
+    - key: ordinal
+      title: "#"
+      format: integer
+    - key: symbol
+      title: 코드
+    - key: name
+      title: 종목
+    - key: change_pct
+      title: 등락%
+      format: percent
+      precision: 2
+    - key: market_cap_trillion
+      title: 시총(조)
+      format: number
+      precision: 2
+    - key: turnover_100m
+      title: 거래대금(억)
+      format: number
+      precision: 0
+    - key: relative_volume_20d
+      title: 거래량x20
+      format: number
+      precision: 1
+    - key: high_52w_pct
+      title: 52주고점%
+      format: percent
+      precision: 1
+    - key: close_position_pct
+      title: 종가위치%
+      format: percent
+      precision: 1
+    - key: rsi_14
+      title: RSI
+      format: number
+      precision: 1
+    - key: adx_14
+      title: ADX
+      format: number
+      precision: 1
+    - key: atr_pct_14
+      title: ATR%
+      format: percent
+      precision: 1
+    - key: trend
+      title: 추세
+    - key: label
+      title: 메모/라벨

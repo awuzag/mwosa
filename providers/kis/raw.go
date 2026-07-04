@@ -42,6 +42,8 @@ type RawResult struct {
 	BaseDate  string               `json:"base_date"`
 }
 
+var _ provider.RawFetcher = (*Provider)(nil)
+
 func (p *Provider) RawOperations() []RawOperation {
 	if p == nil || p.client == nil {
 		return nil
@@ -70,6 +72,25 @@ func (p *Provider) RawRequestTemplate(operationID provider.OperationID) (map[str
 		return nil, oops.In("kis_adapter").With("provider", provider.ProviderKIS, "operation", operationID).New("kis provider client is nil")
 	}
 	return p.client.RawRequestTemplate(string(operationID))
+}
+
+func (p *Provider) FetchProviderRaw(ctx context.Context, input provider.RawFetchInput) (provider.RawFetchResult, error) {
+	result, err := p.FetchRaw(ctx, RawRequest{
+		OperationID: input.OperationID,
+		Input:       input.Input,
+	})
+	if err != nil {
+		return provider.RawFetchResult{}, err
+	}
+	return provider.RawFetchResult{
+		Provider:  result.Provider,
+		Group:     result.Group,
+		Operation: result.Operation,
+		Endpoint:  result.Endpoint,
+		Response:  result.Response,
+		RowCount:  result.RowCount,
+		BaseDate:  result.BaseDate,
+	}, nil
 }
 
 func (p *Provider) FetchRaw(ctx context.Context, req RawRequest) (RawResult, error) {

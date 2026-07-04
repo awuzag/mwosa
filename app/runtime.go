@@ -17,6 +17,7 @@ import (
 	"github.com/awuzag/mwosa/providers/core/orderbook"
 	"github.com/awuzag/mwosa/providers/core/quote"
 	"github.com/awuzag/mwosa/providers/core/trades"
+	aggregateservice "github.com/awuzag/mwosa/service/aggregate"
 	backtestservice "github.com/awuzag/mwosa/service/backtest"
 	compositionservice "github.com/awuzag/mwosa/service/composition"
 	"github.com/awuzag/mwosa/service/daily"
@@ -65,6 +66,7 @@ type StorageRuntime struct {
 	MongoDB              *storagemongodb.Runtime
 	ProviderAuthDatabase *providerauth.Database
 	ProviderRaw          ProviderRawRepository         `repository:"providerraw"`
+	Aggregates           aggregateservice.Repository   `repository:"aggregate"`
 	Compositions         compositionservice.Repository `repository:"composition"`
 	DailyBars            DailyBarStorage               `repository:"dailybar"`
 	IndexBars            IndexBarStorage               `repository:"indexbar"`
@@ -108,6 +110,7 @@ type ProviderRuntime struct {
 
 type ServiceRuntime struct {
 	Backtest     backtestservice.Service
+	Aggregates   aggregateservice.Service
 	Compositions compositionservice.Service
 	Daily        DailyServices
 	Index        IndexServices
@@ -126,6 +129,7 @@ type ServiceRuntime struct {
 
 type Handlers struct {
 	Backtest     handler.Backtest
+	Aggregates   handler.Aggregate
 	Compositions handler.Composition
 	Daily        handler.Daily
 	Index        handler.Index

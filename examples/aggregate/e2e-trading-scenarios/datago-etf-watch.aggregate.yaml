@@ -1,0 +1,103 @@
+kind: Aggregate
+schema_version: 1
+name: datago-etf-watch
+description: Datago로 수집된 ETF 일별 데이터를 NAV/괴리/거래대금 중심으로 관찰
+
+params:
+  as_of:
+    type: date
+    default: "2026-06-25"
+  limit:
+    type: int
+    default: 40
+
+workspace:
+  ttl: 24h
+
+pipeline:
+  - name: etf_daily
+    type: local_dataset
+    dataset: daily_bars
+    filter:
+      provider: datago
+      security_type: etf
+      trading_date: "${params.as_of}"
+
+  - name: shaped
+    type: jq
+    from: etf_daily
+    query: |
+      map({
+        symbol,
+        name,
+        nav: (.extensions.nav // .nav // 0),
+        close: (.closing_price // 0),
+        premium_pct: (
+          ((.closing_price // 0) | tonumber? // 0) as $close
+          | ((.extensions.nav // .nav // 0) | tonumber? // 0) as $nav
+          | if $nav > 0 then (($close / $nav - 1) * 100) else 0 end
+        ),
+        traded_amount_100m: (((.traded_amount // 0) | tonumber? // 0) / 100000000),
+        underlying_index: (.extensions.bssIdxIdxNm // ""),
+        market_cap_100m: (((.market_capitalization // 0) | tonumber? // 0) / 100000000)
+      })
+      | sort_by(.traded_amount_100m)
+      | reverse
+      | .[:50]
+
+  - name: ranked
+    type: aggregate
+    from: shaped
+    pipeline:
+      - $match:
+          traded_amount_100m:
+            $gte: 0
+      - $sort:
+          traded_amount_100m: -1
+      - $limit: "${params.limit}"
+
+output:
+  from: ranked
+  default_format: table
+  sort:
+    - field: premium_pct
+      order: desc
+  columns:
+    - key: ordinal
+      title: "#"
+      format: integer
+      align: right
+    - key: symbol
+      title: 코드
+      align: center
+    - key: name
+      title: ETF
+      align: left
+    - key: close
+      title: 종가
+      format: number
+      precision: 0
+      align: right
+    - key: nav
+      title: NAV
+      format: number
+      precision: 2
+      align: right
+    - key: premium_pct
+      title: 괴리%
+      format: percent
+      precision: 2
+      align: right
+    - key: traded_amount_100m
+      title: 거래대금(억)
+      format: number
+      precision: 0
+      align: right
+    - key: underlying_index
+      title: 기초지수
+      align: left
+    - key: market_cap_100m
+      title: 시총(억)
+      format: number
+      precision: 0
+      align: right

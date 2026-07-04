@@ -23,6 +23,7 @@ const (
 	RepositoryMacro              RepositoryName = "macro"
 	RepositoryInstruments        RepositoryName = "instrument"
 	RepositoryCompositions       RepositoryName = "composition"
+	RepositoryAggregates         RepositoryName = "aggregate"
 	RepositoryStrategies         RepositoryName = "strategy"
 	RepositoryFundamentals       RepositoryName = "strategyfundamentals"
 	RepositoryBacktestStrategies RepositoryName = "backtest"

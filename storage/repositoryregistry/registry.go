@@ -14,6 +14,7 @@ const (
 	NameMacro                Name = "macro"
 	NameInstrument           Name = "instrument"
 	NameComposition          Name = "composition"
+	NameAggregate            Name = "aggregate"
 	NameStrategy             Name = "strategy"
 	NameStrategyFundamentals Name = "strategyfundamentals"
 	NameBacktest             Name = "backtest"

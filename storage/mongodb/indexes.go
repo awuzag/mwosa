@@ -298,6 +298,82 @@ func CollectionSpecs() []CollectionSpec {
 			},
 		},
 		{
+			Name:      "aggregates",
+			Validator: baseValidator([]string{"aggregate_id", "name", "active_version_id"}),
+			Indexes: []IndexSpec{
+				{
+					Name:   "aggregates_name_unique",
+					Keys:   bson.D{{Key: "name", Value: 1}},
+					Unique: true,
+				},
+				{
+					Name:   "aggregates_aggregate_id_unique",
+					Keys:   bson.D{{Key: "aggregate_id", Value: 1}},
+					Unique: true,
+				},
+				{
+					Name: "aggregates_archived_at",
+					Keys: bson.D{{Key: "archived_at", Value: 1}},
+				},
+			},
+		},
+		{
+			Name:      "aggregate_versions",
+			Validator: baseValidator([]string{"version_id", "aggregate_id", "version", "spec", "spec_hash"}),
+			Indexes: []IndexSpec{
+				{
+					Name:   "aggregate_versions_version_id_unique",
+					Keys:   bson.D{{Key: "version_id", Value: 1}},
+					Unique: true,
+				},
+				{
+					Name:   "aggregate_versions_aggregate_version_unique",
+					Keys:   bson.D{{Key: "aggregate_id", Value: 1}, {Key: "version", Value: 1}},
+					Unique: true,
+				},
+				{
+					Name: "aggregate_versions_aggregate_spec_hash",
+					Keys: bson.D{{Key: "aggregate_id", Value: 1}, {Key: "spec_hash", Value: 1}},
+				},
+			},
+		},
+		{
+			Name:      "aggregate_runs",
+			Validator: baseValidator([]string{"run_id", "aggregate_id", "aggregate_version_id", "aggregate_name", "status", "started_at"}),
+			Indexes: []IndexSpec{
+				{
+					Name:   "aggregate_runs_run_id_unique",
+					Keys:   bson.D{{Key: "run_id", Value: 1}},
+					Unique: true,
+				},
+				{
+					Name:   "aggregate_runs_alias_unique",
+					Keys:   bson.D{{Key: "alias", Value: 1}},
+					Unique: true,
+					Sparse: true,
+				},
+				{
+					Name: "aggregate_runs_started_at",
+					Keys: bson.D{{Key: "started_at", Value: -1}},
+				},
+				{
+					Name: "aggregate_runs_name_status_started",
+					Keys: bson.D{{Key: "aggregate_name", Value: 1}, {Key: "status", Value: 1}, {Key: "started_at", Value: -1}},
+				},
+			},
+		},
+		{
+			Name:      "aggregate_run_items",
+			Validator: baseValidator([]string{"run_id", "ordinal", "payload"}),
+			Indexes: []IndexSpec{
+				{
+					Name:   "aggregate_run_items_run_ordinal_unique",
+					Keys:   bson.D{{Key: "run_id", Value: 1}, {Key: "ordinal", Value: 1}},
+					Unique: true,
+				},
+			},
+		},
+		{
 			Name:      "screen_strategies",
 			Validator: baseValidator([]string{"strategy_id", "name", "engine", "active_version_id", "versions"}),
 			Indexes: []IndexSpec{

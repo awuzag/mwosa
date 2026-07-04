@@ -1,0 +1,108 @@
+kind: Aggregate
+schema_version: 1
+name: opendart-catalyst-watch
+description: 저장된 OpenDART 공시/이벤트와 로컬 종목 정보를 합쳐 촉매 후보를 관찰
+
+params:
+  from:
+    type: date
+    default: "2026-06-01"
+  limit:
+    type: int
+    default: 50
+
+workspace:
+  ttl: 24h
+
+pipeline:
+  - name: filings
+    type: local_collection
+    collection: opendart_filings
+    filter:
+      rcept_dt:
+        $gte: "${params.from}"
+
+  - name: instruments
+    type: local_collection
+    collection: instruments
+    filter:
+      market_key: krx
+      security_type: stock
+
+  - name: joined
+    type: aggregate
+    from: filings
+    pipeline:
+      - $lookup:
+          from: instruments
+          localField: stock_code
+          foreignField: symbol
+          as: instrument
+      - $addFields:
+          symbol:
+            $ifNull: ["$stock_code", { $first: "$instrument.symbol" }]
+          name:
+            $ifNull: [{ $first: "$instrument.name" }, "$corp_name"]
+          keyword:
+            $ifNull: ["$keyword", "$report_nm"]
+          catalyst_score:
+            $cond:
+              - $regexMatch:
+                  input: "$report_nm"
+                  regex: "계약|공급|유상증자|자기주식|합병|분할|수주"
+              - 3
+              - 1
+      - $sort:
+          rcept_dt: -1
+          catalyst_score: -1
+      - $limit: "${params.limit}"
+
+  - name: shaped
+    type: jq
+    from: joined
+    query: |
+      map({
+        received_at: (.rcept_dt // .received_at // ""),
+        symbol,
+        name,
+        report_name: (.report_nm // .report_name // ""),
+        keyword,
+        catalyst_score,
+        rcept_no: (.rcept_no // "")
+      })
+
+output:
+  from: shaped
+  default_format: table
+  sort:
+    - field: received_at
+      order: desc
+    - field: catalyst_score
+      order: desc
+  columns:
+    - key: ordinal
+      title: "#"
+      format: integer
+      align: right
+    - key: received_at
+      title: 접수일
+      align: center
+    - key: symbol
+      title: 코드
+      align: center
+    - key: name
+      title: 종목
+      align: left
+    - key: report_name
+      title: 공시명
+      align: left
+    - key: keyword
+      title: 키워드
+      align: left
+    - key: catalyst_score
+      title: 점수
+      format: integer
+      align: right
+    - key: rcept_no
+      title: 접수번호
+      align: left

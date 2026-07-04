@@ -98,6 +98,10 @@ type TableOutput interface {
 	TableRows() (header []string, rows [][]string)
 }
 
+type TableAlignmentOutput interface {
+	TableAlignments() []string
+}
+
 type TableBlock struct {
 	Title  string
 	Header []string
@@ -137,7 +141,11 @@ func Render(w io.Writer, output OutputMode, result any) error {
 		}
 		if value, ok := result.(TableOutput); ok {
 			header, rows := value.TableRows()
-			return writeTable(w, header, rows)
+			alignments := []string(nil)
+			if aligned, ok := result.(TableAlignmentOutput); ok {
+				alignments = aligned.TableAlignments()
+			}
+			return writeAlignedTable(w, header, rows, alignments)
 		}
 		return writeTableValue(w, result)
 	case OutputModeJSON:
@@ -218,8 +226,12 @@ func writeNDJSONValue(w io.Writer, value any) error {
 }
 
 func writeTable(w io.Writer, header []string, rows [][]string) error {
+	return writeAlignedTable(w, header, rows, nil)
+}
+
+func writeAlignedTable(w io.Writer, header []string, rows [][]string, alignments []string) error {
 	errb := oops.In("cli_output").With("columns", len(header), "rows", len(rows))
-	table := newOutputTable(w)
+	table := newAlignedOutputTable(w, alignments)
 	table.Header(header)
 	if err := table.Bulk(rows); err != nil {
 		return errb.Wrapf(err, "write table rows")
@@ -265,7 +277,11 @@ func writeTableValue(w io.Writer, value any) error {
 }
 
 func newOutputTable(w io.Writer) *tablewriter.Table {
-	return tablewriter.NewTable(w,
+	return newAlignedOutputTable(w, nil)
+}
+
+func newAlignedOutputTable(w io.Writer, alignments []string) *tablewriter.Table {
+	tableOptions := []tablewriter.Option{
 		tablewriter.WithRenderer(renderer.NewBlueprint(tw.Rendition{
 			Borders: tw.BorderNone,
 			Settings: tw.Settings{
@@ -279,7 +295,30 @@ func newOutputTable(w io.Writer) *tablewriter.Table {
 		tablewriter.WithHeaderAutoFormat(tw.Off),
 		tablewriter.WithRowAutoFormat(tw.Off),
 		tablewriter.WithPadding(tw.Padding{Right: "  ", Overwrite: true}),
+	}
+	if parsed := parseTableAlignments(alignments); len(parsed) > 0 {
+		tableOptions = append(tableOptions, tablewriter.WithAlignment(parsed))
+	}
+	return tablewriter.NewTable(w,
+		tableOptions...,
 	)
+}
+
+func parseTableAlignments(alignments []string) tw.Alignment {
+	out := make(tw.Alignment, 0, len(alignments))
+	for _, align := range alignments {
+		switch strings.ToLower(strings.TrimSpace(align)) {
+		case "right":
+			out = append(out, tw.AlignRight)
+		case "center":
+			out = append(out, tw.AlignCenter)
+		case "left", "":
+			out = append(out, tw.AlignLeft)
+		default:
+			out = append(out, tw.AlignLeft)
+		}
+	}
+	return out
 }
 
 func writeCSV(w io.Writer, rows any) error {

@@ -1,0 +1,122 @@
+kind: Aggregate
+schema_version: 1
+name: krx-market-snapshot
+description: KRX OPEN API raw 시장 스냅샷을 상승률/거래대금 중심 테이블로 정리
+
+params:
+  as_of:
+    type: date
+    default: "2026-06-25"
+  limit:
+    type: int
+    default: 30
+
+workspace:
+  ttl: 24h
+
+pipeline:
+  - name: kospi_raw
+    type: provider_raw
+    provider: krx
+    operation: stk_bydd_trd
+    params:
+      base_date: "${params.as_of}"
+
+  - name: kosdaq_raw
+    type: provider_raw
+    provider: krx
+    operation: ksq_bydd_trd
+    params:
+      base_date: "${params.as_of}"
+
+  - name: kospi_rows
+    type: jq
+    from: kospi_raw
+    query: |
+      map(.payload[]? | {
+        symbol: .ISU_CD,
+        name: .ISU_NM,
+        market: "KOSPI",
+        close: (.TDD_CLSPRC | tostring | gsub(","; "") | tonumber? // 0),
+        change_pct: (.FLUC_RT | tostring | gsub(","; "") | tonumber? // 0),
+        traded_amount_100m: ((.ACC_TRDVAL | tostring | gsub(","; "") | tonumber? // 0) / 100000000),
+        market_cap_trillion: ((.MKTCAP | tostring | gsub(","; "") | tonumber? // 0) / 1000000000000)
+      })
+
+  - name: kosdaq_rows
+    type: jq
+    from: kosdaq_raw
+    query: |
+      map(.payload[]? | {
+        symbol: .ISU_CD,
+        name: .ISU_NM,
+        market: "KOSDAQ",
+        close: (.TDD_CLSPRC | tostring | gsub(","; "") | tonumber? // 0),
+        change_pct: (.FLUC_RT | tostring | gsub(","; "") | tonumber? // 0),
+        traded_amount_100m: ((.ACC_TRDVAL | tostring | gsub(","; "") | tonumber? // 0) / 100000000),
+        market_cap_trillion: ((.MKTCAP | tostring | gsub(","; "") | tonumber? // 0) / 1000000000000)
+      })
+
+  - name: merged
+    type: aggregate
+    from: kospi_rows
+    pipeline:
+      - $lookup:
+          from: kosdaq_rows
+          localField: symbol
+          foreignField: symbol
+          as: kosdaq_peer
+      - $project:
+          symbol: 1
+          name: 1
+          market: 1
+          close: 1
+          change_pct: 1
+          traded_amount_100m: 1
+          market_cap_trillion: 1
+      - $sort:
+          traded_amount_100m: -1
+      - $limit: "${params.limit}"
+
+output:
+  from: merged
+  default_format: table
+  sort:
+    - field: change_pct
+      order: desc
+    - field: traded_amount_100m
+      order: desc
+  columns:
+    - key: ordinal
+      title: "#"
+      format: integer
+      align: right
+    - key: market
+      title: 시장
+      align: center
+    - key: symbol
+      title: 코드
+      align: center
+    - key: name
+      title: 종목
+      align: left
+    - key: close
+      title: 종가
+      format: number
+      precision: 0
+      align: right
+    - key: change_pct
+      title: 상승률%
+      format: percent
+      precision: 2
+      align: right
+    - key: traded_amount_100m
+      title: 거래대금(억)
+      format: number
+      precision: 0
+      align: right
+    - key: market_cap_trillion
+      title: 시총(조)
+      format: number
+      precision: 2
+      align: right
