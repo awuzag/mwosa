@@ -25,6 +25,8 @@ go.work.sum
 
 # env file
 .env
+.env.local
+.mwosa.local.env
 .mwosa/
 
 # Local provider client secrets and probe outputs

@@ -1,0 +1,147 @@
+kind: Aggregate
+schema_version: 1
+name: priority-candidate-board-fixture
+description: 로컬 fixture 데이터로 1순위 KRX 후보 관찰 테이블 출력 계약을 검증한다
+
+params:
+  as_of:
+    type: date
+    default: "2026-07-01"
+  fixture:
+    type: string
+    default: priority-candidate-e2e
+  limit:
+    type: int
+    default: 10
+
+workspace:
+  ttl: 24h
+
+pipeline:
+  - name: universe
+    type: local_collection
+    collection: aggregate_priority_candidates
+    filter:
+      fixture: "${params.fixture}"
+      as_of_date: "${params.as_of}"
+
+  - name: valuation
+    type: local_collection
+    collection: aggregate_priority_valuation_snapshots
+    filter:
+      fixture: "${params.fixture}"
+      as_of_date: "${params.as_of}"
+
+  - name: board
+    type: aggregate
+    from: universe
+    pipeline:
+      - $lookup:
+          from: valuation
+          localField: symbol
+          foreignField: symbol
+          as: valuation
+      - $addFields:
+          market_cap_trillion:
+            $divide:
+              - { $ifNull: [{ $first: "$valuation.market_cap_minor" }, 0] }
+              - 1000000000000
+          turnover_100m:
+            $divide:
+              - { $ifNull: ["$traded_amount", 0] }
+              - 100000000
+      - $sort:
+          turnover_100m: -1
+          change_pct: -1
+      - $limit: "${params.limit}"
+
+  - name: ranked_candidates
+    type: jq
+    from: board
+    query: |
+      map({
+        symbol,
+        name,
+        change_pct,
+        market_cap_trillion,
+        turnover_100m,
+        relative_volume_20d,
+        high_52w_pct,
+        close_position_pct,
+        rsi_14,
+        adx_14,
+        atr_pct_14,
+        trend,
+        label
+      })
+
+output:
+  from: ranked_candidates
+  default_format: table
+  sort:
+    - field: turnover_100m
+      order: desc
+    - field: change_pct
+      order: desc
+  columns:
+    - key: ordinal
+      title: "#"
+      format: integer
+      align: right
+    - key: symbol
+      title: 코드
+      align: center
+    - key: name
+      title: 종목
+      align: left
+    - key: change_pct
+      title: 등락%
+      format: percent
+      precision: 2
+      align: right
+    - key: market_cap_trillion
+      title: 시총(조)
+      format: number
+      precision: 2
+      align: right
+    - key: turnover_100m
+      title: 거래대금(억)
+      format: number
+      precision: 0
+      align: right
+    - key: relative_volume_20d
+      title: 거래량x20
+      format: number
+      precision: 1
+      align: right
+    - key: high_52w_pct
+      title: 52주고점%
+      format: percent
+      precision: 1
+      align: right
+    - key: close_position_pct
+      title: 종가위치%
+      format: percent
+      precision: 1
+      align: right
+    - key: rsi_14
+      title: RSI
+      format: number
+      precision: 1
+      align: right
+    - key: adx_14
+      title: ADX
+      format: number
+      precision: 1
+      align: right
+    - key: atr_pct_14
+      title: ATR%
+      format: percent
+      precision: 1
+      align: right
+    - key: trend
+      title: 추세
+      align: center
+    - key: label
+      title: 메모/라벨
+      align: left

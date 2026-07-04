@@ -141,7 +141,7 @@ func newRunAggregateCommand(opts *Options) *cobra.Command {
 		Short: "Run a saved Aggregate resource",
 		Args:  cobra.ExactArgs(1),
 		RunE: runResult(opts, func(cmd *cobra.Command, args []string) (any, error) {
-			runtime, err := newAppRuntime(cmd.Context(), opts, false)
+			runtime, err := newAppRuntime(cmd.Context(), opts, true)
 			if err != nil {
 				return nil, err
 			}

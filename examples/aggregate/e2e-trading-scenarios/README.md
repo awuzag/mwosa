@@ -18,11 +18,35 @@ mwosa inspect aggregate-run <alias> --view stages -o json
 JSON, NDJSON, CSV smoke는 같은 run 명령에 `-o json`, `-o ndjson`, `-o csv`를
 붙여 확인한다. credential 값은 명령이나 출력에 넣지 않는다.
 
+## Taskfile 실행
+
+저장소 루트에서 `Taskfile.yml`을 사용한다. 로컬 secret은 Git에 커밋하지 않는
+`.env.local`, `.mwosa.local.env`, 기존 `mwosa` config 파일 중 하나를 사용한다.
+dev 설치 바이너리는 실행 위치의 `.mwosa/config.json`을 우선 만들 수 있으므로,
+이미 등록해 둔 사용자 config를 쓰려면 `MWOSA_CONFIG`를 지정한다. 이 환경에서는
+`/Users/danghamo/.config/mwosa/config.json`에 KIS/KRX/Datago 일부 credential이
+마스킹된 상태로 확인됐다.
+
+```bash
+task test:unit
+task test:integration
+task install
+task aggregate:smoke:fixture
+MWOSA_CONFIG="$HOME/.config/mwosa/config.json" task aggregate:smoke:live
+```
+
+`aggregate:smoke:fixture`는 secret 없이 `scripts/aggregate/seed_priority_fixture.js`로
+fixture 데이터를 넣고 1순위 후보 테이블을 출력한다. `aggregate:smoke:live`는 전체
+종목 universe가 아니라 `aggregate_live_symbols` fixture 2개 종목만 KIS raw live
+호출에 사용한다.
+
 ## 시나리오
 
 | 파일 | provider/data | HTS형 화면 | live 호출 | 현재 기대 |
 | --- | --- | --- | --- | --- |
 | `kis-daily-candidate-board.aggregate.yaml` | KIS raw, `instruments`, `valuation_snapshots` | 장중/일봉 후보 관찰 | 있음 | KIS credential과 로컬 universe 필요 |
+| `priority-candidate-board-fixture.aggregate.yaml` | local fixture, valuation fixture | 1순위 후보 테이블 출력 계약 | 없음 | credential 없이 출력 계약 검증 |
+| `kis-daily-raw-live-smoke.aggregate.yaml` | KIS raw, local fixture universe | 2개 종목 KIS raw live 연결 확인 | 있음 | KIS credential과 네트워크 연결 필요 |
 | `krx-market-snapshot.aggregate.yaml` | KRX raw | 시장별 상승률/거래대금 후보 | 있음 | KRX auth와 서비스 승인 필요 |
 | `datago-etf-watch.aggregate.yaml` | Datago 수집 `daily_bars` | ETF NAV/괴리/거래대금 | 없음 | 로컬 Datago ETF daily 필요 |
 | `opendart-catalyst-watch.aggregate.yaml` | 저장 OpenDART filings, `instruments` | 최근 공시 촉매 테이블 | 없음 | 선행 OpenDART sync 필요 |
@@ -44,7 +68,9 @@ JSON, NDJSON, CSV smoke는 같은 run 명령에 `-o json`, `-o ndjson`, `-o csv`
 
 | 시나리오 | validate | update | plan | run | output smoke | inspect/history | 메모 |
 | --- | --- | --- | --- | --- | --- | --- | --- |
-| kis-daily-candidate-board | 성공 | 성공 | 성공 | 실패 | table 실패 출력 확인 | 성공 | alias `e2e-kis-20260704`; `universe` 2768행 뒤 `provider_raw` 단계에서 KIS provider 미등록으로 실패 |
+| kis-daily-candidate-board | 성공 | 성공 | 성공 | 실패 | table 실패 출력 확인 | 성공 | alias `e2e-kis-20260704`; 기존 검증에서는 worktree local config에 KIS credential이 없어 `provider_raw` 단계에서 KIS provider 미등록으로 실패 |
+| priority-candidate-board-fixture | 성공 | 성공 | 성공 | 성공 | table/json/ndjson/csv 성공 | 성공 | alias `e2e-priority-fixture-20260704`; fixture 2행으로 `#`, `코드`, `종목`, `등락%`, `시총(조)`, `거래대금(억)`, `거래량x20`, `52주고점%`, `종가위치%`, `RSI`, `ADX`, `ATR%`, `추세`, `메모/라벨` 출력 계약 검증 |
+| kis-daily-raw-live-smoke | 성공 | 성공 | 성공 | 실패 | table 실패 출력 확인 | 성공 | alias `e2e-kis-raw-live-20260704c`; 전역 config로 KIS credential은 확인됐고 provider registry도 활성화됐으나 KIS OAuth token endpoint `openapi.koreainvestment.com:9443` 연결 거부로 `daily_raw` 실패 |
 | krx-market-snapshot | 성공 | 성공 | 성공 | 실패 | table 실패 출력 확인 | 성공 | alias `e2e-krx-market-20260704`; KRX provider 미등록으로 `kospi_raw` 단계 실패 |
 | datago-etf-watch | 성공 | 성공 | 성공 | 성공 | table/json/ndjson/csv 성공 | 성공 | alias `e2e-datago-etf-20260704`; 로컬 `daily_bars` 0행이라 결과 0행 |
 | opendart-catalyst-watch | 성공 | 성공 | 성공 | 성공 | table 성공 | 성공 | alias `e2e-opendart-catalyst-20260704`; 로컬 `opendart_filings` 0행이라 결과 0행 |
@@ -52,9 +78,8 @@ JSON, NDJSON, CSV smoke는 같은 run 명령에 `-o json`, `-o ndjson`, `-o csv`
 | raw-snapshot-replay | 성공 | 성공 | 성공 | 성공 | table 성공 | 성공 | alias `e2e-raw-snapshot-20260704`; 저장 snapshot 0행이라 결과 0행 |
 
 실패 run도 `history aggregate`와 `inspect aggregate-run --view stages`에서 stage별
-실패 원인이 재현된다. 예를 들어 KIS 실패 run은 `daily_raw` stage에
-`provider is not registered`가 남고, KRX 실패 run은 `kospi_raw` stage에 같은
-provider 등록 한계가 남는다.
+실패 원인이 재현된다. 예를 들어 최신 KIS live smoke 실패 run은 `universe` 2행 성공
+뒤 `daily_raw` stage에 OAuth token endpoint 연결 거부가 남는다.
 
 출력 포맷 smoke는 `datago-etf-watch`로 확인했다. 결과가 0행인 환경에서는 table은
 run summary table을 출력하고, json은 run detail JSON을 출력하며, ndjson/csv는 빈

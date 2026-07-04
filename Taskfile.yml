@@ -1,0 +1,97 @@
+version: "3"
+
+silent: true
+
+dotenv:
+  - .env.local
+  - .mwosa.local.env
+
+tasks:
+  test:unit:
+    desc: Run the default test suite.
+    cmds:
+      - go test ./...
+
+  test:integration:
+    desc: Run focused Aggregate and provider integration tests.
+    cmds:
+      - go test -tags=integration ./service/aggregate ./storage/aggregate ./cli ./providers/kis
+
+  install:
+    desc: Install mwosa from this checkout into the active Go bin directory.
+    cmds:
+      - go install ./cmd/mwosa
+      - mwosa version
+
+  aggregate:init:storage:
+    desc: Initialize local MongoDB storage for Aggregate smoke runs.
+    cmds:
+      - |
+        set -eu
+        MWOSA_BIN="${MWOSA_BIN:-mwosa}"
+        MWOSA_MONGODB_URI="${MWOSA_MONGODB_URI:-mongodb://127.0.0.1:27017}"
+        MWOSA_MONGODB_DATABASE="${MWOSA_MONGODB_DATABASE:-mwosa}"
+        "$MWOSA_BIN" init storage \
+          --mongodb-uri "$MWOSA_MONGODB_URI" \
+          --mongodb-database "$MWOSA_MONGODB_DATABASE" \
+          -o json
+
+  aggregate:seed:fixture:
+    desc: Seed non-secret local MongoDB fixture data for the priority candidate board.
+    cmds:
+      - |
+        set -eu
+        MWOSA_MONGODB_URI="${MWOSA_MONGODB_URI:-mongodb://127.0.0.1:27017}"
+        MWOSA_MONGODB_DATABASE="${MWOSA_MONGODB_DATABASE:-mwosa}"
+        MONGODB_CONTAINER="${MONGODB_CONTAINER:-mwosa-mongodb}"
+        SCRIPT="scripts/aggregate/seed_priority_fixture.js"
+        if command -v mongosh >/dev/null 2>&1; then
+          mongosh "${MWOSA_MONGODB_URI}/${MWOSA_MONGODB_DATABASE}" --quiet "$SCRIPT"
+        elif command -v docker >/dev/null 2>&1 && docker ps --format '{{"{{.Names}}"}}' | grep -qx "$MONGODB_CONTAINER"; then
+          docker exec -i "$MONGODB_CONTAINER" mongosh "$MWOSA_MONGODB_DATABASE" --quiet < "$SCRIPT"
+        else
+          echo "mongosh is required, or set MONGODB_CONTAINER to a running MongoDB container with mongosh" >&2
+          exit 1
+        fi
+
+  aggregate:smoke:fixture:
+    desc: Run the installed mwosa CLI against the deterministic priority candidate Aggregate.
+    cmds:
+      - task: aggregate:init:storage
+      - task: aggregate:seed:fixture
+      - |
+        set -eu
+        MWOSA_BIN="${MWOSA_BIN:-mwosa}"
+        MWOSA_MONGODB_URI="${MWOSA_MONGODB_URI:-mongodb://127.0.0.1:27017}"
+        ALIAS="${AGGREGATE_FIXTURE_ALIAS:-e2e-priority-fixture-20260704}"
+        SPEC="examples/aggregate/e2e-trading-scenarios/priority-candidate-board-fixture.aggregate.yaml"
+        COMMON_ARGS="--database-backend mongodb --database-url $MWOSA_MONGODB_URI"
+        "$MWOSA_BIN" $COMMON_ARGS validate aggregate "$SPEC" -o json
+        "$MWOSA_BIN" $COMMON_ARGS update aggregate priority-candidate-board-fixture --file "$SPEC" -o json
+        "$MWOSA_BIN" $COMMON_ARGS inspect aggregate-plan priority-candidate-board-fixture --view stages -o json
+        "$MWOSA_BIN" $COMMON_ARGS run aggregate priority-candidate-board-fixture --alias "$ALIAS" -o table
+        "$MWOSA_BIN" $COMMON_ARGS history aggregate --name priority-candidate-board-fixture -o table
+        "$MWOSA_BIN" $COMMON_ARGS inspect aggregate-run "$ALIAS" --view stages -o json
+
+  aggregate:smoke:live:
+    desc: Try a provider-backed Aggregate smoke using local mwosa credentials.
+    cmds:
+      - task: aggregate:init:storage
+      - task: aggregate:seed:fixture
+      - |
+        set -eu
+        MWOSA_BIN="${MWOSA_BIN:-mwosa}"
+        MWOSA_MONGODB_URI="${MWOSA_MONGODB_URI:-mongodb://127.0.0.1:27017}"
+        ALIAS="${AGGREGATE_LIVE_ALIAS:-e2e-kis-raw-live-20260704}"
+        SPEC="examples/aggregate/e2e-trading-scenarios/kis-daily-raw-live-smoke.aggregate.yaml"
+        COMMON_ARGS="--database-backend mongodb --database-url $MWOSA_MONGODB_URI"
+        if [ -z "${MWOSA_CONFIG:-}" ] && [ -f "$HOME/.config/mwosa/config.json" ]; then
+          export MWOSA_CONFIG="$HOME/.config/mwosa/config.json"
+        fi
+        "$MWOSA_BIN" doctor provider kis -o json
+        "$MWOSA_BIN" $COMMON_ARGS validate aggregate "$SPEC" -o json
+        "$MWOSA_BIN" $COMMON_ARGS update aggregate kis-daily-raw-live-smoke --file "$SPEC" -o json
+        "$MWOSA_BIN" $COMMON_ARGS inspect aggregate-plan kis-daily-raw-live-smoke --view stages -o json
+        "$MWOSA_BIN" $COMMON_ARGS run aggregate kis-daily-raw-live-smoke --alias "$ALIAS" -o table
+        "$MWOSA_BIN" $COMMON_ARGS history aggregate --name kis-daily-raw-live-smoke -o table
+        "$MWOSA_BIN" $COMMON_ARGS inspect aggregate-run "$ALIAS" --view stages -o json

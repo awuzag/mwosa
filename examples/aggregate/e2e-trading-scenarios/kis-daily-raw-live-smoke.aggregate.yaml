@@ -1,0 +1,82 @@
+kind: Aggregate
+schema_version: 1
+name: kis-daily-raw-live-smoke
+description: 로컬 fixture universe 2개 종목만 KIS 일봉 raw live 호출로 검증한다
+
+params:
+  as_of:
+    type: date
+    default: "2026-07-01"
+  from:
+    type: date
+    default: "2026-06-01"
+  fixture:
+    type: string
+    default: priority-candidate-e2e
+
+workspace:
+  ttl: 24h
+
+pipeline:
+  - name: universe
+    type: local_collection
+    collection: aggregate_live_symbols
+    filter:
+      fixture: "${params.fixture}"
+      market_key: krx
+      security_type: stock
+
+  - name: daily_raw
+    type: provider_raw
+    provider: kis
+    operation: inquire-daily-itemchartprice
+    foreach:
+      stage: universe
+      field: symbol
+      as: symbol
+    params:
+      FID_INPUT_ISCD: "${each.symbol}"
+      FID_INPUT_DATE_1: "${params.from}"
+      FID_INPUT_DATE_2: "${params.as_of}"
+      FID_PERIOD_DIV_CODE: D
+
+  - name: shaped
+    type: jq
+    from: daily_raw
+    query: |
+      map({
+        symbol: .context.symbol,
+        provider,
+        operation,
+        row_count,
+        base_date,
+        sample_name: (.payload.output1.hts_kor_isnm // .payload.output1.prdt_name // "")
+      })
+
+output:
+  from: shaped
+  default_format: table
+  columns:
+    - key: ordinal
+      title: "#"
+      format: integer
+      align: right
+    - key: symbol
+      title: 코드
+      align: center
+    - key: sample_name
+      title: 종목
+      align: left
+    - key: row_count
+      title: raw행수
+      format: integer
+      align: right
+    - key: base_date
+      title: 기준일
+      align: center
+    - key: provider
+      title: provider
+      align: center
+    - key: operation
+      title: operation
+      align: left
