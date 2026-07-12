@@ -75,6 +75,7 @@ func TestAggregateCLIRunsKRXMonthlyArchive(t *testing.T) {
 	requireStageRows(t, stages, "snapshots", 42)
 	requireStageRows(t, stages, "normalized", 58144)
 	requireStageRows(t, stages, "monthly", 30)
+	requireStageRows(t, stages, "derived", 30)
 	require.Len(t, rows, 30)
 	markets := map[string]bool{}
 	symbols := map[string]bool{}
@@ -93,6 +94,8 @@ func TestAggregateCLIRunsKRXMonthlyArchive(t *testing.T) {
 		require.Equal(t, "2026-06-30", row["last_date"])
 		require.IsType(t, float64(0), row["total_traded_amount"])
 		tradedAmount := row["total_traded_amount"].(float64)
+		require.IsType(t, float64(0), row["total_traded_amount_100m"])
+		require.InDelta(t, tradedAmount/100000000, row["total_traded_amount_100m"].(float64), 0.0000001)
 		require.LessOrEqual(t, tradedAmount, previousTradedAmount)
 		previousTradedAmount = tradedAmount
 		require.NotNil(t, row["return_pct"])

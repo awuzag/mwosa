@@ -91,8 +91,16 @@ pipeline:
           total_traded_amount: -1
       - $limit: "${params.limit}"
 
+  - name: derived
+    type: jq
+    from: monthly
+    query: |
+      map(. + {
+        total_traded_amount_100m: (.total_traded_amount / 100000000)
+      })
+
 output:
-  from: monthly
+  from: derived
   default_format: table
   columns:
     - key: ordinal
@@ -124,8 +132,8 @@ output:
       format: percent
       precision: 2
       align: right
-    - key: total_traded_amount
-      title: 월간 거래대금
+    - key: total_traded_amount_100m
+      title: 월간 거래대금(억)
       format: number
-      precision: 0
+      precision: 1
       align: right
