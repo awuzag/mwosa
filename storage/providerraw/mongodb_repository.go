@@ -62,7 +62,62 @@ func (r MongoRepository) UpsertSnapshot(ctx context.Context, snapshot Snapshot) 
 	if _, err := bson.Marshal(bson.M{"payload": document.Payload}); err != nil {
 		return WriteResult{}, errb.Wrapf(err, "encode provider raw snapshot bson payload")
 	}
-	update := bson.D{
+	update := rawSnapshotMongoUpdate(document)
+	if _, err := r.collection.UpdateOne(ctx, bson.D{{Key: "_id", Value: document.ID}}, update, options.UpdateOne().SetUpsert(true)); err != nil {
+		return WriteResult{}, errb.With("id", document.ID).Wrapf(err, "upsert provider raw snapshot mongodb document")
+	}
+	return WriteResult{
+		Provider:         snapshot.Provider,
+		Group:            snapshot.Group,
+		Operation:        snapshot.Operation,
+		BaseDate:         document.Source.BaseDate,
+		CanonicalSupport: snapshot.CanonicalSupport,
+		RowCount:         snapshot.RowCount,
+		RowsAffected:     1,
+	}, nil
+}
+
+func (r MongoRepository) UpsertSnapshots(ctx context.Context, snapshots []Snapshot) (BulkWriteResult, error) {
+	errB := oops.In("provider_raw_repository").With("backend", "mongodb", "snapshot_count", len(snapshots))
+	if len(snapshots) == 0 {
+		return BulkWriteResult{}, nil
+	}
+
+	models := make([]mongo.WriteModel, 0, len(snapshots))
+	rowCount := 0
+	for index, snapshot := range snapshots {
+		if snapshot.Provider == "" || snapshot.Group == "" || snapshot.Operation == "" {
+			return BulkWriteResult{}, errB.With("index", index).New("provider raw snapshot missing natural key")
+		}
+		document, err := snapshotToMongoDocument(snapshot)
+		if err != nil {
+			return BulkWriteResult{}, errB.With("index", index).Wrap(err)
+		}
+		if _, err := bson.Marshal(bson.M{"payload": document.Payload}); err != nil {
+			return BulkWriteResult{}, errB.With("index", index).Wrapf(err, "encode provider raw snapshot bson payload")
+		}
+		models = append(models, mongo.NewUpdateOneModel().
+			SetFilter(bson.D{{Key: "_id", Value: document.ID}}).
+			SetUpdate(rawSnapshotMongoUpdate(document)).
+			SetUpsert(true))
+		rowCount += snapshot.RowCount
+	}
+
+	result, err := r.collection.BulkWrite(ctx, models, options.BulkWrite().SetOrdered(false))
+	if err != nil {
+		return BulkWriteResult{}, errB.Wrapf(err, "bulk upsert provider raw snapshots")
+	}
+	return BulkWriteResult{
+		SnapshotCount: len(snapshots),
+		RowCount:      rowCount,
+		MatchedCount:  result.MatchedCount,
+		ModifiedCount: result.ModifiedCount,
+		UpsertedCount: result.UpsertedCount,
+	}, nil
+}
+
+func rawSnapshotMongoUpdate(document rawSnapshotMongoDocument) bson.D {
+	return bson.D{
 		{Key: "$setOnInsert", Value: bson.D{
 			{Key: "_id", Value: document.ID},
 			{Key: "created_at", Value: document.CreatedAt},
@@ -77,18 +132,6 @@ func (r MongoRepository) UpsertSnapshot(ctx context.Context, snapshot Snapshot) 
 		}},
 		{Key: "$inc", Value: bson.D{{Key: "revision", Value: int64(1)}}},
 	}
-	if _, err := r.collection.UpdateOne(ctx, bson.D{{Key: "_id", Value: document.ID}}, update, options.UpdateOne().SetUpsert(true)); err != nil {
-		return WriteResult{}, errb.With("id", document.ID).Wrapf(err, "upsert provider raw snapshot mongodb document")
-	}
-	return WriteResult{
-		Provider:         snapshot.Provider,
-		Group:            snapshot.Group,
-		Operation:        snapshot.Operation,
-		BaseDate:         document.Source.BaseDate,
-		CanonicalSupport: snapshot.CanonicalSupport,
-		RowCount:         snapshot.RowCount,
-		RowsAffected:     1,
-	}, nil
 }
 
 func (r MongoRepository) ListSnapshots(ctx context.Context, query Query) ([]SnapshotRecord, error) {

@@ -44,7 +44,43 @@ func TestMongoProviderRawRepositoryMatchesSQLiteContract(t *testing.T) {
 
 	assertProviderRawRepositoryContract(t, sqliteRepository)
 	assertProviderRawRepositoryContract(t, mongoRepository)
+	assertMongoProviderRawBulkUpsert(t, mongoRepository)
 	assertMongoProviderRawDocumentShape(t, runtime)
+}
+
+func assertMongoProviderRawBulkUpsert(t *testing.T, repository MongoRepository) {
+	t.Helper()
+	ctx := context.Background()
+	snapshots := []Snapshot{
+		{
+			Provider:         provider.ProviderKRX,
+			Group:            provider.GroupKRXStockDailyTrade,
+			Operation:        provider.OperationStockByddTrd,
+			BaseDate:         "2024-04-15",
+			CanonicalSupport: "daily_bar",
+			Rows:             []map[string]string{{"ISU_CD": "005930"}},
+			RowCount:         1,
+		},
+		{
+			Provider:         provider.ProviderKRX,
+			Group:            provider.GroupKRXStockDailyTrade,
+			Operation:        provider.OperationKOSDAQByddTrd,
+			BaseDate:         "2024-04-15",
+			CanonicalSupport: "daily_bar",
+			Rows:             []map[string]string{{"ISU_CD": "247540"}},
+			RowCount:         1,
+		},
+	}
+	first, err := repository.UpsertSnapshots(ctx, snapshots)
+	require.NoError(t, err)
+	require.Equal(t, 2, first.SnapshotCount)
+	require.Equal(t, 2, first.RowCount)
+	require.Equal(t, int64(2), first.UpsertedCount)
+
+	second, err := repository.UpsertSnapshots(ctx, snapshots)
+	require.NoError(t, err)
+	require.Equal(t, int64(2), second.MatchedCount)
+	require.Zero(t, second.UpsertedCount)
 }
 
 func assertProviderRawRepositoryContract(t *testing.T, repository rawSnapshotRepository) {

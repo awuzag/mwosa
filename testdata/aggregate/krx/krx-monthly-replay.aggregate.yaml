@@ -1,0 +1,131 @@
+kind: Aggregate
+schema_version: 1
+name: krx-monthly-fixture-replay
+description: ZIP fixture로 복원한 KRX 한 달 스냅샷을 월간 종목 지표로 집계
+
+params:
+  limit:
+    type: int
+    default: 30
+
+workspace:
+  ttl: 2h
+  timeout: 2m
+  max_rows: 70000
+
+pipeline:
+  - name: snapshots
+    type: snapshot
+    provider: krx
+    params:
+      provider_group: stockDailyTrade
+      limit: 100
+
+  - name: normalized
+    type: jq
+    from: snapshots
+    query: |
+      map(
+        . as $snapshot
+        | .payload[]?
+        | {
+            market: (if $snapshot.source.operation == "stk_bydd_trd" then "KOSPI" else "KOSDAQ" end),
+            symbol: .ISU_CD,
+            name: .ISU_NM,
+            trading_date: $snapshot.source.base_date,
+            close: (.TDD_CLSPRC | tostring | gsub(","; "") | tonumber? // 0),
+            traded_amount: (.ACC_TRDVAL | tostring | gsub(","; "") | tonumber? // 0)
+          }
+      )
+
+  - name: monthly
+    type: aggregate
+    from: normalized
+    pipeline:
+      - $sort:
+          market: 1
+          symbol: 1
+          trading_date: 1
+      - $group:
+          _id:
+            market: "$market"
+            symbol: "$symbol"
+          name:
+            $last: "$name"
+          first_date:
+            $first: "$trading_date"
+          last_date:
+            $last: "$trading_date"
+          first_close:
+            $first: "$close"
+          last_close:
+            $last: "$close"
+          trading_days:
+            $sum: 1
+          total_traded_amount:
+            $sum: "$traded_amount"
+      - $match:
+          trading_days:
+            $gte: 15
+      - $project:
+          _id: 0
+          market: "$_id.market"
+          symbol: "$_id.symbol"
+          name: 1
+          first_date: 1
+          last_date: 1
+          first_close: 1
+          last_close: 1
+          trading_days: 1
+          total_traded_amount: 1
+          return_pct:
+            $cond:
+              - $gt: ["$first_close", 0]
+              - $multiply:
+                  - $subtract:
+                      - $divide: ["$last_close", "$first_close"]
+                      - 1
+                  - 100
+              - 0
+      - $sort:
+          total_traded_amount: -1
+      - $limit: "${params.limit}"
+
+output:
+  from: monthly
+  default_format: table
+  columns:
+    - key: ordinal
+      title: "#"
+      format: integer
+      align: right
+    - key: market
+      title: 시장
+    - key: symbol
+      title: 코드
+    - key: name
+      title: 종목
+    - key: trading_days
+      title: 거래일
+      format: integer
+      align: right
+    - key: first_close
+      title: 월초 종가
+      format: number
+      precision: 0
+      align: right
+    - key: last_close
+      title: 월말 종가
+      format: number
+      precision: 0
+      align: right
+    - key: return_pct
+      title: 월간 수익률
+      format: percent
+      precision: 2
+      align: right
+    - key: total_traded_amount
+      title: 월간 거래대금
+      format: number
+      precision: 0
+      align: right

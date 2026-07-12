@@ -46,6 +46,14 @@ type WriteResult struct {
 	RowsAffected     int64                `json:"rows_affected" csv:"rows_affected"`
 }
 
+type BulkWriteResult struct {
+	SnapshotCount int   `json:"snapshot_count"`
+	RowCount      int   `json:"row_count"`
+	MatchedCount  int64 `json:"matched_count"`
+	ModifiedCount int64 `json:"modified_count"`
+	UpsertedCount int64 `json:"upserted_count"`
+}
+
 type SnapshotRecord struct {
 	ID               int64                `json:"id" csv:"id"`
 	Provider         provider.ProviderID  `json:"provider" csv:"provider"`
