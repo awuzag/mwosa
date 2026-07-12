@@ -1,0 +1,22 @@
+openapi: 3.0.4
+info:
+  title: Context 주문 API 예시
+  version: 0.1.0
+  description: "API.A.01 주문 생성의 HTTP 계약 원장 예시다."
+servers:
+  - url: https://api.example.com/api/v1
+    description: 공개 Gateway 예시 주소
+tags:
+  - name: Orders
+    description: 주문 생성과 조회
+paths:
+  /orders:
+    $ref: ./paths/API_A_01_place_order.yaml
+components:
+  securitySchemes:
+    SessionCookie:
+      $ref: ./components/security-schemes.yaml#/SessionCookie
+    CsrfToken:
+      $ref: ./components/security-schemes.yaml#/CsrfToken
+    WebOrigin:
+      $ref: ./components/security-schemes.yaml#/WebOrigin

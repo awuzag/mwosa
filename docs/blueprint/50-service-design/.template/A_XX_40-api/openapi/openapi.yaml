@@ -1,0 +1,24 @@
+openapi: 3.0.4
+info:
+  title: Context API 설계 템플릿
+  version: 0.1.0
+  description: 복사한 뒤 Context와 Endpoint 이름, 경로, schema와 오류를 실제 계약으로 교체한다.
+servers:
+  - url: https://api.example.com
+    description: 공개 Gateway 예시 주소
+tags:
+  - name: Resource
+    description: 예시 Resource API
+paths:
+  /api/v1/resources:
+    $ref: ./paths/API_A_XX_01_endpoint.yaml
+components:
+  securitySchemes:
+    SessionCookie:
+      $ref: ./components/security-schemes.yaml#/SessionCookie
+    CsrfToken:
+      $ref: ./components/security-schemes.yaml#/CsrfToken
+    WebOrigin:
+      $ref: ./components/security-schemes.yaml#/WebOrigin
+    BearerAuth:
+      $ref: ./components/security-schemes.yaml#/BearerAuth

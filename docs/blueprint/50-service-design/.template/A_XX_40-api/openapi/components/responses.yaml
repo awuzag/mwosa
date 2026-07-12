@@ -1,0 +1,150 @@
+InputInvalid:
+  description: 요청 schema 또는 공개 입력값이 유효하지 않다.
+  headers:
+    X-Request-Id:
+      $ref: ./headers.yaml#/XRequestId
+  content:
+    application/problem+json:
+      schema:
+        allOf:
+          - $ref: ./schemas.yaml#/ProblemDetails
+          - type: object
+            properties:
+              status:
+                type: integer
+                enum:
+                  - 400
+              code:
+                type: string
+                enum:
+                  - RESOURCE_INPUT_INVALID
+      example:
+        type: https://api.example.com/problems/resource-input-invalid
+        title: 요청 형식이 올바르지 않습니다.
+        status: 400
+        code: RESOURCE_INPUT_INVALID
+        detail: 입력값을 확인한 뒤 다시 시도해주세요.
+        retryable: false
+        requestId: 30d9fa85-0a18-4263-98b6-231dca5a6fb8
+        violations:
+          - field: name
+            reason: required
+
+AuthenticationRequired:
+  description: 요청을 처리할 수 있는 인증 credential이 없다.
+  headers:
+    X-Request-Id:
+      $ref: ./headers.yaml#/XRequestId
+  content:
+    application/problem+json:
+      schema:
+        allOf:
+          - $ref: ./schemas.yaml#/ProblemDetails
+          - type: object
+            properties:
+              status:
+                type: integer
+                enum:
+                  - 401
+              code:
+                type: string
+                enum:
+                  - AUTHENTICATION_REQUIRED
+      example:
+        type: https://api.example.com/problems/authentication-required
+        title: 로그인이 필요합니다.
+        status: 401
+        code: AUTHENTICATION_REQUIRED
+        detail: 로그인한 뒤 다시 시도해주세요.
+        retryable: false
+        requestId: 30d9fa85-0a18-4263-98b6-231dca5a6fb8
+
+RequestForbidden:
+  description: 권한, 소유권, CSRF token 또는 Origin 검사를 통과하지 못했다.
+  headers:
+    X-Request-Id:
+      $ref: ./headers.yaml#/XRequestId
+  content:
+    application/problem+json:
+      schema:
+        allOf:
+          - $ref: ./schemas.yaml#/ProblemDetails
+          - type: object
+            properties:
+              status:
+                type: integer
+                enum:
+                  - 403
+              code:
+                type: string
+                enum:
+                  - RESOURCE_REQUEST_FORBIDDEN
+      example:
+        type: https://api.example.com/problems/resource-request-forbidden
+        title: 이 요청을 처리할 수 없습니다.
+        status: 403
+        code: RESOURCE_REQUEST_FORBIDDEN
+        detail: 로그인 상태와 요청 대상을 확인해주세요.
+        retryable: false
+        requestId: 30d9fa85-0a18-4263-98b6-231dca5a6fb8
+
+Conflict:
+  description: 현재 상태 또는 멱등 key가 새 실행과 충돌한다.
+  headers:
+    X-Request-Id:
+      $ref: ./headers.yaml#/XRequestId
+  content:
+    application/problem+json:
+      schema:
+        allOf:
+          - $ref: ./schemas.yaml#/ProblemDetails
+          - type: object
+            properties:
+              status:
+                type: integer
+                enum:
+                  - 409
+              code:
+                type: string
+                enum:
+                  - RESOURCE_CONFLICT
+                  - RESOURCE_IDEMPOTENCY_CONFLICT
+      example:
+        type: https://api.example.com/problems/resource-conflict
+        title: 현재 상태에서 요청을 완료할 수 없습니다.
+        status: 409
+        code: RESOURCE_CONFLICT
+        detail: 최신 상태를 확인한 뒤 다시 시도해주세요.
+        retryable: false
+        requestId: 30d9fa85-0a18-4263-98b6-231dca5a6fb8
+
+ServiceUnavailable:
+  description: 필수 의존성을 일시적으로 사용할 수 없다.
+  headers:
+    X-Request-Id:
+      $ref: ./headers.yaml#/XRequestId
+    Retry-After:
+      $ref: ./headers.yaml#/RetryAfter
+  content:
+    application/problem+json:
+      schema:
+        allOf:
+          - $ref: ./schemas.yaml#/ProblemDetails
+          - type: object
+            properties:
+              status:
+                type: integer
+                enum:
+                  - 503
+              code:
+                type: string
+                enum:
+                  - RESOURCE_SERVICE_UNAVAILABLE
+      example:
+        type: https://api.example.com/problems/resource-service-unavailable
+        title: 서비스를 일시적으로 사용할 수 없습니다.
+        status: 503
+        code: RESOURCE_SERVICE_UNAVAILABLE
+        detail: 잠시 뒤 다시 시도해주세요.
+        retryable: true
+        requestId: 30d9fa85-0a18-4263-98b6-231dca5a6fb8

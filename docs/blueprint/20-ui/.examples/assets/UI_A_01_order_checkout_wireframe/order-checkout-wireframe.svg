@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="560" viewBox="0 0 900 560">
+  <rect width="900" height="560" fill="#f6f6f2"/>
+  <rect x="40" y="32" width="820" height="64" fill="#fff" stroke="#333"/>
+  <text x="64" y="72" font-family="Arial" font-size="24" fill="#222">Checkout Page</text>
+  <text x="760" y="72" font-family="Arial" font-size="18" fill="#0b6b50">Profile</text>
+
+  <rect x="40" y="124" width="500" height="340" fill="#fff" stroke="#333"/>
+  <text x="64" y="164" font-family="Arial" font-size="20" fill="#222">Order Items</text>
+
+  <rect x="64" y="196" width="440" height="64" fill="#ece8dc" stroke="#777"/>
+  <text x="88" y="235" font-family="Arial" font-size="17" fill="#222">Product A</text>
+  <text x="420" y="235" font-family="Arial" font-size="16" fill="#0b6b50">Detail</text>
+
+  <rect x="64" y="284" width="440" height="64" fill="#ece8dc" stroke="#777"/>
+  <text x="88" y="323" font-family="Arial" font-size="17" fill="#222">Product B</text>
+  <text x="420" y="323" font-family="Arial" font-size="16" fill="#0b6b50">Detail</text>
+
+  <rect x="580" y="124" width="280" height="340" fill="#fff" stroke="#333"/>
+  <text x="604" y="164" font-family="Arial" font-size="20" fill="#222">Summary</text>
+  <line x1="604" y1="204" x2="828" y2="204" stroke="#999"/>
+  <line x1="604" y1="248" x2="828" y2="248" stroke="#999"/>
+  <line x1="604" y1="292" x2="828" y2="292" stroke="#999"/>
+  <rect x="604" y="372" width="224" height="56" fill="#0b6b50"/>
+  <text x="664" y="407" font-family="Arial" font-size="18" fill="#fff">Place Order</text>
+</svg>

@@ -1,0 +1,18 @@
+SessionCookie:
+  type: apiKey
+  in: cookie
+  name: __Host-dm_session
+  description: 구매자의 웹 로그인 상태를 가리키는 HttpOnly Session cookie다.
+
+CsrfToken:
+  type: apiKey
+  in: header
+  name: X-CSRF-Token
+  description: 현재 Session credential에 묶인 CSRF token이다.
+
+WebOrigin:
+  type: apiKey
+  in: header
+  name: Origin
+  description: 인증 credential은 아니며 Gateway가 allowlist와 정확히 비교하는 필수 웹 Origin이다.
+  x-purpose: origin-allowlist

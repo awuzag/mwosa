@@ -1,0 +1,27 @@
+XRequestId:
+  name: X-Request-Id
+  in: header
+  required: false
+  description: 선택적인 클라이언트 요청 식별자다. Gateway가 응답 UUID를 확정한다.
+  schema:
+    type: string
+  example: 30d9fa85-0a18-4263-98b6-231dca5a6fb8
+
+Traceparent:
+  name: traceparent
+  in: header
+  required: false
+  description: W3C Trace Context의 traceparent 값이다.
+  schema:
+    type: string
+  example: 00-4bf92f3577b34da6a3ce929d0e0e4736-00f067aa0ba902b7-01
+
+IdempotencyKey:
+  name: Idempotency-Key
+  in: header
+  required: true
+  description: 같은 주문 생성 실행을 식별하는 UUID다.
+  schema:
+    type: string
+    format: uuid
+  example: 04bbeb3a-5576-4e95-acb1-89f74ef9eae2

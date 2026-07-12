@@ -1,0 +1,95 @@
+CreateResourceRequest:
+  type: object
+  required:
+    - name
+  additionalProperties: false
+  properties:
+    name:
+      type: string
+      minLength: 1
+      maxLength: 100
+
+ResourceCreatedData:
+  type: object
+  required:
+    - resourceId
+    - status
+  additionalProperties: false
+  properties:
+    resourceId:
+      type: string
+      format: uuid
+    status:
+      type: string
+      enum:
+        - created
+
+ResponseMeta:
+  type: object
+  required:
+    - requestId
+  additionalProperties: false
+  properties:
+    requestId:
+      type: string
+      format: uuid
+
+CreateResourceResponse:
+  type: object
+  required:
+    - data
+    - meta
+  additionalProperties: false
+  properties:
+    data:
+      $ref: '#/ResourceCreatedData'
+    meta:
+      $ref: '#/ResponseMeta'
+
+FieldViolation:
+  type: object
+  required:
+    - field
+    - reason
+  additionalProperties: false
+  properties:
+    field:
+      type: string
+    reason:
+      type: string
+
+ProblemDetails:
+  type: object
+  required:
+    - type
+    - title
+    - status
+    - code
+    - detail
+    - retryable
+    - requestId
+  additionalProperties: false
+  properties:
+    type:
+      type: string
+      format: uri
+    title:
+      type: string
+    status:
+      type: integer
+      minimum: 400
+      maximum: 599
+    code:
+      type: string
+      pattern: ^[A-Z][A-Z0-9_]+$
+    detail:
+      type: string
+    retryable:
+      type: boolean
+    requestId:
+      type: string
+      format: uuid
+    violations:
+      type: array
+      items:
+        $ref: '#/FieldViolation'

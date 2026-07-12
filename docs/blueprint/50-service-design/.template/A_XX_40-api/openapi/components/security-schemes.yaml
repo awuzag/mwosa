@@ -1,0 +1,24 @@
+SessionCookie:
+  type: apiKey
+  in: cookie
+  name: __Host-session
+  description: 웹 로그인 상태를 가리키는 HttpOnly Session cookie 예시다.
+
+CsrfToken:
+  type: apiKey
+  in: header
+  name: X-CSRF-Token
+  description: 현재 Session credential에 묶인 CSRF token 예시다.
+
+WebOrigin:
+  type: apiKey
+  in: header
+  name: Origin
+  description: Gateway가 allowlist와 정확히 비교하는 필수 웹 Origin 예시다.
+  x-purpose: origin-allowlist
+
+BearerAuth:
+  type: http
+  scheme: bearer
+  bearerFormat: JWT
+  description: 모바일 또는 API 클라이언트의 access token 예시다.

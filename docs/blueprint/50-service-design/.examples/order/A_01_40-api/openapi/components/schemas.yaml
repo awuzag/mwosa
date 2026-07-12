@@ -1,0 +1,207 @@
+Money:
+  type: object
+  required:
+    - amount
+    - currency
+  additionalProperties: false
+  properties:
+    amount:
+      type: integer
+      format: int64
+      minimum: 0
+    currency:
+      type: string
+      enum:
+        - KRW
+
+PlaceOrderRequest:
+  type: object
+  required:
+    - cartId
+    - shippingAddressId
+    - expectedTotal
+  additionalProperties: false
+  properties:
+    cartId:
+      type: string
+      format: uuid
+    shippingAddressId:
+      type: string
+      format: uuid
+    couponId:
+      type: string
+      format: uuid
+    expectedTotal:
+      $ref: '#/Money'
+
+OrderCreatedData:
+  type: object
+  required:
+    - orderId
+    - orderNumber
+    - status
+    - total
+    - createdAt
+  additionalProperties: false
+  properties:
+    orderId:
+      type: string
+      format: uuid
+    orderNumber:
+      type: string
+      minLength: 1
+      maxLength: 64
+      pattern: ^ORD-[A-Z0-9-]+$
+    status:
+      type: string
+      enum:
+        - created
+    total:
+      $ref: '#/Money'
+    createdAt:
+      type: string
+      format: date-time
+
+ResponseMeta:
+  type: object
+  required:
+    - requestId
+  additionalProperties: false
+  properties:
+    requestId:
+      type: string
+      format: uuid
+
+PlaceOrderResponse:
+  type: object
+  required:
+    - data
+    - meta
+  additionalProperties: false
+  properties:
+    data:
+      $ref: '#/OrderCreatedData'
+    meta:
+      $ref: '#/ResponseMeta'
+
+FieldViolation:
+  type: object
+  required:
+    - field
+    - reason
+  additionalProperties: false
+  properties:
+    field:
+      type: string
+    reason:
+      type: string
+
+ProblemDetails:
+  type: object
+  required:
+    - type
+    - title
+    - status
+    - code
+    - detail
+    - retryable
+    - requestId
+  additionalProperties: false
+  properties:
+    type:
+      type: string
+      format: uri
+    title:
+      type: string
+    status:
+      type: integer
+      minimum: 400
+      maximum: 599
+    code:
+      type: string
+      pattern: ^[A-Z][A-Z0-9_]+$
+    detail:
+      type: string
+    retryable:
+      type: boolean
+    requestId:
+      type: string
+      format: uuid
+    violations:
+      type: array
+      items:
+        $ref: '#/FieldViolation'
+    currentTotal:
+      description: ORDER_TOTAL_CHANGED 오류에서만 허용하며 해당 오류에서는 필수다.
+      $ref: '#/Money'
+
+HasCurrentTotal:
+  type: object
+  required:
+    - currentTotal
+  properties:
+    currentTotal:
+      $ref: '#/Money'
+
+OrderOutOfStockProblem:
+  allOf:
+    - $ref: '#/ProblemDetails'
+    - type: object
+      properties:
+        status:
+          type: integer
+          enum:
+            - 409
+        code:
+          type: string
+          enum:
+            - ORDER_OUT_OF_STOCK
+  not:
+    $ref: '#/HasCurrentTotal'
+
+OrderTotalChangedProblem:
+  allOf:
+    - $ref: '#/ProblemDetails'
+    - $ref: '#/HasCurrentTotal'
+    - type: object
+      properties:
+        status:
+          type: integer
+          enum:
+            - 409
+        code:
+          type: string
+          enum:
+            - ORDER_TOTAL_CHANGED
+
+OrderCouponUnavailableProblem:
+  allOf:
+    - $ref: '#/ProblemDetails'
+    - type: object
+      properties:
+        status:
+          type: integer
+          enum:
+            - 409
+        code:
+          type: string
+          enum:
+            - ORDER_COUPON_UNAVAILABLE
+  not:
+    $ref: '#/HasCurrentTotal'
+
+OrderIdempotencyConflictProblem:
+  allOf:
+    - $ref: '#/ProblemDetails'
+    - type: object
+      properties:
+        status:
+          type: integer
+          enum:
+            - 409
+        code:
+          type: string
+          enum:
+            - ORDER_IDEMPOTENCY_CONFLICT
+  not:
+    $ref: '#/HasCurrentTotal'

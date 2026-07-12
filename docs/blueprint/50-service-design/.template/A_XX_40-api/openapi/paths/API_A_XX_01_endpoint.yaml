@@ -1,0 +1,56 @@
+post:
+  tags:
+    - Resource
+  summary: Resource 생성 예시
+  description: 실제 Endpoint의 성공 의미와 중요한 HTTP 처리 조건으로 교체한다.
+  operationId: createResource
+  x-api-id: API.A.XX-01
+  x-use-case: UC.A.XX
+  x-service-design: SD.A.XX40
+  x-sequences:
+    - SCN.A.XX-01
+  x-design-doc: ../../api-endpoint-process.md
+  security:
+    - SessionCookie: []
+      CsrfToken: []
+      WebOrigin: []
+    - BearerAuth: []
+  parameters:
+    - $ref: ../components/parameters.yaml#/XRequestId
+    - $ref: ../components/parameters.yaml#/IdempotencyKey
+  requestBody:
+    required: true
+    content:
+      application/json:
+        schema:
+          $ref: ../components/schemas.yaml#/CreateResourceRequest
+        example:
+          name: example
+  responses:
+    '201':
+      description: Resource를 생성했다.
+      headers:
+        X-Request-Id:
+          $ref: ../components/headers.yaml#/XRequestId
+        Location:
+          $ref: ../components/headers.yaml#/Location
+      content:
+        application/json:
+          schema:
+            $ref: ../components/schemas.yaml#/CreateResourceResponse
+          example:
+            data:
+              resourceId: 7d4a8f2c-5e14-46be-9b9b-987f5d69e001
+              status: created
+            meta:
+              requestId: 30d9fa85-0a18-4263-98b6-231dca5a6fb8
+    '400':
+      $ref: ../components/responses.yaml#/InputInvalid
+    '401':
+      $ref: ../components/responses.yaml#/AuthenticationRequired
+    '403':
+      $ref: ../components/responses.yaml#/RequestForbidden
+    '409':
+      $ref: ../components/responses.yaml#/Conflict
+    '503':
+      $ref: ../components/responses.yaml#/ServiceUnavailable

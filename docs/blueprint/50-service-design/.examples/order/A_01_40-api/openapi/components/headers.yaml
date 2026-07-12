@@ -1,0 +1,35 @@
+XRequestId:
+  description: 응답 본문 meta.requestId와 같은 UUID다.
+  schema:
+    type: string
+    format: uuid
+  example: 30d9fa85-0a18-4263-98b6-231dca5a6fb8
+
+Location:
+  description: 생성한 주문의 origin-relative 조회 경로다.
+  schema:
+    type: string
+    format: uri-reference
+    pattern: ^/api/v1/orders/[0-9a-fA-F-]{36}$
+  example: /api/v1/orders/0fd7ec65-bb7e-4c58-a92a-9b7b8a31e001
+
+IdempotencyReplayed:
+  description: 같은 멱등 요청의 기존 결과를 반환했는지 나타낸다.
+  schema:
+    type: boolean
+  example: false
+
+CacheControlNoStore:
+  description: 개인 주문 응답을 브라우저와 중간 캐시에 저장하지 못하게 한다.
+  schema:
+    type: string
+    enum:
+      - no-store
+  example: no-store
+
+RetryAfter:
+  description: 재시도 전에 기다릴 최소 초다.
+  schema:
+    type: integer
+    minimum: 1
+  example: 1

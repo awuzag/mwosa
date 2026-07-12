@@ -1,0 +1,20 @@
+XRequestId:
+  description: 응답 본문 meta.requestId와 같은 UUID다.
+  schema:
+    type: string
+    format: uuid
+  example: 30d9fa85-0a18-4263-98b6-231dca5a6fb8
+
+Location:
+  description: 생성한 Resource의 조회 상대 경로다.
+  schema:
+    type: string
+    format: uri-reference
+  example: /api/v1/resources/7d4a8f2c-5e14-46be-9b9b-987f5d69e001
+
+RetryAfter:
+  description: 재시도 전에 기다릴 최소 초다.
+  schema:
+    type: integer
+    minimum: 1
+  example: 1

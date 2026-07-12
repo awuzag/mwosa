@@ -1,0 +1,231 @@
+InputInvalid:
+  description: 요청 schema 또는 공개 입력값이 유효하지 않다.
+  headers:
+    X-Request-Id:
+      $ref: ./headers.yaml#/XRequestId
+    Cache-Control:
+      $ref: ./headers.yaml#/CacheControlNoStore
+  content:
+    application/problem+json:
+      schema:
+        allOf:
+          - $ref: ./schemas.yaml#/ProblemDetails
+          - type: object
+            properties:
+              status:
+                type: integer
+                enum:
+                  - 400
+              code:
+                type: string
+                enum:
+                  - ORDER_INPUT_INVALID
+        not:
+          $ref: ./schemas.yaml#/HasCurrentTotal
+      example:
+        type: https://api.example.com/problems/order-input-invalid
+        title: 주문 요청 형식이 올바르지 않습니다.
+        status: 400
+        code: ORDER_INPUT_INVALID
+        detail: 입력값을 확인한 뒤 다시 시도해주세요.
+        retryable: false
+        requestId: 30d9fa85-0a18-4263-98b6-231dca5a6fb8
+        violations:
+          - field: expectedTotal.amount
+            reason: minimum
+
+AuthenticationRequired:
+  description: 유효한 웹 Session이 없다.
+  headers:
+    X-Request-Id:
+      $ref: ./headers.yaml#/XRequestId
+    Cache-Control:
+      $ref: ./headers.yaml#/CacheControlNoStore
+  content:
+    application/problem+json:
+      schema:
+        allOf:
+          - $ref: ./schemas.yaml#/ProblemDetails
+          - type: object
+            properties:
+              status:
+                type: integer
+                enum:
+                  - 401
+              code:
+                type: string
+                enum:
+                  - AUTHENTICATION_REQUIRED
+        not:
+          $ref: ./schemas.yaml#/HasCurrentTotal
+      example:
+        type: https://api.example.com/problems/authentication-required
+        title: 로그인이 필요합니다.
+        status: 401
+        code: AUTHENTICATION_REQUIRED
+        detail: 로그인한 뒤 다시 시도해주세요.
+        retryable: false
+        requestId: 30d9fa85-0a18-4263-98b6-231dca5a6fb8
+
+RequestForbidden:
+  description: 현재 사용자가 요청의 장바구니·배송지·쿠폰을 사용할 수 없다.
+  headers:
+    X-Request-Id:
+      $ref: ./headers.yaml#/XRequestId
+    Cache-Control:
+      $ref: ./headers.yaml#/CacheControlNoStore
+  content:
+    application/problem+json:
+      schema:
+        allOf:
+          - $ref: ./schemas.yaml#/ProblemDetails
+          - type: object
+            properties:
+              status:
+                type: integer
+                enum:
+                  - 403
+              code:
+                type: string
+                enum:
+                  - ORDER_REQUEST_FORBIDDEN
+        not:
+          $ref: ./schemas.yaml#/HasCurrentTotal
+      example:
+        type: https://api.example.com/problems/order-request-forbidden
+        title: 이 주문 요청을 처리할 수 없습니다.
+        status: 403
+        code: ORDER_REQUEST_FORBIDDEN
+        detail: 주문 대상과 로그인 상태를 확인해주세요.
+        retryable: false
+        requestId: 30d9fa85-0a18-4263-98b6-231dca5a6fb8
+
+OrderConflict:
+  description: 주문 가능 상태, 서버 계산 금액, 쿠폰 또는 멱등 요청이 충돌한다.
+  headers:
+    X-Request-Id:
+      $ref: ./headers.yaml#/XRequestId
+    Cache-Control:
+      $ref: ./headers.yaml#/CacheControlNoStore
+  content:
+    application/problem+json:
+      schema:
+        oneOf:
+          - $ref: ./schemas.yaml#/OrderOutOfStockProblem
+          - $ref: ./schemas.yaml#/OrderTotalChangedProblem
+          - $ref: ./schemas.yaml#/OrderCouponUnavailableProblem
+          - $ref: ./schemas.yaml#/OrderIdempotencyConflictProblem
+      examples:
+        outOfStock:
+          summary: 상품 주문 가능 수량 부족
+          value:
+            type: https://api.example.com/problems/order-out-of-stock
+            title: 품절된 상품이 있어 주문할 수 없습니다.
+            status: 409
+            code: ORDER_OUT_OF_STOCK
+            detail: 장바구니를 다시 확인해주세요.
+            retryable: false
+            requestId: 30d9fa85-0a18-4263-98b6-231dca5a6fb8
+        totalChanged:
+          summary: 서버 계산 총액 변경
+          value:
+            type: https://api.example.com/problems/order-total-changed
+            title: 주문 금액이 변경되었습니다.
+            status: 409
+            code: ORDER_TOTAL_CHANGED
+            detail: 변경된 금액을 확인한 뒤 다시 주문해주세요.
+            retryable: false
+            requestId: 30d9fa85-0a18-4263-98b6-231dca5a6fb8
+            currentTotal:
+              amount: 43000
+              currency: KRW
+        couponUnavailable:
+          summary: 쿠폰 사용 불가
+          value:
+            type: https://api.example.com/problems/order-coupon-unavailable
+            title: 선택한 쿠폰을 사용할 수 없습니다.
+            status: 409
+            code: ORDER_COUPON_UNAVAILABLE
+            detail: 쿠폰을 다시 선택해주세요.
+            retryable: false
+            requestId: 30d9fa85-0a18-4263-98b6-231dca5a6fb8
+        idempotencyConflict:
+          summary: 같은 key의 다른 주문 요청
+          value:
+            type: https://api.example.com/problems/order-idempotency-conflict
+            title: 같은 요청을 이어 갈 수 없습니다.
+            status: 409
+            code: ORDER_IDEMPOTENCY_CONFLICT
+            detail: 원래 요청을 재사용하거나 새 주문에는 새 key를 사용해주세요.
+            retryable: false
+            requestId: 30d9fa85-0a18-4263-98b6-231dca5a6fb8
+
+RateLimited:
+  description: 사용자 또는 Session 기준 주문 생성 제한을 초과했다.
+  headers:
+    X-Request-Id:
+      $ref: ./headers.yaml#/XRequestId
+    Cache-Control:
+      $ref: ./headers.yaml#/CacheControlNoStore
+    Retry-After:
+      $ref: ./headers.yaml#/RetryAfter
+  content:
+    application/problem+json:
+      schema:
+        allOf:
+          - $ref: ./schemas.yaml#/ProblemDetails
+          - type: object
+            properties:
+              status:
+                type: integer
+                enum:
+                  - 429
+              code:
+                type: string
+                enum:
+                  - ORDER_RATE_LIMITED
+        not:
+          $ref: ./schemas.yaml#/HasCurrentTotal
+      example:
+        type: https://api.example.com/problems/order-rate-limited
+        title: 주문 요청이 너무 많습니다.
+        status: 429
+        code: ORDER_RATE_LIMITED
+        detail: 잠시 뒤 다시 시도해주세요.
+        retryable: true
+        requestId: 30d9fa85-0a18-4263-98b6-231dca5a6fb8
+
+DependencyUnavailable:
+  description: 가격·재고·쿠폰·배송지 또는 주문 저장소를 일시적으로 사용할 수 없다.
+  headers:
+    X-Request-Id:
+      $ref: ./headers.yaml#/XRequestId
+    Cache-Control:
+      $ref: ./headers.yaml#/CacheControlNoStore
+    Retry-After:
+      $ref: ./headers.yaml#/RetryAfter
+  content:
+    application/problem+json:
+      schema:
+        allOf:
+          - $ref: ./schemas.yaml#/ProblemDetails
+          - type: object
+            properties:
+              status:
+                type: integer
+                enum:
+                  - 503
+              code:
+                type: string
+                enum:
+                  - ORDER_DEPENDENCY_UNAVAILABLE
+        not:
+          $ref: ./schemas.yaml#/HasCurrentTotal
+      example:
+        type: https://api.example.com/problems/order-dependency-unavailable
+        title: 주문 서비스를 일시적으로 사용할 수 없습니다.
+        status: 503
+        code: ORDER_DEPENDENCY_UNAVAILABLE
+        detail: 잠시 뒤 같은 요청으로 다시 시도해주세요.
+        retryable: true
+        requestId: 30d9fa85-0a18-4263-98b6-231dca5a6fb8
