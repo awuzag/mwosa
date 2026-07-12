@@ -74,6 +74,69 @@ Go 없이 사용하는 사용자는 GitHub Release 에서 자기 OS/CPU 에 맞�
 받아 `mwosa` 실행 파일을 `PATH` 에 둔다. 릴리스 자동화는 macOS, Linux,
 Windows 용 바이너리와 `checksums.txt` 를 생성한다.
 
+### 워크트리 전용 개발 환경
+
+여러 브랜치나 워크트리를 동시에 개발할 때는 전역 `mwosa` 바이너리와 공용
+MongoDB를 재사용하지 않고 다음 Task를 사용한다.
+
+```bash
+task dev:storage:init
+task dev:status
+task dev:mwosa -- inspect config -o json
+```
+
+`dev:storage:init`은 현재 소스를 `.mwosa/bin/mwosa`에 빌드한다. 별도 설정이 없으면
+워크트리 경로의 해시를 사용한 전용 MongoDB container와 volume도 만든다. 현재
+워크트리의 기본 database 이름은 `aggregate-mwosa`다. 관리형 container의 포트가
+이미 사용 중이면 `MONGODB_PORT`로 재정의할 수 있다.
+
+```bash
+task dev:mongo:url
+MONGODB_PORT=37017 task dev:mongo:up
+```
+
+이미 실행 중인 MongoDB를 사용할 때는 전체 URL 하나를 전달하거나, 서버 URL과
+database 이름을 나눠 전달할 수 있다. 두 방식은 함께 지정하지 않는다.
+
+```bash
+# 전체 URL 방식
+MWOSA_DATABASE_URL="mongodb://127.0.0.1:27017/aggregate-mwosa" \
+  task dev:storage:init
+
+# 서버 URL + database 이름 방식
+MWOSA_MONGODB_URI="mongodb://127.0.0.1:27017" \
+MWOSA_MONGODB_DATABASE="aggregate-mwosa" \
+  task dev:storage:init
+```
+
+외부 MongoDB를 선택한 경우 `dev:mongo:up`, `dev:mongo:down`은 해당 서버의
+lifecycle을 변경하지 않는다. `dev:mongo:reset`도 외부 database 삭제를 거부한다.
+인증 정보가 URL에 포함돼 있으면 상태와 URL 출력에서는 credential을 가린다.
+
+KRX Aggregate의 반복 가능한 통합 테스트는 저장된 한 달 ZIP fixture를 사용한다.
+평소 테스트에서는 외부 API를 호출하지 않고 새 MongoDB Testcontainer에 bulk
+upsert한다. 실제 KRX 호출은 fixture를 명시적으로 재수집할 때만 발생한다.
+
+```bash
+task test:integration:krx-fixture
+MWOSA_CONFIG="$HOME/.config/mwosa/config.json" \
+KRX_FIXTURE_OVERWRITE=true \
+  task fixture:krx:collect
+```
+
+실제 KRX 인증과 승인된 API를 사용해 Aggregate까지 확인하려면 사용자 config 또는
+`MWOSA_KRX_AUTH_KEY`를 준비한 뒤 실행한다.
+
+```bash
+MWOSA_CONFIG="$HOME/.config/mwosa/config.json" task dev:krx:doctor
+MWOSA_CONFIG="$HOME/.config/mwosa/config.json" task dev:krx:aggregate
+KRX_AS_OF=2026-06-25 task dev:krx:aggregate
+```
+
+`task dev:mongo:down`은 컨테이너만 중지하고 데이터를 보존한다. 완전히 새로 시작할
+때만 `task dev:mongo:reset`을 사용한다. 이 명령은 현재 워크트리 전용 volume만
+삭제한다.
+
 ## 현재 CLI 구조
 
 `mwosa` 는 verb-first 명령 체계를 가진다.

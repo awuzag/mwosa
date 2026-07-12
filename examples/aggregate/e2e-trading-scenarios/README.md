@@ -36,6 +36,26 @@ task aggregate:smoke:fixture
 MWOSA_CONFIG="$HOME/.config/mwosa/config.json" task aggregate:smoke:live
 ```
 
+여러 워크트리를 동시에 사용할 때는 전역 설치와 공용 MongoDB 대신 워크트리 전용
+Task를 우선한다. 다음 명령은 `.mwosa/bin/mwosa`와 별도 MongoDB container,
+volume, database URL을 사용해 KRX live 시나리오 전체를 실행한다.
+
+```bash
+task dev:storage:init
+MWOSA_CONFIG="$HOME/.config/mwosa/config.json" task dev:krx:aggregate
+task dev:status
+```
+
+공용 개발 MongoDB에서 워크트리별 database만 나누려면 다음처럼 실행한다. 전체
+URL을 `MWOSA_DATABASE_URL`로 직접 넘기는 방식도 동일하게 지원한다.
+
+```bash
+MWOSA_MONGODB_URI="mongodb://127.0.0.1:27017" \
+MWOSA_MONGODB_DATABASE="aggregate-mwosa" \
+MWOSA_CONFIG="$HOME/.config/mwosa/config.json" \
+  task dev:krx:aggregate
+```
+
 `aggregate:smoke:fixture`는 secret 없이 `scripts/aggregate/seed_priority_fixture.js`로
 fixture 데이터를 넣고 1순위 후보 테이블을 출력한다. `aggregate:smoke:live`는 전체
 종목 universe가 아니라 `aggregate_live_symbols` fixture 2개 종목만 KIS raw live
@@ -98,6 +118,20 @@ hostname prefix가 붙은 개발용 이름으로 분리된다.
 실패 run도 `history aggregate`와 `inspect aggregate-run --view stages`에서 stage별
 실패 원인이 재현된다. 예를 들어 최신 KIS live smoke 실패 run은 `universe` 2행 성공
 뒤 `daily_raw` stage에 OAuth token endpoint 연결 거부가 남는다.
+
+## KRX 한 달 ZIP 재생 테스트
+
+`testdata/aggregate/krx/krx-stock-daily-2026-06.zip`에는 KOSPI/KOSDAQ 한 달
+원본 58,144행이 날짜/API별 JSON으로 저장돼 있다. 다음 테스트는 매번 새 MongoDB
+Testcontainer를 만들고 ZIP의 42개 snapshot을 bulk upsert한 뒤, 외부 API 호출 없이
+월간 Aggregate를 실행한다.
+
+```bash
+task test:integration:krx-fixture
+```
+
+archive 재수집은 `task fixture:krx:collect`를 사용한다. 실제 KRX 호출은 재수집
+명령과 opt-in live E2E에서만 발생한다.
 
 출력 포맷 smoke는 `datago-etf-watch`로 확인했다. 결과가 0행인 환경에서는 table은
 run summary table을 출력하고, json은 run detail JSON을 출력하며, ndjson/csv는 빈

@@ -6,27 +6,175 @@ dotenv:
   - .env.local
   - .mwosa.local.env
 
+vars:
+  DEV_MWOSA_BIN: .mwosa/bin/mwosa
+  DEV_MWOSA_CONFIG: .mwosa/config.json
+  DEV_MONGODB: scripts/dev/worktree-mongodb.sh
+
 tasks:
   test:unit:
     desc: Run the default test suite.
     cmds:
       - go test ./...
 
+  test:dev:
+    desc: Validate worktree MongoDB connection modes without changing a database.
+    cmds:
+      - sh scripts/dev/worktree-mongodb_test.sh
+
   test:integration:
     desc: Run focused Aggregate and provider integration tests.
     cmds:
       - go test -tags=integration ./service/aggregate ./storage/aggregate ./cli ./providers/kis
+
+  test:integration:krx-fixture:
+    desc: Load the KRX monthly ZIP into Testcontainers MongoDB and run Aggregate.
+    cmds:
+      - go test -tags=integration ./cli -run TestAggregateCLIRunsKRXMonthlyArchive -count=1 -v
 
   test:e2e:live:
     desc: Run opt-in live Aggregate E2E tests against provider APIs.
     cmds:
       - MWOSA_LIVE_E2E=1 go test -tags=e2e ./cli -run TestAggregateLiveE2EKRXMarketSnapshot -count=1 -v
 
+  fixture:krx:collect:
+    desc: Collect one month of KRX stock daily snapshots into a reproducible ZIP fixture.
+    cmds:
+      - task: dev:install
+      - |
+        set -eu
+        CONFIG="${MWOSA_CONFIG:-$HOME/.config/mwosa/config.json}"
+        go run ./testing/fixtures/krxmonthly/cmd/collect \
+          --mwosa-bin "{{.DEV_MWOSA_BIN}}" \
+          --config "$CONFIG" \
+          --from "${KRX_FIXTURE_FROM:-2026-06-01}" \
+          --to "${KRX_FIXTURE_TO:-2026-06-30}" \
+          --fixture-id "${KRX_FIXTURE_ID:-krx-stock-daily-2026-06}" \
+          --output "${KRX_FIXTURE_ARCHIVE:-testdata/aggregate/krx/krx-stock-daily-2026-06.zip}" \
+          --overwrite="${KRX_FIXTURE_OVERWRITE:-false}"
+
   install:
     desc: Install mwosa from this checkout into the active Go bin directory.
     cmds:
       - go install ./cmd/mwosa
       - mwosa version
+
+  dev:install:
+    desc: Build a mwosa binary isolated inside this worktree.
+    cmds:
+      - mkdir -p "$(dirname {{.DEV_MWOSA_BIN}})"
+      - go build -ldflags "-X main.version=dev-worktree" -o {{.DEV_MWOSA_BIN}} ./cmd/mwosa
+      - "{{.DEV_MWOSA_BIN}} version"
+
+  dev:mongo:up:
+    desc: Select the configured MongoDB or start the container dedicated to this worktree.
+    cmds:
+      - sh {{.DEV_MONGODB}} up
+
+  dev:mongo:down:
+    desc: Stop the managed worktree MongoDB container and preserve its data.
+    cmds:
+      - sh {{.DEV_MONGODB}} down
+
+  dev:mongo:reset:
+    desc: Delete the managed worktree MongoDB container and its data volume.
+    prompt: This removes only the MongoDB data dedicated to the current worktree. Continue?
+    cmds:
+      - sh {{.DEV_MONGODB}} reset
+
+  dev:mongo:url:
+    desc: Print the selected MongoDB URL with credentials redacted.
+    cmds:
+      - sh {{.DEV_MONGODB}} display-uri
+
+  dev:status:
+    desc: Show this worktree binary and MongoDB isolation state.
+    cmds:
+      - sh {{.DEV_MONGODB}} status
+      - |
+        if [ -x {{.DEV_MWOSA_BIN}} ]; then
+          printf 'binary: %s\n' "$(cd "$(dirname {{.DEV_MWOSA_BIN}})" && pwd)/$(basename {{.DEV_MWOSA_BIN}})"
+        else
+          printf 'binary: missing (run task dev:install)\n'
+        fi
+
+  dev:storage:init:
+    desc: Build mwosa, select or start MongoDB, and initialize its schema.
+    cmds:
+      - task: dev:install
+      - task: dev:mongo:up
+      - |
+        set -eu
+        MONGODB_URL="$(sh {{.DEV_MONGODB}} uri)"
+        "{{.DEV_MWOSA_BIN}}" --config "{{.DEV_MWOSA_CONFIG}}" \
+          --database-backend mongodb \
+          --database-url "$MONGODB_URL" \
+          init storage --mongodb-uri "$MONGODB_URL" -o json
+        "{{.DEV_MWOSA_BIN}}" --config "{{.DEV_MWOSA_CONFIG}}" \
+          --database-backend mongodb \
+          --database-url "$MONGODB_URL" \
+          doctor storage -o json
+
+  dev:mwosa:
+    desc: Run this worktree mwosa binary against the selected MongoDB. Pass CLI args after --.
+    cmds:
+      - |
+        set -eu
+        task dev:install >&2
+        task dev:mongo:up >&2
+        MONGODB_URL="$(sh {{.DEV_MONGODB}} uri)"
+        CONFIG="${MWOSA_CONFIG:-}"
+        if [ -z "$CONFIG" ]; then
+          if [ -f "$HOME/.config/mwosa/config.json" ]; then
+            CONFIG="$HOME/.config/mwosa/config.json"
+          else
+            CONFIG="{{.DEV_MWOSA_CONFIG}}"
+          fi
+        fi
+        "{{.DEV_MWOSA_BIN}}" --config "$CONFIG" \
+          --database-backend mongodb \
+          --database-url "$MONGODB_URL" \
+          {{.CLI_ARGS}}
+
+  dev:krx:doctor:
+    desc: Diagnose KRX access using this worktree binary and MongoDB.
+    cmds:
+      - task: dev:install
+      - task: dev:mongo:up
+      - |
+        set -eu
+        MONGODB_URL="$(sh {{.DEV_MONGODB}} uri)"
+        CONFIG="${MWOSA_CONFIG:-$HOME/.config/mwosa/config.json}"
+        "{{.DEV_MWOSA_BIN}}" --config "$CONFIG" \
+          --database-backend mongodb \
+          --database-url "$MONGODB_URL" \
+          doctor provider krx -o json
+
+  dev:krx:aggregate:
+    desc: Run the real KRX Aggregate scenario in this worktree database.
+    cmds:
+      - task: dev:storage:init
+      - |
+        set -eu
+        MONGODB_URL="$(sh {{.DEV_MONGODB}} uri)"
+        CONFIG="${MWOSA_CONFIG:-$HOME/.config/mwosa/config.json}"
+        SPEC="examples/aggregate/e2e-trading-scenarios/krx-market-snapshot.aggregate.yaml"
+        AS_OF="${KRX_AS_OF:-2026-06-25}"
+        ALIAS="${AGGREGATE_ALIAS:-dev-krx-$(date -u +%Y%m%d%H%M%S)}"
+        run_mwosa() {
+          "{{.DEV_MWOSA_BIN}}" --config "$CONFIG" \
+            --database-backend mongodb \
+            --database-url "$MONGODB_URL" "$@"
+        }
+        run_mwosa doctor provider krx -o json
+        run_mwosa validate aggregate "$SPEC" -o json
+        run_mwosa update aggregate krx-market-snapshot --file "$SPEC" -o json
+        run_mwosa inspect aggregate-plan krx-market-snapshot \
+          --param "as_of=$AS_OF" --view stages -o json
+        run_mwosa run aggregate krx-market-snapshot \
+          --param "as_of=$AS_OF" --alias "$ALIAS" -o table
+        run_mwosa history aggregate --name krx-market-snapshot -o table
+        run_mwosa inspect aggregate-run "$ALIAS" --view stages -o json
 
   aggregate:init:storage:
     desc: Initialize local MongoDB storage for Aggregate smoke runs.
