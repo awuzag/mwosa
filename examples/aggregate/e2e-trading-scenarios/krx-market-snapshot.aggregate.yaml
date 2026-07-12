@@ -34,6 +34,7 @@ pipeline:
     from: kospi_raw
     query: |
       map(.payload[]? | {
+        join_key: "market",
         symbol: .ISU_CD,
         name: .ISU_NM,
         market: "KOSPI",
@@ -48,6 +49,7 @@ pipeline:
     from: kosdaq_raw
     query: |
       map(.payload[]? | {
+        join_key: "market",
         symbol: .ISU_CD,
         name: .ISU_NM,
         market: "KOSDAQ",
@@ -61,19 +63,27 @@ pipeline:
     type: aggregate
     from: kospi_rows
     pipeline:
+      - $group:
+          _id: "$join_key"
+          kospi_rows:
+            $push: "$$ROOT"
       - $lookup:
           from: kosdaq_rows
-          localField: symbol
-          foreignField: symbol
-          as: kosdaq_peer
+          localField: _id
+          foreignField: join_key
+          as: kosdaq_rows
       - $project:
-          symbol: 1
-          name: 1
-          market: 1
-          close: 1
-          change_pct: 1
-          traded_amount_100m: 1
-          market_cap_trillion: 1
+          rows:
+            $concatArrays: ["$kospi_rows", "$kosdaq_rows"]
+      - $unwind: "$rows"
+      - $project:
+          symbol: "$rows.symbol"
+          name: "$rows.name"
+          market: "$rows.market"
+          close: "$rows.close"
+          change_pct: "$rows.change_pct"
+          traded_amount_100m: "$rows.traded_amount_100m"
+          market_cap_trillion: "$rows.market_cap_trillion"
       - $sort:
           traded_amount_100m: -1
       - $limit: "${params.limit}"

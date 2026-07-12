@@ -17,6 +17,11 @@ tasks:
     cmds:
       - go test -tags=integration ./service/aggregate ./storage/aggregate ./cli ./providers/kis
 
+  test:e2e:live:
+    desc: Run opt-in live Aggregate E2E tests against provider APIs.
+    cmds:
+      - MWOSA_LIVE_E2E=1 go test -tags=e2e ./cli -run TestAggregateLiveE2EKRXMarketSnapshot -count=1 -v
+
   install:
     desc: Install mwosa from this checkout into the active Go bin directory.
     cmds:
