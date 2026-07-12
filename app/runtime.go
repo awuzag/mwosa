@@ -43,6 +43,7 @@ type Options struct {
 	Database             string
 	DatabaseURL          string
 	ProviderAuthDatabase string
+	Development          bool
 	// RepositoryBackends is an internal assembly hook for tests and staged
 	// migrations. CLI/config backend selection stays on DatabaseBackend.
 	RepositoryBackends map[RepositoryName]string

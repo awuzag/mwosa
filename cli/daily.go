@@ -216,6 +216,7 @@ func newAppRuntime(ctx context.Context, opts *Options, activateProviders bool) (
 		Database:             opts.Database,
 		DatabaseURL:          opts.DatabaseURL,
 		ProviderAuthDatabase: opts.ProviderAuthDatabase,
+		Development:          opts.Development,
 		Market:               provider.Market(opts.Market),
 		ProviderID:           provider.ProviderID(opts.Provider),
 		PreferProvider:       provider.ProviderID(opts.PreferProvider),

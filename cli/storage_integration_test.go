@@ -6,6 +6,7 @@ import (
 	"bytes"
 	"context"
 	"encoding/json"
+	"os"
 	"testing"
 
 	"github.com/awuzag/mwosa/internal/integrationtest"
@@ -91,6 +92,41 @@ func TestInitAndDoctorStorageMongoDB(t *testing.T) {
 				t.Fatalf("doctor collection %s missing index %s in %#v", spec.Name, index.Name, status.Indexes)
 			}
 		}
+	}
+}
+
+func TestInitStorageMongoDBScopesDatabaseForDevelopmentBuild(t *testing.T) {
+	server := integrationtest.StartMongoDB(t)
+	t.Setenv("MWOSA_DATABASE_URL", server.URI)
+	configPath := t.TempDir() + "/config.json"
+	databaseName := "mwosa_cli_dev_scope"
+
+	hostname, err := os.Hostname()
+	if err != nil {
+		t.Fatalf("resolve hostname: %v", err)
+	}
+	scopedDatabaseName, err := storagemongodb.DevelopmentDatabaseName(databaseName, hostname)
+	if err != nil {
+		t.Fatalf("scope database name: %v", err)
+	}
+
+	cmd := NewRootCommand(BuildInfo{Development: true})
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+	cmd.SetErr(&out)
+	cmd.SetArgs([]string{
+		"--config", configPath,
+		"init", "storage",
+		"--mongodb-database", databaseName,
+	})
+	requireExecute(t, cmd, &out)
+
+	var initResult storageInitResult
+	if err := json.Unmarshal(out.Bytes(), &initResult); err != nil {
+		t.Fatalf("decode init storage output: %v\n%s", err, out.String())
+	}
+	if initResult.Status != "ok" || initResult.Database != scopedDatabaseName {
+		t.Fatalf("init storage result = %#v, want ok %s", initResult, scopedDatabaseName)
 	}
 }
 

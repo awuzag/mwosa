@@ -26,7 +26,8 @@ func NewStorageRuntime(ctx context.Context, opts Options) (StorageRuntime, error
 
 	if requiresMongoDBRuntime(backend, opts.RepositoryBackends) {
 		mongoRuntime, err := storagemongodb.NewRuntime(ctx, storagemongodb.Config{
-			URI: opts.DatabaseURL,
+			URI:         opts.DatabaseURL,
+			Development: opts.Development,
 		})
 		if err != nil {
 			return StorageRuntime{}, oops.Join(

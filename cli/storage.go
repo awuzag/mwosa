@@ -116,9 +116,10 @@ func bindStorageMongoDBFlags(cmd *cobra.Command, flags *storageMongoDBFlags) {
 
 func newStorageMongoDBRuntime(ctx context.Context, opts *Options, flags storageMongoDBFlags) (*storagemongodb.Runtime, storagemongodb.Config, error) {
 	config := storagemongodb.Config{
-		URI:      strings.TrimSpace(flags.URI),
-		Database: strings.TrimSpace(flags.Database),
-		Timeout:  flags.Timeout,
+		URI:         strings.TrimSpace(flags.URI),
+		Database:    strings.TrimSpace(flags.Database),
+		Timeout:     flags.Timeout,
+		Development: opts != nil && opts.Development,
 	}
 	if config.URI == "" && opts != nil {
 		config.URI = strings.TrimSpace(opts.DatabaseURL)

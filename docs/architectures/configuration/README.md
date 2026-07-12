@@ -67,6 +67,12 @@ CLI 실행 시 경로 결정 우선순위는 명시적인 입력을 가장 높�
 
 이 규칙은 명시 경로보다 낮은 우선순위다. 즉 `--config`, `MWOSA_CONFIG`, `--database`, `MWOSA_DATABASE` 를 지정하면 해당 값이 계속 우선한다. 릴리스 바이너리와 설치된 CLI 는 기존 OS 기본 경로를 사용한다.
 
+MongoDB backend도 development build에서는 실제 database 이름에 hostname
+prefix를 붙인다. 예를 들어 기준 database가 `mwosa`이고 hostname이
+`dev.local`이면 런타임 database는 `dev-local-mwosa`가 된다. 기준 database는
+명시한 database 이름, MongoDB URI의 path, 기본값 `mwosa` 순서로 정해진다.
+릴리스 바이너리는 이 prefix를 붙이지 않는다.
+
 ## Init 동작
 
 `mwosa init config` 는 아래 작업을 수행한다.
