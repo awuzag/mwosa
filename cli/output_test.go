@@ -13,6 +13,7 @@ import (
 	"github.com/awuzag/mwosa/providers/core/financials"
 	"github.com/awuzag/mwosa/service/daily"
 	strategyservice "github.com/awuzag/mwosa/service/strategy"
+	"github.com/spf13/cobra"
 )
 
 func TestRenderBarsTableShowsPriceFieldsWithoutProviderMetadata(t *testing.T) {
@@ -325,6 +326,59 @@ func TestRenderTableUsesPerColumnAlignment(t *testing.T) {
 	if !strings.Contains(got, "a        12") || !strings.Contains(got, "long      3") {
 		t.Fatalf("table output should right align second column:\n%s", got)
 	}
+}
+
+func TestRunResultUsesResultDefaultOutputWhenFlagIsUnchanged(t *testing.T) {
+	opts := Options{Output: OutputModeTable}
+	cmd := &cobra.Command{}
+	cmd.Flags().VarP(&opts.Output, "output", "o", "output")
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+
+	run := runResult(&opts, func(*cobra.Command, []string) (any, error) {
+		return preferredJSONOutput{}, nil
+	})
+	if err := run(cmd, nil); err != nil {
+		t.Fatalf("run result: %v", err)
+	}
+	if !strings.Contains(out.String(), `"mode": "json"`) {
+		t.Fatalf("run result should use preferred json output:\n%s", out.String())
+	}
+}
+
+func TestRunResultKeepsExplicitOutputFlag(t *testing.T) {
+	opts := Options{Output: OutputModeTable}
+	cmd := &cobra.Command{}
+	cmd.Flags().VarP(&opts.Output, "output", "o", "output")
+	if err := cmd.Flags().Set("output", "table"); err != nil {
+		t.Fatalf("set output flag: %v", err)
+	}
+	var out bytes.Buffer
+	cmd.SetOut(&out)
+
+	run := runResult(&opts, func(*cobra.Command, []string) (any, error) {
+		return preferredJSONOutput{}, nil
+	})
+	if err := run(cmd, nil); err != nil {
+		t.Fatalf("run result: %v", err)
+	}
+	if !strings.Contains(out.String(), "mode") || !strings.Contains(out.String(), "table") {
+		t.Fatalf("explicit table output should win:\n%s", out.String())
+	}
+}
+
+type preferredJSONOutput struct{}
+
+func (preferredJSONOutput) DefaultOutputMode() string {
+	return "json"
+}
+
+func (preferredJSONOutput) JSONValue() any {
+	return map[string]string{"mode": "json"}
+}
+
+func (preferredJSONOutput) TableRows() ([]string, [][]string) {
+	return []string{"mode"}, [][]string{{"table"}}
 }
 
 type alignedTableOutput struct {

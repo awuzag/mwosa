@@ -102,7 +102,7 @@ CLI command
 | provider router | canonical provider API stage 실행, 인증, pagination, rate limit, retry |
 | provider raw adapter | provider-native raw API stage 실행, raw endpoint 별 인증, rate limit, retry |
 | jq engine | stage 입력 row 를 jq query 로 변환하고 실패를 명시적으로 반환 |
-| `storage/mongodb` | MongoDB runtime, 임시 collection, validator/index, TTL 정책 |
+| `storage/mongodb` | MongoDB runtime, `aggregate_stage_items` validator/index, TTL 정책 |
 | aggregate repository | aggregate/version/run/item 저장과 조회 |
 | presentation | `table`, `json`, `ndjson`, `csv` 출력 |
 
@@ -231,7 +231,7 @@ mwosa delete aggregate <name>
 | `validate aggregate` | YAML 구조, param 치환, pipeline stage type, MongoDB stage 허용 여부를 검증한다. stage 는 실행하지 않는다. |
 | `list aggregates` | 저장된 Aggregate 목록과 active version, spec hash, 최근 실행 상태를 보여준다. |
 | `inspect aggregate` | 저장된 Aggregate 정의, version, spec hash, stage 요약을 조회한다. |
-| `inspect aggregate-plan` | runtime param 적용 뒤 stage 계획, 임시 collection alias, pipeline 해석 결과를 보여준다. stage 는 실행하지 않는다. |
+| `inspect aggregate-plan` | runtime param 적용 뒤 stage 계획, 중간 결과 alias, pipeline 해석 결과를 보여준다. stage 는 실행하지 않는다. |
 | `run aggregate` | 저장된 Aggregate 를 실행하고 run, stage provenance, result row 를 저장한 뒤 결과를 출력한다. |
 | `history aggregate` | 저장된 Aggregate 실행 이력을 조회한다. |
 | `inspect aggregate-run` | 특정 실행의 params, stage, 오류, pipeline, result row 를 다시 조회한다. |
@@ -248,12 +248,12 @@ mwosa delete aggregate <name>
 1. aggregate 이름, version, spec hash 조건으로 저장된 spec 을 읽는다.
 2. YAML 기본 param 과 `--param key=value` 를 합치고 타입을 검증한다.
 3. pipeline stage 정의를 검증한다. API stage 와 local stage 는 여기서 이미 결정된다.
-4. stage 를 순서대로 실행하고 각 결과를 run 전용 이름 있는 결과로 materialize 한다.
-5. `aggregate` stage 는 stage alias 를 실제 임시 collection 이름으로 해석해 MongoDB aggregation 을 실행한다.
+4. stage 를 순서대로 실행하고 각 결과를 `aggregate_stage_items`에 `run_id`와 stage alias로 materialize 한다.
+5. `aggregate` stage 는 stage alias 를 같은 collection의 `run_id`·stage 조건으로 해석해 MongoDB aggregation 을 실행한다.
 6. `jq` stage 는 앞 stage 의 row 를 jq 입력으로 받아 새 row 결과를 만든다.
 7. `output.from` stage 의 row 를 `aggregate_run_items` 에 저장하고, run 요약과 provenance 를 `aggregate_runs` 에 저장한다.
 8. 요청한 출력 포맷에 맞춰 presentation layer 로 결과를 넘긴다.
-9. 임시 collection 은 TTL 정책에 따라 정리한다.
+9. `aggregate_stage_items`의 임시 document는 TTL 정책에 따라 정리한다.
 
 어느 단계든 provider 인증 실패, provider 가 반환한 rate limit 초과, API 실패,
 local collection 누락, aggregation 실패, jq 실패가 발생하면 실행을 실패로
@@ -351,23 +351,25 @@ pipeline:
 
 ## Stage materialize
 
-각 stage 결과는 다음 stage 가 읽을 수 있는 이름 있는 결과로 materialize 한다.
-MongoDB 를 쓰는 stage 는 임시 collection 을 실제 실행 작업 공간으로 사용한다.
+각 stage 결과는 다음 stage가 읽을 수 있는 이름 있는 결과로 materialize 한다.
+MongoDB 실행 작업 공간은 고정된 `aggregate_stage_items` collection 하나를 쓴다.
 
 기본 규칙:
 
 - stage 이름은 pipeline 안에서 결과 alias 로 쓴다.
-- runtime 은 stage alias 를 run 전용 physical collection 이름으로 바꾼다.
+- runtime 은 stage alias 를 `run_id`와 `_aggregate_stage` 조건으로 바꾼다.
 - 각 stage document 는 provenance 와 원본 row 또는 변환 row 를 함께 가진다.
 - aggregation 과 jq 에서는 payload field 를 최대한 펼친 형태로 읽을 수 있게 한다.
 - 임시 document 는 `expires_at` 필드를 가지며 TTL index 로 정리한다.
+- 실행마다 새로운 physical collection을 만들지 않는다.
 
 예:
 
 ```text
-aggregate_tmp_<run_id>_movers
-aggregate_tmp_<run_id>_technical_windows
-aggregate_tmp_<run_id>_market_cap
+aggregate_stage_items
+  {_aggregate_run_id: <run_id>, _aggregate_stage: movers, ...}
+  {_aggregate_run_id: <run_id>, _aggregate_stage: technical_windows, ...}
+  {_aggregate_run_id: <run_id>, _aggregate_stage: market_cap, ...}
 ```
 
 YAML 안에서는 실제 collection 이름을 쓰지 않고 stage alias 를 쓴다.
@@ -385,18 +387,28 @@ pipeline:
           as: technical
 ```
 
-runtime 은 `movers`, `technical_windows` 를 해당 run 의 임시 collection 으로
-해석한다. 이 방식은 사용자가 MongoDB pipeline 을 거의 원문 그대로 쓰면서도
-run 간 collection 충돌을 피하게 한다.
+runtime은 `movers`, `technical_windows`를 같은 `aggregate_stage_items` collection의
+stage 조건으로 해석하고 현재 `run_id` 조건을 자동으로 추가한다. 사용자는 MongoDB
+pipeline을 거의 원문 그대로 쓰면서도 다른 실행과 stage의 document가 섞이지 않는다.
 
-임시 collection TTL 기본값은 24시간으로 둔다. YAML 에서 필요하면 아래처럼
-늘릴 수 있지만, 영구 재사용은 임시 collection 이 아니라 `aggregate_run_items`
+임시 document TTL 기본값은 24시간으로 둔다. YAML 에서 필요하면 아래처럼
+조정할 수 있지만, 영구 재사용은 stage item이 아니라 `aggregate_run_items`
 또는 명시적인 export 대상으로 한다.
 
 ```yaml
 workspace:
   ttl: 24h
+  timeout: 5m
+  max_rows: 100000
+  max_fanout: 5000
 ```
+
+기본 실행 상한은 전체 실행 5분, stage당 100,000행, fan-out 5,000건이다.
+`workspace` 값은 Aggregate 실행 범위만 제한하며 provider별 호출 속도와 retry
+정책은 계속 provider adapter가 관리한다.
+
+기존 버전이 만든 `aggregate_tmp_*` collection은 `mwosa init storage`에서
+정리한다. 새 runtime은 이 이름의 collection을 만들지 않는다.
 
 ## MongoDB aggregation 정책
 
@@ -416,9 +428,9 @@ aggregation pipeline 은 MongoDB pipeline 문법을 가능한 한 그대로 사�
 - aggregation 실패는 input stage, stage index, MongoDB error 를 포함해 실행 실패로
   저장한다.
 
-`$lookup.from` 은 stage alias 또는 허용된 local collection 이름이어야 한다.
-stage alias 는 run 전용 임시 collection 으로 해석한다. 허용되지 않은 collection
-참조는 실행 전에 error 로 처리한다.
+`$lookup.from`은 stage alias 또는 허용된 local collection 이름이어야 한다.
+stage alias는 `aggregate_stage_items`와 현재 `run_id`·stage 조건으로 해석한다.
+허용되지 않은 collection 참조는 실행 전에 error로 처리한다.
 
 ## 출력 모델
 
@@ -543,6 +555,9 @@ params:
 
 workspace:
   ttl: 24h
+  timeout: 5m
+  max_rows: 100000
+  max_fanout: 5000
 
 pipeline:
   - name: universe
@@ -742,14 +757,14 @@ output:
 
 - `kind: Aggregate` 의 리소스 모델, YAML 구조, 실행 단계, stage 종류,
   MongoDB aggregation 사용 방식, 저장/출력 모델을 설명한다.
-- KIS provider raw/API stage, 로컬 MongoDB stage, jq stage, 임시 collection,
+- KIS provider raw/API stage, 로컬 MongoDB stage, jq stage, 단일 stage item collection,
   aggregation pipeline, output columns 의 관계를 예시 YAML 로 보여준다.
 - 저장, 검증, 계획 확인, 실행, 이력 조회, run inspect 를 위한 명령어 트리를 둔다.
 - API stage 와 local stage 의 명시적 구분을 둔다.
 - MongoDB 전용 기능이며 SQLite fallback 이 없다는 정책을 명시한다.
 - RSI, ADX, ATR, 추세, 라벨은 고정 내장 판단이 아니라 사용자 pipeline 결과라고
   설명한다.
-- 임시 collection TTL 정책을 둔다.
+- `aggregate_stage_items` document TTL 정책을 둔다.
 - 1순위 후보 테이블 사용 사례를 요구사항과 예시 출력 수준으로 포함한다.
 
 ## 비요구사항

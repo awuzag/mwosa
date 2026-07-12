@@ -102,6 +102,10 @@ type TableAlignmentOutput interface {
 	TableAlignments() []string
 }
 
+type DefaultOutputModeOutput interface {
+	DefaultOutputMode() string
+}
+
 type TableBlock struct {
 	Title  string
 	Header []string
@@ -118,7 +122,17 @@ func runResult(opts *Options, handler resultHandler) func(*cobra.Command, []stri
 		if err != nil {
 			return err
 		}
-		return Render(cmd.OutOrStdout(), opts.Output, result)
+		output := opts.Output
+		if !cmd.Flags().Changed("output") {
+			if preferred, ok := result.(DefaultOutputModeOutput); ok {
+				resolved, parseErr := ParseOutputMode(preferred.DefaultOutputMode())
+				if parseErr != nil {
+					return parseErr
+				}
+				output = resolved
+			}
+		}
+		return Render(cmd.OutOrStdout(), output, result)
 	}
 }
 

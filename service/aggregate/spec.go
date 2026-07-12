@@ -55,7 +55,10 @@ type ParamSpec struct {
 }
 
 type WorkspaceSpec struct {
-	TTL string `json:"ttl,omitempty" yaml:"ttl,omitempty"`
+	TTL       string `json:"ttl,omitempty" yaml:"ttl,omitempty"`
+	Timeout   string `json:"timeout,omitempty" yaml:"timeout,omitempty"`
+	MaxRows   int    `json:"max_rows,omitempty" yaml:"max_rows,omitempty"`
+	MaxFanout int    `json:"max_fanout,omitempty" yaml:"max_fanout,omitempty"`
 }
 
 type ForeachSpec struct {
@@ -129,6 +132,14 @@ func ValidateSpec(spec Spec) error {
 	if len(spec.Pipeline) == 0 {
 		return errb.New("aggregate pipeline requires at least one stage")
 	}
+	if _, err := resolveWorkspaceLimits(spec.Workspace); err != nil {
+		return errb.Wrap(err)
+	}
+	for name := range spec.Params {
+		if sensitiveParamName(name) {
+			return errb.With("param", name).Errorf("aggregate credentials must use provider configuration, not param: %s", name)
+		}
+	}
 	seen := map[string]struct{}{}
 	for i, stage := range spec.Pipeline {
 		stageErr := oops.In("aggregate_spec").With("name", spec.Name, "stage_index", i, "stage", stage.Name, "type", stage.Type)
@@ -167,6 +178,11 @@ func ValidateSpec(spec Spec) error {
 	if strings.TrimSpace(spec.Output.From) == "" {
 		return errb.New("aggregate output.from is required")
 	}
+	switch strings.TrimSpace(spec.Output.DefaultFormat) {
+	case "", "table", "json", "ndjson", "csv":
+	default:
+		return errb.With("default_format", spec.Output.DefaultFormat).Errorf("unsupported aggregate output format: %s", spec.Output.DefaultFormat)
+	}
 	if _, ok := seen[spec.Output.From]; !ok {
 		return errb.With("output_from", spec.Output.From).New("unknown aggregate output stage")
 	}
@@ -176,6 +192,18 @@ func ValidateSpec(spec Spec) error {
 		}
 	}
 	return nil
+}
+
+func sensitiveParamName(name string) bool {
+	normalized := strings.ToLower(strings.ReplaceAll(strings.TrimSpace(name), "-", "_"))
+	sensitive := map[string]struct{}{
+		"token": {}, "access_token": {}, "refresh_token": {},
+		"secret": {}, "app_secret": {}, "password": {},
+		"credential": {}, "credentials": {}, "api_key": {},
+		"app_key": {}, "service_key": {}, "auth_key": {},
+	}
+	_, found := sensitive[normalized]
+	return found
 }
 
 func requiresInput(stageType StageType) bool {

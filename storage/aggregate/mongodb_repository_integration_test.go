@@ -31,6 +31,7 @@ func TestMongoAggregateRepositoryContract(t *testing.T) {
 	repository, err := NewMongoRepository(runtime.Database())
 	require.NoError(t, err)
 	assertAggregateRepositoryContract(t, repository)
+	assertMongoAggregateRunRollback(t, repository, runtime)
 	assertMongoAggregateDocumentShape(t, runtime)
 }
 
@@ -112,6 +113,12 @@ func assertAggregateRepositoryContract(t *testing.T, repository aggregateservice
 	require.NoError(t, err)
 	require.Equal(t, "krx-candidates", runDetail.Aggregate.Name)
 	require.Len(t, runDetail.Items, 1)
+	hasAlias, err := repository.HasRunAlias(ctx, "latest-run")
+	require.NoError(t, err)
+	require.True(t, hasAlias)
+	hasAlias, err = repository.HasRunAlias(ctx, "missing-run")
+	require.NoError(t, err)
+	require.False(t, hasAlias)
 
 	history, err := repository.ListRuns(ctx, aggregateservice.RunHistoryFilter{Name: "krx-candidates", Limit: 10})
 	require.NoError(t, err)
@@ -127,6 +134,41 @@ func assertAggregateRepositoryContract(t *testing.T, repository aggregateservice
 	list, err = repository.ListAggregates(ctx)
 	require.NoError(t, err)
 	require.Empty(t, list)
+}
+
+func assertMongoAggregateRunRollback(t *testing.T, repository aggregateservice.Repository, runtime *storagemongodb.Runtime) {
+	t.Helper()
+	ctx := context.Background()
+	now := time.Now().UTC()
+	run := aggregateservice.Run{
+		ID:                 "run-invalid-item",
+		Alias:              "invalid-item",
+		AggregateID:        "aggregate-1",
+		AggregateVersionID: "version-2",
+		AggregateName:      "krx-candidates",
+		Version:            2,
+		SpecHash:           "spec-hash-2",
+		ParamsJSON:         json.RawMessage(`{}`),
+		StagesJSON:         json.RawMessage(`[]`),
+		PipelineJSON:       json.RawMessage(`[]`),
+		StartedAt:          now,
+		FinishedAt:         &now,
+		Status:             aggregateservice.RunSucceeded,
+	}
+	_, err := repository.CreateRun(ctx, run, []aggregateservice.RunItem{{
+		ID:          "invalid-item",
+		RunID:       run.ID,
+		Ordinal:     0,
+		PayloadJSON: json.RawMessage(`{`),
+	}})
+	require.Error(t, err)
+
+	runCount, err := runtime.Database().Collection("aggregate_runs").CountDocuments(ctx, bson.D{{Key: "run_id", Value: run.ID}})
+	require.NoError(t, err)
+	require.Zero(t, runCount)
+	itemCount, err := runtime.Database().Collection("aggregate_run_items").CountDocuments(ctx, bson.D{{Key: "run_id", Value: run.ID}})
+	require.NoError(t, err)
+	require.Zero(t, itemCount)
 }
 
 func assertMongoAggregateDocumentShape(t *testing.T, runtime *storagemongodb.Runtime) {

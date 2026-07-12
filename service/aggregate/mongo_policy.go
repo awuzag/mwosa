@@ -89,6 +89,12 @@ func containsBlockedMongoOperator(value any) bool {
 				return true
 			}
 		}
+	case []map[string]any:
+		for _, child := range typed {
+			if containsBlockedMongoOperator(child) {
+				return true
+			}
+		}
 	}
 	return false
 }

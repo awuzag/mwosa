@@ -276,6 +276,18 @@ func (r *mongoRepository) ArchiveAggregate(ctx context.Context, name string, arc
 	return nil
 }
 
+func (r *mongoRepository) HasRunAlias(ctx context.Context, alias string) (bool, error) {
+	alias = strings.TrimSpace(alias)
+	if alias == "" {
+		return false, nil
+	}
+	count, err := r.runs.CountDocuments(ctx, bson.D{{Key: "alias", Value: alias}}, options.Count().SetLimit(1))
+	if err != nil {
+		return false, oops.In("aggregate_repository").With("backend", "mongodb", "alias", alias).Wrapf(err, "check aggregate run alias")
+	}
+	return count > 0, nil
+}
+
 func (r *mongoRepository) CreateRun(ctx context.Context, run aggregateservice.Run, items []aggregateservice.RunItem) (aggregateservice.RunDetail, error) {
 	errb := oops.In("aggregate_repository").With("backend", "mongodb", "run_id", run.ID, "alias", run.Alias, "aggregate_id", run.AggregateID)
 	aggregateDocument, err := r.getAggregateDocumentByID(ctx, run.AggregateID)
@@ -290,21 +302,40 @@ func (r *mongoRepository) CreateRun(ctx context.Context, run aggregateservice.Ru
 	if err != nil {
 		return aggregateservice.RunDetail{}, errb.Wrap(err)
 	}
-	if _, err := r.runs.InsertOne(ctx, runDocument); err != nil {
-		return aggregateservice.RunDetail{}, errb.Wrapf(err, "create aggregate run mongodb document")
-	}
 	itemDocuments := make([]runItemMongoDocument, 0, len(items))
+	itemValues := make([]any, 0, len(items))
 	for _, item := range items {
 		itemDocument, err := runItemToMongoDocument(item)
 		if err != nil {
 			return aggregateservice.RunDetail{}, errb.With("ordinal", item.Ordinal).Wrap(err)
 		}
-		if _, err := r.items.InsertOne(ctx, itemDocument); err != nil {
-			return aggregateservice.RunDetail{}, errb.With("ordinal", item.Ordinal).Wrapf(err, "create aggregate run item mongodb document")
-		}
 		itemDocuments = append(itemDocuments, itemDocument)
+		itemValues = append(itemValues, itemDocument)
+	}
+	if len(itemValues) > 0 {
+		if _, err := r.items.InsertMany(ctx, itemValues, options.InsertMany().SetOrdered(true)); err != nil {
+			cleanupErr := r.deleteRunItems(ctx, run.ID)
+			return aggregateservice.RunDetail{}, oops.Join(
+				errb.Wrapf(err, "create aggregate run item mongodb documents"),
+				cleanupErr,
+			)
+		}
+	}
+	if _, err := r.runs.InsertOne(ctx, runDocument); err != nil {
+		cleanupErr := r.deleteRunItems(ctx, run.ID)
+		return aggregateservice.RunDetail{}, oops.Join(
+			errb.Wrapf(err, "create aggregate run mongodb document"),
+			cleanupErr,
+		)
 	}
 	return runDetailFromMongoDocuments(runDocument, aggregateDocument, versionDocument, itemDocuments), nil
+}
+
+func (r *mongoRepository) deleteRunItems(ctx context.Context, runID string) error {
+	if _, err := r.items.DeleteMany(ctx, bson.D{{Key: "run_id", Value: runID}}); err != nil {
+		return oops.In("aggregate_repository").With("backend", "mongodb", "run_id", runID).Wrapf(err, "rollback aggregate run items")
+	}
+	return nil
 }
 
 func (r *mongoRepository) ListRuns(ctx context.Context, filter aggregateservice.RunHistoryFilter) ([]aggregateservice.Run, error) {

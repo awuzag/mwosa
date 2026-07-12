@@ -24,6 +24,7 @@ func TestCollectionSpecsIncludePriorityMongoDBModels(t *testing.T) {
 	require.Contains(t, collectionNames(specs), "valuation_snapshots")
 	require.Contains(t, collectionNames(specs), "company_facts")
 	require.Contains(t, collectionNames(specs), "company_events")
+	require.Contains(t, collectionNames(specs), "aggregate_stage_items")
 	require.Contains(t, collectionNames(specs), "screen_strategies")
 	require.Contains(t, collectionNames(specs), "screen_runs")
 	require.Contains(t, collectionNames(specs), "screen_run_items")
@@ -92,6 +93,11 @@ func TestCollectionSpecsIncludePriorityMongoDBModels(t *testing.T) {
 	require.NotEmpty(t, companyEvents.Validator)
 	require.True(t, hasUniqueIndex(companyEvents, "company_events_natural_key_unique"))
 
+	aggregateStageItems := requireCollectionSpec(t, specs, "aggregate_stage_items")
+	require.NotEmpty(t, aggregateStageItems.Validator)
+	require.True(t, hasUniqueIndex(aggregateStageItems, "aggregate_stage_items_run_stage_ordinal_unique"))
+	require.True(t, hasTTLIndex(aggregateStageItems, "aggregate_stage_items_expires_at_ttl"))
+
 	screenStrategies := requireCollectionSpec(t, specs, "screen_strategies")
 	require.NotEmpty(t, screenStrategies.Validator)
 	require.True(t, hasUniqueIndex(screenStrategies, "screen_strategies_name_unique"))
@@ -147,6 +153,15 @@ func requireCollectionSpec(t *testing.T, specs []CollectionSpec, name string) Co
 func hasUniqueIndex(spec CollectionSpec, name string) bool {
 	for _, index := range spec.Indexes {
 		if index.Name == name && index.Unique {
+			return true
+		}
+	}
+	return false
+}
+
+func hasTTLIndex(spec CollectionSpec, name string) bool {
+	for _, index := range spec.Indexes {
+		if index.Name == name && index.TTL {
 			return true
 		}
 	}

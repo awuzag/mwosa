@@ -40,6 +40,10 @@ func (r unsupportedRepository) ArchiveAggregate(context.Context, string, time.Ti
 	return r.err()
 }
 
+func (r unsupportedRepository) HasRunAlias(context.Context, string) (bool, error) {
+	return false, r.err()
+}
+
 func (r unsupportedRepository) CreateRun(context.Context, aggregateservice.Run, []aggregateservice.RunItem) (aggregateservice.RunDetail, error) {
 	return aggregateservice.RunDetail{}, r.err()
 }

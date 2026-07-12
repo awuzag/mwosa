@@ -4,6 +4,7 @@ import (
 	"context"
 	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/stretchr/testify/assert"
 	"github.com/stretchr/testify/require"
@@ -88,17 +89,56 @@ func TestValidateSpecRejectsUnknownSourceAndBadAlias(t *testing.T) {
 	require.ErrorContains(t, ValidateSpec(spec), "unknown aggregate stage input")
 }
 
+func TestValidateSpecRejectsInvalidWorkspaceAndOutputDefaults(t *testing.T) {
+	spec := minimalSpec()
+	spec.Workspace.TTL = "forever"
+	require.ErrorContains(t, ValidateSpec(spec), "parse aggregate workspace ttl")
+
+	spec = minimalSpec()
+	spec.Output.DefaultFormat = "xml"
+	require.ErrorContains(t, ValidateSpec(spec), "unsupported aggregate output format")
+
+	spec = minimalSpec()
+	spec.Params["api_key"] = ParamSpec{Type: ParamString, Required: true}
+	require.ErrorContains(t, ValidateSpec(spec), "credentials must use provider configuration")
+
+	spec = minimalSpec()
+	spec.Workspace.MaxRows = -1
+	require.ErrorContains(t, ValidateSpec(spec), "max_rows must be positive")
+}
+
+func TestWorkspaceTTLUsesDefaultAndConfiguredDuration(t *testing.T) {
+	ttl, err := workspaceTTL(WorkspaceSpec{})
+	require.NoError(t, err)
+	assert.Equal(t, defaultWorkspaceTTL, ttl)
+
+	ttl, err = workspaceTTL(WorkspaceSpec{TTL: "2h30m"})
+	require.NoError(t, err)
+	assert.Equal(t, 2*time.Hour+30*time.Minute, ttl)
+
+	limits, err := resolveWorkspaceLimits(WorkspaceSpec{})
+	require.NoError(t, err)
+	assert.Equal(t, defaultWorkspaceTimeout, limits.timeout)
+	assert.Equal(t, defaultWorkspaceMaxRows, limits.maxRows)
+	assert.Equal(t, defaultWorkspaceMaxFanout, limits.maxFanout)
+}
+
 func TestMongoPipelinePolicyAllowsReadStagesAndBlocksSideEffects(t *testing.T) {
 	require.NoError(t, ValidateMongoPipeline([]map[string]any{
 		{"$lookup": map[string]any{"from": "universe", "localField": "symbol", "foreignField": "symbol", "as": "rows"}},
 		{"$group": map[string]any{"_id": "$symbol"}},
 		{"$setWindowFields": map[string]any{"sortBy": map[string]any{"date": 1}}},
-	}, map[string]string{"universe": "aggregate_tmp_run_universe"}))
+	}, map[string]string{"universe": "universe"}))
 
 	err := ValidateMongoPipeline([]map[string]any{{"$merge": "daily_bars"}}, nil)
 	require.ErrorContains(t, err, "blocked mongodb aggregation stage")
+	err = ValidateMongoPipeline([]map[string]any{{"$lookup": map[string]any{
+		"from":     "universe",
+		"pipeline": []map[string]any{{"$merge": "daily_bars"}},
+	}}}, map[string]string{"universe": "universe"})
+	require.ErrorContains(t, err, "blocked mongodb expression operator")
 
-	err = ValidateMongoPipeline([]map[string]any{{"$lookup": map[string]any{"from": "not_a_stage"}}}, map[string]string{"universe": "aggregate_tmp_run_universe"})
+	err = ValidateMongoPipeline([]map[string]any{{"$lookup": map[string]any{"from": "not_a_stage"}}}, map[string]string{"universe": "universe"})
 	require.ErrorContains(t, err, "unknown lookup source")
 }
 

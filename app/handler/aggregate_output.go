@@ -160,38 +160,27 @@ type AggregateRunOutput struct {
 }
 
 func (o AggregateRunOutput) JSONValue() any {
-	if len(o.Rows.Rows) > 0 {
-		return o.Rows.JSONValue()
-	}
-	return o.Detail
+	return o.Rows.JSONValue()
 }
 
 func (o AggregateRunOutput) NDJSONRows() any {
-	if len(o.Rows.Rows) > 0 {
-		return o.Rows.NDJSONRows()
-	}
-	return o.Detail.Items
+	return o.Rows.NDJSONRows()
 }
 
 func (o AggregateRunOutput) CSVRows() any {
-	if len(o.Rows.Rows) > 0 {
-		return o.Rows.CSVRows()
-	}
-	return o.Detail.Items
+	return o.Rows.CSVRows()
 }
 
 func (o AggregateRunOutput) TableRows() ([]string, [][]string) {
-	if len(o.Rows.Rows) > 0 {
-		return o.Rows.TableRows()
-	}
-	return AggregateRunDetailOutput{Detail: o.Detail}.TableRows()
+	return o.Rows.TableRows()
 }
 
 func (o AggregateRunOutput) TableAlignments() []string {
-	if len(o.Rows.Rows) > 0 {
-		return o.Rows.TableAlignments()
-	}
-	return nil
+	return o.Rows.TableAlignments()
+}
+
+func (o AggregateRunOutput) DefaultOutputMode() string {
+	return o.Rows.DefaultFormat
 }
 
 type AggregateRunHistoryOutput []aggregateservice.Run

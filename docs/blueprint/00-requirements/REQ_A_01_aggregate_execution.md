@@ -139,7 +139,7 @@ updated: 2026-07-12
 | `REQ.A.01.FR-012` | pipeline은 canonical provider 호출, provider raw 호출, local collection, local dataset, snapshot과 이전 Aggregate 실행 결과를 입력으로 선택할 수 있어야 한다. | Must | 실시간 호출과 저장 데이터 조회가 stage type으로 구분된다. |
 | `REQ.A.01.FR-013` | provider stage는 기존 provider router와 adapter를 사용해야 한다. | Must | Aggregate service가 provider client 구현 타입과 rate limit·retry 정책을 직접 소유하지 않는다. |
 | `REQ.A.01.FR-014` | stage는 앞 stage의 각 행을 입력으로 반복 호출하는 fan-out을 선언할 수 있어야 한다. | Should | 반복 대상과 `${each.*}` 참조를 실행 전에 검증하고 실행 범위를 제한할 수 있다. |
-| `REQ.A.01.FR-015` | 각 stage 결과는 같은 실행 안에서 다음 stage가 참조할 수 있는 이름 있는 중간 결과로 저장되어야 한다. | Must | stage alias가 실행별 물리 collection으로 격리되고 충돌하지 않는다. |
+| `REQ.A.01.FR-015` | 각 stage 결과는 같은 실행 안에서 다음 stage가 참조할 수 있는 이름 있는 중간 결과로 저장되어야 한다. | Must | 단일 `aggregate_stage_items` collection에서 `run_id`와 stage alias로 격리되고 충돌하지 않는다. |
 | `REQ.A.01.FR-016` | 사용자는 MongoDB aggregation pipeline으로 저장된 중간 결과를 결합·집계·정렬할 수 있어야 한다. | Must | stage alias와 허용된 local collection만 참조하고 `$out`, `$merge` 같은 쓰기 단계는 차단한다. |
 | `REQ.A.01.FR-017` | 사용자는 jq로 stage의 행을 변환할 수 있어야 한다. | Must | jq 오류를 해당 stage의 실행 실패로 기록하며 숨은 셸 실행을 허용하지 않는다. |
 | `REQ.A.01.FR-018` | 어느 stage든 실패하면 전체 실행을 실패로 처리하고 이미 확인된 단계 정보와 오류 원인을 기록해야 한다. | Must | 실패가 빈 성공으로 변환되지 않고 stage 이름, type과 원인 맥락이 남는다. |
@@ -156,7 +156,7 @@ updated: 2026-07-12
 | `REQ.A.01.FR-024` | 사용자는 실행 ID 또는 alias로 파라미터, stage, pipeline, 오류와 결과 행을 조회할 수 있어야 한다. | Must | 큰 결과는 기본 제한과 명시적인 조회 범위를 가진다. |
 | `REQ.A.01.FR-025` | Aggregate 실행 결과는 이후 Aggregate의 입력으로 다시 사용할 수 있어야 한다. | Must | 이전 run을 명시적으로 선택하고 원본 실행 식별자를 provenance에 남긴다. |
 | `REQ.A.01.FR-026` | screen, backtest와 report가 Aggregate 결과를 입력으로 사용할 수 있는 안정적인 조회 계약을 제공해야 한다. | Should | 다른 기능이 Aggregate storage 구현 세부사항에 직접 의존하지 않는다. |
-| `REQ.A.01.FR-027` | 실행별 임시 collection은 TTL 정책으로 정리되어야 하며 영구 재사용 결과와 구분되어야 한다. | Must | 기본 TTL과 실행별 만료 시각이 있고 결과 이력은 임시 collection 삭제 뒤에도 조회할 수 있다. |
+| `REQ.A.01.FR-027` | stage 중간 결과 document는 TTL 정책으로 정리되어야 하며 영구 재사용 결과와 구분되어야 한다. | Must | `aggregate_stage_items` 하나만 사용하고 기본 TTL과 실행별 만료 시각을 적용하며, document 만료 뒤에도 결과 이력을 조회할 수 있다. |
 
 ## 비기능 요구사항
 
@@ -166,7 +166,7 @@ updated: 2026-07-12
 | `REQ.A.01.NFR-002` | 실패 가시성 | invalid input, 인증 실패, provider 오류, 누락된 입력, MongoDB 오류와 jq 오류를 성공으로 위장하지 않는다. |
 | `REQ.A.01.NFR-003` | 출력 안정성 | JSON·NDJSON·CSV stdout은 기계 판독 가능해야 하며 진행 상태와 진단은 stderr로 분리한다. |
 | `REQ.A.01.NFR-004` | 보안 | credential, token, provider secret과 민감한 원문을 명세, 출력, 오류, 로그와 실행 기록에 저장하지 않는다. |
-| `REQ.A.01.NFR-005` | 실행 격리 | 실행별 임시 collection 이름이 충돌하지 않고 한 실행의 정리가 다른 실행 결과를 삭제하지 않는다. |
+| `REQ.A.01.NFR-005` | 실행 격리 | `aggregate_stage_items`의 `run_id`·stage 복합 식별로 실행을 격리하고 한 실행의 TTL 정리가 다른 실행 결과를 삭제하지 않는다. |
 | `REQ.A.01.NFR-006` | 자원 제한 | fan-out, 실행 시간, 결과 행 수, 조회 행 수와 임시 데이터 수명에 상한을 적용할 수 있어야 한다. |
 | `REQ.A.01.NFR-007` | 레이어 독립성 | service는 provider role과 repository 계약에만 의존하며 provider client와 MongoDB 수명주기를 직접 관리하지 않는다. |
 | `REQ.A.01.NFR-008` | 테스트 가능성 | 기본 테스트는 fake provider, fixture와 격리된 storage를 사용하고 실제 외부 API 호출은 opt-in E2E로 분리한다. |
@@ -240,14 +240,20 @@ updated: 2026-07-12
 | --- | --- | --- |
 | `REQ.A.01.Q-001` | Aggregate version을 별도 collection에 둘 것인가, 리소스에 embed할 것인가? | 보존 정책, 조회 복잡도와 document 크기에 영향을 준다. |
 | `REQ.A.01.Q-002` | archive된 Aggregate의 기존 version 실행을 허용할 것인가? | archive의 사용자 의미를 먼저 고정해야 한다. |
-| `REQ.A.01.Q-003` | 기본 fan-out, timeout, 결과 행 수와 조회 행 수 상한은 얼마인가? | 안전한 기본값과 실제 분석 규모를 함께 고려해야 한다. |
-| `REQ.A.01.Q-004` | 실행 취소를 `failed`와 구분한 `cancelled` 상태로 저장할 것인가? | 사용자 진단과 재시도 판단에 영향을 준다. |
-| `REQ.A.01.Q-005` | 실패 뒤 완료된 stage의 임시 결과를 언제까지 보존할 것인가? | 진단 가능성과 storage 비용 사이의 기준이 필요하다. |
 | `REQ.A.01.Q-006` | local collection과 MongoDB stage 허용 목록을 어디서 관리할 것인가? | 명세 검증과 운영 보안의 기준 문서가 필요하다. |
 | `REQ.A.01.Q-007` | 날짜, 숫자와 boolean 파라미터를 pipeline literal에 치환할 때 타입을 어떻게 보존할 것인가? | 문자열 치환으로 인한 쿼리 의미 변경을 막아야 한다. |
 | `REQ.A.01.Q-008` | live 입력을 사용한 실행의 재현 가능성을 어느 수준까지 보장할 것인가? | 실행 기록, raw snapshot 저장과 재실행의 관계를 정해야 한다. |
 | `REQ.A.01.Q-009` | 결과가 큰 실행의 저장 상한과 export 정책은 무엇인가? | `aggregate_run_items` 증가와 CLI 응답 크기를 제한해야 한다. |
 | `REQ.A.01.Q-010` | screen, backtest와 report가 run 결과를 참조하는 공개 service 계약은 무엇인가? | storage collection 직접 의존을 막아야 한다. |
+
+## 결정된 사항
+
+- 취소된 실행은 `failed`와 구분한 `cancelled` 상태로 저장한다.
+- 성공·실패·취소 stage 중간 결과는 `workspace.ttl`까지 `aggregate_stage_items`에
+  보존하고 이후 TTL index로 document를 삭제한다.
+- 실행별 또는 stage별 physical collection은 만들지 않는다.
+- 기본 실행 상한은 전체 실행 5분, stage당 100,000행, fan-out 5,000건으로 두고
+  `workspace.timeout`, `workspace.max_rows`, `workspace.max_fanout`으로 조정한다.
 
 ## 확인 필요
 

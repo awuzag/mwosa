@@ -3,7 +3,6 @@ package aggregate
 import (
 	"context"
 	"encoding/json"
-	"regexp"
 	"strconv"
 	"strings"
 	"time"
@@ -13,6 +12,21 @@ import (
 	"go.mongodb.org/mongo-driver/v2/mongo"
 	"go.mongodb.org/mongo-driver/v2/mongo/options"
 )
+
+const (
+	aggregateStageItemsCollection = "aggregate_stage_items"
+	defaultWorkspaceTTL           = 24 * time.Hour
+	defaultWorkspaceTimeout       = 5 * time.Minute
+	defaultWorkspaceMaxRows       = 100000
+	defaultWorkspaceMaxFanout     = 5000
+)
+
+type workspaceLimits struct {
+	ttl       time.Duration
+	timeout   time.Duration
+	maxRows   int
+	maxFanout int
+}
 
 type StageSummary struct {
 	Name       string `json:"name"`
@@ -114,26 +128,51 @@ func (e MongoExecutor) Execute(ctx context.Context, spec Spec, params map[string
 	if e.database == nil {
 		return ExecutionResult{}, errb.New("mongodb database is nil")
 	}
+	limits, err := resolveWorkspaceLimits(spec.Workspace)
+	if err != nil {
+		return ExecutionResult{}, errb.Wrap(err)
+	}
+	if summary, err := e.validateLocalSources(ctx, spec); err != nil {
+		return ExecutionResult{Stages: []StageSummary{summary}}, errb.Wrap(err)
+	}
+	if err := ensureStageItemsIndexes(ctx, e.database.Collection(aggregateStageItemsCollection)); err != nil {
+		return ExecutionResult{}, errb.Wrapf(err, "ensure aggregate stage item indexes")
+	}
+	executionCtx, cancel := context.WithTimeout(ctx, limits.timeout)
+	defer cancel()
 	aliases := map[string]string{}
 	stageRows := map[string][]json.RawMessage{}
 	summaries := make([]StageSummary, 0, len(spec.Pipeline))
 	for _, stage := range spec.Pipeline {
-		collectionName := tempCollectionName(runID, stage.Name)
-		summary := StageSummary{Name: stage.Name, Type: string(stage.Type), Status: "succeeded", Collection: collectionName}
-		rows, err := e.executeStage(ctx, stage, TemplateContext{Params: params}, aliases, stageRows, collectionName)
+		summary := StageSummary{Name: stage.Name, Type: string(stage.Type), Status: "succeeded", Collection: aggregateStageItemsCollection}
+		if stage.Foreach != nil && len(stageRows[stage.Foreach.Stage]) > limits.maxFanout {
+			err := errb.With("stage", stage.Name, "fanout", len(stageRows[stage.Foreach.Stage]), "max_fanout", limits.maxFanout).New("aggregate stage fan-out limit exceeded")
+			summary.Status = "failed"
+			summary.Error = err.Error()
+			summaries = append(summaries, summary)
+			return ExecutionResult{Stages: summaries}, err
+		}
+		rows, err := e.executeStage(executionCtx, stage, TemplateContext{Params: params}, aliases, stageRows, runID)
 		if err != nil {
 			summary.Status = "failed"
 			summary.Error = err.Error()
 			summaries = append(summaries, summary)
 			return ExecutionResult{Stages: summaries}, errb.With("stage", stage.Name, "type", stage.Type).Wrap(err)
 		}
-		if err := e.materialize(ctx, collectionName, rows, runID, stage.Name); err != nil {
+		if len(rows) > limits.maxRows {
+			err := errb.With("stage", stage.Name, "rows", len(rows), "max_rows", limits.maxRows).New("aggregate stage row limit exceeded")
+			summary.Status = "failed"
+			summary.Error = err.Error()
+			summaries = append(summaries, summary)
+			return ExecutionResult{Stages: summaries}, err
+		}
+		if err := e.materialize(executionCtx, rows, runID, stage.Name, limits.ttl); err != nil {
 			summary.Status = "failed"
 			summary.Error = err.Error()
 			summaries = append(summaries, summary)
 			return ExecutionResult{Stages: summaries}, errb.With("stage", stage.Name).Wrap(err)
 		}
-		aliases[stage.Name] = collectionName
+		aliases[stage.Name] = stage.Name
 		stageRows[stage.Name] = rows
 		summary.Rows = len(rows)
 		summaries = append(summaries, summary)
@@ -145,7 +184,7 @@ func (e MongoExecutor) Execute(ctx context.Context, spec Spec, params map[string
 	return ExecutionResult{Rows: rows, Stages: summaries}, nil
 }
 
-func (e MongoExecutor) executeStage(ctx context.Context, stage StageSpec, template TemplateContext, aliases map[string]string, stageRows map[string][]json.RawMessage, collectionName string) ([]json.RawMessage, error) {
+func (e MongoExecutor) executeStage(ctx context.Context, stage StageSpec, template TemplateContext, aliases map[string]string, stageRows map[string][]json.RawMessage, runID string) ([]json.RawMessage, error) {
 	switch stage.Type {
 	case StageProvider:
 		return e.executeProvider(ctx, stage, template, stageRows)
@@ -160,7 +199,7 @@ func (e MongoExecutor) executeStage(ctx context.Context, stage StageSpec, templa
 	case StageProviderRaw:
 		return e.executeProviderRaw(ctx, stage, template, stageRows)
 	case StageAggregate:
-		return e.executeMongoAggregate(ctx, stage, template, aliases)
+		return e.executeMongoAggregate(ctx, stage, template, aliases, runID)
 	case StageJQ:
 		rows, ok := stageRows[stage.From]
 		if !ok {
@@ -279,6 +318,13 @@ func foreachContexts(stage StageSpec, stageRows map[string][]json.RawMessage) ([
 }
 
 func (e MongoExecutor) executeLocalCollection(ctx context.Context, stage StageSpec, template TemplateContext) ([]json.RawMessage, error) {
+	exists, err := e.collectionExists(ctx, stage.Collection)
+	if err != nil {
+		return nil, oops.In("aggregate_executor").With("stage", stage.Name, "collection", stage.Collection).Wrapf(err, "check local collection")
+	}
+	if !exists {
+		return nil, oops.In("aggregate_executor").With("stage", stage.Name, "collection", stage.Collection).Errorf("local collection does not exist: %s", stage.Collection)
+	}
 	filterValue, err := ResolveTemplateValue(stage.Filter, template)
 	if err != nil {
 		return nil, err
@@ -384,16 +430,17 @@ func (e MongoExecutor) executeAggregateRun(ctx context.Context, stage StageSpec)
 	return rows, nil
 }
 
-func (e MongoExecutor) executeMongoAggregate(ctx context.Context, stage StageSpec, template TemplateContext, aliases map[string]string) ([]json.RawMessage, error) {
-	source, ok := aliases[stage.From]
+func (e MongoExecutor) executeMongoAggregate(ctx context.Context, stage StageSpec, template TemplateContext, aliases map[string]string, runID string) ([]json.RawMessage, error) {
+	sourceStage, ok := aliases[stage.From]
 	if !ok {
 		return nil, oops.In("aggregate_executor").With("stage", stage.Name, "from", stage.From).New("aggregate input stage was not produced")
 	}
-	pipeline, err := resolveMongoPipeline(stage.Pipeline, template, aliases)
+	pipeline, err := resolveMongoPipeline(stage.Pipeline, template, aliases, runID)
 	if err != nil {
 		return nil, err
 	}
-	cursor, err := e.database.Collection(source).Aggregate(ctx, pipeline)
+	pipeline = append(mongo.Pipeline{stageItemsMatch(runID, sourceStage)}, pipeline...)
+	cursor, err := e.database.Collection(aggregateStageItemsCollection).Aggregate(ctx, pipeline)
 	if err != nil {
 		return nil, oops.In("aggregate_executor").With("stage", stage.Name, "from", stage.From).Wrapf(err, "execute mongodb aggregation")
 	}
@@ -405,17 +452,18 @@ func (e MongoExecutor) executeMongoAggregate(ctx context.Context, stage StageSpe
 	return bsonDocumentsToRows(docs)
 }
 
-func (e MongoExecutor) materialize(ctx context.Context, collectionName string, rows []json.RawMessage, runID string, stage string) error {
-	collection := e.database.Collection(collectionName)
-	if err := ensureTempCollectionIndex(ctx, collection); err != nil {
-		return oops.In("aggregate_executor").With("stage", stage, "collection", collectionName).Wrapf(err, "create aggregate temp ttl index")
+func (e MongoExecutor) materialize(ctx context.Context, rows []json.RawMessage, runID string, stage string, ttl time.Duration) error {
+	collection := e.database.Collection(aggregateStageItemsCollection)
+	filter := bson.D{{Key: "_aggregate_run_id", Value: runID}, {Key: "_aggregate_stage", Value: stage}}
+	if _, err := collection.DeleteMany(ctx, filter); err != nil {
+		return oops.In("aggregate_executor").With("stage", stage, "collection", aggregateStageItemsCollection).Wrapf(err, "clear aggregate stage items")
 	}
-	_, _ = collection.DeleteMany(ctx, bson.D{})
 	if len(rows) == 0 {
 		return nil
 	}
 	docs := make([]any, 0, len(rows))
-	expiresAt := e.now().Add(24 * time.Hour)
+	now := e.now()
+	expiresAt := now.Add(ttl)
 	for index, row := range rows {
 		var doc bson.M
 		if err := bson.UnmarshalExtJSON(row, true, &doc); err != nil {
@@ -426,28 +474,42 @@ func (e MongoExecutor) materialize(ctx context.Context, collectionName string, r
 			doc = bson.M(generic)
 		}
 		delete(doc, "_id")
+		doc["_id"] = strings.Join([]string{"aggregate_stage_items", runID, stage, strconv.Itoa(index)}, ":")
+		doc["schema_version"] = "1.0.0"
+		doc["revision"] = int64(1)
+		doc["created_at"] = now
+		doc["updated_at"] = now
 		doc["_aggregate_run_id"] = runID
 		doc["_aggregate_stage"] = stage
+		doc["_aggregate_ordinal"] = index
 		doc["expires_at"] = expiresAt
 		docs = append(docs, doc)
 	}
 	if _, err := collection.InsertMany(ctx, docs, options.InsertMany().SetOrdered(true)); err != nil {
-		return oops.In("aggregate_executor").With("stage", stage, "collection", collectionName).Wrapf(err, "materialize aggregate stage")
+		return oops.In("aggregate_executor").With("stage", stage, "collection", aggregateStageItemsCollection).Wrapf(err, "materialize aggregate stage")
 	}
 	return nil
 }
 
-func ensureTempCollectionIndex(ctx context.Context, collection *mongo.Collection) error {
-	_, err := collection.Indexes().CreateOne(ctx, mongo.IndexModel{
-		Keys: bson.D{{Key: "expires_at", Value: 1}},
-		Options: options.Index().
-			SetName("aggregate_tmp_expires_at_ttl").
-			SetExpireAfterSeconds(0),
+func ensureStageItemsIndexes(ctx context.Context, collection *mongo.Collection) error {
+	_, err := collection.Indexes().CreateMany(ctx, []mongo.IndexModel{
+		{
+			Keys: bson.D{{Key: "_aggregate_run_id", Value: 1}, {Key: "_aggregate_stage", Value: 1}, {Key: "_aggregate_ordinal", Value: 1}},
+			Options: options.Index().
+				SetName("aggregate_stage_items_run_stage_ordinal_unique").
+				SetUnique(true),
+		},
+		{
+			Keys: bson.D{{Key: "expires_at", Value: 1}},
+			Options: options.Index().
+				SetName("aggregate_stage_items_expires_at_ttl").
+				SetExpireAfterSeconds(0),
+		},
 	})
 	return err
 }
 
-func resolveMongoPipeline(in []map[string]any, template TemplateContext, aliases map[string]string) (mongo.Pipeline, error) {
+func resolveMongoPipeline(in []map[string]any, template TemplateContext, aliases map[string]string, runID string) (mongo.Pipeline, error) {
 	resolved := make(mongo.Pipeline, 0, len(in))
 	for _, stage := range in {
 		value, err := ResolveTemplateValue(stage, template)
@@ -458,24 +520,142 @@ func resolveMongoPipeline(in []map[string]any, template TemplateContext, aliases
 		if !ok {
 			return nil, oops.In("aggregate_executor").New("resolved mongodb stage is not an object")
 		}
-		replaceLookupAliases(stageMap, aliases)
+		if err := replaceLookupAliases(stageMap, aliases, runID); err != nil {
+			return nil, err
+		}
 		resolved = append(resolved, bsonDocument(stageMap))
 	}
 	return resolved, nil
 }
 
-func replaceLookupAliases(stage map[string]any, aliases map[string]string) {
+func replaceLookupAliases(stage map[string]any, aliases map[string]string, runID string) error {
 	lookup, ok := stage["$lookup"].(map[string]any)
 	if !ok {
-		return
+		return nil
 	}
 	from, ok := lookup["from"].(string)
 	if !ok {
-		return
+		return nil
 	}
-	if physical, exists := aliases[from]; exists {
-		lookup["from"] = physical
+	if sourceStage, exists := aliases[from]; exists {
+		lookup["from"] = aggregateStageItemsCollection
+		match := map[string]any{"$match": map[string]any{
+			"_aggregate_run_id": runID,
+			"_aggregate_stage":  sourceStage,
+		}}
+		pipeline, err := lookupPipeline(lookup["pipeline"])
+		if err != nil {
+			return oops.In("aggregate_executor").With("lookup_from", from).Wrap(err)
+		}
+		lookup["pipeline"] = append([]any{match}, pipeline...)
 	}
+	return nil
+}
+
+func lookupPipeline(value any) ([]any, error) {
+	switch typed := value.(type) {
+	case nil:
+		return nil, nil
+	case []any:
+		return typed, nil
+	case []map[string]any:
+		out := make([]any, 0, len(typed))
+		for _, stage := range typed {
+			out = append(out, stage)
+		}
+		return out, nil
+	default:
+		return nil, oops.In("aggregate_executor").New("mongodb lookup pipeline must be an array")
+	}
+}
+
+func stageItemsMatch(runID string, stage string) bson.D {
+	return bson.D{{Key: "$match", Value: bson.D{
+		{Key: "_aggregate_run_id", Value: runID},
+		{Key: "_aggregate_stage", Value: stage},
+	}}}
+}
+
+func workspaceTTL(workspace WorkspaceSpec) (time.Duration, error) {
+	limits, err := resolveWorkspaceLimits(workspace)
+	return limits.ttl, err
+}
+
+func resolveWorkspaceLimits(workspace WorkspaceSpec) (workspaceLimits, error) {
+	limits := workspaceLimits{
+		ttl:       defaultWorkspaceTTL,
+		timeout:   defaultWorkspaceTimeout,
+		maxRows:   defaultWorkspaceMaxRows,
+		maxFanout: defaultWorkspaceMaxFanout,
+	}
+	if value := strings.TrimSpace(workspace.TTL); value != "" {
+		ttl, err := time.ParseDuration(value)
+		if err != nil {
+			return workspaceLimits{}, oops.In("aggregate_workspace").With("ttl", value).Wrapf(err, "parse aggregate workspace ttl")
+		}
+		if ttl <= 0 {
+			return workspaceLimits{}, oops.In("aggregate_workspace").With("ttl", value).New("aggregate workspace ttl must be positive")
+		}
+		limits.ttl = ttl
+	}
+	if value := strings.TrimSpace(workspace.Timeout); value != "" {
+		timeout, err := time.ParseDuration(value)
+		if err != nil {
+			return workspaceLimits{}, oops.In("aggregate_workspace").With("timeout", value).Wrapf(err, "parse aggregate workspace timeout")
+		}
+		if timeout <= 0 {
+			return workspaceLimits{}, oops.In("aggregate_workspace").With("timeout", value).New("aggregate workspace timeout must be positive")
+		}
+		limits.timeout = timeout
+	}
+	if workspace.MaxRows < 0 {
+		return workspaceLimits{}, oops.In("aggregate_workspace").With("max_rows", workspace.MaxRows).New("aggregate workspace max_rows must be positive")
+	}
+	if workspace.MaxRows > 0 {
+		limits.maxRows = workspace.MaxRows
+	}
+	if workspace.MaxFanout < 0 {
+		return workspaceLimits{}, oops.In("aggregate_workspace").With("max_fanout", workspace.MaxFanout).New("aggregate workspace max_fanout must be positive")
+	}
+	if workspace.MaxFanout > 0 {
+		limits.maxFanout = workspace.MaxFanout
+	}
+	return limits, nil
+}
+
+func (e MongoExecutor) collectionExists(ctx context.Context, name string) (bool, error) {
+	names, err := e.database.ListCollectionNames(ctx, bson.D{{Key: "name", Value: strings.TrimSpace(name)}})
+	if err != nil {
+		return false, err
+	}
+	return len(names) > 0, nil
+}
+
+func (e MongoExecutor) validateLocalSources(ctx context.Context, spec Spec) (StageSummary, error) {
+	for _, stage := range spec.Pipeline {
+		var collection string
+		switch stage.Type {
+		case StageLocalCollection:
+			collection = strings.TrimSpace(stage.Collection)
+		case StageLocalDataset:
+			collection = strings.TrimSpace(stage.Dataset)
+		default:
+			continue
+		}
+		summary := StageSummary{Name: stage.Name, Type: string(stage.Type), Status: "failed", Collection: aggregateStageItemsCollection}
+		exists, err := e.collectionExists(ctx, collection)
+		if err != nil {
+			sourceErr := oops.In("aggregate_executor").With("stage", stage.Name, "collection", collection).Wrapf(err, "check aggregate local source")
+			summary.Error = sourceErr.Error()
+			return summary, sourceErr
+		}
+		if !exists {
+			sourceErr := oops.In("aggregate_executor").With("stage", stage.Name, "collection", collection).Errorf("local collection does not exist: %s", collection)
+			summary.Error = sourceErr.Error()
+			return summary, sourceErr
+		}
+	}
+	return StageSummary{}, nil
 }
 
 func bsonDocumentsToRows(docs []bson.M) ([]json.RawMessage, error) {
@@ -493,8 +673,13 @@ func bsonDocumentsToRows(docs []bson.M) ([]json.RawMessage, error) {
 
 func cleanInternalFields(doc bson.M) {
 	delete(doc, "_id")
+	delete(doc, "schema_version")
+	delete(doc, "revision")
+	delete(doc, "created_at")
+	delete(doc, "updated_at")
 	delete(doc, "_aggregate_run_id")
 	delete(doc, "_aggregate_stage")
+	delete(doc, "_aggregate_ordinal")
 	delete(doc, "expires_at")
 }
 
@@ -546,12 +731,4 @@ func mapStringValues(value any) map[string]string {
 		out[key] = toString(child)
 	}
 	return out
-}
-
-var tempCollectionUnsafe = regexp.MustCompile(`[^A-Za-z0-9_]+`)
-
-func tempCollectionName(runID string, stage string) string {
-	runID = tempCollectionUnsafe.ReplaceAllString(runID, "_")
-	stage = tempCollectionUnsafe.ReplaceAllString(stage, "_")
-	return strings.Trim(strings.Join([]string{"aggregate_tmp", runID, stage}, "_"), "_")
 }

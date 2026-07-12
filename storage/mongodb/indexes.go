@@ -21,6 +21,7 @@ type IndexSpec struct {
 	Keys   bson.D
 	Unique bool
 	Sparse bool
+	TTL    bool
 }
 
 func CollectionSpecs() []CollectionSpec {
@@ -363,6 +364,22 @@ func CollectionSpecs() []CollectionSpec {
 			},
 		},
 		{
+			Name:      "aggregate_stage_items",
+			Validator: baseValidator([]string{"_aggregate_run_id", "_aggregate_stage", "_aggregate_ordinal", "expires_at"}),
+			Indexes: []IndexSpec{
+				{
+					Name:   "aggregate_stage_items_run_stage_ordinal_unique",
+					Keys:   bson.D{{Key: "_aggregate_run_id", Value: 1}, {Key: "_aggregate_stage", Value: 1}, {Key: "_aggregate_ordinal", Value: 1}},
+					Unique: true,
+				},
+				{
+					Name: "aggregate_stage_items_expires_at_ttl",
+					Keys: bson.D{{Key: "expires_at", Value: 1}},
+					TTL:  true,
+				},
+			},
+		},
+		{
 			Name:      "aggregate_run_items",
 			Validator: baseValidator([]string{"run_id", "ordinal", "payload"}),
 			Indexes: []IndexSpec{
@@ -531,6 +548,19 @@ func EnsureCollections(ctx context.Context, db *mongo.Database) error {
 			return errb.With("collection", spec.Name).Wrap(err)
 		}
 	}
+	return dropLegacyAggregateTempCollections(ctx, db)
+}
+
+func dropLegacyAggregateTempCollections(ctx context.Context, db *mongo.Database) error {
+	names, err := db.ListCollectionNames(ctx, bson.D{{Key: "name", Value: bson.D{{Key: "$regex", Value: "^aggregate_tmp_"}}}})
+	if err != nil {
+		return oops.In("mongodb_indexes").Wrapf(err, "list legacy aggregate temp collections")
+	}
+	for _, name := range names {
+		if err := db.Collection(name).Drop(ctx); err != nil {
+			return oops.In("mongodb_indexes").With("collection", name).Wrapf(err, "drop legacy aggregate temp collection")
+		}
+	}
 	return nil
 }
 
@@ -570,6 +600,9 @@ func ensureIndexes(ctx context.Context, collection *mongo.Collection, spec Colle
 		}
 		if index.Sparse {
 			opts.SetSparse(true)
+		}
+		if index.TTL {
+			opts.SetExpireAfterSeconds(0)
 		}
 		model := mongo.IndexModel{
 			Keys:    index.Keys,

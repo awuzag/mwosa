@@ -3,6 +3,7 @@ package aggregate
 import (
 	"context"
 	"encoding/json"
+	"errors"
 	"strings"
 	"time"
 
@@ -10,6 +11,8 @@ import (
 	"github.com/awuzag/mwosa/packages/idgen"
 	"github.com/samber/oops"
 )
+
+const runPersistenceTimeout = 10 * time.Second
 
 type Service struct {
 	repo     Repository
@@ -95,6 +98,9 @@ func (s Service) Upsert(ctx context.Context, req UpsertRequest) (Detail, error) 
 			return Detail{}, errb.Wrapf(err, "load aggregate before upsert")
 		}
 		return s.createFromSpec(ctx, spec, req.YAMLText, req.Note, specJSON, specHash)
+	}
+	if existing.ActiveVersion.SpecHash == specHash {
+		return existing, nil
 	}
 	versionID, err := idgen.NewUUIDV7()
 	if err != nil {
@@ -185,6 +191,11 @@ func (s Service) Plan(ctx context.Context, req PlanRequest) (Plan, error) {
 }
 
 func (s Service) History(ctx context.Context, filter RunHistoryFilter) ([]Run, error) {
+	switch filter.Status {
+	case "", RunSucceeded, RunFailed, RunCancelled:
+	default:
+		return nil, oops.In("aggregate_service").With("status", filter.Status).Errorf("unsupported aggregate run status: %s", filter.Status)
+	}
 	if filter.Limit <= 0 {
 		filter.Limit = 50
 	}
@@ -215,6 +226,16 @@ func (s Service) Run(ctx context.Context, req RunRequest) (RunDetail, OutputRows
 	if err != nil {
 		return RunDetail{}, OutputRows{}, errb.Wrap(err)
 	}
+	alias := strings.TrimSpace(req.Alias)
+	if alias != "" {
+		exists, err := s.repo.HasRunAlias(ctx, alias)
+		if err != nil {
+			return RunDetail{}, OutputRows{}, errb.Wrapf(err, "check aggregate run alias")
+		}
+		if exists {
+			return RunDetail{}, OutputRows{}, errb.Errorf("aggregate run alias already exists: %s", alias)
+		}
+	}
 	started := s.now()
 	runID, err := idgen.NewUUIDV7()
 	if err != nil {
@@ -222,13 +243,13 @@ func (s Service) Run(ctx context.Context, req RunRequest) (RunDetail, OutputRows
 	}
 	result, err := s.executor.Execute(ctx, spec, params, runID)
 	if err != nil {
-		failed, saveErr := s.recordFailedRun(ctx, detail, req.Alias, started, params, result.Stages, err)
+		failed, saveErr := s.recordFailedRun(ctx, detail, alias, started, runID, params, spec, result.Stages, err)
 		if saveErr != nil {
 			return failed, OutputRows{}, saveErr
 		}
 		return failed, OutputRows{}, err
 	}
-	return s.recordSucceededRun(ctx, detail, req.Alias, started, runID, params, spec, result)
+	return s.recordSucceededRun(ctx, detail, alias, started, runID, params, spec, result)
 }
 
 func (s Service) recordSucceededRun(ctx context.Context, detail Detail, alias string, started time.Time, runID string, params map[string]any, spec Spec, result ExecutionResult) (RunDetail, OutputRows, error) {
@@ -281,18 +302,16 @@ func (s Service) recordSucceededRun(ctx context.Context, detail Detail, alias st
 	if err != nil {
 		return RunDetail{}, OutputRows{}, errb.Wrap(err)
 	}
-	saved, err := s.repo.CreateRun(ctx, run, items)
+	persistCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), runPersistenceTimeout)
+	defer cancel()
+	saved, err := s.repo.CreateRun(persistCtx, run, items)
 	if err != nil {
 		return RunDetail{}, OutputRows{}, errb.Wrapf(err, "save aggregate run")
 	}
 	return saved, output, nil
 }
 
-func (s Service) recordFailedRun(ctx context.Context, detail Detail, alias string, started time.Time, params map[string]any, stages []StageSummary, runErr error) (RunDetail, error) {
-	runID, err := idgen.NewUUIDV7()
-	if err != nil {
-		return RunDetail{}, oops.Join(runErr, oops.In("aggregate_service").With("aggregate_id", detail.Aggregate.ID, "alias", alias).Wrapf(err, "generate failed aggregate run id"))
-	}
+func (s Service) recordFailedRun(ctx context.Context, detail Detail, alias string, started time.Time, runID string, params map[string]any, spec Spec, stages []StageSummary, runErr error) (RunDetail, error) {
 	paramsJSON, err := json.Marshal(params)
 	if err != nil {
 		return RunDetail{}, oops.Join(runErr, oops.In("aggregate_service").Wrapf(err, "encode failed aggregate params"))
@@ -301,7 +320,15 @@ func (s Service) recordFailedRun(ctx context.Context, detail Detail, alias strin
 	if err != nil {
 		return RunDetail{}, oops.Join(runErr, oops.In("aggregate_service").Wrapf(err, "encode failed aggregate stages"))
 	}
+	pipelineJSON, err := json.Marshal(spec.Pipeline)
+	if err != nil {
+		return RunDetail{}, oops.Join(runErr, oops.In("aggregate_service").Wrapf(err, "encode failed aggregate pipeline"))
+	}
 	finished := s.now()
+	status := RunFailed
+	if errors.Is(runErr, context.Canceled) || errors.Is(runErr, context.DeadlineExceeded) {
+		status = RunCancelled
+	}
 	run := Run{
 		ID:                 runID,
 		Alias:              strings.TrimSpace(alias),
@@ -312,13 +339,15 @@ func (s Service) recordFailedRun(ctx context.Context, detail Detail, alias strin
 		SpecHash:           detail.ActiveVersion.SpecHash,
 		ParamsJSON:         paramsJSON,
 		StagesJSON:         stagesJSON,
-		PipelineJSON:       json.RawMessage(`[]`),
+		PipelineJSON:       pipelineJSON,
 		StartedAt:          started,
 		FinishedAt:         &finished,
-		Status:             RunFailed,
+		Status:             status,
 		ErrorMessage:       runErr.Error(),
 	}
-	saved, saveErr := s.repo.CreateRun(ctx, run, nil)
+	persistCtx, cancel := context.WithTimeout(context.WithoutCancel(ctx), runPersistenceTimeout)
+	defer cancel()
+	saved, saveErr := s.repo.CreateRun(persistCtx, run, nil)
 	if saveErr != nil {
 		return saved, oops.Join(runErr, oops.In("aggregate_service").Wrapf(saveErr, "save failed aggregate run"))
 	}

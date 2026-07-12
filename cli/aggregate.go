@@ -171,7 +171,7 @@ func newHistoryAggregateCommand(opts *Options) *cobra.Command {
 		}),
 	}
 	cmd.Flags().StringVar(&flags.Name, "name", flags.Name, "aggregate name")
-	cmd.Flags().StringVar(&flags.Status, "status", flags.Status, "run status: succeeded or failed")
+	cmd.Flags().StringVar(&flags.Status, "status", flags.Status, "run status: succeeded, failed, or cancelled")
 	cmd.Flags().IntVar(&flags.Limit, "limit", flags.Limit, "maximum runs to list")
 	return cmd
 }

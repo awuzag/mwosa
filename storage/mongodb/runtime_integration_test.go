@@ -28,7 +28,11 @@ func TestRuntimeInitializesCollectionsAndChecksStatus(t *testing.T) {
 	require.NotNil(t, runtime.Client())
 	require.NotNil(t, runtime.Database())
 	require.NoError(t, runtime.Ping(ctx))
+	require.NoError(t, runtime.Database().CreateCollection(ctx, "aggregate_tmp_legacy_run_source"))
 	require.NoError(t, runtime.Init(ctx))
+	legacyNames, err := runtime.Database().ListCollectionNames(ctx, bson.D{{Key: "name", Value: "aggregate_tmp_legacy_run_source"}})
+	require.NoError(t, err)
+	require.Empty(t, legacyNames)
 
 	status, err := runtime.Check(ctx)
 	require.NoError(t, err)

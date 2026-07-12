@@ -126,7 +126,7 @@ output:
 	}
 
 	inspectStagesOut := runAggregateCLI(t, configPath, server.URI, "inspect", "aggregate-run", "cli-latest", "--view", "stages", "-o", "json")
-	if !strings.Contains(inspectStagesOut, `"collection": "aggregate_tmp_`) || !strings.Contains(inspectStagesOut, `"name": "source"`) {
+	if !strings.Contains(inspectStagesOut, `"collection": "aggregate_stage_items"`) || !strings.Contains(inspectStagesOut, `"name": "source"`) {
 		t.Fatalf("inspect run stages output missing materialized stage context:\n%s", inspectStagesOut)
 	}
 
@@ -144,6 +144,20 @@ output:
 	lines := strings.Split(strings.TrimSpace(ndjsonOut), "\n")
 	if len(lines) != 1 || !strings.Contains(lines[0], `"symbol":"000660"`) {
 		t.Fatalf("ndjson output missing expected single row:\n%s", ndjsonOut)
+	}
+
+	defaultOut := runAggregateCLI(t, configPath, server.URI, "run", "aggregate", "cli-krx-candidates", "--alias", "cli-default", "--param", "limit=1")
+	if !strings.Contains(defaultOut, "코드") || !strings.Contains(defaultOut, "000660") {
+		t.Fatalf("default aggregate output should use spec table format:\n%s", defaultOut)
+	}
+
+	emptyOut := runAggregateCLI(t, configPath, server.URI, "run", "aggregate", "cli-krx-candidates", "--alias", "cli-empty", "--param", "market=missing", "-o", "json")
+	var emptyRows []map[string]any
+	if err := json.Unmarshal([]byte(emptyOut), &emptyRows); err != nil {
+		t.Fatalf("decode empty aggregate rows: %v\n%s", err, emptyOut)
+	}
+	if emptyRows == nil || len(emptyRows) != 0 {
+		t.Fatalf("empty aggregate output = %#v, want []", emptyRows)
 	}
 }
 

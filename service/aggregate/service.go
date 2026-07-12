@@ -11,6 +11,7 @@ type RunStatus string
 const (
 	RunSucceeded RunStatus = "succeeded"
 	RunFailed    RunStatus = "failed"
+	RunCancelled RunStatus = "cancelled"
 )
 
 type Aggregate struct {
@@ -93,6 +94,7 @@ type Repository interface {
 	ListAggregateVersions(ctx context.Context, name string) ([]Version, error)
 	AddAggregateVersion(ctx context.Context, name string, version Version, now time.Time) (Detail, error)
 	ArchiveAggregate(ctx context.Context, name string, archivedAt time.Time) error
+	HasRunAlias(ctx context.Context, alias string) (bool, error)
 	CreateRun(ctx context.Context, run Run, items []RunItem) (RunDetail, error)
 	ListRuns(ctx context.Context, filter RunHistoryFilter) ([]Run, error)
 	GetRun(ctx context.Context, ref string, limit int) (RunDetail, error)

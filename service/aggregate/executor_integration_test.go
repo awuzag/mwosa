@@ -4,8 +4,9 @@ package aggregate_test
 
 import (
 	"context"
-	"strings"
+	"encoding/json"
 	"testing"
+	"time"
 
 	"github.com/awuzag/mwosa/internal/integrationtest"
 	aggregateservice "github.com/awuzag/mwosa/service/aggregate"
@@ -55,6 +56,8 @@ params:
   limit:
     type: int
     default: 2
+workspace:
+  ttl: 2h
 pipeline:
   - name: source
     type: local_collection
@@ -96,17 +99,26 @@ output:
 	require.Equal(t, aggregateservice.RunSucceeded, detail.Run.Status)
 	require.Len(t, detail.Items, 1)
 	assert.JSONEq(t, `{"symbol":"000660","traded_amount":2000,"change_pct":2.1}`, string(detail.Items[0].PayloadJSON))
-	tempCollection := "aggregate_tmp_" + strings.ReplaceAll(detail.Run.ID, "-", "_") + "_source"
-	assertTempCollectionHasTTLIndex(t, ctx, runtime.Database().Collection(tempCollection))
+	assertSharedStageItems(t, ctx, runtime.Database(), detail.Run.ID, "source", 2, 2*time.Hour)
 
 	header, rows := output.TableRows()
 	assert.Equal(t, []string{"#", "코드", "거래대금"}, header)
 	assert.Equal(t, [][]string{{"1", "000660", "2000"}}, rows)
 
+	limited := spec
+	limited.Name = "limited-candidates"
+	limited.Workspace.MaxRows = 1
+	_, err = service.Upsert(ctx, aggregateservice.UpsertRequest{Name: limited.Name, Spec: limited, YAMLText: "kind: Aggregate\n"})
+	require.NoError(t, err)
+	_, _, err = service.Run(ctx, aggregateservice.RunRequest{Name: limited.Name, Alias: "limited"})
+	require.ErrorContains(t, err, "stage row limit exceeded")
+
 	history, err := service.History(ctx, aggregateservice.RunHistoryFilter{Name: "krx-candidates"})
 	require.NoError(t, err)
 	require.Len(t, history, 1)
 	assert.Equal(t, "latest", history[0].Alias)
+	_, err = service.History(ctx, aggregateservice.RunHistoryFilter{Status: "unknown"})
+	require.ErrorContains(t, err, "unsupported aggregate run status")
 
 	loaded, err := service.InspectRun(ctx, "latest", 10)
 	require.NoError(t, err)
@@ -143,8 +155,26 @@ output:
 	assert.JSONEq(t, `{"symbol":"000660","reused":true}`, string(reused.Items[0].PayloadJSON))
 }
 
-func assertTempCollectionHasTTLIndex(t *testing.T, ctx context.Context, collection *mongo.Collection) {
+func assertSharedStageItems(t *testing.T, ctx context.Context, database *mongo.Database, runID string, stage string, expected int64, ttl time.Duration) {
 	t.Helper()
+	collection := database.Collection("aggregate_stage_items")
+	count, err := collection.CountDocuments(ctx, bson.D{{Key: "_aggregate_run_id", Value: runID}, {Key: "_aggregate_stage", Value: stage}})
+	require.NoError(t, err)
+	assert.Equal(t, expected, count)
+	if expected > 0 {
+		var item struct {
+			ExpiresAt time.Time `bson:"expires_at"`
+		}
+		require.NoError(t, collection.FindOne(ctx, bson.D{{Key: "_aggregate_run_id", Value: runID}, {Key: "_aggregate_stage", Value: stage}}).Decode(&item))
+		assert.WithinDuration(t, time.Now().Add(ttl), item.ExpiresAt, time.Minute)
+	}
+
+	names, err := database.ListCollectionNames(ctx, bson.D{})
+	require.NoError(t, err)
+	for _, name := range names {
+		assert.NotContains(t, name, "aggregate_tmp_", "aggregate execution must not create per-run collections")
+	}
+
 	cursor, err := collection.Indexes().List(ctx)
 	require.NoError(t, err)
 	defer cursor.Close(ctx)
@@ -152,12 +182,12 @@ func assertTempCollectionHasTTLIndex(t *testing.T, ctx context.Context, collecti
 	var indexes []bson.M
 	require.NoError(t, cursor.All(ctx, &indexes))
 	for _, index := range indexes {
-		if index["name"] == "aggregate_tmp_expires_at_ttl" {
+		if index["name"] == "aggregate_stage_items_expires_at_ttl" {
 			assert.Equal(t, int32(0), index["expireAfterSeconds"])
 			return
 		}
 	}
-	t.Fatalf("aggregate temp ttl index not found: %#v", indexes)
+	t.Fatalf("aggregate stage item ttl index not found: %#v", indexes)
 }
 
 func TestServicePersistsFailedAggregateRun(t *testing.T) {
@@ -182,8 +212,11 @@ func TestServicePersistsFailedAggregateRun(t *testing.T) {
 
 	spec := minimalAggregateSpec()
 	spec.Name = "broken"
+	spec.Pipeline[0].Collection = "broken_source"
 	spec.Pipeline = append(spec.Pipeline, aggregateservice.StageSpec{Name: "broken_jq", Type: aggregateservice.StageJQ, From: "universe", Query: "map("})
 	spec.Output.From = "broken_jq"
+	_, err = runtime.Database().Collection("broken_source").InsertOne(ctx, bson.M{"symbol": "005930"})
+	require.NoError(t, err)
 	_, err = service.Upsert(ctx, aggregateservice.UpsertRequest{Name: "broken", Spec: spec, YAMLText: "kind: Aggregate\n"})
 	require.NoError(t, err)
 
@@ -194,6 +227,133 @@ func TestServicePersistsFailedAggregateRun(t *testing.T) {
 	require.NoError(t, err)
 	assert.Equal(t, aggregateservice.RunFailed, loaded.Run.Status)
 	assert.Contains(t, loaded.Run.ErrorMessage, "execute aggregate jq")
+	assertSharedStageItems(t, ctx, runtime.Database(), loaded.Run.ID, "universe", 1, 24*time.Hour)
+}
+
+func TestServiceRejectsMissingLocalCollection(t *testing.T) {
+	ctx := context.Background()
+	server := integrationtest.StartMongoDB(t)
+	runtime, err := storagemongodb.NewRuntime(ctx, storagemongodb.Config{URI: server.URI, Database: "mwosa_aggregate_missing_collection_test"})
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, runtime.Close(context.Background())) })
+	require.NoError(t, runtime.Init(ctx))
+
+	repository, err := storageaggregate.NewMongoRepository(runtime.Database())
+	require.NoError(t, err)
+	executor, err := aggregateservice.NewMongoExecutor(runtime.Database())
+	require.NoError(t, err)
+	service, err := aggregateservice.NewService(repository, aggregateservice.WithExecutor(executor))
+	require.NoError(t, err)
+
+	spec := minimalAggregateSpec()
+	spec.Name = "missing-source"
+	_, err = service.Upsert(ctx, aggregateservice.UpsertRequest{Name: spec.Name, Spec: spec, YAMLText: "kind: Aggregate\n"})
+	require.NoError(t, err)
+	_, _, err = service.Run(ctx, aggregateservice.RunRequest{Name: spec.Name, Alias: "missing-source-run"})
+	require.ErrorContains(t, err, "local collection does not exist")
+
+	loaded, err := service.InspectRun(ctx, "missing-source-run", 10)
+	require.NoError(t, err)
+	assert.Equal(t, aggregateservice.RunFailed, loaded.Run.Status)
+	var stages []aggregateservice.StageSummary
+	require.NoError(t, json.Unmarshal(loaded.Run.StagesJSON, &stages))
+	require.Len(t, stages, 1)
+	assert.Equal(t, "universe", stages[0].Name)
+	assert.Contains(t, stages[0].Error, "local collection does not exist")
+}
+
+func TestServiceRecordsCancelledRunWithExecutionID(t *testing.T) {
+	ctx := context.Background()
+	server := integrationtest.StartMongoDB(t)
+	runtime, err := storagemongodb.NewRuntime(ctx, storagemongodb.Config{URI: server.URI, Database: "mwosa_aggregate_cancelled_run_test"})
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, runtime.Close(context.Background())) })
+	require.NoError(t, runtime.Init(ctx))
+
+	repository, err := storageaggregate.NewMongoRepository(runtime.Database())
+	require.NoError(t, err)
+	executor := &cancelExecutor{}
+	service, err := aggregateservice.NewService(repository, aggregateservice.WithExecutor(executor))
+	require.NoError(t, err)
+	spec := minimalAggregateSpec()
+	spec.Name = "cancelled"
+	_, err = service.Upsert(ctx, aggregateservice.UpsertRequest{Name: spec.Name, Spec: spec, YAMLText: "kind: Aggregate\n"})
+	require.NoError(t, err)
+
+	_, _, err = service.Run(ctx, aggregateservice.RunRequest{Name: spec.Name, Alias: "cancelled-run"})
+	require.ErrorIs(t, err, context.Canceled)
+	loaded, err := service.InspectRun(ctx, "cancelled-run", 10)
+	require.NoError(t, err)
+	assert.Equal(t, aggregateservice.RunCancelled, loaded.Run.Status)
+	assert.Equal(t, executor.runID, loaded.Run.ID)
+}
+
+type cancelExecutor struct {
+	runID string
+}
+
+func (e *cancelExecutor) Execute(_ context.Context, _ aggregateservice.Spec, _ map[string]any, runID string) (aggregateservice.ExecutionResult, error) {
+	e.runID = runID
+	return aggregateservice.ExecutionResult{Stages: []aggregateservice.StageSummary{{Name: "source", Type: "local_collection", Status: "failed"}}}, context.Canceled
+}
+
+func TestServiceRejectsDuplicateAliasBeforeExecution(t *testing.T) {
+	ctx := context.Background()
+	server := integrationtest.StartMongoDB(t)
+	runtime, err := storagemongodb.NewRuntime(ctx, storagemongodb.Config{URI: server.URI, Database: "mwosa_aggregate_duplicate_alias_test"})
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, runtime.Close(context.Background())) })
+	require.NoError(t, runtime.Init(ctx))
+
+	repository, err := storageaggregate.NewMongoRepository(runtime.Database())
+	require.NoError(t, err)
+	executor := &countingExecutor{}
+	service, err := aggregateservice.NewService(repository, aggregateservice.WithExecutor(executor))
+	require.NoError(t, err)
+	spec := minimalAggregateSpec()
+	spec.Name = "alias-check"
+	_, err = service.Upsert(ctx, aggregateservice.UpsertRequest{Name: spec.Name, Spec: spec, YAMLText: "kind: Aggregate\n"})
+	require.NoError(t, err)
+
+	_, _, err = service.Run(ctx, aggregateservice.RunRequest{Name: spec.Name, Alias: "same-alias"})
+	require.NoError(t, err)
+	_, _, err = service.Run(ctx, aggregateservice.RunRequest{Name: spec.Name, Alias: "same-alias"})
+	require.ErrorContains(t, err, "alias already exists")
+	assert.Equal(t, 1, executor.calls)
+}
+
+type countingExecutor struct {
+	calls int
+}
+
+func (e *countingExecutor) Execute(_ context.Context, _ aggregateservice.Spec, _ map[string]any, _ string) (aggregateservice.ExecutionResult, error) {
+	e.calls++
+	return aggregateservice.ExecutionResult{Rows: []json.RawMessage{}, Stages: []aggregateservice.StageSummary{}}, nil
+}
+
+func TestServiceDoesNotCreateDuplicateActiveVersion(t *testing.T) {
+	ctx := context.Background()
+	server := integrationtest.StartMongoDB(t)
+	runtime, err := storagemongodb.NewRuntime(ctx, storagemongodb.Config{URI: server.URI, Database: "mwosa_aggregate_duplicate_version_test"})
+	require.NoError(t, err)
+	t.Cleanup(func() { require.NoError(t, runtime.Close(context.Background())) })
+	require.NoError(t, runtime.Init(ctx))
+
+	repository, err := storageaggregate.NewMongoRepository(runtime.Database())
+	require.NoError(t, err)
+	service, err := aggregateservice.NewService(repository)
+	require.NoError(t, err)
+	spec := minimalAggregateSpec()
+	spec.Name = "deduplicated"
+	request := aggregateservice.UpsertRequest{Name: spec.Name, Spec: spec, YAMLText: "kind: Aggregate\n"}
+	_, err = service.Upsert(ctx, request)
+	require.NoError(t, err)
+	_, err = service.Upsert(ctx, request)
+	require.NoError(t, err)
+
+	detail, err := service.Inspect(ctx, spec.Name, aggregateservice.VersionRef{})
+	require.NoError(t, err)
+	assert.Len(t, detail.Versions, 1)
 }
 
 func minimalAggregateSpec() aggregateservice.Spec {

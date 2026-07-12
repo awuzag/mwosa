@@ -11,8 +11,9 @@ import (
 )
 
 type OutputRows struct {
-	Columns []OutputColumnSpec `json:"columns"`
-	Rows    []map[string]any   `json:"rows"`
+	Columns       []OutputColumnSpec `json:"columns"`
+	Rows          []map[string]any   `json:"rows"`
+	DefaultFormat string             `json:"-"`
 }
 
 func FormatOutputRows(spec OutputSpec, rows []json.RawMessage) (OutputRows, error) {
@@ -31,7 +32,7 @@ func FormatOutputRows(spec OutputSpec, rows []json.RawMessage) (OutputRows, erro
 		columns = inferColumns(decoded)
 	}
 	sortOutputRows(decoded, spec.Sort)
-	return OutputRows{Columns: columns, Rows: decoded}, nil
+	return OutputRows{Columns: columns, Rows: decoded, DefaultFormat: strings.TrimSpace(spec.DefaultFormat)}, nil
 }
 
 func (spec OutputSpec) OutputColumns() []OutputColumnSpec {
